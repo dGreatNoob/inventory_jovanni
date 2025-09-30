@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    image: gentle-walker-app
+    container_name: gentle-walker-app
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/var/www
+      - ./vendor:/var/www/vendor
+      - ./node_modules:/var/www/node_modules
+      - ./storage:/var/www/storage
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - APP_KEY=base64:SomeRandomString
+      - DB_CONNECTION=mysql
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_DATABASE=gentle_walker
+      - DB_USERNAME=gentlewalker
+      - DB_PASSWORD=secret
+    depends_on:
+      - db
+
+  db:
+    image: mysql:8.0
+    container_name: gentle-walker-db
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: gentle_walker
+      MYSQL_USER: gentlewalker
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: rootsecret
+    volumes:
+      - dbdata:/var/lib/mysql
+
+volumes:
+  dbdata:

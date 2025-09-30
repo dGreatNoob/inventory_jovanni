@@ -1,0 +1,167 @@
+<x-slot:header>Purchase Order</x-slot:header>
+<x-slot:subheader>Purchase Order Receiving Report</x-slot:subheader>
+
+<div class="mb-14">
+    <div class="">
+        <x-collapsible-card title="Purchase Order Receiving Report" open="true" size="full">
+            <div class="grid gap-6 mb-6 md:grid-cols-2">
+                <x-input type="text" name="status" value="{{ str_replace('_', ' ', ucfirst($purchaseOrder->status)) }}"
+                    label="Status" disabled="true" />
+                <x-input type="text" name="po_num" value="{{ $purchaseOrder->po_num }}" label="PO Number"
+                    disabled="true" />
+                <x-input type="text" name="ordered_by"
+                    value="{{ $purchaseOrder->orderedBy ? $purchaseOrder->orderedBy->name : 'N/A' }}" label="Ordered By"
+                    disabled="true" />
+                <x-input type="text" name="supplier" value="{{ $purchaseOrder->supplier->name }}" label="Supplier"
+                    disabled="true" />
+                <x-input type="text" name="receiving_department"
+                    value="{{ str_replace('_', ' ', ucfirst($purchaseOrder->department->name)) }}"
+                    label="Receiving Department" disabled="true" />
+                <x-input type="text" name="order_date" value="{{ $purchaseOrder->order_date->format('M d, Y') }}"
+                    label="Order Date" disabled="true" />
+                <x-input type="text" name="payment_terms" value="{{ $purchaseOrder->payment_terms }}"
+                    label="Payment Terms" disabled="true" />
+                <x-input type="text" name="quotation" value="{{ $purchaseOrder->quotation }}" label="Quotation"
+                    disabled="true" />
+                <x-input type="text" name="approver"
+                    value="{{ $purchaseOrder->approverInfo ? $purchaseOrder->approverInfo->name : 'N/A' }}" label="Approver"
+                    disabled="true" />
+            </div>
+        </x-collapsible-card>
+
+        <x-collapsible-card title="Received Items Report" open="true" size="full">
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
+                    <thead class="text-sm text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                        <tr>
+                            <th scope="col" class="px-6 py-3">SKU</th>
+                            <th scope="col" class="px-6 py-3">Description</th>
+                            <th scope="col" class="px-6 py-3">Item Type</th>
+                            <th scope="col" class="px-6 py-3">Ordered Qty</th>
+                            <th scope="col" class="px-6 py-3">Receiving Status</th>
+                            <th scope="col" class="px-6 py-3">Remarks</th>
+                            <th scope="col" class="px-6 py-3">Unit Price</th>
+                            <th scope="col" class="px-6 py-3">Total Price</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($purchaseOrder->supplyOrders as $order)
+                            <tr class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700">
+                                <td class="px-6 py-4 font-mono">{{ $order->supplyProfile->supply_sku ?? 'N/A' }}</td>
+                                <td class="px-6 py-4">{{ $order->supplyProfile->supply_description ?? 'N/A' }}</td>
+                                <td class="px-6 py-4">{{ $order->supplyProfile->itemType->name ?? 'N/A' }}</td>
+                                <td class="px-6 py-4">{{ number_format($order->order_qty, 2) }}</td>
+                                <td class="px-6 py-4">
+                                    @if($order->receiving_status)
+                                        @if($order->receiving_status === 'good')
+                                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
+                                                {{ ucfirst($order->receiving_status) }}
+                                            </span>
+                                        @elseif($order->receiving_status === 'incomplete')
+                                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300">
+                                                {{ ucfirst($order->receiving_status) }}
+                                            </span>
+                                        @elseif($order->receiving_status === 'destroyed')
+                                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">
+                                                {{ ucfirst($order->receiving_status) }}
+                                            </span>
+                                        @else
+                                            <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300">
+                                                {{ ucfirst($order->receiving_status) }}
+                                            </span>
+                                        @endif
+                                    @else
+                                        <span class="text-gray-500">Not Set</span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="max-w-xs">
+                                        {{ $order->receiving_remarks ?? 'No remarks' }}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">₱{{ number_format($order->unit_price, 2) }}</td>
+                                <td class="px-6 py-4 font-semibold">₱{{ number_format($order->order_total_price, 2) }}</td>
+                            </tr>
+                            
+                            {{-- Show batch information for consumable items --}}
+                            @if($order->supplyProfile->supply_item_class === 'consumable' && $order->supplyProfile->supplyBatches->isNotEmpty())
+                                <tr class="bg-amber-50 dark:bg-amber-900/20">
+                                    <td colspan="8" class="px-6 py-4">
+                                        <div class="ml-4">
+                                            <div class="flex items-center gap-2 mb-2">
+                                                <svg class="w-4 h-4 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                                                </svg>
+                                                <h4 class="text-sm font-semibold text-amber-800 dark:text-amber-200">Batch Information (Consumable Item)</h4>
+                                            </div>
+                                            
+                                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                                @foreach($order->supplyProfile->supplyBatches as $batch)
+                                                    <div class="bg-white dark:bg-gray-800 rounded-lg p-3 border border-amber-200 dark:border-amber-700">
+                                                        <div class="space-y-1 text-xs">
+                                                            <div><span class="font-medium">Batch Number:</span> {{ $batch->batch_number }}</div>
+                                                            <div><span class="font-medium">Initial Qty:</span> {{ number_format($batch->initial_qty, 2) }}</div>
+                                                            <div><span class="font-medium">Current Qty:</span> {{ number_format($batch->current_qty, 2) }}</div>
+                                                            @if($batch->expiration_date)
+                                                                <div><span class="font-medium">Expiration:</span> {{ $batch->expiration_date->format('M d, Y') }}</div>
+                                                            @endif
+                                                            @if($batch->manufactured_date)
+                                                                <div><span class="font-medium">Manufactured:</span> {{ $batch->manufactured_date->format('M d, Y') }}</div>
+                                                            @endif
+                                                            @if($batch->location)
+                                                                <div><span class="font-medium">Location:</span> {{ $batch->location }}</div>
+                                                            @endif
+                                                            @if($batch->notes)
+                                                                <div><span class="font-medium">Notes:</span> {{ $batch->notes }}</div>
+                                                            @endif
+                                                            <div>
+                                                                <span class="font-medium">Status:</span> 
+                                                                @if($batch->status === 'active')
+                                                                    <span class="px-1 py-0.5 text-xs rounded bg-green-100 text-green-800">
+                                                                        {{ ucfirst($batch->status) }}
+                                                                    </span>
+                                                                @elseif($batch->status === 'depleted')
+                                                                    <span class="px-1 py-0.5 text-xs rounded bg-gray-100 text-gray-800">
+                                                                        {{ ucfirst($batch->status) }}
+                                                                    </span>
+                                                                @else
+                                                                    <span class="px-1 py-0.5 text-xs rounded bg-red-100 text-red-800">
+                                                                        {{ ucfirst($batch->status) }}
+                                                                    </span>
+                                                                @endif
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endif
+                        @empty
+                            <tr class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700">
+                                <td colspan="8" class="px-6 py-4 text-center">No items found</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                    <tfoot class="text-sm text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                        <tr>
+                            <td colspan="6" class="px-6 py-3 text-right font-bold">Total:</td>
+                            <td class="px-6 py-3 font-bold">{{ number_format($totalQuantity, 2) }}</td>
+                            <td class="px-6 py-3 font-bold">₱{{ number_format($totalPrice, 2) }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </x-collapsible-card>
+
+        <div class="fixed bottom-0 right-0 p-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 w-full">
+            <div class="flex justify-end space-x-4">
+                <a href="{{ route('supplies.PurchaseOrder') }}"
+                    class="text-gray-500 bg-white hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-blue-300 rounded-lg border border-gray-200 text-sm font-medium px-5 py-2.5 hover:text-gray-900 focus:z-10 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-500 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-600">
+                    Back to List
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

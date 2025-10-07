@@ -1,10 +1,96 @@
-{{-- <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 42" {{ $attributes }}>
-    <path 
-        fill="currentColor" 
-        fill-rule="evenodd" 
-        clip-rule="evenodd"
-        d="M17.2 5.633 8.6.855 0 5.633v26.51l16.2 9 16.2-9v-8.442l7.6-4.223V9.856l-8.6-4.777-8.6 4.777V18.3l-5.6 3.111V5.633ZM38 18.301l-5.6 3.11v-6.157l5.6-3.11V18.3Zm-1.06-7.856-5.54 3.078-5.54-3.079 5.54-3.078 5.54 3.079ZM24.8 18.3v-6.157l5.6 3.111v6.158L24.8 18.3Zm-1 1.732 5.54 3.078-13.14 7.302-5.54-3.078 13.14-7.3v-.002Zm-16.2 7.89 7.6 4.222V38.3L2 30.966V7.92l5.6 3.111v16.892ZM8.6 9.3 3.06 6.222 8.6 3.143l5.54 3.08L8.6 9.3Zm21.8 15.51-13.2 7.334V38.3l13.2-7.334v-6.156ZM9.6 11.034l5.6-3.11v14.6l-5.6 3.11v-14.6Z"
-    />
-</svg> --}}
+{{-- Dynamic Jovanni Logo - switches based on theme --}}
+<div 
+    class="logo-container {{ $attributes->get('class') }}" 
+    x-data="{ 
+        isDark: $flux.appearance === 'dark' || ($flux.appearance === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+    }"
+    x-effect="isDark = $flux.appearance === 'dark' || ($flux.appearance === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)"
+>
+    {{-- Light mode logo (black) --}}
+    <img 
+        src="{{ asset('images/jovanni_logo_black.png') }}" 
+        alt="Jovanni Logo" 
+        x-show="!isDark"
+        class="logo-image"
+    >
+    
+    {{-- Dark mode logo (white) --}}
+    <img 
+        src="{{ asset('images/jovanni_logo_white.png') }}" 
+        alt="Jovanni Logo" 
+        x-show="isDark"
+        class="logo-image"
+    >
+</div>
 
-<img src="{{ asset('images/cliqueha_logo.png') }}" alt="Logo" style="height:30px;">
+<style>
+    /* Default logo size for regular usage */
+    .logo-image {
+        height: 30px;
+        width: auto;
+        object-fit: contain;
+        object-position: center;
+    }
+    
+    /* Dashboard logo sizing - prevent distortion */
+    .logo-container.h-6.w-8 .logo-image,
+    .h-6.w-8 .logo-image {
+        height: 24px !important;
+        width: auto !important;
+        object-fit: contain;
+        object-position: center;
+    }
+    
+    /* Larger dashboard logo sizing - 2x size */
+    .logo-container.h-12.w-16 .logo-image,
+    .h-12.w-16 .logo-image {
+        height: 48px !important;
+        width: auto !important;
+        object-fit: contain;
+        object-position: center;
+    }
+    
+    /* Large logo for auth pages - fill the entire container */
+    .logo-container.size-45 .logo-image,
+    .size-45 .logo-image {
+        height: 100% !important;
+        width: 100% !important;
+        object-fit: cover;
+        object-position: center;
+    }
+    
+    .logo-container.size-35 .logo-image,
+    .size-35 .logo-image {
+        height: 100% !important;
+        width: 100% !important;
+        object-fit: contain;
+        object-position: center;
+    }
+    
+    /* Fallback CSS for when Alpine.js hasn't loaded yet */
+    .logo-container img:first-child {
+        display: block;
+    }
+    
+    .logo-container img:last-child {
+        display: none;
+    }
+    
+    /* Show dark logo when dark mode is active (CSS fallback) */
+    .dark .logo-container img:first-child {
+        display: none;
+    }
+    
+    .dark .logo-container img:last-child {
+        display: block;
+    }
+    
+    /* Also handle data-theme attribute for compatibility */
+    [data-theme="dark"] .logo-container img:first-child {
+        display: none;
+    }
+    
+    [data-theme="dark"] .logo-container img:last-child {
+        display: block;
+    }
+</style>

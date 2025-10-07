@@ -4,8 +4,8 @@
 <head>
     @include('partials.head')
     @livewireStyles
-    <link rel="icon" type="image/png" href="{{ asset('images/cliqueha_logo.png') }}" alt ="Logo"
-        style="height:30px; width:30px" />
+    {{-- Dynamic favicon - will use black logo for light mode --}}
+    <link rel="icon" type="image/png" href="{{ asset('images/jovanni_logo_black.png') }}" alt="Jovanni Logo" />
 </head>
 @php
     use App\Enums\Enum\PermissionEnum;

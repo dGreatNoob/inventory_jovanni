@@ -1,6 +1,5 @@
 @props([
     'name',
-    'show' => false,
     'title',
     'description' => null,
     'size' => 'lg',
@@ -39,7 +38,6 @@
 
 <flux:modal 
     name="{{ $name }}" 
-    wire:model.self="$show"
     class="{{ $sizeClasses[$size] ?? 'max-w-lg' }}"
     :dismissible="!$persistent"
     :closable="$closeable"

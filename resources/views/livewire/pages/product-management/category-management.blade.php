@@ -106,15 +106,15 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
                         </div>
-                        <input wire:model.live.debounce.300ms="search" 
-                               type="text" 
-                               placeholder="Search categories..." 
-                               class="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <input wire:model.live.debounce.300ms="search"
+                               type="text"
+                               placeholder="Search categories..."
+                               class="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 sm:text-sm">
                     </div>
                 </div>
                 <div class="mt-4 sm:mt-0 flex space-x-3">
-                    <button wire:click="toggleFilters" 
-                            class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <button wire:click="toggleFilters"
+                            class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:focus:ring-gray-400">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.414A1 1 0 013 6.707V4z"></path>
                         </svg>
@@ -129,9 +129,9 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <!-- Parent Filter -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Parent Category</label>
-                            <select wire:model.live="parentFilter" 
-                                    class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Parent Category</label>
+                            <select wire:model.live="parentFilter"
+                                    class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 sm:text-sm">
                                 <option value="">All Categories</option>
                                 <option value="root">Root Categories Only</option>
                                 @foreach($parentCategories as $category)
@@ -142,9 +142,9 @@
 
                         <!-- Status Filter -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                            <select wire:model.live="statusFilter" 
-                                    class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Status</label>
+                            <select wire:model.live="statusFilter"
+                                    class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 sm:text-sm">
                                 <option value="">All Status</option>
                                 <option value="active">Active</option>
                                 <option value="inactive">Inactive</option>
@@ -153,8 +153,8 @@
                     </div>
 
                     <div class="mt-4 flex justify-end">
-                        <button wire:click="clearFilters" 
-                                class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <button wire:click="clearFilters"
+                                class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:focus:ring-gray-400">
                             Clear Filters
                         </button>
                     </div>
@@ -165,20 +165,20 @@
 
     <!-- Bulk Actions -->
     @if(count($selectedCategories) > 0)
-        <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4 mb-6">
+        <div class="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg p-4 mb-6">
             <div class="flex items-center justify-between">
                 <div class="flex items-center">
-                    <span class="text-sm font-medium text-indigo-800">
+                    <span class="text-sm font-medium text-gray-800 dark:text-gray-200">
                         {{ count($selectedCategories) }} category(ies) selected
                     </span>
                 </div>
                 <div class="flex space-x-2">
-                    <button wire:click="openBulkActionModal" 
-                            class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <button wire:click="openBulkActionModal"
+                            class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:focus:ring-gray-400">
                         Bulk Actions
                     </button>
-                    <button wire:click="clearSelection" 
-                            class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <button wire:click="clearSelection"
+                            class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:focus:ring-gray-400">
                         Clear Selection
                     </button>
                 </div>
@@ -194,10 +194,10 @@
                     @foreach($categories as $category)
                         <div class="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
                             <div class="flex items-center space-x-4">
-                                <input type="checkbox" 
+                                <input type="checkbox"
                                        wire:click="toggleCategorySelection({{ $category->id }})"
                                        @if(in_array($category->id, $selectedCategories)) checked @endif
-                                       class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                       class="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded dark:border-gray-600 dark:focus:ring-gray-400">
 
                                 <div class="flex-1">
                                     <div class="flex items-center space-x-2">
@@ -229,11 +229,11 @@
                             </div>
 
                             <div class="flex items-center space-x-2">
-                                <flux:button 
-                                    wire:click="editCategory({{ $category->id }})" 
-                                    variant="ghost" 
+                                <flux:button
+                                    wire:click="editCategory({{ $category->id }})"
+                                    variant="ghost"
                                     size="sm"
-                                    class="text-indigo-600 hover:text-indigo-900"
+                                    class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
                                 >
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>

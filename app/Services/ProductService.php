@@ -71,12 +71,12 @@ class ProductService
                 'shelf_life_days' => $data['shelf_life_days'] ?? null,
                 'pict_name' => $data['pict_name'] ?? null,
                 'disabled' => $data['disabled'] ?? false,
-                'created_by' => $data['created_by'] ?? auth()->id(),
-                'updated_by' => auth()->id(),
+                'created_by' => $data['created_by'] ?? (auth()->id() ?? 1),
+                'updated_by' => auth()->id() ?? 1,
             ]);
 
             // Create initial inventory for default location
-            if (isset($data['initial_quantity'])) {
+            if (isset($data['initial_quantity']) && $data['initial_quantity'] > 0) {
                 $this->createInitialInventory($product, $data['initial_quantity'], $data['location_id'] ?? 1);
             }
 
@@ -229,7 +229,7 @@ class ProductService
             'total_cost' => $quantity * $product->cost,
             'reference_type' => 'manual',
             'notes' => 'Initial inventory setup',
-            'created_by' => auth()->id(),
+            'created_by' => auth()->id() ?? 1,
         ]);
 
         return $inventory;

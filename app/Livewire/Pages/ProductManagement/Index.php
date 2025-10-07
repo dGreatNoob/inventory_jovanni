@@ -78,10 +78,6 @@ class Index extends Component
 
     public function mount()
     {
-        // Ensure ProductService is available
-        if (!$this->productService) {
-            $this->productService = app(ProductService::class);
-        }
         $this->loadFilters();
     }
 
@@ -211,6 +207,14 @@ class Index extends Component
         $this->resetForm();
         $this->editingProduct = null;
         $this->showCreateModal = true;
+    }
+
+    public function closeModal()
+    {
+        $this->showCreateModal = false;
+        $this->showEditModal = false;
+        $this->editingProduct = null;
+        $this->resetForm();
     }
 
     public function editProduct($productId)
@@ -377,21 +381,26 @@ class Index extends Component
 
     public function saveProduct()
     {
-        $this->validate([
-            'form.name' => 'required|string|max:255',
-            'form.sku' => 'required|string|max:255|unique:products,sku' . ($this->editingProduct ? ',' . $this->editingProduct->id : ''),
-            'form.barcode' => 'nullable|string|max:255|unique:products,barcode' . ($this->editingProduct ? ',' . $this->editingProduct->id : ''),
-            'form.category_id' => 'required|exists:categories,id',
-            'form.supplier_id' => 'required|exists:suppliers,id',
-            'form.price' => 'required|numeric|min:0',
-            'form.cost' => 'required|numeric|min:0',
-            'form.uom' => 'required|string|max:255',
-            'form.shelf_life_days' => 'nullable|integer|min:0',
-            'form.initial_quantity' => 'nullable|numeric|min:0',
-            'form.location_id' => 'nullable|exists:inventory_locations,id',
-        ]);
-
         try {
+            // Ensure ProductService is available
+            if (!$this->productService) {
+                $this->productService = app(ProductService::class);
+            }
+
+            $this->validate([
+                'form.name' => 'required|string|max:255',
+                'form.sku' => 'required|string|max:255|unique:products,sku' . ($this->editingProduct ? ',' . $this->editingProduct->id : ''),
+                'form.barcode' => 'nullable|string|max:255|unique:products,barcode' . ($this->editingProduct ? ',' . $this->editingProduct->id : ''),
+                'form.category_id' => 'required|exists:categories,id',
+                'form.supplier_id' => 'required|exists:suppliers,id',
+                'form.price' => 'required|numeric|min:0',
+                'form.cost' => 'required|numeric|min:0',
+                'form.uom' => 'required|string|max:255',
+                'form.shelf_life_days' => 'nullable|integer|min:0',
+                'form.initial_quantity' => 'nullable|numeric|min:0',
+                'form.location_id' => 'nullable|exists:inventory_locations,id',
+            ]);
+
             if ($this->editingProduct) {
                 // Update existing product
                 $this->productService->updateProduct($this->editingProduct, $this->form);
@@ -402,11 +411,15 @@ class Index extends Component
                 session()->flash('message', 'Product created successfully.');
             }
 
-            $this->showCreateModal = false;
-            $this->showEditModal = false;
+            // Reset form and close modal
             $this->resetForm();
             $this->editingProduct = null;
+            $this->showCreateModal = false;
+            $this->showEditModal = false;
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Re-throw validation exceptions to show field errors
+            throw $e;
         } catch (\Exception $e) {
             session()->flash('error', 'Error saving product: ' . $e->getMessage());
         }

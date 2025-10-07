@@ -1,7 +1,6 @@
 <!-- Create/Edit Product Modal -->
 <x-product-management-modal 
     name="create-edit-product"
-    :show="$showCreateModal || $showEditModal"
     :title="$editingProduct ? 'Edit Product' : 'Create New Product'"
     :description="$editingProduct ? 'Update the product information below.' : 'Fill in the product information to add it to your inventory.'"
     size="4xl"
@@ -198,15 +197,14 @@
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Check this to disable the product</p>
         </div>
 
+        <x-slot name="actions">
+            <flux:modal.close>
+                <flux:button variant="ghost">Cancel</flux:button>
+            </flux:modal.close>
+            
+            <flux:button wire:click="saveProduct" variant="primary">
+                {{ $editingProduct ? 'Update Product' : 'Create Product' }}
+            </flux:button>
+        </x-slot>
     </form>
-
-    <x-slot name="actions">
-        <flux:modal.close>
-            <flux:button variant="ghost">Cancel</flux:button>
-        </flux:modal.close>
-        
-        <flux:button type="submit" variant="primary">
-            {{ $editingProduct ? 'Update Product' : 'Create Product' }}
-        </flux:button>
-    </x-slot>
 </x-product-management-modal>

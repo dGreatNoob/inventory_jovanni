@@ -18,13 +18,19 @@ Your CliqueHA inventory management system is now running locally on your machine
 ## 🔧 Current Configuration
 
 ### Database (Docker)
-- **Container**: `gentle-walker-db`
+- **Container**: `inventory-jovanni-db`
 - **Host**: `127.0.0.1` (localhost)
 - **Port**: `3307` (mapped from container port 3306)
-- **Database Name**: `gentle_walker`
-- **Username**: `gentlewalker`
+- **Database Name**: `inventory_jovanni`
+- **Username**: `jovanni`
 - **Password**: `secret`
 - **Status**: ✅ Running with migrations and seed data
+
+### Database Management (phpMyAdmin)
+- **URL**: http://localhost:8081
+- **Container**: `inventory-jovanni-phpmyadmin`
+- **Auto-login**: Configured with database credentials
+- **Status**: ✅ Running and accessible
 
 ### Application Server
 - **URL**: http://localhost:8000
@@ -319,6 +325,7 @@ Your CliqueHA inventory management system is fully configured and running!
 ### What's Running:
 ✅ MySQL Database (Docker container on port 3307)  
 ✅ Laravel Application Server (http://localhost:8000)  
+✅ phpMyAdmin Database Management (http://localhost:8081)  
 ✅ Frontend Assets (compiled and ready)  
 ✅ Database with migrations and seed data  
 

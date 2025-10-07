@@ -11,7 +11,7 @@ vendor
 # composer.lock
 
 # NPM/Yarn lock files
-package-lock.json
+# package-lock.json
 yarn.lock
 
 # Laravel storage and cache files

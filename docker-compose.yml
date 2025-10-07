@@ -2,9 +2,8 @@ version: '3.8'
 
 services:
   app:
-    build: .
-    image: gentle-walker-app
-    container_name: gentle-walker-app
+    image: php:8.2-fpm
+    container_name: inventory-jovanni-app
     restart: unless-stopped
     ports:
       - "8080:8000"
@@ -20,25 +19,52 @@ services:
       - DB_CONNECTION=mysql
       - DB_HOST=db
       - DB_PORT=3306
-      - DB_DATABASE=gentle_walker
-      - DB_USERNAME=gentlewalker
+      - DB_DATABASE=inventory_jovanni
+      - DB_USERNAME=jovanni
       - DB_PASSWORD=secret
     depends_on:
       - db
+    command: >
+      sh -c "
+        apt-get update &&
+        apt-get install -y libpng-dev libonig-dev libxml2-dev zip unzip git curl libzip-dev libpq-dev &&
+        docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd zip &&
+        curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer &&
+        cd /var/www &&
+        composer install --ignore-platform-reqs &&
+        php artisan key:generate &&
+        php artisan migrate:fresh --seed &&
+        php artisan serve --host=0.0.0.0 --port=8000
+      "
 
   db:
     image: mysql:8.0
-    container_name: gentle-walker-db
+    container_name: inventory-jovanni-db
     restart: unless-stopped
     ports:
       - "3307:3306"
     environment:
-      MYSQL_DATABASE: gentle_walker
-      MYSQL_USER: gentlewalker
+      MYSQL_DATABASE: inventory-jovanni
+      MYSQL_USER: jovanni
       MYSQL_PASSWORD: secret
       MYSQL_ROOT_PASSWORD: rootsecret
     volumes:
       - dbdata:/var/lib/mysql
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: inventory-jovanni-phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: jovanni
+      PMA_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: rootsecret
+    depends_on:
+      - db
 
 volumes:
   dbdata:

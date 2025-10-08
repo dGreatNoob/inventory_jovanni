@@ -339,16 +339,6 @@
                     </svg>
                     <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No images found</h3>
                     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by uploading some product images.</p>
-                    <div class="mt-6">
-                        <flux:modal.trigger name="upload-images">
-                            <flux:button variant="primary" class="inline-flex items-center">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                                </svg>
-                                Upload Images
-                            </flux:button>
-                        </flux:modal.trigger>
-                    </div>
                 </div>
             @endif
         </div>

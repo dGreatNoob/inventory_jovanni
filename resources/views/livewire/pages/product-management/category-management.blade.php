@@ -1,4 +1,39 @@
 <div>
+    <!-- Success/Error Messages -->
+    @if (session()->has('message'))
+        <div class="mb-4 rounded-md bg-green-50 dark:bg-green-900/20 p-4">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-green-800 dark:text-green-200">
+                        {{ session('message') }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    @if (session()->has('error'))
+        <div class="mb-4 rounded-md bg-red-50 dark:bg-red-900/20 p-4">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-red-800 dark:text-red-200">
+                        {{ session('error') }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <!-- Header Section -->
     <div class="mb-6">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
@@ -7,14 +42,36 @@
                 <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Organize your products with hierarchical categories</p>
             </div>
             <div class="mt-4 sm:mt-0 flex space-x-3">
-                <flux:modal.trigger name="create-edit-category">
-                    <flux:button variant="primary">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+            <flux:modal.trigger name="create-edit-category">
+    <flux:button 
+        wire:click="createRootCategory" 
+        variant="primary"
+        class="inline-flex items-center space-x-2"
+    >
+        <span class="flex items-center">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            <span>Create Root Category</span>
+        </span>
+    </flux:button>
+</flux:modal.trigger>
+
+            <flux:modal.trigger name="create-edit-category">
+                <flux:button 
+                    wire:click="createSubcategory" 
+                    variant="ghost"
+                    class="inline-flex items-center space-x-2 text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500"
+                >
+                    <span class="flex items-center">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                         </svg>
-                        Add Category
-                    </flux:button>
-                </flux:modal.trigger>
+                        <span>Create Subcategory</span>
+                    </span>
+                </flux:button>
+            </flux:modal.trigger>
+
             </div>
         </div>
     </div>
@@ -266,16 +323,6 @@
                     </svg>
                     <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No categories found</h3>
                     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by creating a new category.</p>
-                    <div class="mt-6">
-                        <flux:modal.trigger name="create-edit-category">
-                            <flux:button variant="primary">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                                </svg>
-                                Add Category
-                            </flux:button>
-                        </flux:modal.trigger>
-                    </div>
                 </div>
             @endif
         </div>

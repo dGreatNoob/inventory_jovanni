@@ -32,9 +32,11 @@ class CategoryManagement extends Component
 
     // Modals
     public $editingCategory = null;
+    public $creationMode = null; // 'root' or 'subcategory'
 
     // Form Data
     public $form = [
+        'entity_id' => 1, // Default entity for multi-tenant support
         'name' => '',
         'description' => '',
         'parent_id' => '',
@@ -66,6 +68,7 @@ class CategoryManagement extends Component
     public function loadFilters()
     {
         $this->parentCategories = Category::whereNull('parent_id')
+            ->where('is_active', true)  // Only show active categories
             ->orderBy('name')
             ->get(['id', 'name']);
     }
@@ -73,6 +76,14 @@ class CategoryManagement extends Component
     public function updatedSearch()
     {
         $this->resetPage();
+    }
+
+    public function updatedFormName()
+    {
+        // Auto-generate slug from name if slug is empty
+        if (empty($this->form['slug']) && !empty($this->form['name'])) {
+            $this->form['slug'] = Str::slug($this->form['name']);
+        }
     }
 
     public function updatedParentFilter()
@@ -140,9 +151,27 @@ class CategoryManagement extends Component
         $this->editingCategory = null;
     }
 
+    public function createRootCategory()
+    {
+        $this->resetForm();
+        $this->editingCategory = null;
+        $this->creationMode = 'root';
+        $this->form['parent_id'] = null; // Ensure it's a root category
+        $this->form['sort_order'] = 0; // Default sort order for root categories
+    }
+
+    public function createSubcategory()
+    {
+        $this->resetForm();
+        $this->editingCategory = null;
+        $this->creationMode = 'subcategory';
+        $this->form['parent_id'] = ''; // Ensure it's empty for subcategory creation
+    }
+
     public function editCategory($categoryId)
     {
         $this->editingCategory = Category::findOrFail($categoryId);
+        $this->creationMode = null; // Clear creation mode when editing
         $this->loadCategoryData();
     }
 
@@ -194,6 +223,17 @@ class CategoryManagement extends Component
         try {
             switch ($this->bulkAction) {
                 case 'delete':
+                    // Check if any root categories with subcategories are selected
+                    $rootCategoriesWithChildren = Category::whereIn('id', $this->selectedCategories)
+                        ->whereNull('parent_id')
+                        ->whereHas('children')
+                        ->count();
+                    
+                    if ($rootCategoriesWithChildren > 0) {
+                        session()->flash('error', 'Cannot delete root categories that have subcategories. Please delete all subcategories first, or deselect root categories with subcategories and try again.');
+                        return;
+                    }
+                    
                     foreach ($this->selectedCategories as $categoryId) {
                         $category = Category::findOrFail($categoryId);
                         $this->categoryService->deleteCategory($category);
@@ -208,7 +248,7 @@ class CategoryManagement extends Component
                     Category::whereIn('id', $this->selectedCategories)->update(['is_active' => false]);
                     session()->flash('message', 'Selected categories deactivated successfully.');
                     break;
-                case 'move_to_parent':
+                case 'update_parent':
                     if ($this->bulkActionValue) {
                         Category::whereIn('id', $this->selectedCategories)->update(['parent_id' => $this->bulkActionValue]);
                         session()->flash('message', 'Selected categories moved successfully.');
@@ -229,6 +269,7 @@ class CategoryManagement extends Component
     public function resetForm()
     {
         $this->form = [
+            'entity_id' => 1, // Default entity for multi-tenant support
             'name' => '',
             'description' => '',
             'parent_id' => '',
@@ -242,6 +283,7 @@ class CategoryManagement extends Component
     {
         if ($this->editingCategory) {
             $this->form = [
+                'entity_id' => $this->editingCategory->entity_id,
                 'name' => $this->editingCategory->name,
                 'description' => $this->editingCategory->description,
                 'parent_id' => $this->editingCategory->parent_id,
@@ -254,33 +296,54 @@ class CategoryManagement extends Component
 
     public function saveCategory()
     {
+        // Generate slug if not provided before validation
+        if (empty($this->form['slug'])) {
+            $this->form['slug'] = Str::slug($this->form['name']);
+        }
+
         $this->validate([
+            'form.entity_id' => 'required|integer|min:1',
             'form.name' => 'required|string|max:255',
             'form.description' => 'nullable|string',
             'form.parent_id' => 'nullable|exists:categories,id',
             'form.sort_order' => 'nullable|integer|min:0',
-            'form.slug' => 'nullable|string|max:255|unique:categories,slug' . ($this->editingCategory ? ',' . $this->editingCategory->id : ''),
+            'form.slug' => 'required|string|max:255|unique:categories,slug' . ($this->editingCategory ? ',' . $this->editingCategory->id : ''),
             'form.is_active' => 'boolean',
+        ], [
+            'form.entity_id.required' => 'Entity ID is required.',
+            'form.entity_id.integer' => 'Entity ID must be a number.',
+            'form.entity_id.min' => 'Entity ID must be at least 1.',
+            'form.name.required' => 'Category name is required.',
+            'form.name.max' => 'Category name cannot exceed 255 characters.',
+            'form.parent_id.exists' => 'Selected parent category does not exist.',
+            'form.sort_order.integer' => 'Sort order must be a number.',
+            'form.sort_order.min' => 'Sort order must be greater than or equal to 0.',
+            'form.slug.required' => 'Slug is required.',
+            'form.slug.unique' => 'This slug is already in use.',
         ]);
 
         try {
-            // Generate slug if not provided
-            if (empty($this->form['slug'])) {
-                $this->form['slug'] = Str::slug($this->form['name']);
+            // Handle parent_id properly - convert empty string to null for root categories
+            if ($this->form['parent_id'] === '') {
+                $this->form['parent_id'] = null;
             }
 
             if ($this->editingCategory) {
                 // Update existing category
                 $this->categoryService->updateCategory($this->editingCategory, $this->form);
                 session()->flash('message', 'Category updated successfully.');
+                // Reset form and editing state after update
+                $this->resetForm();
+                $this->editingCategory = null;
+                $this->creationMode = null;
             } else {
                 // Create new category
                 $this->categoryService->createCategory($this->form);
                 session()->flash('message', 'Category created successfully.');
+                // Reset form fields for next creation but keep the creation mode
+                $this->resetForm();
+                $this->editingCategory = null;
             }
-
-            $this->resetForm();
-            $this->editingCategory = null;
             $this->dispatch('close-modal', name: 'create-edit-category');
             $this->loadFilters();
 

@@ -233,10 +233,11 @@
                     </span>
                 </div>
                 <div class="flex space-x-2">
-                    <button wire:click="openBulkActionModal"
-                            class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:focus:ring-gray-400">
-                        Bulk Actions
-                    </button>
+                    <flux:modal.trigger name="bulk-actions">
+                        <flux:button variant="ghost" class="text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500">
+                            Bulk Actions
+                        </flux:button>
+                    </flux:modal.trigger>
                     <button wire:click="clearSelection"
                             class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:focus:ring-gray-400">
                         Clear Selection

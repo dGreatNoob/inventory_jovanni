@@ -1,98 +1,127 @@
 <!-- Create/Edit Category Modal -->
-<x-product-management-modal 
-    name="create-edit-category"
-    :title="$editingCategory ? 'Edit Category' : 'Create New Category'"
-    :description="$editingCategory ? 'Update the category information below.' : 'Fill in the category information to organize your products.'"
-    size="lg"
-    icon="edit"
-    icon-color="indigo"
->
-    <form wire:submit.prevent="saveCategory" class="space-y-6">
-        <div class="space-y-4">
-            <flux:input 
-                wire:model="form.name" 
-                label="Category Name" 
-                required
-                placeholder="Enter category name"
-                class="dark:bg-gray-700 dark:text-white dark:border-gray-600"
-            />
-            @error('form.name') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+<flux:modal name="create-edit-category" class="max-w-lg" :closable="false">
+    <div class="pr-2">
+        <div class="mb-6">
+            <flux:heading size="lg" class="text-gray-900 dark:text-white">
+                @if($editingCategory)
+                    Edit Category
+                @elseif($creationMode === 'root')
+                    Create New Root Category
+                @else
+                    Create New Subcategory
+                @endif
+            </flux:heading>
+            <flux:subheading class="text-gray-600 dark:text-gray-400">
+                @if($editingCategory)
+                    Update the category information below.
+                @elseif($creationMode === 'root')
+                    Fill in the root category information to organize your products.
+                @else
+                    Fill in the subcategory information to organize your products.
+                @endif
+            </flux:subheading>
+        </div>
 
-            <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
-                <textarea wire:model="form.description" 
-                          rows="3"
-                          placeholder="Enter category description"
-                          class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
-            </div>
-            @error('form.description') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
-
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Parent Category</label>
-                    <select wire:model="form.parent_id" 
-                            class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                        <option value="">No Parent (Root Category)</option>
-                        @foreach($parentCategories as $category)
-                            <option value="{{ $category->id }}">{{ $category->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                @error('form.parent_id') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
-
+        <div class="space-y-6">
+            <flux:field>
+                <flux:label>Category Name</flux:label>
                 <flux:input 
-                    wire:model="form.sort_order" 
-                    label="Sort Order" 
-                    type="number"
-                    placeholder="Enter sort order"
+                    wire:model="form.name" 
+                    placeholder="Enter category name"
+                    required
                     class="dark:bg-gray-700 dark:text-white dark:border-gray-600"
                 />
-                @error('form.sort_order') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                @error('form.name') 
+                    <flux:error>{{ $message }}</flux:error>
+                @enderror
+            </flux:field>
+
+            <flux:field>
+                <flux:label>Description</flux:label>
+                <flux:textarea 
+                    wire:model="form.description" 
+                    rows="3"
+                    placeholder="Enter category description"
+                    class="dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                />
+                @error('form.description') 
+                    <flux:error>{{ $message }}</flux:error>
+                @enderror
+            </flux:field>
+
+            @if($creationMode === 'subcategory')
+            <flux:field>
+                <flux:label>Parent Category</flux:label>
+                <flux:select 
+                    wire:model="form.parent_id" 
+                    placeholder="Select parent category"
+                    class="dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                >
+                    <option value="">No Parent (Root Category)</option>
+                    @foreach($parentCategories as $category)
+                        <option value="{{ $category->id }}">{{ $category->name }}</option>
+                    @endforeach
+                </flux:select>
+                @error('form.parent_id') 
+                    <flux:error>{{ $message }}</flux:error>
+                @enderror
+            </flux:field>
+            @endif
+
+            <flux:field>
+                <flux:label>Sort Order</flux:label>
+                <flux:input 
+                    wire:model="form.sort_order" 
+                    type="number"
+                    placeholder="Enter sort order (0 = first, 1 = second, etc.)"
+                    class="dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                />
+                <flux:description>Controls the display order of categories. Lower numbers appear first.</flux:description>
+                @error('form.sort_order') 
+                    <flux:error>{{ $message }}</flux:error>
+                @enderror
+            </flux:field>
+
+            <flux:field>
+                <flux:label>Slug</flux:label>
+                <flux:input 
+                    wire:model="form.slug" 
+                    placeholder="Enter URL slug (auto-generated if empty)"
+                    class="dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                />
+                @error('form.slug') 
+                    <flux:error>{{ $message }}</flux:error>
+                @enderror
+            </flux:field>
+
+
+            <!-- Status -->
+            <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
+                <flux:checkbox 
+                    wire:model="form.is_active" 
+                    label="Active"
+                    description="Check this to make the category active and visible"
+                />
             </div>
 
-            <flux:input 
-                wire:model="form.slug" 
-                label="Slug" 
-                placeholder="Enter URL slug (auto-generated if empty)"
-                class="dark:bg-gray-700 dark:text-white dark:border-gray-600"
-            />
-            @error('form.slug') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
-
-            <flux:input 
-                wire:model="form.meta_title" 
-                label="Meta Title" 
-                placeholder="Enter meta title for SEO"
-                class="dark:bg-gray-700 dark:text-white dark:border-gray-600"
-            />
-            @error('form.meta_title') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
-
-            <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Meta Description</label>
-                <textarea wire:model="form.meta_description" 
-                          rows="2"
-                          placeholder="Enter meta description for SEO"
-                          class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
+            <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200 dark:border-gray-700">
+                <flux:modal.close>
+                    <flux:button variant="ghost">Cancel</flux:button>
+                </flux:modal.close>
+                
+                <flux:button 
+                    wire:click="saveCategory" 
+                    variant="primary"
+                >
+                    @if($editingCategory)
+                        Update Category
+                    @elseif($creationMode === 'root')
+                        Create Root Category
+                    @else
+                        Create Subcategory
+                    @endif
+                </flux:button>
             </div>
-            @error('form.meta_description') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
         </div>
-
-        <!-- Status -->
-        <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
-            <flux:checkbox 
-                wire:model="form.is_active" 
-                label="Active"
-                description="Check this to make the category active and visible"
-            />
-        </div>
-
-        <x-slot name="actions">
-            <flux:modal.close>
-                <flux:button variant="ghost">Cancel</flux:button>
-            </flux:modal.close>
-            
-            <flux:button type="submit" variant="primary">
-                {{ $editingCategory ? 'Update Category' : 'Create Category' }}
-            </flux:button>
-        </x-slot>
-    </form>
-</x-product-management-modal>
+    </div>
+</flux:modal>

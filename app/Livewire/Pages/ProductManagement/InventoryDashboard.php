@@ -86,15 +86,20 @@ class InventoryDashboard extends Component
         $totalSuppliers = Supplier::where('is_active', true)->count();
         $totalLocations = InventoryLocation::where('is_active', true)->count();
 
-        // Inventory value calculation (guard against NULL cost)
+        // Inventory value calculation (guard against NULL cost and exclude soft-deleted products)
         $inventoryValue = ProductInventory::join('products', 'product_inventory.product_id', '=', 'products.id')
+            ->whereNull('products.deleted_at')
             ->sum(DB::raw('product_inventory.quantity * COALESCE(products.cost, 0)'));
 
-        // Low stock products (quantity < 10)
-        $lowStockProducts = ProductInventory::where('quantity', '<', 10)->count();
+        // Low stock products (quantity < 10) - only for non-deleted products
+        $lowStockProducts = ProductInventory::where('quantity', '<', 10)
+            ->whereHas('product')
+            ->count();
 
-        // Out of stock products
-        $outOfStockProducts = ProductInventory::where('quantity', '<=', 0)->count();
+        // Out of stock products - only for non-deleted products
+        $outOfStockProducts = ProductInventory::where('quantity', '<=', 0)
+            ->whereHas('product')
+            ->count();
 
         return [
             'total_products' => $totalProducts,

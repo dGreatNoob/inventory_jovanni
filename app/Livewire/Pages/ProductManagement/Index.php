@@ -41,7 +41,6 @@ class Index extends Component
     public $showFilters = false;
 
     // Modals
-    public $showBulkActionModal = false;
     public $editingProduct = null;
     public $isEditMode = false;
     // Viewer state for product details modal
@@ -288,14 +287,6 @@ class Index extends Component
         $this->selectedProducts = [];
     }
 
-    public function openBulkActionModal()
-    {
-        if (empty($this->selectedProducts)) {
-            session()->flash('error', 'Please select products first.');
-            return;
-        }
-        $this->showBulkActionModal = true;
-    }
 
     public function performBulkAction()
     {
@@ -344,9 +335,9 @@ class Index extends Component
             }
 
             $this->clearSelection();
-            $this->showBulkActionModal = false;
             $this->bulkAction = '';
             $this->bulkActionValue = '';
+            $this->dispatch('close-modal', name: 'bulk-actions');
 
         } catch (\Exception $e) {
             session()->flash('error', 'Error performing bulk action: ' . $e->getMessage());

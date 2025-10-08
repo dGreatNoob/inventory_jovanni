@@ -58,8 +58,8 @@ class CategoryService
     public function updateCategory(Category $category, array $data): Category
     {
         return DB::transaction(function () use ($category, $data) {
-            // Update slug if name changed
-            if (isset($data['name']) && $data['name'] !== $category->name) {
+            // Only generate slug if name changed AND slug is not already provided
+            if (isset($data['name']) && $data['name'] !== $category->name && empty($data['slug'])) {
                 $data['slug'] = Str::slug($data['name']);
             }
 

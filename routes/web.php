@@ -181,6 +181,12 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/locations', \App\Livewire\Pages\ProductManagement\InventoryLocationManagement::class)->name('locations');
         Route::get('/images', \App\Livewire\Pages\ProductManagement\ProductImageGallery::class)->name('images');
         Route::get('/dashboard', \App\Livewire\Pages\ProductManagement\InventoryDashboard::class)->name('dashboard');
+        Route::get('/print-catalog', function() {
+            $products = \App\Models\Product::with(['images' => function($q){
+                $q->orderByDesc('is_primary')->orderBy('sort_order')->orderBy('created_at', 'desc');
+            }])->orderBy('name')->get();
+            return view('livewire.pages.product-management.print-catalog', compact('products'));
+        })->name('print');
     });
 //    Route::get('/notifications', Notifications::class)
 //         ->name('notifications.index');

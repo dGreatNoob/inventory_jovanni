@@ -321,8 +321,8 @@ class Index extends Component
 
     public function exportProducts()
     {
-        // TODO: Implement export functionality
-        session()->flash('message', 'Export functionality coming soon.');
+        // Open the print view in a new tab to immediately trigger print, while keeping the page state
+        return redirect()->away(route('product-management.print'));
     }
 
     public function refreshProducts()

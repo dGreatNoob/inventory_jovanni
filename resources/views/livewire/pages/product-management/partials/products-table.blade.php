@@ -1,15 +1,15 @@
 <!-- Products Table View -->
 <div class="overflow-hidden">
     <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead class="bg-gray-50 dark:bg-gray-700">
                 <tr>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         <input type="checkbox" 
                                wire:click="selectAllProducts"
-                               class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                               class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-gray-600 rounded">
                     </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         <button wire:click="sortBy('name')" class="group inline-flex">
                             Product
                             @if($sortBy === 'name')
@@ -29,13 +29,13 @@
                             @endif
                         </button>
                     </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Category
                     </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Supplier
                     </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         <button wire:click="sortBy('price')" class="group inline-flex">
                             Price
                             @if($sortBy === 'price')
@@ -55,10 +55,10 @@
                             @endif
                         </button>
                     </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Stock
                     </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Status
                     </th>
                     <th scope="col" class="relative px-6 py-3">
@@ -66,14 +66,14 @@
                     </th>
                 </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
+            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 @forelse($products as $product)
-                    <tr class="hover:bg-gray-50">
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
                         <td class="px-6 py-4 whitespace-nowrap">
                             <input type="checkbox" 
                                    wire:click="toggleProductSelection({{ $product->id }})"
                                    @if(in_array($product->id, $selectedProducts)) checked @endif
-                                   class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                   class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-gray-600 rounded">
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="flex items-center">
@@ -83,36 +83,36 @@
                                              src="{{ Storage::url('photos/' . $product->primary_image) }}" 
                                              alt="{{ $product->name }}">
                                     @else
-                                        <div class="h-10 w-10 rounded-lg bg-gray-200 flex items-center justify-center">
-                                            <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <div class="h-10 w-10 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                                            <svg class="h-6 w-6 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                             </svg>
                                         </div>
                                     @endif
                                 </div>
                                 <div class="ml-4">
-                                    <div class="text-sm font-medium text-gray-900">{{ $product->name }}</div>
-                                    <div class="text-sm text-gray-500">SKU: {{ $product->sku }}</div>
+                                    <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $product->name }}</div>
+                                    <div class="text-sm text-gray-500 dark:text-gray-400">SKU: {{ $product->sku }}</div>
                                 </div>
                             </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900">
+                            <div class="text-sm text-gray-900 dark:text-white">
                                 {{ $product->category->name ?? 'N/A' }}
                             </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900">
+                            <div class="text-sm text-gray-900 dark:text-white">
                                 {{ $product->supplier->name ?? 'N/A' }}
                             </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900">${{ number_format($product->price, 2) }}</div>
-                            <div class="text-sm text-gray-500">Cost: ${{ number_format($product->cost, 2) }}</div>
+                            <div class="text-sm text-gray-900 dark:text-white">${{ number_format($product->price, 2) }}</div>
+                            <div class="text-sm text-gray-500 dark:text-gray-400">Cost: ${{ number_format($product->cost, 2) }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900">{{ number_format($product->total_quantity) }}</div>
-                            <div class="text-sm text-gray-500">{{ $product->uom }}</div>
+                            <div class="text-sm text-gray-900 dark:text-white">{{ number_format($product->total_quantity) }}</div>
+                            <div class="text-sm text-gray-500 dark:text-gray-400">{{ $product->uom }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             @if($product->total_quantity <= 0)
@@ -158,11 +158,11 @@
                     <tr>
                         <td colspan="8" class="px-6 py-12 text-center">
                             <div class="text-center">
-                                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
                                 </svg>
-                                <h3 class="mt-2 text-sm font-medium text-gray-900">No products found</h3>
-                                <p class="mt-1 text-sm text-gray-500">Get started by creating a new product.</p>
+                                <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No products found</h3>
+                                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by creating a new product.</p>
                                 <div class="mt-6">
                                     <button wire:click="createProduct" 
                                             class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
@@ -182,7 +182,7 @@
 
     <!-- Pagination -->
     @if(count($products) > 0)
-        <div class="bg-white px-4 py-3 border-t border-gray-200 sm:px-6">
+        <div class="bg-white dark:bg-gray-800 px-4 py-3 border-t border-gray-200 dark:border-gray-700 sm:px-6">
             {{ $products->links() }}
         </div>
     @endif

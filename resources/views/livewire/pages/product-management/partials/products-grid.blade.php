@@ -3,16 +3,16 @@
     @if(count($products) > 0)
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             @foreach($products as $product)
-                <div class="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
                     <!-- Product Image -->
-                    <div class="aspect-w-16 aspect-h-12 bg-gray-200 rounded-t-lg overflow-hidden">
+                    <div class="aspect-w-16 aspect-h-12 bg-gray-200 dark:bg-gray-700 rounded-t-lg overflow-hidden">
                         @if($product->primary_image)
                             <img src="{{ Storage::url('photos/' . $product->primary_image) }}" 
                                  alt="{{ $product->name }}" 
                                  class="w-full h-48 object-cover">
                         @else
-                            <div class="w-full h-48 bg-gray-200 flex items-center justify-center">
-                                <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="w-full h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                                <svg class="w-12 h-12 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                 </svg>
                             </div>
@@ -23,7 +23,7 @@
                             <input type="checkbox" 
                                    wire:click="toggleProductSelection({{ $product->id }})"
                                    @if(in_array($product->id, $selectedProducts)) checked @endif
-                                   class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                   class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-gray-600 rounded">
                         </div>
 
                         <!-- Stock Status Badge -->
@@ -48,14 +48,14 @@
                     <div class="p-4">
                         <div class="flex items-start justify-between">
                             <div class="flex-1 min-w-0">
-                                <h3 class="text-sm font-medium text-gray-900 truncate">
+                                <h3 class="text-sm font-medium text-gray-900 dark:text-white truncate">
                                     {{ $product->name }}
                                 </h3>
-                                <p class="text-xs text-gray-500 mt-1">
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                     SKU: {{ $product->sku }}
                                 </p>
                                 @if($product->category)
-                                    <p class="text-xs text-gray-500">
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">
                                         {{ $product->category->name }}
                                     </p>
                                 @endif
@@ -64,18 +64,18 @@
 
                         <div class="mt-2 flex items-center justify-between">
                             <div>
-                                <p class="text-lg font-semibold text-gray-900">
+                                <p class="text-lg font-semibold text-gray-900 dark:text-white">
                                     ${{ number_format($product->price, 2) }}
                                 </p>
-                                <p class="text-xs text-gray-500">
+                                <p class="text-xs text-gray-500 dark:text-gray-400">
                                     Cost: ${{ number_format($product->cost, 2) }}
                                 </p>
                             </div>
                             <div class="text-right">
-                                <p class="text-sm font-medium text-gray-900">
+                                <p class="text-sm font-medium text-gray-900 dark:text-white">
                                     Qty: {{ number_format($product->total_quantity) }}
                                 </p>
-                                <p class="text-xs text-gray-500">
+                                <p class="text-xs text-gray-500 dark:text-gray-400">
                                     {{ $product->uom }}
                                 </p>
                             </div>
@@ -118,11 +118,11 @@
     @else
         <!-- Empty State -->
         <div class="text-center py-12">
-            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
             </svg>
-            <h3 class="mt-2 text-sm font-medium text-gray-900">No products found</h3>
-            <p class="mt-1 text-sm text-gray-500">Get started by creating a new product.</p>
+            <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No products found</h3>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by creating a new product.</p>
             <div class="mt-6">
                 <button wire:click="createProduct" 
                         class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">

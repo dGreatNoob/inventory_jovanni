@@ -20,6 +20,7 @@ class CategoryService
                 $q->where('name', 'like', "%{$query}%")
                   ->orWhere('description', 'like', "%{$query}%");
             })
+            ->when(($filters['root_only'] ?? false) === true, fn($q) => $q->whereNull('parent_id'))
             ->when($filters['parent_id'] ?? null, fn($q) => $q->where('parent_id', $filters['parent_id']))
             ->when(isset($filters['is_active']), fn($q) => $q->where('is_active', $filters['is_active']))
             ->orderBy('sort_order')

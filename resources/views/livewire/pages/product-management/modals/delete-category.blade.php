@@ -1,7 +1,6 @@
 <!-- Delete Category Modal -->
 <x-product-management-modal 
     name="delete-category"
-    :show="$showDeleteModal"
     title="Delete Category"
     description="Are you sure you want to delete this category? This action cannot be undone and will permanently remove the category from your system."
     size="md"

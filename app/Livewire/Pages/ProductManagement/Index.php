@@ -280,7 +280,7 @@ class Index extends Component
 
     public function selectAllProducts()
     {
-        $this->selectedProducts = collect($this->products)->pluck('id')->toArray();
+        $this->selectedProducts = $this->products->pluck('id')->toArray();
     }
 
     public function clearSelection()

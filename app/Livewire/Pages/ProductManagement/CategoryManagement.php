@@ -31,10 +31,6 @@ class CategoryManagement extends Component
     public $showFilters = false;
 
     // Modals
-    public $showCreateModal = false;
-    public $showEditModal = false;
-    public $showDeleteModal = false;
-    public $showBulkActionModal = false;
     public $editingCategory = null;
 
     // Form Data
@@ -116,7 +112,8 @@ class CategoryManagement extends Component
     public function getCategoriesProperty()
     {
         $filters = [
-            'parent_id' => $this->parentFilter,
+            'root_only' => $this->parentFilter === 'root',
+            'parent_id' => is_numeric($this->parentFilter) ? (int) $this->parentFilter : null,
             'is_active' => $this->statusFilter === 'active' ? true : ($this->statusFilter === 'inactive' ? false : null),
         ];
 
@@ -141,20 +138,17 @@ class CategoryManagement extends Component
     {
         $this->resetForm();
         $this->editingCategory = null;
-        $this->showCreateModal = true;
     }
 
     public function editCategory($categoryId)
     {
         $this->editingCategory = Category::findOrFail($categoryId);
         $this->loadCategoryData();
-        $this->showEditModal = true;
     }
 
     public function deleteCategory($categoryId)
     {
         $this->editingCategory = Category::findOrFail($categoryId);
-        $this->showDeleteModal = true;
     }
 
     public function confirmDelete()
@@ -162,8 +156,8 @@ class CategoryManagement extends Component
         if ($this->editingCategory) {
             try {
                 $this->categoryService->deleteCategory($this->editingCategory);
-                $this->showDeleteModal = false;
                 $this->editingCategory = null;
+                $this->dispatch('close-modal', name: 'delete-category');
                 session()->flash('message', 'Category deleted successfully.');
             } catch (\Exception $e) {
                 session()->flash('error', 'Error deleting category: ' . $e->getMessage());
@@ -182,7 +176,7 @@ class CategoryManagement extends Component
 
     public function selectAllCategories()
     {
-        $this->selectedCategories = collect($this->categories)->pluck('id')->toArray();
+        $this->selectedCategories = $this->categories->pluck('id')->toArray();
     }
 
     public function clearSelection()
@@ -190,14 +184,6 @@ class CategoryManagement extends Component
         $this->selectedCategories = [];
     }
 
-    public function openBulkActionModal()
-    {
-        if (empty($this->selectedCategories)) {
-            session()->flash('error', 'Please select categories first.');
-            return;
-        }
-        $this->showBulkActionModal = true;
-    }
 
     public function performBulkAction()
     {
@@ -231,9 +217,9 @@ class CategoryManagement extends Component
             }
 
             $this->clearSelection();
-            $this->showBulkActionModal = false;
             $this->bulkAction = '';
             $this->bulkActionValue = '';
+            $this->dispatch('close-modal', name: 'bulk-actions-category');
 
         } catch (\Exception $e) {
             session()->flash('error', 'Error performing bulk action: ' . $e->getMessage());
@@ -293,10 +279,9 @@ class CategoryManagement extends Component
                 session()->flash('message', 'Category created successfully.');
             }
 
-            $this->showCreateModal = false;
-            $this->showEditModal = false;
             $this->resetForm();
             $this->editingCategory = null;
+            $this->dispatch('close-modal', name: 'create-edit-category');
             $this->loadFilters();
 
         } catch (\Exception $e) {

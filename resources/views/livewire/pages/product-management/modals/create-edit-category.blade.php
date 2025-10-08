@@ -1,7 +1,6 @@
 <!-- Create/Edit Category Modal -->
 <x-product-management-modal 
     name="create-edit-category"
-    :show="$showCreateModal || $showEditModal"
     :title="$editingCategory ? 'Edit Category' : 'Create New Category'"
     :description="$editingCategory ? 'Update the category information below.' : 'Fill in the category information to organize your products.'"
     size="lg"

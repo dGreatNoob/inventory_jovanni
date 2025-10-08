@@ -1,7 +1,6 @@
 <!-- Bulk Actions Category Modal -->
 <x-product-management-modal 
     name="bulk-actions-category"
-    :show="$showBulkActionModal"
     title="Bulk Actions"
     :description="'You have selected ' . count($selectedCategories) . ' category(ies). Choose an action to perform on all selected categories.'"
     size="lg"

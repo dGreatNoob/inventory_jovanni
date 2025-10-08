@@ -134,7 +134,7 @@
                         </div>
                         <input wire:model.live.debounce.300ms="search" 
                                type="text" 
-                               placeholder="Search images..." 
+                               placeholder="Search by product, SKU, or alt text..." 
                                class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white dark:bg-gray-700 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 sm:text-sm dark:text-white">
                     </div>
                 </div>
@@ -150,12 +150,11 @@
                     </button>
 
                     @if(!empty($selectedImages))
-                        <flux:button 
-                            wire:click="openBulkActionModal" 
-                            variant="primary"
-                        >
-                            Bulk Actions ({{ count($selectedImages) }})
-                        </flux:button>
+                        <flux:modal.trigger name="bulk-actions-image">
+                            <flux:button variant="primary">
+                                Bulk Actions ({{ count($selectedImages) }})
+                            </flux:button>
+                        </flux:modal.trigger>
                     @endif
                 </div>
             </div>
@@ -201,22 +200,23 @@
     <!-- Images Display -->
     <div class="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-md">
         <div class="px-4 py-5 sm:p-6">
-            @if(count($images) > 0)
+            @if(($viewMode === 'grid' && count($productCards) > 0) || ($viewMode !== 'grid' && count($images) > 0))
                 @if($viewMode === 'grid')
-                    <!-- Grid View -->
+                    <!-- Grid View: group by product (one card per product, show primary/first image) -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                        @foreach($images as $image)
+                        @foreach($productCards as $product)
+                            @php $cover = $product->images->first(); @endphp
                             <div class="group relative bg-white dark:bg-gray-700 rounded-lg shadow-sm border border-gray-200 dark:border-gray-600 overflow-hidden">
                                 <!-- Selection Checkbox -->
                                 <div class="absolute top-2 left-2 z-10">
                                     <input type="checkbox" 
-                                           wire:click="toggleImageSelection({{ $image->id }})"
-                                           @if(in_array($image->id, $selectedImages)) checked @endif
+                                           wire:click="toggleImageSelection({{ $cover->id ?? 0 }})"
+                                           @if($cover && in_array($cover->id, $selectedImages)) checked @endif
                                            class="h-4 w-4 text-gray-600 focus:ring-gray-500 dark:focus:ring-gray-400 border-gray-300 rounded">
                                 </div>
 
                                 <!-- Primary Badge -->
-                                @if($image->is_primary)
+                                @if($cover && $cover->is_primary)
                                     <div class="absolute top-2 right-2 z-10">
                                         <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300">
                                             Primary
@@ -225,156 +225,96 @@
                                 @endif
 
                                 <!-- Image -->
-                                <div class="aspect-square bg-gray-100 dark:bg-gray-600 overflow-hidden">
-                                    <img src="{{ $image->url }}" 
-                                         alt="{{ $image->alt_text ?: $image->product->name }}"
-                                         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200 cursor-pointer"
-                                         wire:click="openImageViewer({{ $image->id }})">
-                                </div>
+                                <flux:modal.trigger name="image-viewer">
+                                    <div class="aspect-square bg-gray-100 dark:bg-gray-600 overflow-hidden cursor-pointer"
+                                         wire:click="openProductViewer({{ $product->id }}, {{ $cover->id ?? 'null' }})">
+                                        @if($cover)
+                                            <img src="{{ $cover->url }}" 
+                                                 alt="{{ $product->name }}"
+                                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200">
+                                        @else
+                                            <div class="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
+                                        @endif
+                                    </div>
+                                </flux:modal.trigger>
 
                                 <!-- Image Info -->
                                 <div class="p-3">
                                     <h3 class="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                        {{ $image->product->name }}
+                                        {{ $product->name }}
                                     </h3>
                                     <p class="text-xs text-gray-500 dark:text-gray-400">
-                                        {{ $image->product->sku }}
+                                        {{ $product->sku }}
                                     </p>
-                                    @if($image->alt_text)
-                                        <p class="text-xs text-gray-600 dark:text-gray-300 mt-1">
-                                            {{ Str::limit($image->alt_text, 30) }}
-                                        </p>
-                                    @endif
-                                    <div class="flex items-center justify-between mt-2">
-                                        <span class="text-xs text-gray-500 dark:text-gray-400">
-                                            {{ $image->formatted_size }}
-                                        </span>
-                                        <div class="flex space-x-1">
-                                            @if(!$image->is_primary)
-                                                <flux:button 
-                                                    wire:click="setAsPrimary({{ $image->id }})" 
-                                                    variant="ghost" 
-                                                    size="sm"
-                                                    class="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300"
-                                                    title="Set as Primary"
-                                                >
-                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
-                                                    </svg>
-                                                </flux:button>
-                                            @endif
-                                            <flux:button 
-                                                wire:click="openEditModal({{ $image->id }})" 
-                                                variant="ghost" 
-                                                size="sm"
-                                                class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
-                                                title="Edit"
-                                            >
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                                </svg>
-                                            </flux:button>
-                                            <flux:button 
-                                                wire:click="deleteImage({{ $image->id }})" 
-                                                variant="ghost" 
-                                                size="sm"
-                                                class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                                                title="Delete"
-                                            >
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                                </svg>
-                                            </flux:button>
-                                        </div>
+                                    <div class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                                        {{ $product->images->count() }} {{ Str::plural('image', $product->images->count()) }}
                                     </div>
                                 </div>
                             </div>
                         @endforeach
                     </div>
+                    <div class="mt-6">
+                        {{ $productCards->links() }}
+                    </div>
                 @else
-                    <!-- List View -->
+                    <!-- List View: one row per product -->
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                             <thead class="bg-gray-50 dark:bg-gray-700">
                                 <tr>
                                     <th scope="col" class="px-6 py-3 text-left">
                                         <input type="checkbox" 
-                                               wire:click="selectAllImages" 
+                                               wire:click="selectAllCurrentProducts" 
                                                class="h-4 w-4 text-gray-600 focus:ring-gray-500 dark:focus:ring-gray-400 border-gray-300 rounded">
                                     </th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">Image</th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">Product</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">Alt Text</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">Size</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">Status</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">Images</th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                @foreach($images as $image)
+                                @foreach($productCards as $product)
+                                    @php $cover = $product->images->first(); @endphp
                                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
                                         <td class="px-6 py-4 whitespace-nowrap">
+                                            @if($cover)
                                             <input type="checkbox" 
-                                                   wire:click="toggleImageSelection({{ $image->id }})"
-                                                   @if(in_array($image->id, $selectedImages)) checked @endif
+                                                   wire:click="toggleImageSelection({{ $cover->id }})"
+                                                   @if(in_array($cover->id, $selectedImages)) checked @endif
                                                    class="h-4 w-4 text-gray-600 focus:ring-gray-500 dark:focus:ring-gray-400 border-gray-300 rounded">
+                                            @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="flex-shrink-0 h-16 w-16">
-                                                <img class="h-16 w-16 rounded-lg object-cover" 
-                                                     src="{{ $image->url }}" 
-                                                     alt="{{ $image->alt_text ?: $image->product->name }}">
+                                                @if($cover)
+                                                    <img class="h-16 w-16 rounded-lg object-cover" 
+                                                         src="{{ $cover->url }}" 
+                                                         alt="{{ $product->name }}">
+                                                @else
+                                                    <div class="h-16 w-16 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-400">—</div>
+                                                @endif
                                             </div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $image->product->name }}</div>
-                                            <div class="text-sm text-gray-500 dark:text-gray-400">{{ $image->product->sku }}</div>
+                                            <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $product->name }}</div>
+                                            <div class="text-sm text-gray-500 dark:text-gray-400">{{ $product->sku }}</div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                            {{ $image->alt_text ?: 'No alt text' }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                            {{ $image->formatted_size }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            @if($image->is_primary)
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300">
-                                                    Primary
-                                                </span>
-                                            @else
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300">
-                                                    Secondary
-                                                </span>
-                                            @endif
+                                            {{ $product->images->count() }} {{ Str::plural('image', $product->images->count()) }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                             <div class="flex space-x-2">
-                                                @if(!$image->is_primary)
+                                                <flux:modal.trigger name="image-viewer">
                                                     <flux:button 
-                                                        wire:click="setAsPrimary({{ $image->id }})" 
+                                                        wire:click="openProductViewer({{ $product->id }}, {{ $cover->id ?? 'null' }})" 
                                                         variant="ghost" 
                                                         size="sm"
-                                                        class="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300"
+                                                        class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
                                                     >
-                                                        Set Primary
+                                                        View
                                                     </flux:button>
-                                                @endif
-                                                <flux:button 
-                                                    wire:click="openEditModal({{ $image->id }})" 
-                                                    variant="ghost" 
-                                                    size="sm"
-                                                    class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
-                                                >
-                                                    Edit
-                                                </flux:button>
-                                                <flux:button 
-                                                    wire:click="deleteImage({{ $image->id }})" 
-                                                    variant="ghost" 
-                                                    size="sm"
-                                                    class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                                                >
-                                                    Delete
-                                                </flux:button>
+                                                </flux:modal.trigger>
                                             </div>
                                         </td>
                                     </tr>
@@ -386,7 +326,11 @@
 
                 <!-- Pagination -->
                 <div class="mt-6">
-                    {{ $images->links() }}
+                    @if($viewMode === 'grid')
+                        {{ $productCards->links() }}
+                    @else
+                        {{ $productCards->links() }}
+                    @endif
                 </div>
             @else
                 <div class="text-center py-12">

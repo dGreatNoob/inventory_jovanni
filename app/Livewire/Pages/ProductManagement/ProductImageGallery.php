@@ -34,13 +34,11 @@ class ProductImageGallery extends Component
     public $showFilters = false;
 
     // Modals
-    public $showUploadModal = false;
-    public $showEditModal = false;
-    public $showDeleteModal = false;
-    public $showBulkActionModal = false;
-    public $showImageViewer = false;
     public $editingImage = null;
     public $viewingImage = null;
+    public $viewerProductId = null;
+    public $viewerImages = [];
+    public $viewerIndex = 0;
 
     // Upload
     public $uploadImages = [];
@@ -135,34 +133,65 @@ class ProductImageGallery extends Component
         );
     }
 
+    public function getProductCardsProperty()
+    {
+        $query = Product::whereHas('images');
+
+        if ($this->productFilter) {
+            $query->where('id', (int) $this->productFilter);
+        }
+
+        if ($this->search) {
+            $search = "%{$this->search}%";
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', $search)
+                  ->orWhere('sku', 'like', $search);
+            })->orWhereHas('images', function ($qi) use ($search) {
+                $qi->where('alt_text', 'like', $search);
+            });
+        }
+
+        // Eager load images ordered by primary then sort_order
+        $query->with(['images' => function ($q) {
+            $q->orderByDesc('is_primary')->orderBy('sort_order')->orderBy('created_at', 'desc');
+        }]);
+
+        if ($this->extensionFilter) {
+            $ext = strtolower($this->extensionFilter);
+            $query->whereHas('images', function ($q) use ($ext) {
+                if ($ext === 'jpg' || $ext === 'jpeg') {
+                    $q->where(function ($qq) {
+                        $qq->where('filename', 'like', '%.jpg')
+                           ->orWhere('filename', 'like', '%.jpeg');
+                    });
+                } else {
+                    $q->where('filename', 'like', '%.' . $ext);
+                }
+            });
+        }
+
+        return $query->orderBy('name')->paginate($this->perPage);
+    }
+
     public function getStatsProperty()
     {
         return $this->productImageService->getImageStats();
-    }
-
-    public function openUploadModal()
-    {
-        $this->resetUploadForm();
-        $this->showUploadModal = true;
     }
 
     public function openEditModal($imageId)
     {
         $this->editingImage = ProductImage::findOrFail($imageId);
         $this->loadImageData();
-        $this->showEditModal = true;
     }
 
     public function openImageViewer($imageId)
     {
         $this->viewingImage = ProductImage::findOrFail($imageId);
-        $this->showImageViewer = true;
     }
 
     public function deleteImage($imageId)
     {
         $this->editingImage = ProductImage::findOrFail($imageId);
-        $this->showDeleteModal = true;
     }
 
     public function confirmDelete()
@@ -170,8 +199,8 @@ class ProductImageGallery extends Component
         if ($this->editingImage) {
             try {
                 $this->productImageService->deleteImage($this->editingImage);
-                $this->showDeleteModal = false;
                 $this->editingImage = null;
+                $this->dispatch('close-modal', name: 'delete-image');
                 session()->flash('message', 'Image deleted successfully.');
             } catch (\Exception $e) {
                 session()->flash('error', 'Error deleting image: ' . $e->getMessage());
@@ -198,14 +227,6 @@ class ProductImageGallery extends Component
         $this->selectedImages = [];
     }
 
-    public function openBulkActionModal()
-    {
-        if (empty($this->selectedImages)) {
-            session()->flash('error', 'Please select images first.');
-            return;
-        }
-        $this->showBulkActionModal = true;
-    }
 
     public function performBulkAction()
     {
@@ -232,9 +253,9 @@ class ProductImageGallery extends Component
             }
 
             $this->clearSelection();
-            $this->showBulkActionModal = false;
             $this->bulkAction = '';
             $this->bulkActionValue = '';
+            $this->dispatch('close-modal', name: 'bulk-actions-image');
 
         } catch (\Exception $e) {
             session()->flash('error', 'Error performing bulk action: ' . $e->getMessage());
@@ -292,13 +313,77 @@ class ProductImageGallery extends Component
                 ]);
             }
 
-            $this->showUploadModal = false;
             $this->resetUploadForm();
+            $this->dispatch('close-modal', name: 'upload-images');
             session()->flash('message', 'Images uploaded successfully.');
 
         } catch (\Throwable $e) {
             session()->flash('error', 'Error uploading images: ' . $e->getMessage());
         }
+    }
+
+    public function getSelectedProductImagesProperty()
+    {
+        if (!$this->uploadProductId) {
+            return collect();
+        }
+        return $this->productImageService->getProductGallery((int) $this->uploadProductId);
+    }
+
+    public function openProductViewer($productId, $startImageId = null)
+    {
+        $images = $this->productImageService->getProductGallery((int) $productId);
+        $this->viewerProductId = (int) $productId;
+        $this->viewerImages = $images->pluck('id')->values()->all();
+        $this->viewerIndex = 0;
+        if ($startImageId) {
+            $index = array_search((int) $startImageId, $this->viewerImages, true);
+            if ($index !== false) {
+                $this->viewerIndex = $index;
+            }
+        } else {
+            // Try to start at primary image if available
+            $primary = $images->firstWhere('is_primary', true);
+            if ($primary) {
+                $idx = array_search($primary->id, $this->viewerImages, true);
+                if ($idx !== false) {
+                    $this->viewerIndex = $idx;
+                }
+            }
+        }
+        $this->viewingImage = ProductImage::find($this->viewerImages[$this->viewerIndex] ?? null);
+    }
+
+    public function viewerPrev()
+    {
+        if (empty($this->viewerImages)) {
+            return;
+        }
+        $count = count($this->viewerImages);
+        $this->viewerIndex = ($this->viewerIndex - 1 + $count) % $count;
+        $this->viewingImage = ProductImage::find($this->viewerImages[$this->viewerIndex]);
+    }
+
+    public function viewerNext()
+    {
+        if (empty($this->viewerImages)) {
+            return;
+        }
+        $count = count($this->viewerImages);
+        $this->viewerIndex = ($this->viewerIndex + 1) % $count;
+        $this->viewingImage = ProductImage::find($this->viewerImages[$this->viewerIndex]);
+    }
+
+    public function selectAllCurrentProducts()
+    {
+        $ids = [];
+        foreach ($this->productCards as $product) {
+            $cover = $product->images->first();
+            if ($cover) {
+                $ids[] = $cover->id;
+            }
+        }
+        $this->selectedImages = $ids;
     }
 
     public function saveImage()
@@ -311,9 +396,9 @@ class ProductImageGallery extends Component
 
         try {
             $this->productImageService->updateImage($this->editingImage, $this->form);
-            $this->showEditModal = false;
             $this->resetForm();
             $this->editingImage = null;
+            $this->dispatch('close-modal', name: 'edit-image');
             session()->flash('message', 'Image updated successfully.');
 
         } catch (\Exception $e) {
@@ -347,6 +432,8 @@ class ProductImageGallery extends Component
         return view('livewire.pages.product-management.product-image-gallery', [
             'images' => $this->images,
             'stats' => $this->stats,
+            'productCards' => $this->productCards,
+            'selectedProductImages' => $this->selectedProductImages,
         ]);
     }
 }

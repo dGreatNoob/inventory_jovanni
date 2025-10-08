@@ -34,6 +34,24 @@
             @error('uploadProductId') 
                 <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
             @enderror
+
+            @if($selectedProductImages && count($selectedProductImages) > 0)
+                <div class="mt-4">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Existing Images for Selected Product ({{ count($selectedProductImages) }})
+                    </label>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                        @foreach($selectedProductImages as $img)
+                            <div class="relative group">
+                                <img src="{{ $img->url }}" alt="{{ $img->alt_text ?: 'Image' }}" class="w-full h-20 object-cover rounded-lg border border-gray-200 dark:border-gray-600">
+                                @if($img->is_primary)
+                                    <span class="absolute top-1 right-1 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300">Primary</span>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
         </div>
 
         <!-- Image Upload -->

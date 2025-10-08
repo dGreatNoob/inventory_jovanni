@@ -140,7 +140,7 @@ class InventoryLocationService
             ->get()
             ->map(function ($location) {
                 $totalValue = $location->inventory->sum(function ($item) {
-                    return $item->quantity * $item->product->cost;
+                    return $item->product ? ($item->quantity * $item->product->cost) : 0;
                 });
                 return [
                     'id' => $location->id,
@@ -194,7 +194,7 @@ class InventoryLocationService
         $totalProducts = $inventory->count();
         $totalQuantity = $inventory->sum('quantity');
         $totalValue = $inventory->sum(function ($item) {
-            return $item->quantity * $item->product->cost;
+            return $item->product ? ($item->quantity * $item->product->cost) : 0;
         });
 
         $lowStockItems = $inventory->filter(function ($item) {

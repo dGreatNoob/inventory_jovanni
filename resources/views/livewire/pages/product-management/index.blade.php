@@ -253,4 +253,5 @@
     @include('livewire.pages.product-management.modals.create-edit-product')
     @include('livewire.pages.product-management.modals.delete-product')
     @include('livewire.pages.product-management.modals.bulk-actions')
+    @include('livewire.pages.product-management.modals.product-details')
 </div>

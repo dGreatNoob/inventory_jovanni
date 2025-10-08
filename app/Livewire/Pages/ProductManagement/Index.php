@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\Category;
 use App\Models\Supplier;
 use App\Models\InventoryLocation;
+use App\Models\ProductImage;
 use App\Services\ProductService;
 use Illuminate\Support\Facades\DB;
 
@@ -40,11 +41,14 @@ class Index extends Component
     public $showFilters = false;
 
     // Modals
-    public $showCreateModal = false;
-    public $showEditModal = false;
-    public $showDeleteModal = false;
     public $showBulkActionModal = false;
     public $editingProduct = null;
+    public $isEditMode = false;
+    // Viewer state for product details modal
+    public $viewerProductId = null;
+    public $viewerImages = [];
+    public $viewerIndex = 0;
+    public $viewingImage = null;
 
     // Form Data
     public $form = [
@@ -206,36 +210,27 @@ class Index extends Component
     {
         $this->resetForm();
         $this->editingProduct = null;
-        $this->showCreateModal = true;
-    }
-
-    public function closeModal()
-    {
-        $this->showCreateModal = false;
-        $this->showEditModal = false;
-        $this->editingProduct = null;
-        $this->resetForm();
+        $this->isEditMode = false;
     }
 
     public function editProduct($productId)
     {
         $this->editingProduct = Product::findOrFail($productId);
         $this->loadProductData();
-        $this->showEditModal = true;
+        $this->isEditMode = true;
     }
 
     public function deleteProduct($productId)
     {
         $this->editingProduct = Product::findOrFail($productId);
-        $this->showDeleteModal = true;
     }
 
     public function confirmDelete()
     {
         if ($this->editingProduct) {
             $this->productService->deleteProduct($this->editingProduct);
-            $this->showDeleteModal = false;
             $this->editingProduct = null;
+            $this->dispatch('close-modal', name: 'delete-product');
             session()->flash('message', 'Product deleted successfully.');
         }
     }
@@ -405,17 +400,19 @@ class Index extends Component
                 // Update existing product
                 $this->productService->updateProduct($this->editingProduct, $this->form);
                 session()->flash('message', 'Product updated successfully.');
+                // Close modal without flipping UI to create-state before close
+                $this->dispatch('close-modal', name: 'create-edit-product');
+                // Keep isEditMode true for this response to avoid flicker
             } else {
                 // Create new product
                 $this->productService->createProduct($this->form);
                 session()->flash('message', 'Product created successfully.');
+                // Close modal and reset form for next open
+                $this->dispatch('close-modal', name: 'create-edit-product');
+                $this->resetForm();
+                $this->isEditMode = false;
+                $this->editingProduct = null;
             }
-
-            // Reset form and close modal
-            $this->resetForm();
-            $this->editingProduct = null;
-            $this->showCreateModal = false;
-            $this->showEditModal = false;
 
         } catch (\Illuminate\Validation\ValidationException $e) {
             // Re-throw validation exceptions to show field errors
@@ -425,11 +422,66 @@ class Index extends Component
         }
     }
 
+    public function openProductViewer($productId, $startImageId = null)
+    {
+        // Load product details and images
+        $this->editingProduct = Product::with(['category', 'supplier'])->findOrFail($productId);
+        $this->viewerProductId = (int) $productId;
+
+        $images = ProductImage::where('product_id', $this->viewerProductId)
+            ->orderByDesc('is_primary')
+            ->orderBy('sort_order')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $this->viewerImages = $images->pluck('id')->values()->all();
+        $this->viewerIndex = 0;
+
+        if ($startImageId) {
+            $idx = array_search((int) $startImageId, $this->viewerImages, true);
+            if ($idx !== false) {
+                $this->viewerIndex = $idx;
+            }
+        } else {
+            $primary = $images->firstWhere('is_primary', true);
+            if ($primary) {
+                $idx = array_search($primary->id, $this->viewerImages, true);
+                if ($idx !== false) {
+                    $this->viewerIndex = $idx;
+                }
+            }
+        }
+
+        $currentId = $this->viewerImages[$this->viewerIndex] ?? null;
+        $this->viewingImage = $currentId ? ProductImage::find($currentId) : null;
+    }
+
+    public function viewerPrev()
+    {
+        if (empty($this->viewerImages)) {
+            return;
+        }
+        $count = count($this->viewerImages);
+        $this->viewerIndex = ($this->viewerIndex - 1 + $count) % $count;
+        $this->viewingImage = ProductImage::find($this->viewerImages[$this->viewerIndex]);
+    }
+
+    public function viewerNext()
+    {
+        if (empty($this->viewerImages)) {
+            return;
+        }
+        $count = count($this->viewerImages);
+        $this->viewerIndex = ($this->viewerIndex + 1) % $count;
+        $this->viewingImage = ProductImage::find($this->viewerImages[$this->viewerIndex]);
+    }
+
     public function render()
     {
         return view('livewire.pages.product-management.index', [
             'products' => $this->products,
             'stats' => $this->stats,
+            'selectedProduct' => $this->editingProduct,
         ]);
     }
 }

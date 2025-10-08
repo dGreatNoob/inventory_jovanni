@@ -86,9 +86,9 @@ class InventoryDashboard extends Component
         $totalSuppliers = Supplier::where('is_active', true)->count();
         $totalLocations = InventoryLocation::where('is_active', true)->count();
 
-        // Inventory value calculation
+        // Inventory value calculation (guard against NULL cost)
         $inventoryValue = ProductInventory::join('products', 'product_inventory.product_id', '=', 'products.id')
-            ->sum(DB::raw('product_inventory.quantity * products.cost'));
+            ->sum(DB::raw('product_inventory.quantity * COALESCE(products.cost, 0)'));
 
         // Low stock products (quantity < 10)
         $lowStockProducts = ProductInventory::where('quantity', '<', 10)->count();
@@ -125,6 +125,7 @@ class InventoryDashboard extends Component
     {
         return Product::with(['category', 'supplier'])
             ->withSum('inventoryMovements as total_movements', 'quantity')
+            ->whereNotNull('name')
             ->orderBy('total_movements', 'desc')
             ->limit(10)
             ->get();
@@ -133,10 +134,16 @@ class InventoryDashboard extends Component
     public function getLowStockProductsProperty()
     {
         return ProductInventory::with(['product.category', 'product.supplier', 'location'])
+            ->whereHas('product', function($query) {
+                $query->whereNotNull('id');
+            })
             ->where('quantity', '<', 10)
             ->orderBy('quantity', 'asc')
             ->limit(10)
-            ->get();
+            ->get()
+            ->filter(function($inventory) {
+                return $inventory->product !== null;
+            });
     }
 
 
@@ -146,7 +153,10 @@ class InventoryDashboard extends Component
             ->whereBetween('created_at', [$this->dateFrom, $this->dateTo . ' 23:59:59'])
             ->orderBy('created_at', 'desc')
             ->limit(10)
-            ->get();
+            ->get()
+            ->filter(function($movement) {
+                return $movement->product !== null;
+            });
     }
 
     public function getCategoryDistributionProperty()
@@ -214,7 +224,8 @@ class InventoryDashboard extends Component
             ->get()
             ->map(function ($location) {
                 $totalValue = $location->productInventory->sum(function ($inventory) {
-                    return $inventory->quantity * $inventory->product->cost;
+                    $cost = optional($inventory->product)->cost ?? 0;
+                    return $inventory->quantity * $cost;
                 });
 
                 return [

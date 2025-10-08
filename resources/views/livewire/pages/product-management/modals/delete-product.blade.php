@@ -1,7 +1,6 @@
 <!-- Delete Product Modal -->
 <x-product-management-modal 
     name="delete-product"
-    :show="$showDeleteModal"
     title="Delete Product"
     description="Are you sure you want to delete this product? This action cannot be undone and will permanently remove the product from your inventory."
     size="md"

@@ -73,12 +73,6 @@
                     <flux:navlist.item icon="tag" href="{{ route('product-management.categories') }}"
                         :current="request()->routeIs('product-management.categories')" wire:navigate>{{ __('Categories') }}
                     </flux:navlist.item>
-                    <flux:navlist.item icon="building-office" href="{{ route('product-management.suppliers') }}"
-                        :current="request()->routeIs('product-management.suppliers')" wire:navigate>{{ __('Suppliers') }}
-                    </flux:navlist.item>
-                    <flux:navlist.item icon="map-pin" href="{{ route('product-management.locations') }}"
-                        :current="request()->routeIs('product-management.locations')" wire:navigate>{{ __('Locations') }}
-                    </flux:navlist.item>
                     <flux:navlist.item icon="photo" href="{{ route('product-management.images') }}"
                         :current="request()->routeIs('product-management.images')" wire:navigate>{{ __('Images') }}
                     </flux:navlist.item>

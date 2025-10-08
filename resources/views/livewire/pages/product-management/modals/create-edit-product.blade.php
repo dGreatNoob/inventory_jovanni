@@ -1,8 +1,8 @@
 <!-- Create/Edit Product Modal -->
 <x-product-management-modal 
     name="create-edit-product"
-    :title="$editingProduct ? 'Edit Product' : 'Create New Product'"
-    :description="$editingProduct ? 'Update the product information below.' : 'Fill in the product information to add it to your inventory.'"
+    :title="($isEditMode ?? ($editingProduct !== null)) ? 'Edit Product' : 'Create New Product'"
+    :description="($isEditMode ?? ($editingProduct !== null)) ? 'Update the product information below.' : 'Fill in the product information to add it to your inventory.'"
     size="4xl"
     icon="edit"
     icon-color="indigo"
@@ -203,7 +203,7 @@
             </flux:modal.close>
             
             <flux:button wire:click="saveProduct" variant="primary">
-                {{ $editingProduct ? 'Update Product' : 'Create Product' }}
+                {{ ($isEditMode ?? ($editingProduct !== null)) ? 'Update Product' : 'Create Product' }}
             </flux:button>
         </x-slot>
     </form>

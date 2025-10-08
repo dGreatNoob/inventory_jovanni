@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
 
 class ProductImageService
 {
@@ -80,8 +83,8 @@ class ProductImageService
     {
         return DB::transaction(function () use ($image) {
             // Delete file from storage if it exists
-            if ($image->filename && Storage::disk('public')->exists('products/' . $image->filename)) {
-                Storage::disk('public')->delete('products/' . $image->filename);
+            if ($image->filename && Storage::disk('public')->exists('photos/' . $image->filename)) {
+                Storage::disk('public')->delete('photos/' . $image->filename);
             }
 
             // If this was the primary image, set another as primary
@@ -146,15 +149,68 @@ class ProductImageService
     public function uploadImage(array $data): ProductImage
     {
         return DB::transaction(function () use ($data) {
+            /** @var UploadedFile $file */
             $file = $data['image'];
             $productId = $data['product_id'];
 
-            // Generate unique filename
-            $extension = $file->getClientOriginalExtension();
+            // Ensure directory exists
+            Storage::disk('public')->makeDirectory('photos');
+
+            // Generate unique filename based on original extension
+            $originalExtension = strtolower($file->getClientOriginalExtension());
+            $extension = in_array($originalExtension, ['jpg', 'jpeg', 'png', 'webp']) ? $originalExtension : 'jpg';
             $filename = Str::uuid() . '.' . $extension;
 
-            // Store file
-            $path = $file->storeAs('products', $filename, 'public');
+            Log::debug('ProductImageService.uploadImage: start', [
+                'product_id' => $productId,
+                'original_name' => $file->getClientOriginalName(),
+                'original_mime' => $file->getMimeType(),
+                'original_size' => $file->getSize(),
+                'target_extension' => $extension,
+                'target_filename' => $filename,
+            ]);
+
+            // Process image: resize to max width 1920, keep aspect ratio, quality ~85
+            $manager = new ImageManager(new Driver());
+            $image = $manager->read($file->getPathname());
+
+            // Scale down only if wider than 1920px
+            try {
+                // v3 scaleDown(width: ?, height: ?)
+                $image = $image->scaleDown(1920);
+            } catch (\Throwable $t) {
+                Log::warning('ProductImageService.uploadImage: scaleDown failed, proceeding without resize', [
+                    'error' => $t->getMessage(),
+                ]);
+            }
+
+            // Encode according to extension
+            $encoded = null;
+            $mimeType = null;
+            if (in_array($extension, ['jpg', 'jpeg'])) {
+                $encoded = $image->toJpeg(85);
+                $mimeType = 'image/jpeg';
+            } elseif ($extension === 'png') {
+                // PNG is lossless; use default compression, approximate quality via compression level
+                $encoded = $image->toPng();
+                $mimeType = 'image/png';
+            } elseif ($extension === 'webp') {
+                $encoded = $image->toWebp(85);
+                $mimeType = 'image/webp';
+            } else {
+                // Fallback to JPEG
+                $encoded = $image->toJpeg(85);
+                $mimeType = 'image/jpeg';
+                $filename = Str::uuid() . '.jpg';
+                $extension = 'jpg';
+            }
+
+            // Persist to storage
+            $binary = (string) $encoded;
+            Storage::disk('public')->put('photos/' . $filename, $binary);
+
+            $width = method_exists($image, 'width') ? $image->width() : null;
+            $height = method_exists($image, 'height') ? $image->height() : null;
 
             // If setting as primary, unset other primary images for this product
             if ($data['is_primary'] ?? false) {
@@ -170,9 +226,22 @@ class ProductImageService
             $image = ProductImage::create([
                 'product_id' => $productId,
                 'filename' => $filename,
+                'original_filename' => $file->getClientOriginalName(),
+                'mime_type' => $mimeType,
+                'file_size' => strlen($binary),
+                'width' => $width,
+                'height' => $height,
                 'alt_text' => $data['alt_text'] ?? null,
                 'is_primary' => $data['is_primary'] ?? false,
                 'sort_order' => $maxOrder + 1,
+            ]);
+
+            Log::debug('ProductImageService.uploadImage: completed', [
+                'image_id' => $image->id,
+                'stored_path' => 'photos/' . $filename,
+                'width' => $width,
+                'height' => $height,
+                'size_bytes' => strlen($binary),
             ]);
 
             return $image->load(['product']);
@@ -234,8 +303,8 @@ class ProductImageService
         $images = ProductImage::all();
         
         foreach ($images as $image) {
-            if ($image->filename && Storage::disk('public')->exists('products/' . $image->filename)) {
-                $totalSize += Storage::disk('public')->size('products/' . $image->filename);
+            if ($image->filename && Storage::disk('public')->exists('photos/' . $image->filename)) {
+                $totalSize += Storage::disk('public')->size('photos/' . $image->filename);
             }
         }
 
@@ -259,9 +328,9 @@ class ProductImageService
 
         foreach ($images as $image) {
             // Check if file exists but product doesn't
-            if ($image->filename && Storage::disk('public')->exists('products/' . $image->filename)) {
+            if ($image->filename && Storage::disk('public')->exists('photos/' . $image->filename)) {
                 if (!$image->product) {
-                    Storage::disk('public')->delete('products/' . $image->filename);
+                    Storage::disk('public')->delete('photos/' . $image->filename);
                     $image->delete();
                     $deletedCount++;
                 }

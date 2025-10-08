@@ -222,7 +222,7 @@ class ProductImageController extends Controller
         try {
             $validated = $request->validate([
                 'product_id' => 'required|exists:products,id',
-                'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:5120', // 5MB max
+                'image' => 'required|image|mimes:jpeg,png,jpg,webp|max:10240', // 10MB max
                 'alt_text' => 'nullable|string|max:255',
                 'is_primary' => 'boolean',
             ]);

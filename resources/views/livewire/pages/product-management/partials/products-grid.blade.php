@@ -7,7 +7,7 @@
                     <!-- Product Image -->
                     <div class="aspect-w-16 aspect-h-12 bg-gray-200 rounded-t-lg overflow-hidden">
                         @if($product->primary_image)
-                            <img src="{{ Storage::url('products/' . $product->primary_image) }}" 
+                            <img src="{{ Storage::url('photos/' . $product->primary_image) }}" 
                                  alt="{{ $product->name }}" 
                                  class="w-full h-48 object-cover">
                         @else

@@ -4,6 +4,16 @@
         <div>
             <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Product Image Gallery</h1>
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Manage product images and uploads</p>
+            @if (session()->has('message'))
+                <div class="mt-3 rounded-md bg-green-50 dark:bg-green-900/20 p-3 text-sm text-green-700 dark:text-green-300">
+                    {{ session('message') }}
+                </div>
+            @endif
+            @if (session()->has('error'))
+                <div class="mt-3 rounded-md bg-red-50 dark:bg-red-900/20 p-3 text-sm text-red-700 dark:text-red-300">
+                    {{ session('error') }}
+                </div>
+            @endif
         </div>
         <div class="mt-4 sm:mt-0 flex space-x-3">
             <flux:button 
@@ -386,13 +396,14 @@
                     <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No images found</h3>
                     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by uploading some product images.</p>
                     <div class="mt-6">
-                        <button wire:click="openUploadModal" 
-                                class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-500 dark:hover:bg-gray-400">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                            </svg>
-                            Upload Images
-                        </button>
+                        <flux:modal.trigger name="upload-images">
+                            <flux:button variant="primary" class="inline-flex items-center">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                </svg>
+                                Upload Images
+                            </flux:button>
+                        </flux:modal.trigger>
                     </div>
                 </div>
             @endif

@@ -29,7 +29,6 @@ class ProductImageGallery extends Component
     public $viewMode = 'grid'; // grid or list
 
     // Data
-    public $images = [];
     public $products = [];
     public $selectedImages = [];
     public $showFilters = false;
@@ -270,16 +269,20 @@ class ProductImageGallery extends Component
         }
     }
 
-    public function uploadImages()
+    // Renamed to avoid collision with $uploadImages property
+    public function submitImageUpload()
     {
         $this->validate([
-            'uploadImages.*' => 'required|image|max:5120', // 5MB max
+            'uploadImages.*' => 'required|image|mimes:jpg,jpeg,png,webp|max:10240', // 10MB max
             'uploadProductId' => 'required|exists:products,id',
             'uploadAltText' => 'nullable|string|max:255',
             'uploadSetAsPrimary' => 'boolean',
         ]);
 
         try {
+            if (!auth()->check()) {
+                abort(403, 'Unauthorized');
+            }
             foreach ($this->uploadImages as $image) {
                 $this->productImageService->uploadImage([
                     'image' => $image,
@@ -293,7 +296,7 @@ class ProductImageGallery extends Component
             $this->resetUploadForm();
             session()->flash('message', 'Images uploaded successfully.');
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             session()->flash('error', 'Error uploading images: ' . $e->getMessage());
         }
     }

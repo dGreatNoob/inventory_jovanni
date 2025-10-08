@@ -50,14 +50,14 @@ class ProductImage extends Model
     // Accessors
     public function getUrlAttribute(): string
     {
-        return asset('storage/product-images/' . $this->filename);
+        return asset('storage/photos/' . $this->filename);
     }
 
     public function getThumbnailUrlAttribute(): string
     {
         $pathInfo = pathinfo($this->filename);
         $thumbnailName = $pathInfo['filename'] . '_thumb.' . $pathInfo['extension'];
-        return asset('storage/product-images/thumbnails/' . $thumbnailName);
+        return asset('storage/photos/thumbnails/' . $thumbnailName);
     }
 
     public function getFormattedSizeAttribute(): string

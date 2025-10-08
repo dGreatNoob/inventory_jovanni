@@ -56,6 +56,7 @@ class Index extends Component
         'sku' => '',
         'barcode' => '',
         'remarks' => '',
+        'root_category_id' => '',  // For cascading dropdown
         'category_id' => '',
         'supplier_id' => '',
         'supplier_code' => '',
@@ -68,6 +69,9 @@ class Index extends Component
         'initial_quantity' => '',
         'location_id' => '',
     ];
+    
+    // Filtered subcategories based on root selection
+    public $filteredSubcategories = [];
 
     // Bulk Actions
     public $bulkAction = '';
@@ -87,9 +91,13 @@ class Index extends Component
 
     public function loadFilters()
     {
-        $this->categories = Category::active()
+        // Load hierarchical categories with parent information
+        $this->categories = Category::with('parent')
+            ->active()
+            ->orderBy('parent_id')
+            ->orderBy('sort_order')
             ->orderBy('name')
-            ->get(['id', 'name', 'parent_id']);
+            ->get(['id', 'name', 'parent_id', 'sort_order']);
 
         $this->suppliers = Supplier::active()
             ->orderBy('name')
@@ -98,6 +106,32 @@ class Index extends Component
         $this->locations = InventoryLocation::active()
             ->orderBy('name')
             ->get(['id', 'name', 'type']);
+    }
+    
+    // Get root categories only (for first dropdown)
+    public function getRootCategoriesProperty()
+    {
+        return Category::whereNull('parent_id')
+            ->active()
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get(['id', 'name']);
+    }
+    
+    // Update subcategories when root category changes
+    public function updatedFormRootCategoryId($value)
+    {
+        if ($value) {
+            $this->filteredSubcategories = Category::where('parent_id', $value)
+                ->active()
+                ->orderBy('sort_order')
+                ->orderBy('name')
+                ->get(['id', 'name'])
+                ->toArray();
+        } else {
+            $this->filteredSubcategories = [];
+            $this->form['category_id'] = '';
+        }
     }
 
     public function updatedSearch()
@@ -337,6 +371,7 @@ class Index extends Component
             'sku' => '',
             'barcode' => '',
             'remarks' => '',
+            'root_category_id' => '',
             'category_id' => '',
             'supplier_id' => '',
             'supplier_code' => '',
@@ -349,17 +384,42 @@ class Index extends Component
             'initial_quantity' => '',
             'location_id' => '',
         ];
+        $this->filteredSubcategories = [];
     }
 
     public function loadProductData()
     {
         if ($this->editingProduct) {
-            $this->form = [
+            // Load the product's category to determine root and subcategory
+            $category = Category::find($this->editingProduct->category_id);
+            
+            // Determine root category and actual category
+            if ($category) {
+                if ($category->parent_id) {
+                    // Product has a subcategory, so set both root and sub
+                    $this->form['root_category_id'] = $category->parent_id;
+                    $this->form['category_id'] = $category->id;
+                    
+                    // Load subcategories for the selected root
+                    $this->filteredSubcategories = Category::where('parent_id', $category->parent_id)
+                        ->active()
+                        ->orderBy('sort_order')
+                        ->orderBy('name')
+                        ->get(['id', 'name'])
+                        ->toArray();
+                } else {
+                    // Product has a root category only
+                    $this->form['root_category_id'] = $category->id;
+                    $this->form['category_id'] = '';
+                    $this->filteredSubcategories = [];
+                }
+            }
+            
+            $this->form = array_merge($this->form, [
                 'name' => $this->editingProduct->name,
                 'sku' => $this->editingProduct->sku,
                 'barcode' => $this->editingProduct->barcode,
                 'remarks' => $this->editingProduct->remarks,
-                'category_id' => $this->editingProduct->category_id,
                 'supplier_id' => $this->editingProduct->supplier_id,
                 'supplier_code' => $this->editingProduct->supplier_code,
                 'price' => $this->editingProduct->price,
@@ -370,7 +430,7 @@ class Index extends Component
                 'disabled' => $this->editingProduct->disabled,
                 'initial_quantity' => '',
                 'location_id' => '',
-            ];
+            ]);
         }
     }
 
@@ -382,11 +442,17 @@ class Index extends Component
                 $this->productService = app(ProductService::class);
             }
 
+            // Determine final category_id: use subcategory if selected, otherwise use root
+            $finalCategoryId = !empty($this->form['category_id']) 
+                ? $this->form['category_id'] 
+                : $this->form['root_category_id'];
+
             $this->validate([
                 'form.name' => 'required|string|max:255',
                 'form.sku' => 'required|string|max:255|unique:products,sku' . ($this->editingProduct ? ',' . $this->editingProduct->id : ''),
                 'form.barcode' => 'nullable|string|max:255|unique:products,barcode' . ($this->editingProduct ? ',' . $this->editingProduct->id : ''),
-                'form.category_id' => 'required|exists:categories,id',
+                'form.root_category_id' => 'required|exists:categories,id',
+                'form.category_id' => 'nullable|exists:categories,id',
                 'form.supplier_id' => 'required|exists:suppliers,id',
                 'form.price' => 'required|numeric|min:0',
                 'form.cost' => 'required|numeric|min:0',
@@ -395,6 +461,9 @@ class Index extends Component
                 'form.initial_quantity' => 'nullable|numeric|min:0',
                 'form.location_id' => 'nullable|exists:inventory_locations,id',
             ]);
+            
+            // Update form with final category_id for saving
+            $this->form['category_id'] = $finalCategoryId;
 
             if ($this->editingProduct) {
                 // Update existing product

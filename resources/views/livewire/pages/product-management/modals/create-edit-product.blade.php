@@ -55,17 +55,55 @@
             <div class="space-y-4">
                 <flux:heading size="md" class="text-gray-900 dark:text-white">Classification</flux:heading>
                 
+                <!-- Root Category (Step 1) -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
-                    <select wire:model="form.category_id" 
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Root Category <span class="text-red-500">*</span>
+                        <span class="text-xs text-gray-500 dark:text-gray-400 font-normal">(Select main category first)</span>
+                    </label>
+                    <select wire:model.live="form.root_category_id" 
                             class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                        <option value="">Select Category</option>
-                        @foreach($categories as $category)
-                            <option value="{{ $category->id }}">{{ $category->name }}</option>
+                        <option value="">Select Root Category</option>
+                        @foreach($this->rootCategories as $rootCategory)
+                            <option value="{{ $rootCategory->id }}">{{ $rootCategory->name }}</option>
                         @endforeach
                     </select>
+                    @error('form.root_category_id') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                 </div>
-                @error('form.category_id') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+
+                <!-- Subcategory (Step 2) - Cascading -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Sub-category
+                        <span class="text-xs text-gray-500 dark:text-gray-400 font-normal">(Optional - for more specific classification)</span>
+                    </label>
+                    <select wire:model="form.category_id" 
+                            class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                            @if(empty($form['root_category_id'])) disabled @endif>
+                        <option value="">No Sub-category (use root category only)</option>
+                        @if(!empty($filteredSubcategories))
+                            @foreach($filteredSubcategories as $subcategory)
+                                <option value="{{ $subcategory['id'] }}">{{ $subcategory['name'] }}</option>
+                            @endforeach
+                        @endif
+                    </select>
+                    @if(empty($form['root_category_id']))
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            <svg class="inline w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                            </svg>
+                            Select a root category first to see available sub-categories
+                        </p>
+                    @elseif(empty($filteredSubcategories))
+                        <p class="mt-1 text-xs text-yellow-600 dark:text-yellow-400">
+                            <svg class="inline w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                            </svg>
+                            This root category has no sub-categories yet
+                        </p>
+                    @endif
+                    @error('form.category_id') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Supplier</label>
@@ -198,9 +236,9 @@
         </div>
 
         <x-slot name="actions">
-            <flux:modal.close>
-                <flux:button variant="ghost">Cancel</flux:button>
-            </flux:modal.close>
+            <flux:button wire:click="resetForm" variant="ghost">
+                Reset
+            </flux:button>
             
             <flux:button wire:click="saveProduct" variant="primary">
                 {{ ($isEditMode ?? ($editingProduct !== null)) ? 'Update Product' : 'Create Product' }}

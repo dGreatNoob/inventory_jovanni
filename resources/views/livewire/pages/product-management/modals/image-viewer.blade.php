@@ -1,6 +1,6 @@
 <!-- Image Viewer Modal -->
 <flux:modal name="image-viewer" class="max-w-4xl" :closable="false">
-    <div class="space-y-6">
+    <div class="space-y-6 pr-2">
         <!-- Header -->
         <div class="flex items-center justify-between">
             <div class="flex items-center space-x-4">

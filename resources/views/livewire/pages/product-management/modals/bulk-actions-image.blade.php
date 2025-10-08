@@ -1,6 +1,6 @@
 <!-- Bulk Actions Modal -->
 <flux:modal name="bulk-actions-image" class="max-w-lg">
-    <div class="space-y-6">
+    <div class="space-y-6 pr-2">
         <!-- Header -->
         <div class="flex items-start space-x-4">
             <div class="flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/20">

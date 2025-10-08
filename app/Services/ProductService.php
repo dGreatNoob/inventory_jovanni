@@ -136,7 +136,10 @@ class ProductService
     public function getLowStockProducts(): Collection
     {
         return Product::with(['category', 'supplier', 'inventory.location'])
-            ->whereHas('inventory', fn($q) => $q->lowStock())
+            ->whereHas('inventory', function($q) {
+                $q->where('quantity', '<', 10)
+                  ->where('quantity', '>', 0);
+            })
             ->active()
             ->get();
     }
@@ -147,7 +150,7 @@ class ProductService
     public function getOutOfStockProducts(): Collection
     {
         return Product::with(['category', 'supplier', 'inventory.location'])
-            ->whereHas('inventory', fn($q) => $q->outOfStock())
+            ->whereHas('inventory', fn($q) => $q->where('quantity', '<=', 0))
             ->active()
             ->get();
     }

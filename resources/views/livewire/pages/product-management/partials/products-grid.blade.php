@@ -18,7 +18,7 @@
                             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">
                                 Out of Stock
                             </span>
-                        @elseif($product->total_quantity <= 10)
+                        @elseif($product->total_quantity < 10)
                             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300">
                                 Low Stock
                             </span>

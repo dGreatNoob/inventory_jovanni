@@ -313,8 +313,11 @@ class ProductImageGallery extends Component
                 ]);
             }
 
-            $this->resetUploadForm();
+            // Close upload modal and immediately open viewer for the product to show all uploaded photos
             $this->dispatch('close-modal', name: 'upload-images');
+            $this->openProductViewer($this->uploadProductId);
+            $this->dispatch('open-modal', name: 'image-viewer');
+            $this->resetUploadForm();
             session()->flash('message', 'Images uploaded successfully.');
 
         } catch (\Throwable $e) {

@@ -22,6 +22,7 @@ use App\Livewire\Pages\PaperRollWarehouse\Profile\Index as PRWProfile;
 use App\Livewire\Pages\PaperRollWarehouse\PurchaseOrder\ViewItem as PRWPurchaseOrderViewItem;
 
 use App\Livewire\Pages\Supplies\Inventory\Index as SuppliesInventory;
+use App\Livewire\Pages\Supplies\Inventory\Create as SuppliesInventoryCreate;
 use App\Livewire\Pages\Supplies\Inventory\StockBatches;
 use App\Livewire\Pages\Supplies\PurchaseOrder\Index as SuppliesPurchaseOrder;
 use App\Livewire\Pages\Supplies\PurchaseOrder\Create as CreateSuppliesPurchaseOrder;
@@ -36,6 +37,10 @@ use App\Livewire\Pages\Setup\Department\Index as DepartmentSetup;
 use App\Livewire\Pages\Setup\ItemType\Index as ItemTypeSetup;
 use App\Livewire\Pages\Setup\Allocation\Index as AllocationSetup;
 use App\Livewire\Pages\Notifications\Index as Notifications;
+
+// Product Management
+use App\Livewire\Pages\ProductManagement\Index as ProductManagement;
+use App\Livewire\Pages\ProductManagement\CategoryManagement;
 
 
 
@@ -65,6 +70,9 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/Product/Inventory', SuppliesInventory::class)
         ->name('supplies.inventory');
+    
+    Route::get('/Product/Inventory/Create', SuppliesInventoryCreate::class)
+        ->name('supplies.inventory.create');
     
     Route::get('/Shipment', createShipmentIndex::class)
         ->name('shipment.index');   
@@ -164,6 +172,22 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/sales-order/{salesOrderId}', Viewsalesorder::class)->name('salesorder.view');
     Route::get('/sales-return', SalesManagementSalesReturn::class)->name('salesorder.return');
     Route::get('/sales-return/{salesreturnId}', ViewSalesReturn::class)->name('salesreturn.view');
+
+    // Product Management
+    Route::prefix('product-management')->name('product-management.')->group(function () {
+        Route::get('/', ProductManagement::class)->name('index');
+        Route::get('/categories', CategoryManagement::class)->name('categories');
+        Route::get('/suppliers', \App\Livewire\Pages\SupplierManagement\Profile\Index::class)->name('suppliers');
+        Route::get('/locations', \App\Livewire\Pages\ProductManagement\InventoryLocationManagement::class)->name('locations');
+        Route::get('/images', \App\Livewire\Pages\ProductManagement\ProductImageGallery::class)->name('images');
+        Route::get('/dashboard', \App\Livewire\Pages\ProductManagement\InventoryDashboard::class)->name('dashboard');
+        Route::get('/print-catalog', function() {
+            $products = \App\Models\Product::with(['images' => function($q){
+                $q->orderByDesc('is_primary')->orderBy('sort_order')->orderBy('created_at', 'desc');
+            }])->orderBy('name')->get();
+            return view('livewire.pages.product-management.print-catalog', compact('products'));
+        })->name('print');
+    });
 //    Route::get('/notifications', Notifications::class)
 //         ->name('notifications.index');
 
@@ -273,5 +297,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('settings/password', Password::class)->name('settings.password');
     Route::get('settings/appearance', Appearance::class)->name('settings.appearance');
 });
+
 
 require __DIR__ . '/auth.php';

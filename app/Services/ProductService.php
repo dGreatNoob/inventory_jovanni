@@ -53,11 +53,17 @@ class ProductService
     public function createProduct(array $data): Product
     {
         return DB::transaction(function () use ($data) {
+            // Auto-generate barcode if not provided
+            if (empty($data['barcode'])) {
+                $barcodeService = app(BarcodeService::class);
+                $data['barcode'] = $barcodeService->generateSequentialBarcode();
+            }
+            
             // Create the product
             $product = Product::create([
                 'entity_id' => $data['entity_id'] ?? 1,
                 'sku' => $data['sku'],
-                'barcode' => $data['barcode'] ?? null,
+                'barcode' => $data['barcode'],
                 'name' => $data['name'],
                 'specs' => $data['specs'] ?? null,
                 'category_id' => $data['category_id'],

@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\SupplierController;
 use App\Http\Controllers\Api\InventoryLocationController;
 use App\Http\Controllers\Api\ProductImageController;
 use App\Http\Controllers\Api\InventoryMovementController;
+use App\Http\Controllers\Api\BarcodeController;
 
 /*
 |--------------------------------------------------------------------------
@@ -133,4 +134,14 @@ Route::prefix('inventory')->group(function () {
     Route::get('/monthly-summary', [InventoryController::class, 'monthlySummary']);
     Route::post('/set-reorder-point', [InventoryController::class, 'setReorderPoint']);
     Route::get('/stats', [InventoryController::class, 'stats']);
+});
+
+// Barcode Management API Routes
+Route::prefix('barcodes')->group(function () {
+    Route::post('/generate', [BarcodeController::class, 'generate']);
+    Route::post('/generate-sequential', [BarcodeController::class, 'generateSequential']);
+    Route::post('/generate-image', [BarcodeController::class, 'generateImage']);
+    Route::post('/validate', [BarcodeController::class, 'validate']);
+    Route::post('/check-exists', [BarcodeController::class, 'checkExists']);
+    Route::post('/bulk-generate', [BarcodeController::class, 'bulkGenerate']);
 });

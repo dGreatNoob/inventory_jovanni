@@ -29,6 +29,9 @@
                             @endif
                         </button>
                     </th>
+                    <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Barcode
+                    </th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Category
                     </th>
@@ -95,6 +98,22 @@
                                     <div class="text-sm text-gray-500 dark:text-gray-400">SKU: {{ $product->sku }}</div>
                                 </div>
                             </div>
+                        </td>
+                        <td class="px-3 py-4">
+                            @if($product->barcode)
+                                <div class="flex justify-center">
+                                    <x-barcode-display 
+                                        :barcode="$product->barcode"
+                                        size="sm"
+                                        :showLabel="false"
+                                        :showText="true"
+                                    />
+                                </div>
+                            @else
+                                <div class="text-center text-xs text-gray-400 dark:text-gray-500">
+                                    No barcode
+                                </div>
+                            @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="text-sm text-gray-900 dark:text-white">
@@ -177,7 +196,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="8" class="px-6 py-12 text-center">
+                        <td colspan="9" class="px-6 py-12 text-center">
                             <div class="text-center">
                                 <svg class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>

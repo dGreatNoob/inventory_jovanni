@@ -12,7 +12,7 @@ The product management system now features **automatic barcode generation** with
 - ✅ Barcodes are automatically generated when creating products
 - ✅ Sequential numbering system
 - ✅ Unique barcode guarantee
-- ✅ Format: `PROD-YYYYMMDD-XXXXX`
+- ✅ Format: `8901234567006` (13 digits)
 
 ### 📷 **Visual Display**
 - ✅ Barcode image displayed on product cards
@@ -50,7 +50,7 @@ The product management system now features **automatic barcode generation** with
 │            BarcodeService (Auto-Generation)             │
 │  - Finds last barcode                                   │
 │  - Increments sequence                                  │
-│  - Returns: PROD-20251008-00001                        │
+│  - Returns: 8901234567006                              │
 └───────────────────────┬─────────────────────────────────┘
                         │
                         ▼
@@ -66,7 +66,7 @@ The product management system now features **automatic barcode generation** with
 │  └──────────────────────────────┘                      │
 │  ┌──────────────────────────────┐                      │
 │  │   ║║█║║█║║█║║█║║              │ ← Barcode Image     │
-│  │   PROD-20251008-00001         │ ← Barcode Text      │
+│  │   8901234567006               │ ← Barcode Text      │
 │  └──────────────────────────────┘                      │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -84,11 +84,11 @@ The product management system now features **automatic barcode generation** with
 ```php
 // Simple random generation
 generateBarcode($prefix = 'PROD'): string
-// Output: PROD-20251008-47382
+// Output: 8901234567006
 
 // Sequential generation (recommended)
 generateSequentialBarcode(): string
-// Output: PROD-20251008-00001, PROD-20251008-00002, etc.
+// Output: 8900000000001, 8900000000002, etc.
 
 // Entity-specific generation
 generateBarcodeWithEntity($entityId, $productId): string
@@ -98,7 +98,7 @@ generateBarcodeWithEntity($entityId, $productId): string
 #### **Barcode Format:**
 
 ```
-PROD-20251008-00001
+8901234567006
 │    │        └─────── Sequence (5 digits, zero-padded)
 │    └──────────────── Date (YYYYMMDD)
 └───────────────────── Prefix (PROD for products)
@@ -235,7 +235,7 @@ public function createProduct(array $data): Product
 │   └─────────────────────┘   │
 ├─────────────────────────────┤ ← Border separator
 │    ║║█║║█║║█║║█║║         │ ← Barcode image
-│    PROD-20251008-00001      │ ← Barcode text
+│    8901234567006      │ ← Barcode text
 ├─────────────────────────────┤
 │   Product Name              │
 │   SKU: PRD-001              │
@@ -321,7 +321,7 @@ Content-Type: application/json
 Response:
 {
     "success": true,
-    "barcode": "PROD-20251008-47382",
+    "barcode": "8901234567006",
     "message": "Barcode generated successfully"
 }
 ```
@@ -334,7 +334,7 @@ POST /api/barcodes/generate-sequential
 Response:
 {
     "success": true,
-    "barcode": "PROD-20251008-00001",
+    "barcode": "8901234567006",
     "message": "Sequential barcode generated successfully"
 }
 ```
@@ -346,7 +346,7 @@ POST /api/barcodes/generate-image
 Content-Type: application/json
 
 {
-    "barcode": "PROD-20251008-00001",
+    "barcode": "8901234567006",
     "format": "png",     // optional: "png" or "svg"
     "width": 2,          // optional: 1-5
     "height": 50         // optional: 20-150
@@ -355,7 +355,7 @@ Content-Type: application/json
 Response:
 {
     "success": true,
-    "barcode": "PROD-20251008-00001",
+    "barcode": "8901234567006",
     "image": "data:image/png;base64,iVBORw0KGgoAAAA...",
     "format": "png"
 }
@@ -368,13 +368,13 @@ POST /api/barcodes/validate
 Content-Type: application/json
 
 {
-    "barcode": "PROD-20251008-00001"
+    "barcode": "8901234567006"
 }
 
 Response:
 {
     "success": true,
-    "barcode": "PROD-20251008-00001",
+    "barcode": "8901234567006",
     "is_valid": true,
     "parsed": {
         "prefix": "PROD",
@@ -392,13 +392,13 @@ POST /api/barcodes/check-exists
 Content-Type: application/json
 
 {
-    "barcode": "PROD-20251008-00001"
+    "barcode": "8901234567006"
 }
 
 Response:
 {
     "success": true,
-    "barcode": "PROD-20251008-00001",
+    "barcode": "8901234567006",
     "exists": true,
     "product": {
         "id": 1,
@@ -426,9 +426,9 @@ Response:
     "success": true,
     "count": 10,
     "barcodes": [
-        "PROD-20251008-00001",
-        "PROD-20251008-00002",
-        "PROD-20251008-00003",
+        "8901234567006",
+        "8901234567007",
+        "8901234567008",
         ...
     ]
 }
@@ -453,8 +453,8 @@ Response:
 4. ProductService::createProduct() called
    ↓
 5. BarcodeService generates barcode
-   - Finds last: PROD-20251008-00003
-   - Increments: PROD-20251008-00004
+   - Finds last: 8901234567008
+   - Increments: 8901234567009
    ↓
 6. Product saved with auto-generated barcode
    ↓
@@ -469,7 +469,7 @@ Product Card displays:
 │  [Product Image]     │
 ├──────────────────────┤
 │  ║║█║║█║║█║║█║║      │ ← Scannable barcode
-│  PROD-20251008-00004 │ ← Human-readable
+│  8901234567009 │ ← Human-readable
 ├──────────────────────┤
 │  MacBook Pro         │
 │  SKU: MBP-16-2024    │
@@ -602,12 +602,12 @@ curl -X POST http://localhost:8000/api/barcodes/generate-sequential
 # Generate barcode image
 curl -X POST http://localhost:8000/api/barcodes/generate-image \
   -H "Content-Type: application/json" \
-  -d '{"barcode":"PROD-20251008-00001"}'
+  -d '{"barcode":"8901234567006"}'
 
 # Check if exists
 curl -X POST http://localhost:8000/api/barcodes/check-exists \
   -H "Content-Type: application/json" \
-  -d '{"barcode":"PROD-20251008-00001"}'
+  -d '{"barcode":"8901234567006"}'
 ```
 
 ---

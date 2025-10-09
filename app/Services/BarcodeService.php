@@ -11,20 +11,19 @@ class BarcodeService
     /**
      * Generate a unique barcode for a product
      * 
-     * @param string|null $prefix Custom prefix (default: 'PROD')
-     * @return string Generated barcode
+     * @return string Generated barcode (13 digits like 8901234567006)
      */
-    public function generateBarcode(?string $prefix = 'PROD'): string
+    public function generateBarcode(): string
     {
         $attempts = 0;
         $maxAttempts = 100;
 
         do {
-            // Generate barcode with format: PREFIX-YYYYMMDD-XXXXX
-            // Example: PROD-20251008-00001
-            $date = now()->format('Ymd');
-            $sequence = str_pad(random_int(1, 99999), 5, '0', STR_PAD_LEFT);
-            $barcode = "{$prefix}-{$date}-{$sequence}";
+            // Generate 13-digit barcode format: 890 + 10 random digits
+            // Example: 8901234567006
+            $prefix = '890'; // Common prefix for internal use
+            $randomDigits = str_pad(random_int(1, 9999999999), 10, '0', STR_PAD_LEFT);
+            $barcode = $prefix . $randomDigits;
 
             // Check if barcode already exists
             $exists = Product::where('barcode', $barcode)->exists();
@@ -32,7 +31,8 @@ class BarcodeService
 
             if ($attempts >= $maxAttempts) {
                 // Fallback: use timestamp + random
-                $barcode = "{$prefix}-" . now()->format('YmdHis') . "-" . rand(100, 999);
+                $timestamp = now()->format('YmdHis');
+                $barcode = '890' . substr($timestamp, 2); // Remove first 2 digits of year
                 break;
             }
         } while ($exists);
@@ -64,23 +64,15 @@ class BarcodeService
      */
     public function generateSequentialBarcode(): string
     {
-        // Get the last product barcode that matches the pattern
-        $lastProduct = Product::whereNotNull('barcode')
-            ->where('barcode', 'like', 'PROD-%')
-            ->orderBy('id', 'desc')
-            ->first();
-
-        if ($lastProduct && preg_match('/PROD-\d{8}-(\d{5})/', $lastProduct->barcode, $matches)) {
-            $lastSequence = intval($matches[1]);
-            $newSequence = $lastSequence + 1;
-        } else {
-            $newSequence = 1;
-        }
-
-        $date = now()->format('Ymd');
-        $paddedSequence = str_pad($newSequence, 5, '0', STR_PAD_LEFT);
-
-        return "PROD-{$date}-{$paddedSequence}";
+        // Get the last product ID to generate sequential barcode
+        $lastProduct = Product::orderBy('id', 'desc')->first();
+        $lastId = $lastProduct ? $lastProduct->id : 0;
+        
+        // Generate 13-digit barcode: 890 + padded product ID
+        $prefix = '890';
+        $paddedId = str_pad($lastId + 1, 10, '0', STR_PAD_LEFT);
+        
+        return $prefix . $paddedId;
     }
 
     /**
@@ -134,10 +126,8 @@ class BarcodeService
      */
     public function validateBarcode(string $barcode): bool
     {
-        // Check if barcode matches expected internal format
-        // PROD-YYYYMMDD-XXXXX or ENTx-YYYYMMDD-XXXXX
-        $pattern = '/^(PROD|ENT\d+)-\d{8}-\d{5}$/';
-        return preg_match($pattern, $barcode) === 1;
+        // Check if barcode is 13 digits (like 8901234567006)
+        return preg_match('/^\d{13}$/', $barcode) === 1;
     }
 
     /**
@@ -148,22 +138,18 @@ class BarcodeService
      */
     public function parseBarcode(string $barcode): array
     {
-        $parts = explode('-', $barcode);
-        
-        if (count($parts) !== 3) {
+        if (!$this->validateBarcode($barcode)) {
             return [
                 'prefix' => null,
-                'date' => null,
                 'sequence' => null,
                 'valid' => false
             ];
         }
 
         return [
-            'prefix' => $parts[0],
-            'date' => $parts[1],
-            'sequence' => $parts[2],
-            'valid' => $this->validateBarcode($barcode)
+            'prefix' => substr($barcode, 0, 3), // First 3 digits (890)
+            'sequence' => substr($barcode, 3),  // Remaining 10 digits
+            'valid' => true
         ];
     }
 

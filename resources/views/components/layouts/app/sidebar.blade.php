@@ -65,7 +65,7 @@
                     </flux:navlist.item>
                 </flux:navlist.group> --}}
 
-                <flux:navlist.group expandable :expanded="request()->routeIs('product-management.*')" :heading="__('Products-Beta')"
+                <flux:navlist.group expandable :expanded="request()->routeIs('product-management.*')" :heading="__('Product Management')"
                     class="lg:grid text-left">
                     <flux:navlist.item icon="cube" href="{{ route('product-management.index') }}"
                         :current="request()->routeIs('product-management.index')" wire:navigate>{{ __('Products') }}
@@ -79,19 +79,6 @@
                     <flux:navlist.item icon="chart-bar" href="{{ route('product-management.dashboard') }}"
                         :current="request()->routeIs('product-management.dashboard')" wire:navigate>{{ __('Analytics') }}
                     </flux:navlist.item>
-                </flux:navlist.group>
-
-                <flux:navlist.group expandable :expanded="request()->routeIs('supplies.*')"
-                    :heading="__('Products-Legacy')" class="lg:grid text-left">
-                    <flux:navlist.item icon="inbox-stack" href="{{ route('supplies.inventory') }}"
-                        :current="request()->routeIs('supplies.inventory')" wire:navigate>{{ __('Inventory') }}
-                    </flux:navlist.item>
-
-                    <flux:navlist.item icon="inbox-stack" href="{{ route('supplies.PurchaseOrder') }}"
-                        :current="request()->routeIs('supplies.PurchaseOrder')" wire:navigate>{{ __('Purchase Order') }}
-                    </flux:navlist.item>
-                    {{-- <flux:navlist.item icon="inbox-stack" href=""  wire:navigate>{{ __('Restock') }}
-                    </flux:navlist.item> --}}
                 </flux:navlist.group>
 
                 <flux:navlist.group expandable

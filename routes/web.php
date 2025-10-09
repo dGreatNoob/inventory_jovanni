@@ -21,15 +21,6 @@ use App\Livewire\Pages\PaperRollWarehouse\PurchaseOrder\Show as PRWPurchaseOrder
 use App\Livewire\Pages\PaperRollWarehouse\Profile\Index as PRWProfile;
 use App\Livewire\Pages\PaperRollWarehouse\PurchaseOrder\ViewItem as PRWPurchaseOrderViewItem;
 
-use App\Livewire\Pages\Supplies\Inventory\Index as SuppliesInventory;
-use App\Livewire\Pages\Supplies\Inventory\Create as SuppliesInventoryCreate;
-use App\Livewire\Pages\Supplies\Inventory\StockBatches;
-use App\Livewire\Pages\Supplies\PurchaseOrder\Index as SuppliesPurchaseOrder;
-use App\Livewire\Pages\Supplies\PurchaseOrder\Create as CreateSuppliesPurchaseOrder;
-use App\Livewire\Pages\Supplies\PurchaseOrder\Show as ShowSuppliesPurchaseOrder;
-use App\Livewire\Pages\Supplies\PurchaseOrder\Edit as EditSuppliesPurchaseOrder;
-
-
 use App\Livewire\Pages\SupplierManagement\Profile\Index as SupplierProfile;
 use App\Livewire\Pages\Customer\Index as CustomerProfile;
 
@@ -47,7 +38,6 @@ use App\Livewire\Pages\ProductManagement\CategoryManagement;
 use App\Livewire\Pages\User\Index as UserIndex;
 use App\Livewire\Pages\RolePermission\Index as RolePermissionIndex;
 //QR CODE PRINTING
-use App\Models\SupplyProfile;
 use App\Livewire\ActivityLogs;
 use App\Livewire\UserLogs;
 
@@ -67,12 +57,6 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/RequestSlip', RequestSlip::class)
         ->name('requisition.requestslip');
-
-    Route::get('/Product/Inventory', SuppliesInventory::class)
-        ->name('supplies.inventory');
-    
-    Route::get('/Product/Inventory/Create', SuppliesInventoryCreate::class)
-        ->name('supplies.inventory.create');
     
     Route::get('/Shipment', createShipmentIndex::class)
         ->name('shipment.index');   
@@ -83,31 +67,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/Shipment/scan', ShipmentQrScannder::class)
         ->name('shipment.qrscanner');
 
-    Route::get('/Product/Inventory/{supply}/stocks', StockBatches::class)
-        ->name('supplies.inventory.stocks');
-
-    Route::get('/Product/PurchaseOrder', SuppliesPurchaseOrder::class)
-        ->name('supplies.PurchaseOrder');
-
-    Route::get('/Product/PurchaseOrder/Create', CreateSuppliesPurchaseOrder::class)
-        ->name('supplies.PurchaseOrder.create');
-
-    Route::get('/Product/PurchaseOrder/Show/{Id}', ShowSuppliesPurchaseOrder::class)
-        ->name('supplies.PurchaseOrder.show');
-
-    Route::get('/Product/PurchaseOrder/ShowForApproval/{Id}', \App\Livewire\Pages\Supplies\PurchaseOrder\ShowForApproval::class)
-        ->name('supplies.PurchaseOrder.showForApproval');
-
-    Route::get('/Product/PurchaseOrder/ShowReceivingReport/{Id}', \App\Livewire\Pages\Supplies\PurchaseOrder\ShowReceivingReport::class)
-        ->name('supplies.PurchaseOrder.showReceivingReport');
-
-    Route::get('/Product/PurchaseOrder/ShowStandard/{Id}', \App\Livewire\Pages\Supplies\PurchaseOrder\ShowStandard::class)
-        ->name('supplies.PurchaseOrder.showStandard');
-
-    Route::get('/Product/PurchaseOrder/Edit/{Id}', EditSuppliesPurchaseOrder::class)
-        ->name('supplies.PurchaseOrder.edit');
-
-        Route::get('/reports/financial-summary', \App\Livewire\Pages\Reports\ProfitLoss::class)
+    Route::get('/reports/financial-summary', \App\Livewire\Pages\Reports\ProfitLoss::class)
         ->name('reports.financial-summary');
 
     Route::prefix('prw')->name('prw.')->group(function () {
@@ -158,11 +118,6 @@ Route::middleware(['auth'])->group(function () {
     });
 
     //QR CODE PRINTING
-    Route::get('/product/print/{supply_sku}', function ($supply_sku) {
-        $supply = SupplyProfile::with(['itemType', 'allocation'])->where('supply_sku',$supply_sku)->firstOrFail();
-        return view('livewire.pages.qrcode.supplyprint', compact('supply'));
-    })->name('supplies.print');
-
     Route::get('/purchase-order/print/{po_num}', function ($po_num) {
         $purchaseOrder = \App\Models\PurchaseOrder::with(['supplier', 'department', 'supplyOrders.supplyProfile'])->where('po_num', $po_num)->firstOrFail();
         return view('livewire.pages.qrcode.purchaseorderprint', compact('purchaseOrder'));

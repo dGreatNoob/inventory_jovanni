@@ -31,6 +31,7 @@ use App\Livewire\Pages\Supplies\PurchaseOrder\Edit as EditSuppliesPurchaseOrder;
 
 use App\Livewire\Pages\SupplierManagement\Profile\Index as SupplierProfile;
 use App\Livewire\Pages\Customer\Index as CustomerProfile;
+use App\Livewire\Pages\Agent\Index as AgentProfile;
 use App\Livewire\Pages\Branch\Index as BranchProfile;
 
 use App\Livewire\Pages\Setup\Department\Index as DepartmentSetup;
@@ -119,6 +120,9 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/customermanagement/profile', CustomerProfile::class)
         ->name('customer.profile');
+
+    Route::get('/agentmanagement/profile', AgentProfile::class)
+        ->name('agent.profile');
 
     Route::get('/Branchmanagement/profile', BranchProfile::class)
         ->name('branch.profile');

@@ -7,41 +7,122 @@
 
         <section
             class="mb-5 max-w-xlg p-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Basic Information</h2>
             <form wire:submit.prevent="submit">
-                <div class="grid gap-6 mb-6 md:grid-cols-2">
-                    <div>
-                        <label for="name"
-                            class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Branch Name</label>
-                        <input type="text" id="name" wire:model="name"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                            placeholder="Main Branch" required />
-                    </div>
-                    <div>
-                        <label for="address" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Address</label>
-                        <input type="text" id="address" wire:model="address"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                            placeholder="P24 lawaan st. bayugan city" required />
-                    </div>
-                    <div>
-                        <label for="contact_num"
-                            class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Contact Number</label>
-                        <input type="tel" id="contact_num" wire:model="contact_num"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                            placeholder="+639474720112" required />
-                    </div>
-                    <div>
-                        <label for="manager_name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Manager Name</label>
-                        <input type="text" id="manager_name" wire:model="manager_name"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                            placeholder="John Doe" required />
+            <div class="grid gap-6 mb-6 md:grid-cols-2">
+                <div>
+                    <label for="name"
+                        class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Branch Name</label>
+                    <input type="text" id="name" wire:model="name"
+                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        placeholder="Main Branch" required />
+
+                    <!-- Inline inputs below Branch Name -->
+                    <div class="flex gap-2 mt-4">
+                        <div class="flex-1">
+                            <label for="subclass1" class="block mb-1 text-xs font-medium text-gray-900 dark:text-white">Subclass 1</label>
+                            <input type="text" id="subclass1" wire:model="subclass1"
+                                class="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                                placeholder="Subclass 1" />
+                        </div>
+                        <div class="flex-1">
+                            <label for="subclass2" class="block mb-1 text-xs font-medium text-gray-900 dark:text-white">Subclass 2</label>
+                            <input type="text" id="subclass2" wire:model="subclass2"
+                                class="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                                placeholder="Subclass 2" />
+                        </div>
+                        <div class="flex-1">
+                            <label for="subclass3" class="block mb-1 text-xs font-medium text-gray-900 dark:text-white">Subclass 3</label>
+                            <input type="text" id="subclass3" wire:model="subclass3"
+                                class="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                                placeholder="Subclass 3" />
+                        </div>
+                        <div class="flex-1">
+                            <label for="subclass4" class="block mb-1 text-xs font-medium text-gray-900 dark:text-white">Subclass 4</label>
+                            <input type="text" id="subclass4" wire:model="subclass4"
+                                class="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                                placeholder="Subclass 4" />
+                        </div>
                     </div>
                 </div>
-                <div class="flex justify-end">
-                    <button type="submit"
-                        class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
-                        Submit
-                    </button>
+                <div>
+                    <label for="code" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Code</label>
+                    <input type="text" id="code" wire:model="code"
+                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        placeholder="Branch Code" required />
                 </div>
+                <div>
+                    <label for="category" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Category</label>
+                    <input type="text" id="category" wire:model="category"
+                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        placeholder="Category" required />
+                </div>
+                <div>
+                    <label for="address" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Address</label>
+                    <input type="text" id="address" wire:model="address"
+                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        placeholder="P24 lawaan st. bayugan city" required />
+                </div>
+                <div>
+                    <label for="remarks" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Remarks</label>
+                    <input type="text" id="remarks" wire:model="remarks"
+                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        placeholder="Remarks" />
+                </div>
+            </div>
+
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Additional Information</h2>
+            <div class="grid gap-6 mb-6 md:grid-cols-2">
+                <div>
+                    <label for="batch" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Batch</label>
+                    <input type="text" id="batch" wire:model="batch"
+                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        placeholder="Batch" />
+                </div>
+                <div>
+                    <label for="branch_code" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Branch Code</label>
+                    <input type="text" id="branch_code" wire:model="branch_code"
+                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        placeholder="Branch Code" />
+                </div>
+                <div>
+                    <label for="company_name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Company Name</label>
+                    <input type="text" id="company_name" wire:model="company_name"
+                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        placeholder="Company Name" />
+                </div>
+                <div>
+                    <label for="company_tin" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Company TIN</label>
+                    <input type="text" id="company_tin" wire:model="company_tin"
+                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        placeholder="Company TIN" />
+                </div>
+                <div>
+                    <label for="dept_code" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">DeptCode</label>
+                    <input type="text" id="dept_code" wire:model="dept_code"
+                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        placeholder="DeptCode" />
+                </div>
+                <div>
+                    <label for="pull_out_addresse" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Pull Out Addresse</label>
+                    <input type="text" id="pull_out_addresse" wire:model="pull_out_addresse"
+                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        placeholder="Pull Out Addresse" />
+                </div>
+                <div>
+                    <label for="vendor_code" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Vendor Code</label>
+                    <input type="text" id="vendor_code" wire:model="vendor_code"
+                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        placeholder="Vendor Code" />
+                </div>
+            </div>
+
+            <div class="flex justify-end">
+                <button type="submit"
+                class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+                Submit
+                </button>
+            </div>
 
             </form>
         </section>

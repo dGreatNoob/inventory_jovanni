@@ -6,11 +6,22 @@ use Illuminate\Database\Eloquent\Model;
 
 class Branch extends Model
 {
-
     protected $fillable = [
         'name',
+        'subclass1',
+        'subclass2',
+        'subclass3',
+        'subclass4',
+        'code',
+        'category',
         'address',
-        'contact_num',
-        'manager_name',
+        'remarks',
+        'batch',
+        'branch_code',
+        'company_name',
+        'company_tin',
+        'dept_code',
+        'pull_out_addresse',
+        'vendor_code',
     ];
 }

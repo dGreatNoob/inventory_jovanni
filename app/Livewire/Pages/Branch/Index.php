@@ -7,9 +7,12 @@ use App\Models\Branch;
 
 class Index extends Component
 {
+    public $name, $subclass1, $subclass2, $subclass3, $subclass4;
+    public $code, $category, $address, $remarks;
+    public $batch, $branch_code, $company_name, $company_tin;
+    public $dept_code, $pull_out_addresse, $vendor_code;
 
-    public $name, $address, $contact_num, $manager_name;
-    public $edit_name, $edit_address, $edit_contact_num, $edit_manager_name;
+    public $editData = [];
     public $perPage = 10;
     public $search = '';
     public $showDeleteModal = false;
@@ -21,51 +24,59 @@ class Index extends Component
     {
         $this->validate([
             'name' => 'required|string',
+            'code' => 'required|string',
+            'category' => 'required|string',
             'address' => 'required|string',
-            'contact_num' => 'required|string',
-            'manager_name' => 'required|string'
         ]);
 
         Branch::create([
             'name' => $this->name,
+            'subclass1' => $this->subclass1,
+            'subclass2' => $this->subclass2,
+            'subclass3' => $this->subclass3,
+            'subclass4' => $this->subclass4,
+            'code' => $this->code,
+            'category' => $this->category,
             'address' => $this->address,
-            'contact_num' => $this->contact_num,
-            'manager_name' => $this->manager_name
+            'remarks' => $this->remarks,
+            'batch' => $this->batch,
+            'branch_code' => $this->branch_code,
+            'company_name' => $this->company_name,
+            'company_tin' => $this->company_tin,
+            'dept_code' => $this->dept_code,
+            'pull_out_addresse' => $this->pull_out_addresse,
+            'vendor_code' => $this->vendor_code,
         ]);
 
         session()->flash('message', 'Branch Profile Added Successfully.');
-        $this->reset(['name', 'address', 'contact_num', 'manager_name']);
+        $this->reset([
+            'name','subclass1','subclass2','subclass3','subclass4',
+            'code','category','address','remarks',
+            'batch','branch_code','company_name','company_tin',
+            'dept_code','pull_out_addresse','vendor_code'
+        ]);
     }
 
     public function edit($id)
     {
         $branch = Branch::findOrFail($id);
-
         $this->selectedItemId = $id;
-        $this->edit_name = $branch->name;
-        $this->edit_address = $branch->address;
-        $this->edit_contact_num = $branch->contact_num;
-        $this->edit_manager_name = $branch->manager_name;
 
+        $this->editData = $branch->toArray();
         $this->showEditModal = true;
     }
 
     public function update()
     {
         $this->validate([
-            'edit_name' => 'required|string',
-            'edit_address' => 'required|string',
-            'edit_contact_num' => 'required|string',
-            'edit_manager_name' => 'required|string'
+            'editData.name' => 'required|string',
+            'editData.code' => 'required|string',
+            'editData.category' => 'required|string',
+            'editData.address' => 'required|string',
         ]);
 
         $branch = Branch::findOrFail($this->selectedItemId);
-        $branch->update([
-            'name' => $this->edit_name,
-            'address' => $this->edit_address,
-            'contact_num' => $this->edit_contact_num,
-            'manager_name' => $this->edit_manager_name
-        ]);
+        $branch->update($this->editData);
 
         $this->showEditModal = false;
         session()->flash('message', 'Branch Profile Updated Successfully.');
@@ -92,10 +103,7 @@ class Index extends Component
             'showEditModal',
             'deleteId',
             'selectedItemId',
-            'edit_name',
-            'edit_address',
-            'edit_contact_num',
-            'edit_manager_name',
+            'editData'
         ]);
     }
 
@@ -108,7 +116,7 @@ class Index extends Component
         $newLastMonth = Branch::whereMonth('created_at', now()->subMonth()->month)
                                ->whereYear('created_at', now()->subMonth()->year)
                                ->count();
-        
+
         $changePercent = $newLastMonth > 0 ? 
             round((($newThisMonth - $newLastMonth) / $newLastMonth) * 100, 1) : 0;
 
@@ -145,9 +153,9 @@ class Index extends Component
     public function render()
     {
         $items = Branch::where('name', 'like', '%'.$this->search.'%')
+            ->orWhere('code', 'like', '%'.$this->search.'%')
+            ->orWhere('category', 'like', '%'.$this->search.'%')
             ->orWhere('address', 'like', '%'.$this->search.'%')
-            ->orWhere('contact_num', 'like', '%'.$this->search.'%')
-            ->orWhere('manager_name', 'like', '%'.$this->search.'%')
             ->latest()
             ->paginate($this->perPage);
 
@@ -157,4 +165,3 @@ class Index extends Component
         ]);
     }
 }
-

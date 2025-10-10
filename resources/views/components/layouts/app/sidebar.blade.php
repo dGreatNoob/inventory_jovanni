@@ -130,10 +130,14 @@
 
                 </flux:navlist.group>--}}
 
-                <flux:navlist.group expandable :expanded="request()->routeIs('customer.*', 'branch.*')"
+                <flux:navlist.group expandable :expanded="request()->routeIs('customer.*', 'branch.*', 'agent.*')"
                     :heading="__('Operational Management')" class="lg:grid">
-                    <flux:navlist.item icon="users" href="{{ route('customer.profile') }}"
+                     {{-- <flux:navlist.item icon="users" href="{{ route('customer.profile') }}"
                         :current="request()->routeIs('customer.profile')" wire:navigate>{{ __('Agent Management') }}
+                    </flux:navlist.item>--}}
+
+                    <flux:navlist.item icon="users" href="{{ route('agent.profile') }}"
+                        :current="request()->routeIs('agent.profile')" wire:navigate>{{ __('Agent management') }}
                     </flux:navlist.item>
 
                     <flux:navlist.item icon="building-storefront" href="{{ route('branch.profile') }}"

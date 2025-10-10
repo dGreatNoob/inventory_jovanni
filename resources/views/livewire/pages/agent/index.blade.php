@@ -47,11 +47,23 @@
                             placeholder="Butuan City Branch" required />
                     </div>
                 </div>
+                <div>
+                    <label for="assignedBranch" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Assign Branch</label>
+                    <select wire:model="assignedBranch" id="assignedBranch"
+                        class="w-full p-2 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:text-white">
+                        <option value="" disabled selected>Select branch (optional)</option>
+                        @foreach($branches as $branch)
+                            <option value="{{ $branch->id }}">{{ $branch->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="h-4"></div> <!-- Space between assign branch and submit -->
                 <div class="flex justify-end">
                     <button type="submit"
                         class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
                         Submit
                     </button>
+                </div>
                 </div>
             </form>
         </section>
@@ -197,6 +209,16 @@
                                     @error('edit_branch_designation') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                 </div>
 
+                                <div>
+                                    <label for="edit_assignedBranches" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Assign Branches</label>
+                                    <select multiple wire:model="edit_assignedBranches" id="edit_assignedBranches"
+                                        class="w-full p-2 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:text-white">
+                                        @foreach($branches as $branch)
+                                            <option value="{{ $branch->id }}">{{ $branch->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
                             </div>
                         </div>
 
@@ -234,6 +256,30 @@
                     </div>
                 </div>
             @endif
+        </section>
+
+        <section class="mt-6">
+            <h3 class="text-lg font-semibold mb-2">Deployment History</h3>
+            <table class="w-full text-sm text-left border border-gray-300 rounded">
+                <thead>
+                    <tr class="bg-gray-100">
+                        <th class="px-4 py-2">Agent</th>
+                        <th class="px-4 py-2">Branch</th>
+                        <th class="px-4 py-2">Assigned At</th>
+                        <th class="px-4 py-2">Released At</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach(\App\Models\AgentBranchAssignment::with('agent','branch')->latest()->get() as $assignment)
+                        <tr class="border-t">
+                            <td class="px-4 py-2">{{ $assignment->agent->name }}</td>
+                            <td class="px-4 py-2">{{ $assignment->branch->name }}</td>
+                            <td class="px-4 py-2">{{ $assignment->assigned_at }}</td>
+                            <td class="px-4 py-2">{{ $assignment->released_at ?? 'Active' }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
         </section>
 
 

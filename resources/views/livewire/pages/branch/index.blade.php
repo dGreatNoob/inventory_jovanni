@@ -158,16 +158,16 @@
                                 class="text-sm text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                                 <tr>
                                     <th scope="col" class="px-6 py-3">
-                                       Branch Name
+                                        Code
+                                    </th>
+                                    <th scope="col" class="px-6 py-3">
+                                        Branch Name
+                                    </th>
+                                    <th scope="col" class="px-6 py-3">
+                                        Category
                                     </th>
                                     <th scope="col" class="px-6 py-3">
                                         Address
-                                    </th>
-                                    <th scope="col" class="px-6 py-3">
-                                        Contact Number
-                                    </th>
-                                    <th scope="col" class="px-6 py-3">
-                                        Manager Name
                                     </th>
                                     <th scope="col" class="px-6 py-3">
                                         Action
@@ -178,11 +178,11 @@
                                 @foreach($items as $item)
                                     <tr class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700 border-gray-200">
                                         <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                                            {{ $item->name }}
+                                            {{ $item->code }}
                                         </th>
+                                        <td class="px-6 py-4">{{ $item->name }}</td>
+                                        <td class="px-6 py-4">{{ $item->category }}</td>
                                         <td class="px-6 py-4">{{ $item->address }}</td>
-                                        <td class="px-6 py-4">{{ $item->contact_num }}</td>
-                                        <td class="px-6 py-4">{{ $item->manager_name }}</td>
                                         <td class="px-6 py-4">
                                             <x-button href="#" wire:click.prevent="edit({{ $item->id }})"
                                                variant="warning">Edit</x-button>
@@ -231,6 +231,7 @@
                         </div>
 
                         <div class="p-6 space-y-6">
+                            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Basic Information</h2>
                             <div class="grid gap-6 mb-6 md:grid-cols-2">
                                 <div>
                                     <label for="edit_name"
@@ -241,8 +242,50 @@
                                         dark:focus:ring-blue-500 dark:focus:border-blue-500"
                                     placeholder="Enter Branch Name" required />
                                     @error('edit_name') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+
+                                    <!-- Inline inputs below Branch Name -->
+                                    <div class="flex gap-2 mt-4">
+                                        <div class="flex-1">
+                                            <label for="edit_subclass1" class="block mb-1 text-xs font-medium text-gray-900 dark:text-white">Subclass 1</label>
+                                            <input type="text" id="edit_subclass1" wire:model="edit_subclass1"
+                                                class="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                                                placeholder="Subclass 1" />
+                                        </div>
+                                        <div class="flex-1">
+                                            <label for="edit_subclass2" class="block mb-1 text-xs font-medium text-gray-900 dark:text-white">Subclass 2</label>
+                                            <input type="text" id="edit_subclass2" wire:model="edit_subclass2"
+                                                class="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                                                placeholder="Subclass 2" />
+                                        </div>
+                                        <div class="flex-1">
+                                            <label for="edit_subclass3" class="block mb-1 text-xs font-medium text-gray-900 dark:text-white">Subclass 3</label>
+                                            <input type="text" id="edit_subclass3" wire:model="edit_subclass3"
+                                                class="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                                                placeholder="Subclass 3" />
+                                        </div>
+                                        <div class="flex-1">
+                                            <label for="edit_subclass4" class="block mb-1 text-xs font-medium text-gray-900 dark:text-white">Subclass 4</label>
+                                            <input type="text" id="edit_subclass4" wire:model="edit_subclass4"
+                                                class="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                                                placeholder="Subclass 4" />
+                                        </div>
+                                    </div>
                                 </div>
 
+                                <div>
+                                    <label for="edit_code" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Code</label>
+                                    <input type="text" wire:model="edit_code" id="edit_code"
+                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500
+                                        block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white 
+                                        dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                                        placeholder="Branch Code" required />
+                                </div>
+                                <div>
+                                    <label for="edit_category" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Category</label>
+                                    <input type="text" wire:model="edit_category" id="edit_category"
+                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                                        placeholder="Category" required />
+                                </div>
                                 <div>
                                     <label for="edit_address"
                                         class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
@@ -253,25 +296,57 @@
                                         dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Enter address" />
                                     @error('edit_address') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                 </div>
-
                                 <div>
-                                    <label for="edit_contact_num"
-                                        class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Contact Number</label>
-                                    <input type="text" wire:model="edit_contact_num" id="edit_contact_num"
-                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500
-                                        block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white 
-                                        dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Enter contact number" />
-                                    @error('edit_contact_num') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                    <label for="edit_remarks" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Remarks</label>
+                                    <input type="text" wire:model="edit_remarks" id="edit_remarks"
+                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                                        placeholder="Remarks" />
                                 </div>
+                            </div>
 
+                            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Additional Information</h2>
+                            <div class="grid gap-6 mb-6 md:grid-cols-2">
                                 <div>
-                                    <label for="edit_manager_name"
-                                        class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Manager Name</label>
-                                    <input type="text" wire:model="edit_manager_name" id="edit_manager_name"
-                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500
-                                        block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white 
-                                        dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Enter manager name" />
-                                    @error('edit_manager_name') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                    <label for="edit_batch" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Batch</label>
+                                    <input type="text" wire:model="edit_batch" id="edit_batch"
+                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                                        placeholder="Batch" />
+                                </div>
+                                <div>
+                                    <label for="edit_branch_code" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Branch Code</label>
+                                    <input type="text" wire:model="edit_branch_code" id="edit_branch_code"
+                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                                        placeholder="Branch Code" />
+                                </div>
+                                <div>
+                                    <label for="edit_company_name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Company Name</label>
+                                    <input type="text" wire:model="edit_company_name" id="edit_company_name"
+                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                                        placeholder="Company Name" />
+                                </div>
+                                <div>
+                                    <label for="edit_company_tin" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Company TIN</label>
+                                    <input type="text" wire:model="edit_company_tin" id="edit_company_tin"
+                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                                        placeholder="Company TIN" />
+                                </div>
+                                <div>
+                                    <label for="edit_dept_code" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">DeptCode</label>
+                                    <input type="text" wire:model="edit_dept_code" id="edit_dept_code"
+                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                                        placeholder="DeptCode" />
+                                </div>
+                                <div>
+                                    <label for="edit_pull_out_addresse" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Pull Out Addresse</label>
+                                    <input type="text" wire:model="edit_pull_out_addresse" id="edit_pull_out_addresse"
+                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                                        placeholder="Pull Out Addresse" />
+                                </div>
+                                <div>
+                                    <label for="edit_vendor_code" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Vendor Code</label>
+                                    <input type="text" wire:model="edit_vendor_code" id="edit_vendor_code"
+                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                                        placeholder="Vendor Code" />
                                 </div>
                             </div>
                         </div>

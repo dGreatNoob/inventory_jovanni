@@ -20,6 +20,12 @@ class Index extends Component
     public $deleteId = null;
     public $selectedItemId;
 
+    // Edit properties
+    public $edit_name, $edit_code, $edit_category, $edit_address;
+    public $edit_remarks, $edit_subclass1, $edit_subclass2, $edit_subclass3;
+    public $edit_subclass4, $edit_batch, $edit_branch_code, $edit_company_name;
+    public $edit_company_tin, $edit_dept_code, $edit_pull_out_addresse, $edit_vendor_code;
+
     public function submit()
     {
         $this->validate([
@@ -57,26 +63,59 @@ class Index extends Component
         ]);
     }
 
-    public function edit($id)
+        public function edit($id)
     {
         $branch = Branch::findOrFail($id);
-        $this->selectedItemId = $id;
 
-        $this->editData = $branch->toArray();
+        $this->selectedItemId = $id;
+        $this->edit_name = $branch->name;
+        $this->edit_code = $branch->code;
+        $this->edit_category = $branch->category;
+        $this->edit_address = $branch->address;
+        $this->edit_remarks = $branch->remarks;
+        $this->edit_subclass1 = $branch->subclass1;
+        $this->edit_subclass2 = $branch->subclass2;
+        $this->edit_subclass3 = $branch->subclass3;
+        $this->edit_subclass4 = $branch->subclass4;
+        $this->edit_batch = $branch->batch;
+        $this->edit_branch_code = $branch->branch_code;
+        $this->edit_company_name = $branch->company_name;
+        $this->edit_company_tin = $branch->company_tin;
+        $this->edit_dept_code = $branch->dept_code;
+        $this->edit_pull_out_addresse = $branch->pull_out_addresse;
+        $this->edit_vendor_code = $branch->vendor_code;
+
         $this->showEditModal = true;
     }
 
     public function update()
     {
         $this->validate([
-            'editData.name' => 'required|string',
-            'editData.code' => 'required|string',
-            'editData.category' => 'required|string',
-            'editData.address' => 'required|string',
+            'edit_name' => 'required|string',
+            'edit_code' => 'required|string',
+            'edit_category' => 'required|string',
+            'edit_address' => 'required|string',
         ]);
 
         $branch = Branch::findOrFail($this->selectedItemId);
-        $branch->update($this->editData);
+        $branch->update([
+            'name' => $this->edit_name,
+            'code' => $this->edit_code,
+            'category' => $this->edit_category,
+            'address' => $this->edit_address,
+            'remarks' => $this->edit_remarks,
+            'subclass1' => $this->edit_subclass1,
+            'subclass2' => $this->edit_subclass2,
+            'subclass3' => $this->edit_subclass3,
+            'subclass4' => $this->edit_subclass4,
+            'batch' => $this->edit_batch,
+            'branch_code' => $this->edit_branch_code,
+            'company_name' => $this->edit_company_name,
+            'company_tin' => $this->edit_company_tin,
+            'dept_code' => $this->edit_dept_code,
+            'pull_out_addresse' => $this->edit_pull_out_addresse,
+            'vendor_code' => $this->edit_vendor_code,
+        ]);
 
         $this->showEditModal = false;
         session()->flash('message', 'Branch Profile Updated Successfully.');

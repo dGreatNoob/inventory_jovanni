@@ -40,23 +40,8 @@
                             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                             placeholder="123456789" required />
                     </div>
-                    <div>
-                        <label for="branch_designation" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Branch Designation</label>
-                        <input type="text" id="branch_designation" wire:model="branch_designation"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                            placeholder="Butuan City Branch" required />
-                    </div>
                 </div>
-                <div>
-                    <label for="assignedBranch" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Assign Branch</label>
-                    <select wire:model="assignedBranch" id="assignedBranch"
-                        class="w-full p-2 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:text-white">
-                        <option value="" disabled selected>Select branch (optional)</option>
-                        @foreach($branches as $branch)
-                            <option value="{{ $branch->id }}">{{ $branch->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
+
                 <div class="h-4"></div> <!-- Space between assign branch and submit -->
                 <div class="flex justify-end">
                     <button type="submit"
@@ -75,7 +60,7 @@
         @endif
 
         <section>
-            <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
+            <div class="mb-5 max-w-xlg p-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
                 <div class="flex items-center justify-between p-4 pr-10">
                     <div class="flex space-x-6">
                         <div class="relative">
@@ -87,7 +72,7 @@
                                         clip-rule="evenodd" />
                                 </svg>
                             </div>
-                            <input type="text" wire:model.debounce.500ms="search"
+                            <input type="text" wire:model.lazy="search"
                                 class="block w-64 p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                                 placeholder="Search Agent...">
                         </div>
@@ -103,20 +88,33 @@
                                 <th scope="col" class="px-6 py-3">Address</th>
                                 <th scope="col" class="px-6 py-3">Contact Number</th>
                                 <th scope="col" class="px-6 py-3">Tin Number</th>
-                                <th scope="col" class="px-6 py-3">Branch Designation</th>
-                                <th scope="col" class="px-6 py-3">Action</th>
+                                <th scope="col" class="px-6 py-3 text-center">Status</th>
+                                <th scope="col" class="px-6 py-3 text-center">Action</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach($items as $item)
+                                @php
+                                    $isDeployed = $item->branchAssignments->where('released_at', null)->count() > 0;
+                                    $createdRecent = $item->created_at && now()->diffInSeconds($item->created_at) <= 5;
+                                @endphp
                                 <tr class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700 border-gray-200">
                                     <td class="px-6 py-4 font-medium text-gray-900 dark:text-white">{{ $item->agent_code }}</td>
                                     <td class="px-6 py-4">{{ $item->name }}</td>
                                     <td class="px-6 py-4">{{ $item->address }}</td>
                                     <td class="px-6 py-4">{{ $item->contact_num }}</td>
                                     <td class="px-6 py-4">{{ $item->tin_num }}</td>
-                                    <td class="px-6 py-4">{{ $item->branch_designation }}</td>
-                                    <td class="px-6 py-4">
+                                    <td class="px-6 py-4 text-center">
+                                        @if($isDeployed)
+                                            <span class="text-blue-600 font-semibold">Deployed</span>
+                                        @elseif($createdRecent)
+                                            <span class="text-green-600 font-semibold">Active</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <x-button href="#" wire:click.prevent="toggleDeployment({{ $item->id }})" variant="info">
+                                            {{ in_array($item->id, $deployedAgentIds ?? []) ? 'Release' : 'Deploy' }}
+                                        </x-button>
                                         <x-button href="#" wire:click.prevent="edit({{ $item->id }})" variant="warning">Edit</x-button>
                                         <x-button href="#" wire:click.prevent="confirmDelete({{ $item->id }})" variant="danger">Delete</x-button>
                                     </td>
@@ -202,23 +200,6 @@
                                     @error('edit_tin_num') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                 </div>
 
-                                <div>
-                                    <label for="edit_branch_designation" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Branch Designation</label>
-                                    <input type="text" wire:model="edit_branch_designation" id="edit_branch_designation" 
-                                        class="w-full p-2 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:text-white" placeholder="Butuan City Branch" />
-                                    @error('edit_branch_designation') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                                </div>
-
-                                <div>
-                                    <label for="edit_assignedBranches" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Assign Branches</label>
-                                    <select multiple wire:model="edit_assignedBranches" id="edit_assignedBranches"
-                                        class="w-full p-2 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:text-white">
-                                        @foreach($branches as $branch)
-                                            <option value="{{ $branch->id }}">{{ $branch->name }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-
                             </div>
                         </div>
 
@@ -258,28 +239,86 @@
             @endif
         </section>
 
-        <section class="mt-6">
-            <h3 class="text-lg font-semibold mb-2">Deployment History</h3>
-            <table class="w-full text-sm text-left border border-gray-300 rounded">
-                <thead>
-                    <tr class="bg-gray-100">
-                        <th class="px-4 py-2">Agent</th>
-                        <th class="px-4 py-2">Branch</th>
-                        <th class="px-4 py-2">Assigned At</th>
-                        <th class="px-4 py-2">Released At</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach(\App\Models\AgentBranchAssignment::with('agent','branch')->latest()->get() as $assignment)
-                        <tr class="border-t">
-                            <td class="px-4 py-2">{{ $assignment->agent->name }}</td>
-                            <td class="px-4 py-2">{{ $assignment->branch->name }}</td>
-                            <td class="px-4 py-2">{{ $assignment->assigned_at }}</td>
-                            <td class="px-4 py-2">{{ $assignment->released_at ?? 'Active' }}</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
+
+        <section>
+            <div x-data="{
+                    show: @entangle('showAssignModal').live,
+                    branchId: @entangle('assign_branch_id').defer,
+                    subclassOptions: @js($subclassOptions),
+                    updateSubclassOptions() {
+                        this.$wire.set('assign_branch_id', this.branchId);
+                        this.$nextTick(() => {
+                            this.subclassOptions = @js($subclassOptions);
+                        });
+                    }
+                }"
+                x-show="show" x-cloak
+                class="fixed inset-0 z-50 w-full p-4 overflow-x-hidden overflow-y-auto flex items-center justify-center bg-black/30">
+                <div class="relative w-full max-w-lg max-h-full">
+                    <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
+                        <!-- Modal Header -->
+                        <div class="flex items-start justify-between p-4 border-b rounded-t dark:border-gray-600">
+                            <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Assign to Branch</h3>
+                            <button type="button" wire:click="cancel"
+                                class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
+                                <svg class="w-3 h-3" fill="none" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <!-- Modal Body -->
+                        <div class="p-6 space-y-4">
+                            <div>
+                                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Branch</label>
+                                <select x-model="branchId" @change="updateSubclassOptions()" wire:model="assign_branch_id"
+                                    class="w-full p-2 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:text-white">
+                                    <option value="">Select a branch</option>
+                                    @foreach($branches as $branch)
+                                        <option value="{{ $branch->id }}">{{ $branch->name }}</option>
+                                    @endforeach
+                                </select>
+                                @error('assign_branch_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                            </div>
+
+                            <div>
+                                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                                    Subclass {{ empty($subclassOptions) ? '(none)' : '' }}
+                                </label>
+                                <select wire:model="assign_subclass"
+                                    class="w-full p-2 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:text-white"
+                                    @disabled(empty($subclassOptions))>
+                                    <option value="">{{ empty($subclassOptions) ? 'No subclasses' : 'Select a subclass' }}</option>
+                                    @foreach($subclassOptions as $opt)
+                                        <option value="{{ $opt }}">{{ $opt }}</option>
+                                    @endforeach
+                                </select>
+                                @error('assign_subclass') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                            </div>
+                        </div>
+
+                        <!-- Modal Footer -->
+                        <div class="flex items-center p-6 space-x-2 border-t border-gray-200 rounded-b dark:border-gray-600">
+                            <button type="button" wire:click="assignToBranch"
+                                class="text-white bg-blue-600 hover:bg-blue-700 px-5 py-2.5 rounded-lg">
+                                Assign
+                            </button>
+                            <button type="button" wire:click="cancel"
+                                class="text-gray-500 bg-white hover:bg-gray-100 px-5 py-2.5 rounded-lg border border-gray-200">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Deployment History: add a Subclass column -->
+        <section>
+            <div >
+                {{-- Add the Livewire deployment history component --}}
+                <livewire:deployment-history />
+            </div>
         </section>
 
 

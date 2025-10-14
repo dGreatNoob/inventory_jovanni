@@ -31,7 +31,7 @@ class Branch extends Model
     public function currentAgents()
     {
         return $this->belongsToMany(Agent::class, 'agent_branch_assignments')
-                    ->withPivot('assigned_at', 'released_at')
+                    ->withPivot('assigned_at', 'released_at', 'subclass')
                     ->wherePivot('released_at', null);
     }
 
@@ -41,5 +41,23 @@ class Branch extends Model
     public function agentAssignments()
     {
         return $this->hasMany(AgentBranchAssignment::class);
+    }
+
+    /**
+     * Get all branch assignments (for relationship).
+     */
+    public function branchAssignments()
+    {
+        return $this->hasMany(AgentBranchAssignment::class);
+    }
+
+    /**
+     * Get active agent assignments with agent details.
+     */
+    public function activeAgents()
+    {
+        return $this->hasMany(AgentBranchAssignment::class)
+            ->whereNull('released_at')
+            ->with('agent');
     }
 }

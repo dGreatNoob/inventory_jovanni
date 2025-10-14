@@ -12,8 +12,10 @@ class Agent extends Model
         'address',
         'contact_num',
         'tin_num',
-        'branch_designation',
+        'status', // changed from branch_designation to status
     ];
+
+    public $timestamps = true;
 
     /**
      * Get all branch assignments (history) for this agent.

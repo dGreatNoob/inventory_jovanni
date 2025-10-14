@@ -6,7 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class AgentBranchAssignment extends Model
 {
-    protected $fillable = ['agent_id', 'branch_id', 'assigned_at', 'released_at'];
+    protected $fillable = [
+        'agent_id',
+        'branch_id',
+        'subclass',
+        'assigned_at',
+        'released_at',
+    ];
 
     public function agent()
     {

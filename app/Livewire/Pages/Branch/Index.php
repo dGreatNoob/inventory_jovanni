@@ -4,6 +4,8 @@ namespace App\Livewire\Pages\Branch;
 
 use Livewire\Component;
 use App\Models\Branch;
+use App\Models\AgentBranchAssignment;
+use Illuminate\Support\Facades\DB;
 
 class Index extends Component
 {
@@ -20,11 +22,26 @@ class Index extends Component
     public $deleteId = null;
     public $selectedItemId;
 
+    // Agent per branch dashboard properties
+    public $dashboardSearch = '';
+    public $sortBy = 'agent_count';
+    public $sortDirection = 'desc';
+
     // Edit properties
     public $edit_name, $edit_code, $edit_category, $edit_address;
     public $edit_remarks, $edit_subclass1, $edit_subclass2, $edit_subclass3;
     public $edit_subclass4, $edit_batch, $edit_branch_code, $edit_company_name;
     public $edit_company_tin, $edit_dept_code, $edit_pull_out_addresse, $edit_vendor_code;
+
+    public function sortByColumn($column)
+    {
+        if ($this->sortBy === $column) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortBy = $column;
+            $this->sortDirection = 'desc';
+        }
+    }
 
     public function submit()
     {
@@ -63,7 +80,7 @@ class Index extends Component
         ]);
     }
 
-        public function edit($id)
+    public function edit($id)
     {
         $branch = Branch::findOrFail($id);
 
@@ -159,6 +176,15 @@ class Index extends Component
         $changePercent = $newLastMonth > 0 ? 
             round((($newThisMonth - $newLastMonth) / $newLastMonth) * 100, 1) : 0;
 
+        // Count active agents deployed per branch
+        $branchesWithAgents = AgentBranchAssignment::whereNull('released_at')
+            ->distinct('branch_id')
+            ->count('branch_id');
+        
+        $coveragePercent = $totalBranches > 0 
+            ? round(($branchesWithAgents / $totalBranches) * 100, 1) 
+            : 0;
+
         return [
             [
                 'label' => 'Total Branches',
@@ -181,26 +207,71 @@ class Index extends Component
                 'gradient' => 'from-purple-500 to-purple-600'
             ],
             [
-                'label' => 'Growth Rate',
-                'value' => $changePercent >= 0 ? "+{$changePercent}%" : "{$changePercent}%",
-                'icon' => '<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>',
+                'label' => 'Branch Coverage',
+                'value' => "{$branchesWithAgents}/{$totalBranches}",
+                'subtext' => "{$coveragePercent}% covered",
+                'icon' => '<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>',
                 'gradient' => 'from-indigo-500 to-indigo-600'
             ]
         ];
     }
 
+    public function getAgentPerBranchStatsProperty()
+    {
+        // Get branches with active agents eager loaded
+        $branches = Branch::with(['activeAgents' => function($query) {
+                $query->with('agent');
+            }])
+            ->when($this->dashboardSearch, function($query) {
+                $query->where(function($q) {
+                    $q->where('name', 'like', '%'.$this->dashboardSearch.'%')
+                    ->orWhere('code', 'like', '%'.$this->dashboardSearch.'%');
+                });
+            })
+            ->get();
+
+        // Calculate agent_count for each branch
+        foreach ($branches as $branch) {
+            $branch->agent_count = $branch->activeAgents->count();
+        }
+
+        // Sort
+        if ($this->sortBy === 'agent_count') {
+            $branches = $this->sortDirection === 'asc' 
+                ? $branches->sortBy('agent_count')
+                : $branches->sortByDesc('agent_count');
+        } elseif ($this->sortBy === 'name') {
+            $branches = $this->sortDirection === 'asc' 
+                ? $branches->sortBy('name')
+                : $branches->sortByDesc('name');
+        } elseif ($this->sortBy === 'code') {
+            $branches = $this->sortDirection === 'asc' 
+                ? $branches->sortBy('code')
+                : $branches->sortByDesc('code');
+        }
+
+        return $branches->values();
+    }
+
     public function render()
     {
-        $items = Branch::where('name', 'like', '%'.$this->search.'%')
-            ->orWhere('code', 'like', '%'.$this->search.'%')
-            ->orWhere('category', 'like', '%'.$this->search.'%')
-            ->orWhere('address', 'like', '%'.$this->search.'%')
+        $items = Branch::query()
+            ->where(function ($query) {
+                $query->where('name', 'like', '%'.$this->search.'%')
+                    ->orWhere('code', 'like', '%'.$this->search.'%')
+                    ->orWhere('category', 'like', '%'.$this->search.'%')
+                    ->orWhere('address', 'like', '%'.$this->search.'%');
+            })
             ->latest()
             ->paginate($this->perPage);
 
+        $totalActiveAgents = AgentBranchAssignment::whereNull('released_at')
+            ->distinct('agent_id')
+            ->count('agent_id');
+
         return view('livewire.pages.branch.index', [
             'items' => $items,
-            'dashboardStats' => $this->getDashboardStatsProperty()
+            'totalActiveAgents' => $totalActiveAgents,
         ]);
     }
 }

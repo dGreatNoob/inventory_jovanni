@@ -3,7 +3,108 @@
 <div class="pt-4">
     <div class="">
         <!-- Dashboard Section - Commented out as requested -->
-        {{-- <x-branch-dashboard :stats="$dashboardStats" /> --}}
+    <x-branch-dashboard :stats="$this->dashboardStats" />
+
+        {{-- Agent Per Branch Dashboard --}}
+        {{-- Agent Per Branch Dashboard --}}
+        <div class="mb-6 bg-white rounded-lg shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+            <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Agents Per Branch</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                        <p class="text-sm text-blue-600 dark:text-blue-400">Total Active Agents</p>
+                        <p class="text-2xl font-bold text-blue-700 dark:text-blue-300">{{ $totalActiveAgents }}</p>
+                    </div>
+                    <div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+                        <p class="text-sm text-green-600 dark:text-green-400">Branches with Agents</p>
+                        <p class="text-2xl font-bold text-green-700 dark:text-green-300">
+                            {{ $this->agentPerBranchStats->where('agent_count', '>', 0)->count() }}/{{ $this->agentPerBranchStats->count() }}
+                        </p>
+                    </div>
+                    <div class="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
+                        <p class="text-sm text-purple-600 dark:text-purple-400">Coverage Rate</p>
+                        <p class="text-2xl font-bold text-purple-700 dark:text-purple-300">
+                            {{ $this->agentPerBranchStats->count() > 0 ? round(($this->agentPerBranchStats->where('agent_count', '>', 0)->count() / $this->agentPerBranchStats->count()) * 100, 1) : 0 }}%
+                        </p>
+                    </div>
+                </div>
+
+                <input 
+                    type="text" 
+                    wire:model.live.debounce.300ms="dashboardSearch" 
+                    placeholder="Search branch name or code..." 
+                    class="w-full md:w-1/2 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                        <tr>
+                            <th class="px-6 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600" wire:click="sortByColumn('name')">
+                                Branch Name @if($sortBy === 'name') {{ $sortDirection === 'asc' ? '↑' : '↓' }} @endif
+                            </th>
+                            <th class="px-6 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600" wire:click="sortByColumn('code')">
+                                Branch Code @if($sortBy === 'code') {{ $sortDirection === 'asc' ? '↑' : '↓' }} @endif
+                            </th>
+                            <th class="px-6 py-3">Address</th>
+                            <th class="px-6 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600" wire:click="sortByColumn('agent_count')">
+                                Active Agents @if($sortBy === 'agent_count') {{ $sortDirection === 'asc' ? '↑' : '↓' }} @endif
+                            </th>
+                            <th class="px-6 py-3">Agent Details</th>
+                            <th class="px-6 py-3">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($this->agentPerBranchStats as $branch)
+                            <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                                <td class="px-6 py-4 font-medium text-gray-900 dark:text-white">{{ $branch->name }}</td>
+                                <td class="px-6 py-4">{{ $branch->code }}</td>
+                                <td class="px-6 py-4">{{ $branch->address }}</td>
+                                <td class="px-6 py-4">
+                                    <span class="px-3 py-1 text-lg font-semibold rounded-full {{ $branch->agent_count > 0 ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' }}">
+                                        {{ $branch->agent_count }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    @if($branch->activeAgents && $branch->activeAgents->count() > 0)
+                                        <div class="space-y-1">
+                                            @foreach($branch->activeAgents as $assignment)
+                                                <div class="text-xs">
+                                                    <span class="font-semibold text-gray-900 dark:text-white">
+                                                        {{ $assignment->agent->agent_code }}
+                                                    </span>
+                                                    - {{ $assignment->agent->name }}
+                                                    @if($assignment->subclass)
+                                                        <span class="text-gray-500 dark:text-gray-400">({{ $assignment->subclass }})</span>
+                                                    @endif
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    @else
+                                        <span class="text-gray-400 text-xs italic">No agents assigned</span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4">
+                                    @if($branch->agent_count > 0)
+                                        <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">Covered</span>
+                                    @else
+                                        <span class="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">No Agent</span>
+                                    @endif
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6" class="px-6 py-8 text-center text-gray-500 dark:text-gray-400">No branches found.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {{-- Your existing branch table --}}
 
         <section
             class="mb-5 max-w-xlg p-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">

@@ -13,12 +13,12 @@ return new class extends Migration
     {
         Schema::create('agents', function (Blueprint $table) {
             $table->id();
-            $table->string('agent_code')->unique(); // added to match validation
+            $table->string('agent_code')->unique();
             $table->string('name');
             $table->string('address');
             $table->string('contact_num');
             $table->string('tin_num')->nullable();
-            $table->string('branch_designation')->nullable(); // added to match validation
+            $table->string('status')->nullable(); // changed from branch_designation to status
             $table->timestamps();
         });
     }

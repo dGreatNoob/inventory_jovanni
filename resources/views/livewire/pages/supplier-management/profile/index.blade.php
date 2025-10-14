@@ -379,6 +379,16 @@
                                 @error('edit_contact_num') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                             </div>
 
+                            <div class="mb-4">
+                                <label for="edit_email" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Email</label>
+                                <input type="email" id="edit_email" wire:model.defer="edit_email"
+                                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
+                                        focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5
+                                        dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
+                                    placeholder="Enter supplier email">
+                                @error('edit_email') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                            </div>
+
                             <div class="md:col-span-2 h-6"></div>
                             
                             <div>

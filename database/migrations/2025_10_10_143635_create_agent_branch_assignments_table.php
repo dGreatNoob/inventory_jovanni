@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('agent_branch_assignments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('agent_code')->constrained()->onDelete('cascade');
+            $table->foreignId('agent_id')->constrained('agents')->onDelete('cascade');
             $table->foreignId('branch_id')->constrained()->onDelete('cascade');
             $table->timestamp('assigned_at')->nullable();
             $table->timestamp('released_at')->nullable(); // null if currently assigned

@@ -76,6 +76,14 @@
                                 class="block w-64 p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                                 placeholder="Search Agent...">
                         </div>
+
+                        <!-- Status Filter Dropdown -->
+                        <select wire:model.live="statusFilter"
+                            class="px-4 py-2 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+                            <option value="all">All Status</option>
+                            <option value="deployed">Deployed</option>
+                            <option value="active">Active</option>
+                        </select>
                     </div>
                 </div>
 
@@ -106,9 +114,9 @@
                                     <td class="px-6 py-4">{{ $item->tin_num }}</td>
                                     <td class="px-6 py-4 text-center">
                                         @if($isDeployed)
-                                            <span class="text-blue-600 font-semibold">Deployed</span>
-                                        @elseif($createdRecent)
-                                            <span class="text-green-600 font-semibold">Active</span>
+                                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">Deployed</span>
+                                        @else
+                                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">Active</span>
                                         @endif
                                     </td>
                                     <td class="px-6 py-4 text-center">

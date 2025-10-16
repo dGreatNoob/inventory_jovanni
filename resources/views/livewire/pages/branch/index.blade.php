@@ -5,7 +5,7 @@
         <!-- Dashboard Section - Commented out as requested -->
     <x-branch-dashboard :stats="$this->dashboardStats" />
 
-        {{-- Agent Per Branch Dashboard --}}
+
         {{-- Agent Per Branch Dashboard --}}
         <div class="mb-6 bg-white rounded-lg shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
             <div class="p-6 border-b border-gray-200 dark:border-gray-700">
@@ -13,29 +13,36 @@
                 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                     <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-                        <p class="text-sm text-blue-600 dark:text-blue-400">Total Active Agents</p>
-                        <p class="text-2xl font-bold text-blue-700 dark:text-blue-300">{{ $totalActiveAgents }}</p>
+                        <p class="text-sm text-blue-600 dark:text-blue-400">Total Branches</p>
+                        <p class="text-2xl font-bold text-blue-700 dark:text-blue-300">{{ $this->agentPerBranchStats->count() }}</p>
                     </div>
                     <div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
-                        <p class="text-sm text-green-600 dark:text-green-400">Branches with Agents</p>
-                        <p class="text-2xl font-bold text-green-700 dark:text-green-300">
-                            {{ $this->agentPerBranchStats->where('agent_count', '>', 0)->count() }}/{{ $this->agentPerBranchStats->count() }}
-                        </p>
+                        <p class="text-sm text-green-600 dark:text-green-400">Total Agents</p>
+                        <p class="text-2xl font-bold text-green-700 dark:text-green-300">{{ $totalAgents }}</p>
                     </div>
                     <div class="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
-                        <p class="text-sm text-purple-600 dark:text-purple-400">Coverage Rate</p>
-                        <p class="text-2xl font-bold text-purple-700 dark:text-purple-300">
-                            {{ $this->agentPerBranchStats->count() > 0 ? round(($this->agentPerBranchStats->where('agent_count', '>', 0)->count() / $this->agentPerBranchStats->count()) * 100, 1) : 0 }}%
-                        </p>
+                        <p class="text-sm text-purple-600 dark:text-purple-400">Active Agents</p>
+                        <p class="text-2xl font-bold text-purple-700 dark:text-purple-300">{{ $totalActiveAgents }}</p>
                     </div>
                 </div>
 
-                <input 
-                    type="text" 
-                    wire:model.live.debounce.300ms="dashboardSearch" 
-                    placeholder="Search branch name or code..." 
-                    class="w-full md:w-1/2 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                />
+                <div class="flex flex-col md:flex-row gap-3 mb-4">
+                    <input 
+                        type="text" 
+                        wire:model.live.debounce.300ms="dashboardSearch" 
+                        placeholder="Search branch name or code..." 
+                        class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    />
+                    
+                    <select 
+                        wire:model.live="statusFilter"
+                        class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    >
+                        <option value="all">All Statuses</option>
+                        <option value="covered">Covered (Has Agents)</option>
+                        <option value="no_agent">No Agent</option>
+                    </select>
+                </div>
             </div>
 
             <div class="overflow-x-auto">

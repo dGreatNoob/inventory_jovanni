@@ -144,6 +144,11 @@
                         :current="request()->routeIs('branch.profile')" wire:navigate>{{ __('Branch management') }}
                     </flux:navlist.item>
 
+                    <flux:navlist.item icon="inbox-stack" href="{{ route('prw.purchaseorder') }}"
+                        :current="request()->routeIs('prw.purchaseorder')" wire:navigate>
+                        {{ __('Purchase Order') }}
+                    </flux:navlist.item>
+
 
                     {{-- <flux:navlist.item icon="banknotes" href=""
                         :current="request()->routeIs('customer.rebate')" wire:navigate>{{ __('Rebate Criteria') }}
@@ -247,7 +252,7 @@
                     </flux:navlist.item>
                 </flux:navlist.group>--}}
 
-                {{--@role(['Super Admin', 'Admin'])
+                {{-- @role(['Super Admin', 'Admin'])
                     <flux:navlist.group expandable
                         :expanded="request()->routeIs('user.index') || request()->routeIs('roles.index')"
                         :heading="__('User Management')" class="lg:grid">

@@ -4,6 +4,7 @@ namespace App\Livewire\Pages\Branch;
 
 use Livewire\Component;
 use App\Models\Branch;
+use App\Models\Agent;
 use App\Models\AgentBranchAssignment;
 use Illuminate\Support\Facades\DB;
 
@@ -24,6 +25,7 @@ class Index extends Component
 
     // Agent per branch dashboard properties
     public $dashboardSearch = '';
+    public $statusFilter = 'all';
     public $sortBy = 'agent_count';
     public $sortDirection = 'desc';
 
@@ -225,7 +227,7 @@ class Index extends Component
             ->when($this->dashboardSearch, function($query) {
                 $query->where(function($q) {
                     $q->where('name', 'like', '%'.$this->dashboardSearch.'%')
-                    ->orWhere('code', 'like', '%'.$this->dashboardSearch.'%');
+                      ->orWhere('code', 'like', '%'.$this->dashboardSearch.'%');
                 });
             })
             ->get();
@@ -233,6 +235,17 @@ class Index extends Component
         // Calculate agent_count for each branch
         foreach ($branches as $branch) {
             $branch->agent_count = $branch->activeAgents->count();
+        }
+
+        // Filter by status
+        if ($this->statusFilter === 'covered') {
+            $branches = $branches->filter(function($branch) {
+                return $branch->agent_count > 0;
+            });
+        } elseif ($this->statusFilter === 'no_agent') {
+            $branches = $branches->filter(function($branch) {
+                return $branch->agent_count == 0;
+            });
         }
 
         // Sort
@@ -265,12 +278,17 @@ class Index extends Component
             ->latest()
             ->paginate($this->perPage);
 
+        // Total agents (all agents in the system)
+        $totalAgents = Agent::count();
+
+        // Total active agents (currently assigned to branches)
         $totalActiveAgents = AgentBranchAssignment::whereNull('released_at')
             ->distinct('agent_id')
             ->count('agent_id');
 
         return view('livewire.pages.branch.index', [
             'items' => $items,
+            'totalAgents' => $totalAgents,
             'totalActiveAgents' => $totalActiveAgents,
         ]);
     }

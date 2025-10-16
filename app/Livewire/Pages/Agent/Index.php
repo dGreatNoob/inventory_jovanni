@@ -19,6 +19,7 @@ class Index extends Component
 
     public $perPage = 10;
     public $search = '';
+    public $statusFilter = 'all';
     public $showDeleteModal = false;
     public $showEditModal = false;
     public $deleteId = null;
@@ -101,9 +102,6 @@ class Index extends Component
             'tin_num' => $this->edit_tin_num,
         ]);
 
-        // Branch assignment syncing removed from Edit modal.
-        // Use Deploy/Assign modal to manage assignments.
-
         $this->showEditModal = false;
         session()->flash('message', 'Agent Profile Updated Successfully.');
     }
@@ -147,7 +145,7 @@ class Index extends Component
         if ($this->isDeployed($agentId)) {
             $this->releaseAgent($agentId);
             session()->flash('message', 'Agent released from active branch assignments.');
-            $this->dispatch('deploymentHistoryRefresh'); // <--- EMIT REFRESH
+            $this->dispatch('deploymentHistoryRefresh');
         } else {
             $this->openAssignModal($agentId);
         }
@@ -162,7 +160,6 @@ class Index extends Component
         $this->showAssignModal = true;
     }
 
-    // When Branch changes, build subclass options from subclass1..subclass4
     public function updatedAssignBranchId($branchId): void
     {
         $this->assign_subclass = null;
@@ -187,13 +184,11 @@ class Index extends Component
 
     public function assignToBranch(): void
     {
-        // Base rules
         $rules = [
             'assign_agent_id' => 'required|integer|exists:agents,id',
             'assign_branch_id' => 'required|integer|exists:branches,id',
         ];
 
-        // Require subclass if there are options for the chosen branch
         if (count($this->subclassOptions) > 0) {
             $rules['assign_subclass'] = 'required|string|in:' . implode(',', array_map(fn($s) => str_replace(',', '\,', $s), $this->subclassOptions));
         } else {
@@ -204,15 +199,13 @@ class Index extends Component
 
         $agent = Agent::findOrFail($this->assign_agent_id);
 
-        // Release any current active assignments (or remove this block if multiple concurrent assignments are desired)
         AgentBranchAssignment::where('agent_id', $agent->id)
             ->whereNull('released_at')
             ->update(['released_at' => now()]);
 
-        // Create new assignment including subclass if given
         $payload = [
             'branch_id' => $this->assign_branch_id,
-            'subclass' => $this->assign_subclass, // nullable
+            'subclass' => $this->assign_subclass,
             'assigned_at' => now(),
         ];
 
@@ -221,8 +214,8 @@ class Index extends Component
         $this->showAssignModal = false;
         session()->flash('message', 'Agent assigned to branch successfully.');
         $this->reset(['assign_agent_id', 'assign_branch_id', 'assign_subclass', 'subclassOptions']);
-        $this->resetPage(); // Ensures status updates after deploy
-        $this->dispatch('deploymentHistoryRefresh'); // <--- EMIT REFRESH
+        $this->resetPage();
+        $this->dispatch('deploymentHistoryRefresh');
     }
 
     protected function releaseAgent(int $agentId): void
@@ -230,7 +223,7 @@ class Index extends Component
         AgentBranchAssignment::where('agent_id', $agentId)
             ->whereNull('released_at')
             ->update(['released_at' => now()]);
-        $this->dispatch('deploymentHistoryRefresh'); // <--- EMIT REFRESH
+        $this->dispatch('deploymentHistoryRefresh');
     }
 
     protected function isDeployed(int $agentId): bool
@@ -242,16 +235,28 @@ class Index extends Component
 
     public function render()
     {
-        // Eager load branchAssignments for up-to-date status logic
-        $items = Agent::with('branchAssignments')->where(function ($q) {
+        $query = Agent::with('branchAssignments')
+            ->where(function ($q) {
                 $q->where('name', 'like', '%'.$this->search.'%')
                   ->orWhere('agent_code', 'like', '%'.$this->search.'%')
                   ->orWhere('address', 'like', '%'.$this->search.'%')
                   ->orWhere('contact_num', 'like', '%'.$this->search.'%')
                   ->orWhere('tin_num', 'like', '%'.$this->search.'%');
-            })
-            ->latest()
-            ->paginate($this->perPage);
+            });
+
+        // Apply status filter
+        if ($this->statusFilter === 'deployed') {
+            $query->whereHas('branchAssignments', function($q) {
+                $q->whereNull('released_at');
+            });
+        } elseif ($this->statusFilter === 'active') {
+            $query->whereDoesntHave('branchAssignments', function($q) {
+                $q->whereNull('released_at');
+            });
+        }
+        // 'all' shows everything - no additional filter needed
+
+        $items = $query->latest()->paginate($this->perPage);
 
         $deployedAgentIds = AgentBranchAssignment::select('agent_id')
             ->whereNull('released_at')

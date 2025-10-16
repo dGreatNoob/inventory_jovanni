@@ -23,6 +23,8 @@ use App\Livewire\Pages\PaperRollWarehouse\PurchaseOrder\ViewItem as PRWPurchaseO
 
 use App\Livewire\Pages\SupplierManagement\Profile\Index as SupplierProfile;
 use App\Livewire\Pages\Customer\Index as CustomerProfile;
+use App\Livewire\Pages\Agent\Index as AgentProfile;
+use App\Livewire\Pages\Branch\Index as BranchProfile;
 
 use App\Livewire\Pages\Setup\Department\Index as DepartmentSetup;
 use App\Livewire\Pages\Setup\ItemType\Index as ItemTypeSetup;
@@ -48,6 +50,7 @@ use App\Livewire\Pages\SalesManagement\ViewSalesReturn;
 use App\Livewire\Pages\Shipment\Index as createShipmentIndex;
 use App\Livewire\Pages\Shipment\View as createShipmentView;
 use App\Livewire\Pages\Shipment\QrScannder as ShipmentQrScannder;
+use App\Models\Branch;
 
 Route::redirect('', '/login')->name('home');
 
@@ -82,8 +85,16 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/suppliermanagement/profile', SupplierProfile::class)
         ->name('supplier.profile');
+
     Route::get('/customermanagement/profile', CustomerProfile::class)
         ->name('customer.profile');
+
+    Route::get('/agentmanagement/profile', AgentProfile::class)
+        ->name('agent.profile');
+
+    Route::get('/Branchmanagement/profile', BranchProfile::class)
+        ->name('branch.profile');
+
 
     Route::get('/RequestSlip/{request_slip_id}', View::class)
         ->name('requisition.requestslip.view');

@@ -9,8 +9,27 @@ RUN composer install --ignore-platform-reqs --no-scripts --no-autoloader
 # --- Node Build Stage ---
 FROM node:20 AS node_modules
 WORKDIR /app
+
+# Install PHP and Composer for CSS dependencies
+RUN apt-get update && apt-get install -y php-cli unzip
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+# Copy composer files and install dependencies
+COPY composer.json composer.lock ./
+RUN composer install --ignore-platform-reqs --no-scripts --no-autoloader
+
+# Copy package files and install node dependencies
 COPY package.json package-lock.json ./
 RUN npm install
+
+# Copy application files
+COPY . .
+
+# Copy vendor directory
+COPY --from=vendor /app/vendor ./vendor
+
+# Build assets
+RUN npm run build
 
 # --- App Stage ---
 FROM php:8.2-fpm
@@ -39,21 +58,20 @@ WORKDIR /var/www
 # Copy existing application
 COPY . .
 
-# Copy vendor and node_modules
-COPY --from=vendor /app/vendor ./vendor
-COPY --from=node_modules /app/node_modules ./node_modules
-
-# Install PHP dependencies
-RUN composer install --no-interaction --prefer-dist --optimize-autoloader
-
-# Install Node dependencies and build assets
-RUN npm run build || npm run dev
-
-# Create necessary directories
+# Create necessary directories for Laravel
 RUN mkdir -p /var/www/storage/framework/cache/data \
     /var/www/storage/framework/sessions \
     /var/www/storage/framework/views \
-    /var/www/storage/logs
+    /var/www/storage/logs \
+    /var/www/bootstrap/cache
+
+# Copy vendor and node_modules
+COPY --from=vendor /app/vendor ./vendor
+COPY --from=node_modules /app/node_modules ./node_modules
+COPY --from=node_modules /app/public/build ./public/build
+
+# Install PHP dependencies
+RUN composer install --no-interaction --prefer-dist --optimize-autoloader
 
 # Set permissions
 RUN chown -R www-data:www-data /var/www && chmod -R 755 /var/www/storage

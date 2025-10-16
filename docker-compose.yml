@@ -37,12 +37,9 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=redis
-      - REVERB_HOST=reverb
-      - REVERB_PORT=8080
     depends_on:
       - db
       - redis
-      - reverb
 
   db:
     image: mysql:8.0
@@ -69,24 +66,27 @@ services:
     volumes:
       - redisdata:/data
 
-  reverb:
-    image: laravel/reverb:latest
-    container_name: inventory-jovanni-reverb
-    restart: unless-stopped
-    ports:
-      - "8080:8080"
-    environment:
-      - REVERB_APP_ID=116692
-      - REVERB_APP_KEY=y6tzoywvblbve39gvsuh
-      - REVERB_APP_SECRET=geerxqbgevoymkkzmx5f
-      - REVERB_HOST=0.0.0.0
-      - REVERB_PORT=8080
-      - REVERB_SCHEME=http
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - REDIS_PASSWORD=redis
-    depends_on:
-      - redis
+  # Reverb service disabled - uncomment if needed
+  # reverb:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.reverb
+  #   container_name: inventory-jovanni-reverb
+  #   restart: unless-stopped
+  #   ports:
+  #     - "8080:8080"
+  #   environment:
+  #     - REVERB_APP_ID=116692
+  #     - REVERB_APP_KEY=y6tzoywvblbve39gvsuh
+  #     - REVERB_APP_SECRET=geerxqbgevoymkkzmx5f
+  #     - REVERB_HOST=0.0.0.0
+  #     - REVERB_PORT=8080
+  #     - REVERB_SCHEME=http
+  #     - REDIS_HOST=redis
+  #     - REDIS_PORT=6379
+  #     - REDIS_PASSWORD=redis
+  #   depends_on:
+  #     - redis
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin:latest

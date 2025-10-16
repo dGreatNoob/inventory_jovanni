@@ -11,8 +11,7 @@ services:
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ./public:/var/www/public
-      - ./storage:/var/www/storage
+      - .:/var/www
     depends_on:
       - app
 

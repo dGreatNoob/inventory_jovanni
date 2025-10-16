@@ -155,7 +155,7 @@
                     </flux:navlist.item>
                     <!-- <flux:navlist.item icon="banknotes" href="{{ route('finance.currency-conversion') }}"  wire:navigate>{{ __('Currency Conversion') }}
                     </flux:navlist.item> -->
-                </flux:navlist.group>--}}
+                </flux:navlist.group>
 
                 {{--<flux:navlist.group expandable :expanded="request()->routeIs('shipment.*')"
                     :heading="__('Shipment Management')" class="lg:grid">
@@ -197,12 +197,6 @@
                     <flux:navlist.item icon="building-storefront" href="{{ route('branch.profile') }}"
                         :current="request()->routeIs('branch.profile')" wire:navigate>{{ __('Branch management') }}
                     </flux:navlist.item>
-
-                    <flux:navlist.item icon="inbox-stack" href="{{ route('prw.purchaseorder') }}"
-                        :current="request()->routeIs('prw.purchaseorder')" wire:navigate>
-                        {{ __('Purchase Order') }}
-                    </flux:navlist.item>
-
 
                     {{-- <flux:navlist.item icon="banknotes" href=""
                         :current="request()->routeIs('customer.rebate')" wire:navigate>{{ __('Rebate Criteria') }}

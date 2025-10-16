@@ -42,6 +42,11 @@
 - [ ] Expense Tracking
 - [ ] Currency Conversion
 
+### Operational Management (Newly Added)
+- [ ] **Agent Management** - Agent profiles, assignments, and tracking
+- [ ] **Branch Management** - Branch operations and agent assignments
+- [ ] **Deployment History** - System deployment tracking
+
 ### Other Modules
 - [ ] Shipment Management
 - [ ] User Management & Permissions

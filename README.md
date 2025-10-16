@@ -30,7 +30,10 @@ Jovanni Bags is a **comprehensive inventory management system** built with Larav
 - **Core Infrastructure** - Database, authentication, and basic UI components
 
 ### ⚠️ Under Revision
-- Sales Management, Finance, Shipment Management, and other modules are currently under revision
+- **Operational Management** - Agent Management, Branch Management (newly added)
+- **Sales Management** - Sales orders and returns
+- **Finance Module** - Receivables, payables, and expenses
+- **Shipment Management** and other modules are currently under revision
 
 **See [PRODUCTION_READINESS.md](./PRODUCTION_READINESS.md) for detailed status and deployment instructions.**
 

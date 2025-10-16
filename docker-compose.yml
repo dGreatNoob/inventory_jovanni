@@ -1,41 +1,48 @@
 version: '3.8'
 
 services:
-  app:
-    image: php:8.2-fpm
-    container_name: inventory-jovanni-app
+  nginx:
+    image: nginx:alpine
+    container_name: inventory-jovanni-nginx
     restart: unless-stopped
     ports:
-      - "8080:8000"
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./public:/var/www/public
+      - ./storage:/var/www/storage
+    depends_on:
+      - app
+
+  app:
+    build: .
+    image: inventory-jovanni-app
+    container_name: inventory-jovanni-app
+    restart: unless-stopped
     volumes:
       - .:/var/www
-      - ./vendor:/var/www/vendor
-      - ./node_modules:/var/www/node_modules
       - ./storage:/var/www/storage
     environment:
-      - APP_ENV=local
-      - APP_DEBUG=true
-      - APP_KEY=base64:SomeRandomString
+      - APP_ENV=production
+      - APP_DEBUG=false
+      - APP_KEY=base64:wOtTC9tc+PMFkmrGZb4FpoNJ4jDrfoA+iYFkzckOhF0=
       - DB_CONNECTION=mysql
       - DB_HOST=db
       - DB_PORT=3306
       - DB_DATABASE=inventory_jovanni
       - DB_USERNAME=jovanni
       - DB_PASSWORD=secret
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=redis
+      - REVERB_HOST=reverb
+      - REVERB_PORT=8080
     depends_on:
       - db
-    command: >
-      sh -c "
-        apt-get update &&
-        apt-get install -y libpng-dev libonig-dev libxml2-dev zip unzip git curl libzip-dev libpq-dev sqlite3 libsqlite3-dev &&
-        docker-php-ext-install pdo pdo_mysql pdo_sqlite mbstring exif pcntl bcmath gd zip &&
-        curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer &&
-        cd /var/www &&
-        composer install --ignore-platform-reqs &&
-        php artisan key:generate &&
-        php artisan migrate:fresh --seed &&
-        php artisan serve --host=0.0.0.0 --port=8000
-      "
+      - redis
+      - reverb
 
   db:
     image: mysql:8.0
@@ -44,12 +51,42 @@ services:
     ports:
       - "3307:3306"
     environment:
-      MYSQL_DATABASE: inventory-jovanni
+      MYSQL_DATABASE: inventory_jovanni
       MYSQL_USER: jovanni
       MYSQL_PASSWORD: secret
       MYSQL_ROOT_PASSWORD: rootsecret
     volumes:
       - dbdata:/var/lib/mysql
+      - ./mysql/my.cnf:/etc/mysql/conf.d/my.cnf
+
+  redis:
+    image: redis:7-alpine
+    container_name: inventory-jovanni-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass redis
+    volumes:
+      - redisdata:/data
+
+  reverb:
+    image: laravel/reverb:latest
+    container_name: inventory-jovanni-reverb
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - REVERB_APP_ID=116692
+      - REVERB_APP_KEY=y6tzoywvblbve39gvsuh
+      - REVERB_APP_SECRET=geerxqbgevoymkkzmx5f
+      - REVERB_HOST=0.0.0.0
+      - REVERB_PORT=8080
+      - REVERB_SCHEME=http
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=redis
+    depends_on:
+      - redis
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin:latest
@@ -68,3 +105,4 @@ services:
 
 volumes:
   dbdata:
+  redisdata:

@@ -49,10 +49,22 @@ RUN composer install --no-interaction --prefer-dist --optimize-autoloader
 # Install Node dependencies and build assets
 RUN npm run build || npm run dev
 
+# Create necessary directories
+RUN mkdir -p /var/www/storage/framework/cache/data \
+    /var/www/storage/framework/sessions \
+    /var/www/storage/framework/views \
+    /var/www/storage/logs
+
 # Set permissions
 RUN chown -R www-data:www-data /var/www && chmod -R 755 /var/www/storage
 
-EXPOSE 8000
+# Set proper permissions for storage
+RUN chown -R www-data:www-data /var/www/storage && \
+    chmod -R 775 /var/www/storage
 
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
+# Expose PHP-FPM port
+EXPOSE 9000
+
+# Start PHP-FPM
+CMD ["php-fpm"]
 

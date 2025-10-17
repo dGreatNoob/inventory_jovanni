@@ -65,21 +65,74 @@
                     </flux:navlist.item>
                 </flux:navlist.group> --}}
 
-                {{--<flux:navlist.group expandable :expanded="request()->routeIs('supplies.*')"
-                    :heading="__('Product Management')" class="lg:grid">
-                    <flux:navlist.item icon="inbox-stack" href="{{ route('supplies.inventory') }}"
-                        :current="request()->routeIs('supplies.inventory')" wire:navigate>{{ __('Inventory') }}
+                <flux:navlist.group 
+                    expandable 
+                    :expanded="request()->routeIs('product-management.*')" 
+                    :heading="__('Product Management')" 
+                    class="lg:grid text-left"
+                >
+                    <flux:navlist.item 
+                        icon="cube" 
+                        href="{{ route('product-management.index') }}" 
+                        :current="request()->routeIs('product-management.index')" 
+                        wire:navigate
+                    >
+                        <div class="flex items-center justify-between w-full">
+                            <span>{{ __('Products') }}</span>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-green-200 text-green-900 dark:bg-green-700 dark:text-white hover:bg-green-300 dark:hover:bg-green-600 transition-colors">
+                                Ready
+                            </span>
+                        </div>
                     </flux:navlist.item>
 
-                    <flux:navlist.item icon="inbox-stack" href="{{ route('supplies.PurchaseOrder') }}"
-                        :current="request()->routeIs('supplies.PurchaseOrder')" wire:navigate>{{ __('Purchase Order') }}
+                    <flux:navlist.item 
+                        icon="tag" 
+                        href="{{ route('product-management.categories') }}" 
+                        :current="request()->routeIs('product-management.categories')" 
+                        wire:navigate
+                    >
+                        <div class="flex items-center justify-between w-full">
+                            <span>{{ __('Categories') }}</span>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-green-200 text-green-900 dark:bg-green-700 dark:text-white hover:bg-green-300 dark:hover:bg-green-600 transition-colors">
+                                Ready
+                            </span>
+                        </div>
                     </flux:navlist.item>
-                     <flux:navlist.item icon="inbox-stack" href=""  wire:navigate>{{ __('Restock') }}
-                    </flux:navlist.item> 
-                </flux:navlist.group>--}}
-                {{--<flux:navlist.group expandable
+
+                    <flux:navlist.item 
+                        icon="photo" 
+                        href="{{ route('product-management.images') }}" 
+                        :current="request()->routeIs('product-management.images')" 
+                        wire:navigate
+                    >
+                        <div class="flex items-center justify-between w-full">
+                            <span>{{ __('Images') }}</span>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-green-200 text-green-900 dark:bg-green-700 dark:text-white hover:bg-green-300 dark:hover:bg-green-600 transition-colors">
+                                Ready
+                            </span>
+                        </div>
+                    </flux:navlist.item>
+
+                    <flux:navlist.item 
+                        icon="chart-bar" 
+                        href="{{ route('product-management.dashboard') }}" 
+                        :current="request()->routeIs('product-management.dashboard')" 
+                        wire:navigate
+                    >
+                        <div class="flex items-center justify-between w-full">
+                            <span>{{ __('Analytics') }}</span>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-green-200 text-green-900 dark:bg-green-700 dark:text-white hover:bg-green-300 dark:hover:bg-green-600 transition-colors">
+                                Ready
+                            </span>
+                        </div>
+                    </flux:navlist.item>
+                </flux:navlist.group>
+                                
+
+
+                <flux:navlist.group expandable
                     :expanded="request()->routeIs('salesorder.*') || request()->routeIs('salesreturn.*')"
-                    :heading="__('Sales Management')" class="lg:grid">
+                    :heading="__('Sales Management')" class="lg:grid text-left">
 
                     <flux:navlist.item icon="inbox-stack" href="{{ route('salesorder.index') }}"
                         :current="request()->routeIs('salesorder.index')" wire:navigate>{{ __('Sales Order') }}
@@ -88,6 +141,7 @@
                         :current="request()->routeIs('salesorder.return')" wire:navigate>{{ __('Sales Return') }}
                     </flux:navlist.item>
                 </flux:navlist.group>
+
                 <flux:navlist.group expandable :expanded="request()->routeIs('finance.*')" :heading="__('Finance')"
                     class="lg:grid">
                     <flux:navlist.item icon="banknotes" href="{{ route('finance.receivables') }}"
@@ -101,7 +155,7 @@
                     </flux:navlist.item>
                     <!-- <flux:navlist.item icon="banknotes" href="{{ route('finance.currency-conversion') }}"  wire:navigate>{{ __('Currency Conversion') }}
                     </flux:navlist.item> -->
-                </flux:navlist.group>--}}
+                </flux:navlist.group>
 
                 {{--<flux:navlist.group expandable :expanded="request()->routeIs('shipment.*')"
                     :heading="__('Shipment Management')" class="lg:grid">
@@ -143,8 +197,6 @@
                     <flux:navlist.item icon="building-storefront" href="{{ route('branch.profile') }}"
                         :current="request()->routeIs('branch.profile')" wire:navigate>{{ __('Branch management') }}
                     </flux:navlist.item>
-
-
 
                     {{-- <flux:navlist.item icon="banknotes" href=""
                         :current="request()->routeIs('customer.rebate')" wire:navigate>{{ __('Rebate Criteria') }}

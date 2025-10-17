@@ -1,6 +1,6 @@
 # 🎒 Jovanni Bags - Inventory Management System
 
-[![Development Status](https://img.shields.io/badge/Status-Active_Development-brightgreen.svg)](https://github.com/dGreatNoob/inventory_jovanni/tree/dev)
+[![Development Status](https://img.shields.io/badge/Status-Test_Production_Ready-orange.svg)](https://github.com/dGreatNoob/inventory_jovanni/tree/dev)
 [![Laravel](https://img.shields.io/badge/Laravel-11.x-red.svg)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.3-blue.svg)](https://php.net)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://docker.com)
@@ -21,6 +21,21 @@ Jovanni Bags is a **comprehensive inventory management system** built with Larav
 - **🔄 Real-time Updates** - Live data synchronization across all modules
 - **📱 Mobile Responsive** - Optimized for all device sizes
 - **🔐 Role-based Access** - Secure multi-user system with permissions
+
+## 🎯 Production Status
+
+### ✅ Ready for Test Production
+- **Product Management Module** - Complete with CRUD operations, categories, images, and inventory tracking
+- **Dashboard** - Real-time statistics and product-focused analytics
+- **Core Infrastructure** - Database, authentication, and basic UI components
+
+### ⚠️ Under Revision
+- **Operational Management** - Agent Management, Branch Management (newly added)
+- **Sales Management** - Sales orders and returns
+- **Finance Module** - Receivables, payables, and expenses
+- **Shipment Management** and other modules are currently under revision
+
+**See [PRODUCTION_READINESS.md](./PRODUCTION_READINESS.md) for detailed status and deployment instructions.**
 
 ## 🚀 Quick Start
 

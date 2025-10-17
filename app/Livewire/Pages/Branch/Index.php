@@ -10,10 +10,7 @@ use Illuminate\Support\Facades\DB;
 
 class Index extends Component
 {
-    public $name, $subclass1, $subclass2, $subclass3, $subclass4;
-    public $code, $category, $address, $remarks;
-    public $batch, $branch_code, $company_name, $company_tin;
-    public $dept_code, $pull_out_addresse, $vendor_code;
+    public $name, $address, $contact_num, $manager_name;
 
     public $editData = [];
     public $perPage = 10;
@@ -30,10 +27,7 @@ class Index extends Component
     public $sortDirection = 'desc';
 
     // Edit properties
-    public $edit_name, $edit_code, $edit_category, $edit_address;
-    public $edit_remarks, $edit_subclass1, $edit_subclass2, $edit_subclass3;
-    public $edit_subclass4, $edit_batch, $edit_branch_code, $edit_company_name;
-    public $edit_company_tin, $edit_dept_code, $edit_pull_out_addresse, $edit_vendor_code;
+    public $edit_name, $edit_address, $edit_contact_num, $edit_manager_name;
 
     public function sortByColumn($column)
     {
@@ -49,36 +43,21 @@ class Index extends Component
     {
         $this->validate([
             'name' => 'required|string',
-            'code' => 'required|string',
-            'category' => 'required|string',
             'address' => 'required|string',
+            'contact_num' => 'nullable|string',
+            'manager_name' => 'nullable|string',
         ]);
 
         Branch::create([
             'name' => $this->name,
-            'subclass1' => $this->subclass1,
-            'subclass2' => $this->subclass2,
-            'subclass3' => $this->subclass3,
-            'subclass4' => $this->subclass4,
-            'code' => $this->code,
-            'category' => $this->category,
             'address' => $this->address,
-            'remarks' => $this->remarks,
-            'batch' => $this->batch,
-            'branch_code' => $this->branch_code,
-            'company_name' => $this->company_name,
-            'company_tin' => $this->company_tin,
-            'dept_code' => $this->dept_code,
-            'pull_out_addresse' => $this->pull_out_addresse,
-            'vendor_code' => $this->vendor_code,
+            'contact_num' => $this->contact_num,
+            'manager_name' => $this->manager_name,
         ]);
 
         session()->flash('message', 'Branch Profile Added Successfully.');
         $this->reset([
-            'name','subclass1','subclass2','subclass3','subclass4',
-            'code','category','address','remarks',
-            'batch','branch_code','company_name','company_tin',
-            'dept_code','pull_out_addresse','vendor_code'
+            'name', 'address', 'contact_num', 'manager_name'
         ]);
     }
 
@@ -88,21 +67,9 @@ class Index extends Component
 
         $this->selectedItemId = $id;
         $this->edit_name = $branch->name;
-        $this->edit_code = $branch->code;
-        $this->edit_category = $branch->category;
         $this->edit_address = $branch->address;
-        $this->edit_remarks = $branch->remarks;
-        $this->edit_subclass1 = $branch->subclass1;
-        $this->edit_subclass2 = $branch->subclass2;
-        $this->edit_subclass3 = $branch->subclass3;
-        $this->edit_subclass4 = $branch->subclass4;
-        $this->edit_batch = $branch->batch;
-        $this->edit_branch_code = $branch->branch_code;
-        $this->edit_company_name = $branch->company_name;
-        $this->edit_company_tin = $branch->company_tin;
-        $this->edit_dept_code = $branch->dept_code;
-        $this->edit_pull_out_addresse = $branch->pull_out_addresse;
-        $this->edit_vendor_code = $branch->vendor_code;
+        $this->edit_contact_num = $branch->contact_num;
+        $this->edit_manager_name = $branch->manager_name;
 
         $this->showEditModal = true;
     }
@@ -111,29 +78,17 @@ class Index extends Component
     {
         $this->validate([
             'edit_name' => 'required|string',
-            'edit_code' => 'required|string',
-            'edit_category' => 'required|string',
             'edit_address' => 'required|string',
+            'edit_contact_num' => 'nullable|string',
+            'edit_manager_name' => 'nullable|string',
         ]);
 
         $branch = Branch::findOrFail($this->selectedItemId);
         $branch->update([
             'name' => $this->edit_name,
-            'code' => $this->edit_code,
-            'category' => $this->edit_category,
             'address' => $this->edit_address,
-            'remarks' => $this->edit_remarks,
-            'subclass1' => $this->edit_subclass1,
-            'subclass2' => $this->edit_subclass2,
-            'subclass3' => $this->edit_subclass3,
-            'subclass4' => $this->edit_subclass4,
-            'batch' => $this->edit_batch,
-            'branch_code' => $this->edit_branch_code,
-            'company_name' => $this->edit_company_name,
-            'company_tin' => $this->edit_company_tin,
-            'dept_code' => $this->edit_dept_code,
-            'pull_out_addresse' => $this->edit_pull_out_addresse,
-            'vendor_code' => $this->edit_vendor_code,
+            'contact_num' => $this->edit_contact_num,
+            'manager_name' => $this->edit_manager_name,
         ]);
 
         $this->showEditModal = false;
@@ -227,7 +182,8 @@ class Index extends Component
             ->when($this->dashboardSearch, function($query) {
                 $query->where(function($q) {
                     $q->where('name', 'like', '%'.$this->dashboardSearch.'%')
-                      ->orWhere('code', 'like', '%'.$this->dashboardSearch.'%');
+                      ->orWhere('address', 'like', '%'.$this->dashboardSearch.'%')
+                      ->orWhere('manager_name', 'like', '%'.$this->dashboardSearch.'%');
                 });
             })
             ->get();
@@ -271,9 +227,9 @@ class Index extends Component
         $items = Branch::query()
             ->where(function ($query) {
                 $query->where('name', 'like', '%'.$this->search.'%')
-                    ->orWhere('code', 'like', '%'.$this->search.'%')
-                    ->orWhere('category', 'like', '%'.$this->search.'%')
-                    ->orWhere('address', 'like', '%'.$this->search.'%');
+                    ->orWhere('address', 'like', '%'.$this->search.'%')
+                    ->orWhere('contact_num', 'like', '%'.$this->search.'%')
+                    ->orWhere('manager_name', 'like', '%'.$this->search.'%');
             })
             ->latest()
             ->paginate($this->perPage);

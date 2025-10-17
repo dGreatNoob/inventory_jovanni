@@ -1,21 +1,9 @@
 # syntax=docker/dockerfile:1
 
-# --- Build Stage ---
-FROM composer:2.7 AS vendor
-WORKDIR /app
-COPY composer.json composer.lock ./
-RUN composer install --ignore-platform-reqs --no-scripts --no-autoloader
-
-# --- Node Build Stage ---
-FROM node:20 AS node_modules
-WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm install
-
-# --- App Stage ---
+# --- Production Stage ---
 FROM php:8.2-fpm
 
-# Install system dependencies
+# Install system dependencies in one layer
 RUN apt-get update && apt-get install -y \
     libpng-dev \
     libonig-dev \
@@ -26,31 +14,46 @@ RUN apt-get update && apt-get install -y \
     curl \
     libzip-dev \
     libpq-dev \
-    && docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd zip
+    sqlite3 \
+    libsqlite3-dev \
+    nodejs \
+    npm \
+    && docker-php-ext-install pdo pdo_mysql pdo_sqlite mbstring exif pcntl bcmath gd zip \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install Composer
-COPY --from=vendor /usr/bin/composer /usr/bin/composer
+COPY --from=composer:2.7 /usr/bin/composer /usr/bin/composer
 
 # Set working directory
 WORKDIR /var/www
 
-# Copy existing application
+# Copy application code
 COPY . .
 
-# Copy vendor and node_modules
-COPY --from=vendor /app/vendor ./vendor
-COPY --from=node_modules /app/node_modules ./node_modules
+# Create necessary directories
+RUN mkdir -p storage/framework/cache/data \
+    storage/framework/sessions \
+    storage/framework/views \
+    storage/logs \
+    bootstrap/cache
 
 # Install PHP dependencies
-RUN composer install --no-interaction --prefer-dist --optimize-autoloader
+RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-scripts
 
 # Install Node dependencies and build assets
-RUN npm run build || npm run dev
+RUN npm install && npm run build
+
+# Run post-install scripts
+RUN php artisan package:discover --ansi
 
 # Set permissions
-RUN chown -R www-data:www-data /var/www && chmod -R 755 /var/www/storage
+RUN chown -R www-data:www-data /var/www && \
+    chmod -R 755 /var/www && \
+    chmod -R 775 /var/www/storage /var/www/bootstrap/cache
 
-EXPOSE 8000
+# Expose PHP-FPM port
+EXPOSE 9000
 
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
-
+# Start PHP-FPM
+CMD ["php-fpm"]

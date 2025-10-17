@@ -21,14 +21,6 @@ use App\Livewire\Pages\PaperRollWarehouse\PurchaseOrder\Show as PRWPurchaseOrder
 use App\Livewire\Pages\PaperRollWarehouse\Profile\Index as PRWProfile;
 use App\Livewire\Pages\PaperRollWarehouse\PurchaseOrder\ViewItem as PRWPurchaseOrderViewItem;
 
-use App\Livewire\Pages\Supplies\Inventory\Index as SuppliesInventory;
-use App\Livewire\Pages\Supplies\Inventory\StockBatches;
-use App\Livewire\Pages\Supplies\PurchaseOrder\Index as SuppliesPurchaseOrder;
-use App\Livewire\Pages\Supplies\PurchaseOrder\Create as CreateSuppliesPurchaseOrder;
-use App\Livewire\Pages\Supplies\PurchaseOrder\Show as ShowSuppliesPurchaseOrder;
-use App\Livewire\Pages\Supplies\PurchaseOrder\Edit as EditSuppliesPurchaseOrder;
-
-
 use App\Livewire\Pages\SupplierManagement\Profile\Index as SupplierProfile;
 use App\Livewire\Pages\Customer\Index as CustomerProfile;
 use App\Livewire\Pages\Agent\Index as AgentProfile;
@@ -39,12 +31,15 @@ use App\Livewire\Pages\Setup\ItemType\Index as ItemTypeSetup;
 use App\Livewire\Pages\Setup\Allocation\Index as AllocationSetup;
 use App\Livewire\Pages\Notifications\Index as Notifications;
 
+// Product Management
+use App\Livewire\Pages\ProductManagement\Index as ProductManagement;
+use App\Livewire\Pages\ProductManagement\CategoryManagement;
+
 
 
 use App\Livewire\Pages\User\Index as UserIndex;
 use App\Livewire\Pages\RolePermission\Index as RolePermissionIndex;
 //QR CODE PRINTING
-use App\Models\SupplyProfile;
 use App\Livewire\ActivityLogs;
 use App\Livewire\UserLogs;
 
@@ -65,9 +60,6 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/RequestSlip', RequestSlip::class)
         ->name('requisition.requestslip');
-
-    Route::get('/Product/Inventory', SuppliesInventory::class)
-        ->name('supplies.inventory');
     
     Route::get('/Shipment', createShipmentIndex::class)
         ->name('shipment.index');   
@@ -78,31 +70,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/Shipment/scan', ShipmentQrScannder::class)
         ->name('shipment.qrscanner');
 
-    Route::get('/Product/Inventory/{supply}/stocks', StockBatches::class)
-        ->name('supplies.inventory.stocks');
-
-    Route::get('/Product/PurchaseOrder', SuppliesPurchaseOrder::class)
-        ->name('supplies.PurchaseOrder');
-
-    Route::get('/Product/PurchaseOrder/Create', CreateSuppliesPurchaseOrder::class)
-        ->name('supplies.PurchaseOrder.create');
-
-    Route::get('/Product/PurchaseOrder/Show/{Id}', ShowSuppliesPurchaseOrder::class)
-        ->name('supplies.PurchaseOrder.show');
-
-    Route::get('/Product/PurchaseOrder/ShowForApproval/{Id}', \App\Livewire\Pages\Supplies\PurchaseOrder\ShowForApproval::class)
-        ->name('supplies.PurchaseOrder.showForApproval');
-
-    Route::get('/Product/PurchaseOrder/ShowReceivingReport/{Id}', \App\Livewire\Pages\Supplies\PurchaseOrder\ShowReceivingReport::class)
-        ->name('supplies.PurchaseOrder.showReceivingReport');
-
-    Route::get('/Product/PurchaseOrder/ShowStandard/{Id}', \App\Livewire\Pages\Supplies\PurchaseOrder\ShowStandard::class)
-        ->name('supplies.PurchaseOrder.showStandard');
-
-    Route::get('/Product/PurchaseOrder/Edit/{Id}', EditSuppliesPurchaseOrder::class)
-        ->name('supplies.PurchaseOrder.edit');
-
-        Route::get('/reports/financial-summary', \App\Livewire\Pages\Reports\ProfitLoss::class)
+    Route::get('/reports/financial-summary', \App\Livewire\Pages\Reports\ProfitLoss::class)
         ->name('reports.financial-summary');
 
     Route::prefix('prw')->name('prw.')->group(function () {
@@ -161,11 +129,6 @@ Route::middleware(['auth'])->group(function () {
     });
 
     //QR CODE PRINTING
-    Route::get('/product/print/{supply_sku}', function ($supply_sku) {
-        $supply = SupplyProfile::with(['itemType', 'allocation'])->where('supply_sku',$supply_sku)->firstOrFail();
-        return view('livewire.pages.qrcode.supplyprint', compact('supply'));
-    })->name('supplies.print');
-
     Route::get('/purchase-order/print/{po_num}', function ($po_num) {
         $purchaseOrder = \App\Models\PurchaseOrder::with(['supplier', 'department', 'supplyOrders.supplyProfile'])->where('po_num', $po_num)->firstOrFail();
         return view('livewire.pages.qrcode.purchaseorderprint', compact('purchaseOrder'));
@@ -175,6 +138,22 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/sales-order/{salesOrderId}', Viewsalesorder::class)->name('salesorder.view');
     Route::get('/sales-return', SalesManagementSalesReturn::class)->name('salesorder.return');
     Route::get('/sales-return/{salesreturnId}', ViewSalesReturn::class)->name('salesreturn.view');
+
+    // Product Management
+    Route::prefix('product-management')->name('product-management.')->group(function () {
+        Route::get('/', ProductManagement::class)->name('index');
+        Route::get('/categories', CategoryManagement::class)->name('categories');
+        Route::get('/suppliers', \App\Livewire\Pages\SupplierManagement\Profile\Index::class)->name('suppliers');
+        Route::get('/locations', \App\Livewire\Pages\ProductManagement\InventoryLocationManagement::class)->name('locations');
+        Route::get('/images', \App\Livewire\Pages\ProductManagement\ProductImageGallery::class)->name('images');
+        Route::get('/dashboard', \App\Livewire\Pages\ProductManagement\InventoryDashboard::class)->name('dashboard');
+        Route::get('/print-catalog', function() {
+            $products = \App\Models\Product::with(['images' => function($q){
+                $q->orderByDesc('is_primary')->orderBy('sort_order')->orderBy('created_at', 'desc');
+            }])->orderBy('name')->get();
+            return view('livewire.pages.product-management.print-catalog', compact('products'));
+        })->name('print');
+    });
 //    Route::get('/notifications', Notifications::class)
 //         ->name('notifications.index');
 
@@ -284,5 +263,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('settings/password', Password::class)->name('settings.password');
     Route::get('settings/appearance', Appearance::class)->name('settings.appearance');
 });
+
 
 require __DIR__ . '/auth.php';

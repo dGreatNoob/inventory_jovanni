@@ -22,3 +22,6 @@ yarn-error.log
 /.vscode
 /.zed
 db_schema/
+/storage/app/public/photos
+/public/storage/photos
+

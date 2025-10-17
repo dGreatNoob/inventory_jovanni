@@ -5,43 +5,75 @@
         <!-- Dashboard Section - Commented out as requested -->
      {{-- <x-branch-dashboard :stats="$this->dashboardStats" /> 
 
+<div class="pt-4">
+    <!-- Under Revision Notice -->
+    <div class="mb-6 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+        <div class="flex items-start">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                </svg>
+            </div>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-amber-800 dark:text-amber-200">
+                    Module Under Revision
+                </h3>
+                <div class="mt-2 text-sm text-amber-700 dark:text-amber-300">
+                    <p>The Branch Management module is currently under revision and may not be fully functional. Some features may be incomplete or unavailable. Please use the Product Management module for core inventory operations.</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        {{-- Agent Per Branch Dashboard --}}
-        <div class="mb-6 bg-white rounded-lg shadow-sm border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-            <div class="p-6 border-b border-gray-200 dark:border-gray-700">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Agents Per Branch</h3>
-                
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-                        <p class="text-sm text-blue-600 dark:text-blue-400">Total Branches</p>
-                        <p class="text-2xl font-bold text-blue-700 dark:text-blue-300">{{ $this->agentPerBranchStats->count() }}</p>
+    <div class="">
+        <!-- Branch Management Form -->
+        <section class="mb-5 max-w-xlg p-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Branch Information</h2>
+            <form wire:submit.prevent="submit">
+                <div class="grid gap-6 mb-6 md:grid-cols-2">
+                    <div>
+                        <label for="name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Branch Name</label>
+                        <input type="text" id="name" wire:model="name"
+                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                            placeholder="Main Branch" required />
                     </div>
-                    <div class="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
-                        <p class="text-sm text-green-600 dark:text-green-400">Total Agents</p>
-                        <p class="text-2xl font-bold text-green-700 dark:text-green-300">{{ $totalAgents }}</p>
+                    <div>
+                        <label for="address" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Address</label>
+                        <input type="text" id="address" wire:model="address"
+                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                            placeholder="123 Main Street, City" required />
                     </div>
-                    <div class="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
-                        <p class="text-sm text-purple-600 dark:text-purple-400">Active Agents</p>
-                        <p class="text-2xl font-bold text-purple-700 dark:text-purple-300">{{ $totalActiveAgents }}</p>
+                    <div>
+                        <label for="contact_num" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Contact Number</label>
+                        <input type="text" id="contact_num" wire:model="contact_num"
+                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                            placeholder="+1 234 567 8900" />
+                    </div>
+                    <div>
+                        <label for="manager_name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Manager Name</label>
+                        <input type="text" id="manager_name" wire:model="manager_name"
+                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                            placeholder="John Doe" />
                     </div>
                 </div>
+                
+                <button type="submit"
+                    class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+                    Add Branch
+                </button>
+            </form>
+        </section>
 
-                <div class="flex flex-col md:flex-row gap-3 mb-4">
-                    <input 
-                        type="text" 
-                        wire:model.live.debounce.300ms="dashboardSearch" 
-                        placeholder="Search branch name or code..." 
-                        class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    />
-                    
-                    <select 
-                        wire:model.live="statusFilter"
-                        class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    >
-                        <option value="all">All Statuses</option>
-                        <option value="covered">Covered (Has Agents)</option>
-                        <option value="no_agent">No Agent</option>
-                    </select>
+        <!-- Branch List -->
+        <section class="bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
+            <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Branch List</h3>
+                
+                <!-- Search -->
+                <div class="mb-4">
+                    <input type="text" wire:model.live.debounce.300ms="search" 
+                        placeholder="Search branches..." 
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
                 </div>
             </div>
 
@@ -49,61 +81,36 @@
                 <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
                     <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                         <tr>
-                            <th class="px-6 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600" wire:click="sortByColumn('name')">
-                                Branch Name @if($sortBy === 'name') {{ $sortDirection === 'asc' ? '↑' : '↓' }} @endif
-                            </th>
-                            <th class="px-6 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600" wire:click="sortByColumn('code')">
-                                Branch Code @if($sortBy === 'code') {{ $sortDirection === 'asc' ? '↑' : '↓' }} @endif
-                            </th>
+                            <th class="px-6 py-3">Branch Name</th>
                             <th class="px-6 py-3">Address</th>
-                            <th class="px-6 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600" wire:click="sortByColumn('agent_count')">
-                                Active Agents @if($sortBy === 'agent_count') {{ $sortDirection === 'asc' ? '↑' : '↓' }} @endif
-                            </th>
-                            <th class="px-6 py-3">Agent Details</th>
-                            <th class="px-6 py-3">Status</th>
+                            <th class="px-6 py-3">Contact</th>
+                            <th class="px-6 py-3">Manager</th>
+                            <th class="px-6 py-3">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse($this->agentPerBranchStats as $branch)
+                        @forelse($items as $branch)
                             <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                                 <td class="px-6 py-4 font-medium text-gray-900 dark:text-white">{{ $branch->name }}</td>
-                                <td class="px-6 py-4">{{ $branch->code }}</td>
                                 <td class="px-6 py-4">{{ $branch->address }}</td>
+                                <td class="px-6 py-4">{{ $branch->contact_num ?? 'N/A' }}</td>
+                                <td class="px-6 py-4">{{ $branch->manager_name ?? 'N/A' }}</td>
                                 <td class="px-6 py-4">
-                                    <span class="px-3 py-1 text-lg font-semibold rounded-full {{ $branch->agent_count > 0 ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' }}">
-                                        {{ $branch->agent_count }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4">
-                                    @if($branch->activeAgents && $branch->activeAgents->count() > 0)
-                                        <div class="space-y-1">
-                                            @foreach($branch->activeAgents as $assignment)
-                                                <div class="text-xs">
-                                                    <span class="font-semibold text-gray-900 dark:text-white">
-                                                        {{ $assignment->agent->agent_code }}
-                                                    </span>
-                                                    - {{ $assignment->agent->name }}
-                                                    @if($assignment->subclass)
-                                                        <span class="text-gray-500 dark:text-gray-400">({{ $assignment->subclass }})</span>
-                                                    @endif
-                                                </div>
-                                            @endforeach
-                                        </div>
-                                    @else
-                                        <span class="text-gray-400 text-xs italic">No agents assigned</span>
-                                    @endif
-                                </td>
-                                <td class="px-6 py-4">
-                                    @if($branch->agent_count > 0)
-                                        <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">Covered</span>
-                                    @else
-                                        <span class="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">No Agent</span>
-                                    @endif
+                                    <button wire:click="edit({{ $branch->id }})" 
+                                        class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-2">
+                                        Edit
+                                    </button>
+                                    <button wire:click="confirmDelete({{ $branch->id }})" 
+                                        class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
+                                        Delete
+                                    </button>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="px-6 py-8 text-center text-gray-500 dark:text-gray-400">No branches found.</td>
+                                <td colspan="5" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                                    No branches found.
+                                </td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -349,165 +356,79 @@
                             </button>
                         </div>
 
-                        <div class="p-6 space-y-6">
-                            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Basic Information</h2>
-                            <div class="grid gap-6 mb-6 md:grid-cols-2">
+        <!-- Edit Modal -->
+        @if($showEditModal)
+            <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+                <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800">
+                    <div class="mt-3">
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Edit Branch</h3>
+                        <form wire:submit.prevent="update">
+                            <div class="space-y-4">
                                 <div>
-                                    <label for="edit_name"
-                                        class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Branch Name</label>
+                                    <label for="edit_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Branch Name</label>
                                     <input type="text" wire:model="edit_name" id="edit_name"
-                                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500
-                                        block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white 
-                                        dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                    placeholder="Enter Branch Name" required />
-                                    @error('edit_name') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-
-                                    <!-- Inline inputs below Branch Name -->
-                                    <div class="flex gap-2 mt-4">
-                                        <div class="flex-1">
-                                            <label for="edit_subclass1" class="block mb-1 text-xs font-medium text-gray-900 dark:text-white">Subclass 1</label>
-                                            <input type="text" id="edit_subclass1" wire:model="edit_subclass1"
-                                                class="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                                placeholder="Subclass 1" />
-                                        </div>
-                                        <div class="flex-1">
-                                            <label for="edit_subclass2" class="block mb-1 text-xs font-medium text-gray-900 dark:text-white">Subclass 2</label>
-                                            <input type="text" id="edit_subclass2" wire:model="edit_subclass2"
-                                                class="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                                placeholder="Subclass 2" />
-                                        </div>
-                                        <div class="flex-1">
-                                            <label for="edit_subclass3" class="block mb-1 text-xs font-medium text-gray-900 dark:text-white">Subclass 3</label>
-                                            <input type="text" id="edit_subclass3" wire:model="edit_subclass3"
-                                                class="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                                placeholder="Subclass 3" />
-                                        </div>
-                                        <div class="flex-1">
-                                            <label for="edit_subclass4" class="block mb-1 text-xs font-medium text-gray-900 dark:text-white">Subclass 4</label>
-                                            <input type="text" id="edit_subclass4" wire:model="edit_subclass4"
-                                                class="bg-gray-50 border border-gray-300 text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                                placeholder="Subclass 4" />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label for="edit_code" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Code</label>
-                                    <input type="text" wire:model="edit_code" id="edit_code"
-                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500
-                                        block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white 
-                                        dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                        placeholder="Branch Code" required />
+                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                        required />
                                 </div>
                                 <div>
-                                    <label for="edit_category" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Category</label>
-                                    <input type="text" wire:model="edit_category" id="edit_category"
-                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                        placeholder="Category" required />
-                                </div>
-                                <div>
-                                    <label for="edit_address"
-                                        class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                                        >Address</label>
+                                    <label for="edit_address" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Address</label>
                                     <input type="text" wire:model="edit_address" id="edit_address"
-                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500
-                                        block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white 
-                                        dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Enter address" />
-                                    @error('edit_address') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                        required />
                                 </div>
                                 <div>
-                                    <label for="edit_remarks" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Remarks</label>
-                                    <input type="text" wire:model="edit_remarks" id="edit_remarks"
-                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                        placeholder="Remarks" />
+                                    <label for="edit_contact_num" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Contact Number</label>
+                                    <input type="text" wire:model="edit_contact_num" id="edit_contact_num"
+                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+                                </div>
+                                <div>
+                                    <label for="edit_manager_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Manager Name</label>
+                                    <input type="text" wire:model="edit_manager_name" id="edit_manager_name"
+                                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
                                 </div>
                             </div>
-
-                            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Additional Information</h2>
-                            <div class="grid gap-6 mb-6 md:grid-cols-2">
-                                <div>
-                                    <label for="edit_batch" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Batch</label>
-                                    <input type="text" wire:model="edit_batch" id="edit_batch"
-                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                        placeholder="Batch" />
-                                </div>
-                                <div>
-                                    <label for="edit_branch_code" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Branch Code</label>
-                                    <input type="text" wire:model="edit_branch_code" id="edit_branch_code"
-                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                        placeholder="Branch Code" />
-                                </div>
-                                <div>
-                                    <label for="edit_company_name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Company Name</label>
-                                    <input type="text" wire:model="edit_company_name" id="edit_company_name"
-                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                        placeholder="Company Name" />
-                                </div>
-                                <div>
-                                    <label for="edit_company_tin" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Company TIN</label>
-                                    <input type="text" wire:model="edit_company_tin" id="edit_company_tin"
-                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                        placeholder="Company TIN" />
-                                </div>
-                                <div>
-                                    <label for="edit_dept_code" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">DeptCode</label>
-                                    <input type="text" wire:model="edit_dept_code" id="edit_dept_code"
-                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                        placeholder="DeptCode" />
-                                </div>
-                                <div>
-                                    <label for="edit_pull_out_addresse" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Pull Out Addresse</label>
-                                    <input type="text" wire:model="edit_pull_out_addresse" id="edit_pull_out_addresse"
-                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                        placeholder="Pull Out Addresse" />
-                                </div>
-                                <div>
-                                    <label for="edit_vendor_code" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Vendor Code</label>
-                                    <input type="text" wire:model="edit_vendor_code" id="edit_vendor_code"
-                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                        placeholder="Vendor Code" />
-                                </div>
+                            <div class="flex justify-end space-x-2 mt-6">
+                                <button type="button" wire:click="$set('showEditModal', false)"
+                                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-md dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500">
+                                    Cancel
+                                </button>
+                                <button type="submit"
+                                    class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md">
+                                    Update
+                                </button>
                             </div>
-                        </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        @endif
 
-                        <div class="flex items-center p-6 space-x-2 border-t border-gray-200 rounded-b dark:border-gray-600">
-                            <button type="button" wire:click="update"
-                                    class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
-                                Save changes
-                            </button>
-                            <button type="button" wire:click="cancel"
-                                    class="text-gray-500 bg-white hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-blue-300 rounded-lg border border-gray-200 text-sm font-medium px-5 py-2.5 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-500 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-600">
+        <!-- Delete Confirmation Modal -->
+        @if($showDeleteModal)
+            <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+                <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800">
+                    <div class="mt-3">
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Confirm Delete</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Are you sure you want to delete this branch? This action cannot be undone.</p>
+                        <div class="flex justify-end space-x-2">
+                            <button wire:click="$set('showDeleteModal', false)"
+                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-md dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500">
                                 Cancel
+                            </button>
+                            <button wire:click="delete"
+                                class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md">
+                                Delete
                             </button>
                         </div>
                     </div>
                 </div>
             </div>
+        @endif
 
-            @if($showDeleteModal)
-                <div class="fixed top-0 left-0 right-0 z-50 w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] max-h-full flex items-center justify-center">
-                    <div class="relative w-full max-w-md max-h-full">
-                        <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
-                            <button type="button" class="absolute top-3 right-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ml-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white" wire:click="cancel">
-                                <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
-                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
-                                </svg>
-                                <span class="sr-only">Close modal</span>
-                            </button>
-                            <div class="p-6 text-center">
-                                <svg class="mx-auto mb-4 text-gray-400 w-12 h-12 dark:text-gray-200" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
-                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 11V6m0 8h.01M19 10a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
-                                </svg>
-                                <h3 class="mb-5 text-lg font-normal text-gray-500 dark:text-gray-400">Are you sure you want to delete this branch profile?</h3>
-                                <button type="button" wire:click="delete" class="text-white bg-red-600 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 dark:focus:ring-red-800 font-medium rounded-lg text-sm inline-flex items-center px-5 py-2.5 text-center mr-2">
-                                    Yes, I'm sure
-                                </button>
-                                <button type="button" wire:click="cancel" class="text-gray-500 bg-white hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-200 rounded-lg border border-gray-200 text-sm font-medium px-5 py-2.5 hover:text-gray-900 focus:z-10 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-500 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-600">No, cancel</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            @endif
-        </section>
+        @if (session()->has('message'))
+            <div class="fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded z-50">
+                {{ session('message') }}
+            </div>
+        @endif
     </div>
 </div>

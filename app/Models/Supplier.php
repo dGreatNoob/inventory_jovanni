@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Schema;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 
@@ -16,9 +17,15 @@ class Supplier extends Model
     protected $fillable = [
         'entity_id',
         'name',
+        'code',
+        'status',
+        'categories',
         'contact_person',
+        'contact_num',  // Legacy field
+        'phone',        // New field (maps to contact_num)
         'email',
-        'phone',
+        'tin_num',
+        'category',
         'address',
         'city',
         'country',
@@ -33,6 +40,7 @@ class Supplier extends Model
     protected $casts = [
         'is_active' => 'boolean',
         'credit_limit' => 'decimal:2',
+        'categories' => 'array',
     ];
 
     // Relationships
@@ -69,11 +77,27 @@ class Supplier extends Model
     {
         $parts = array_filter([
             $this->contact_person,
-            $this->phone,
+            $this->phone ?? $this->contact_num,  // Use phone if available, fallback to contact_num
             $this->email
         ]);
         
         return implode(' | ', $parts);
+    }
+
+    // Accessor to handle phone/contact_num compatibility
+    public function getPhoneAttribute($value)
+    {
+        return $value ?? $this->attributes['contact_num'] ?? null;
+    }
+
+    // Mutator to handle phone/contact_num compatibility
+    public function setPhoneAttribute($value)
+    {
+        $this->attributes['phone'] = $value;
+        // Also set contact_num for backward compatibility
+        if (Schema::hasColumn($this->getTable(), 'contact_num')) {
+            $this->attributes['contact_num'] = $value;
+        }
     }
 
     public function getActivitylogOptions(): LogOptions

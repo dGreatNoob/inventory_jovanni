@@ -46,77 +46,119 @@
                         <label for="supplier_name"
                             class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Supplier Name</label>
                         <input type="text" id="supplier_name" wire:model="supplier_name"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 
+                                focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 
+                                dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                             placeholder="Yaru Manufacturer Co." required />
+                        @error('supplier_name')
+                            <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                        @enderror
                     </div>
+
                     <div>
-                        <label for="supplier_code" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Supplier Code</label>
+                        <label for="supplier_code"
+                            class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Supplier Code</label>
                         <input type="text" id="supplier_code" wire:model="supplier_code"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 
+                                focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 
+                                dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                             placeholder="P20-209" required />
+                        @error('supplier_code')
+                            <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                        @enderror
                     </div>
+
                     <div>
-                        <label for="supplier_address" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Address</label>
+                        <label for="supplier_address"
+                            class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Address</label>
                         <input type="text" id="supplier_address" wire:model="supplier_address"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 
+                                focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 
+                                dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                             placeholder="P24 lawaan st. bayugan city" required />
+                        @error('supplier_address')
+                            <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                        @enderror
                     </div>
+
                     <div>
                         <label for="contact_person"
                             class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Contact Person</label>
                         <input type="text" id="contact_person" wire:model="contact_person"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 
+                                focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 
+                                dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                             placeholder="Jess Clarence Arreza" required />
+                        @error('contact_person')
+                            <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                        @enderror
                     </div>
+
                     <div>
                         <label for="contact_num"
                             class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Contact Number</label>
                         <input type="tel" id="contact_num" wire:model="contact_num"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 
+                                focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 
+                                dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                             placeholder="+63123456789101" required />
+                        @error('contact_num')
+                            <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                        @enderror
                     </div>
+
                     <div>
                         <label for="email" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Email</label>
                         <input type="text" id="email" wire:model="email"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 
+                                focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 
+                                dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                             placeholder="JovanniBags@gmail.com" required />
+                        @error('email')
+                            <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                        @enderror
                     </div>
 
                     <!-- Spacing -->
                     <div class="md:col-span-2 h-6"></div>
 
                     <div x-data="{ open: false }" class="relative">
-                    <label for="categories" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Categories</label>
-                    
-                    <!-- Trigger button -->
-                    <!-- Button showing selected categories -->
-                    <button type="button" @click="open = !open"
-                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
-                        focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 text-left
-                        flex items-center justify-between dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                    <span class="truncate">
-                        <template x-if="!$wire.categories.length">Select categories</template>
-                        <template x-for="cat in $wire.categories" :key="cat">
-                            <span class="inline-block px-2 py-1 mr-1 mb-1 text-xs font-semibold text-gray-800 bg-gray-200 rounded-full" x-text="cat"></span>
-                        </template>
-                    </span>
-                    <svg class="w-5 h-5 text-gray-400 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                    </svg>
-                </button>
+                        <label for="categories" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Categories</label>
 
-                <!-- Dropdown -->
-                <div x-show="open" @click.away="open = false"
-                    class="absolute mt-1 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg z-50 max-h-72 overflow-auto">
-                    <template x-for="category in ['Bag', 'Travel Bag', 'Sports Bag', 'Purse']" :key="category">
-                        <label class="flex items-center px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer">
-                            <input type="checkbox" :value="category" wire:model.defer="categories" class="mr-2 w-5 h-5">
-                            <span x-text="category" class="text-gray-900 dark:text-white text-sm"></span>
-                        </label>
-                    </template>
-                </div>
-                    @error('categories') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                </div>
+                        <!-- Button -->
+                        <button type="button" @click="open = !open"
+                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 
+                                focus:border-blue-500 block w-full p-2.5 text-left flex items-center justify-between 
+                                dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            <span class="truncate">
+                                <template x-if="!$wire.categories.length">Select categories</template>
+                                <template x-for="cat in $wire.categories" :key="cat">
+                                    <span class="inline-block px-2 py-1 mr-1 mb-1 text-xs font-semibold text-gray-800 bg-gray-200 rounded-full"
+                                        x-text="cat"></span>
+                                </template>
+                            </span>
+                            <svg class="w-5 h-5 text-gray-400 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+
+                        <!-- Dropdown -->
+                        <div x-show="open" @click.away="open = false"
+                            class="absolute mt-1 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 
+                                rounded-lg shadow-lg z-50 max-h-72 overflow-auto">
+                            <template x-for="category in @js($availableCategories)" :key="category">
+                                <label class="flex items-center px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer">
+                                    <input type="checkbox" :value="category" wire:model.defer="categories" class="mr-2 w-5 h-5">
+                                    <span x-text="category" class="text-gray-900 dark:text-white text-sm"></span>
+                                </label>
+                            </template>
+                        </div>
+                        @error('categories')
+                            <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                        @enderror
+                    </div>
+
 
                     <!-- For tags -->
                     
@@ -124,8 +166,13 @@
 
                 <div class="flex justify-end">
                     <button type="submit"
-                        class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
-                        Submit
+                            wire:loading.attr="disabled"
+                            class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none 
+                                focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center 
+                                dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+
+                        <span wire:loading.remove>Submit</span>
+                        <span wire:loading>Saving...</span>
                     </button>
                 </div>
 
@@ -411,32 +458,35 @@
 
                             <!-- Trigger button -->
                             <button type="button" @click="open = !open"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
-                                focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 text-left
-                                flex items-center justify-between dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                            <span class="truncate">
-                                <template x-if="!$wire.edit_categories.length">Select categories</template>
-                                <template x-for="cat in $wire.edit_categories" :key="cat">
-                                    <span class="inline-block px-2 py-1 mr-1 mb-1 text-xs font-semibold text-gray-800 bg-gray-200 rounded-full" x-text="cat"></span>
-                                </template>
-                            </span>
-                            <svg class="w-5 h-5 text-gray-400 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                            </svg>
-                        </button>
+                                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
+                                    focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 text-left
+                                    flex items-center justify-between dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                <span class="truncate">
+                                    <template x-if="!$wire.edit_categories.length">Select categories</template>
+                                    <template x-for="cat in $wire.edit_categories" :key="cat">
+                                        <span class="inline-block px-2 py-1 mr-1 mb-1 text-xs font-semibold text-gray-800 bg-gray-200 rounded-full" x-text="cat"></span>
+                                    </template>
+                                </span>
+                                <svg class="w-5 h-5 text-gray-400 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                </svg>
+                            </button>
 
-                        <!-- Dropdown -->
-                        <div x-show="open" @click.away="open = false"
-                            class="absolute mt-1 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg z-50 max-h-72 overflow-auto">
-                            <template x-for="category in ['Bag', 'Travel Bag', 'Sports Bag', 'Purse']" :key="category">
-                                <label class="flex items-center px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer">
-                                    <input type="checkbox" :value="category" wire:model="edit_categories" class="mr-2 w-5 h-5">
-                                    <span x-text="category" class="text-gray-900 dark:text-white text-sm"></span>
-                                </label>
-                            </template>
-                        </div>
-                            @error('edit_categories') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                        </div>
+                            <!-- Dropdown -->
+                            <div x-show="open" @click.away="open = false"
+                                class="absolute mt-1 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg z-50 max-h-72 overflow-auto">
+                                @foreach ($availableCategories as $category)
+                                    <label class="flex items-center px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer">
+                                        <input type="checkbox" value="{{ $category }}" wire:model="edit_categories" class="mr-2 w-5 h-5">
+                                        <span class="text-gray-900 dark:text-white text-sm">{{ $category }}</span>
+                                    </label>
+                                @endforeach
+                            </div>
+
+                            @error('edit_categories')
+                                <span class="text-red-500 text-sm">{{ $message }}</span>
+                            @enderror
+                            </div>
 
                         </div>
                         </div>

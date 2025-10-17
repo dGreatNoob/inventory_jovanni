@@ -28,6 +28,21 @@ class Supplier extends Model
     'categories' => 'array',
     ];
 
+    const CATEGORIES = [
+    'Bag',
+    'Travel Bag', 
+    'Sports Bag',
+    'Purse',
+    'Accessories',
+    'Wallets'
+    ];
+
+    // In Livewire component
+    public function mount()
+    {
+        $this->availableCategories = Supplier::CATEGORIES;
+    }
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()

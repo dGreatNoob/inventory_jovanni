@@ -9,20 +9,17 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void
+    public function up()
     {
        // Schema::table('suppliers', function (Blueprint $table) {
-       //     $table->string('status')->default('active')->after('id');
+        //    $table->json('categories')->nullable()->after('status');
        // });
     }
 
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
+    public function down()
     {
        // Schema::table('suppliers', function (Blueprint $table) {
-       //     $table->dropColumn('status');
+       //     $table->dropColumn('categories');
        // });
     }
 };

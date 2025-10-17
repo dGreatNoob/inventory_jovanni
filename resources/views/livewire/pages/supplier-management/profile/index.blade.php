@@ -2,38 +2,69 @@
 <x-slot:subheader>Profile</x-slot:subheader>
 <div class="pt-4">
     <div class="">
-        <section>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 p-4 bg-gray-50">
-            <!-- Total Suppliers -->
-            <div class="bg-white rounded-xl shadow-md p-4 flex justify-between items-center">
-            <div>
-                <p class="text-sm font-medium text-gray-500">Total Suppliers</p>
-                <p class="text-2xl font-semibold text-gray-800">{{ $this->totalSuppliers }}</p>
-            </div>
-            <div class="flex-shrink-0 w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
-                <!-- Heroicons: Users -->
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87M12 12a4 4 0 100-8 4 4 0 000 8z" />
-                </svg>
-            </div>
-            </div>
+        <section class="my-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                
+                <!-- Total Suppliers -->
+                <div class="bg-white rounded-xl shadow-md p-4 flex justify-between items-center">
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Total Suppliers</p>
+                        <p class="text-2xl font-semibold text-gray-800">{{ $this->totalSuppliers }}</p>
+                    </div>
+                    <div class="flex-shrink-0 w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87M12 12a4 4 0 100-8 4 4 0 000 8z" />
+                        </svg>
+                    </div>
+                </div>
 
-            <!-- Total Spend -->
-            <div class="bg-white rounded-xl shadow-md p-4 flex justify-between items-center">
-            <div>
-                <p class="text-sm font-medium text-gray-500">Total Spend</p>
-                <p class="text-2xl font-semibold text-gray-800">PHP 2.4M</p>
+                <!-- Active Contracts -->
+                <div class="bg-white rounded-xl shadow-md p-4 flex justify-between items-center">
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Active Contracts</p>
+                        <p class="text-2xl font-semibold text-gray-800">{{ $this->activeSuppliers }}</p>
+                    </div>
+                    <div class="flex-shrink-0 w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12h6M9 16h6M9 8h6M7 2h10a2 2 0 012 2v16a2 2 0 01-2 2H7a2 2 0 01-2-2V4a2 2 0 012-2z" />
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Pending Contracts -->
+                <div class="bg-white rounded-xl shadow-md p-4 flex justify-between items-center">
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Pending Contracts</p>
+                        <p class="text-2xl font-semibold text-gray-800">{{ $this->pendingSuppliers }}</p>
+                    </div>
+                    <div class="flex-shrink-0 w-12 h-12 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2 9h14l-2-9M9 21h6" />
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Total Spend -->
+                <div class="bg-white rounded-xl shadow-md p-4 flex justify-between items-center">
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Total Spend</p>
+                        <p class="text-2xl font-semibold text-gray-800">PHP 2.4M</p>
+                    </div>
+                    <div class="flex-shrink-0 w-12 h-12 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M11 3v10h10M21 21H3v-4h18v4z" />
+                        </svg>
+                    </div>
+                </div>
             </div>
-            <div class="flex-shrink-0 w-12 h-12 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center">
-                <!-- Chart Icon -->
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M11 3v10h10M21 21H3v-4h18v4z" />
-                </svg>
-            </div>
-            </div>
-        </div>
         </section>
 
         <!-- Profiling -->
@@ -49,7 +80,7 @@
                             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 
                                 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 
                                 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                            placeholder="Yaru Manufacturer Co." required />
+                            placeholder="Jovanni Bags Manufacturer Co." required />
                         @error('supplier_name')
                             <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                         @enderror
@@ -88,7 +119,7 @@
                             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 
                                 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 
                                 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                            placeholder="Jess Clarence Arreza" required />
+                            placeholder="Mark Tabugara" required />
                         @error('contact_person')
                             <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                         @enderror
@@ -101,7 +132,7 @@
                             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 
                                 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 
                                 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                            placeholder="+63123456789101" required />
+                            placeholder="012345678910" required />
                         @error('contact_num')
                             <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                         @enderror

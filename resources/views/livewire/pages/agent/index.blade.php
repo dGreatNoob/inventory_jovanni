@@ -37,13 +37,13 @@
                             class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Name</label>
                         <input type="text" id="name" wire:model="name"
                             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                            placeholder="Zach Agbalo" required />
+                            placeholder="Name" required />
                     </div>
                     <div>
                         <label for="address" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Address</label>
                         <input type="text" id="address" wire:model="address"
                             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                            placeholder="P24 Lawa-an St., Bayugan City" required />
+                            placeholder="Unit No, Street Name., City" required />
                     </div>
                     <div>
                         <label for="contact_num"
@@ -79,8 +79,10 @@
 
         <section>
             <div class="mb-5 max-w-xlg p-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
-                <div class="flex items-center justify-between p-4 pr-10">
-                    <div class="flex space-x-6">
+                {{-- Search and Filter Section --}}
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 p-4 pr-10 border-b border-gray-200 dark:border-gray-700">
+                    <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
+                        {{-- Search Input --}}
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                                 <svg aria-hidden="true" class="w-5 h-5 text-gray-500 dark:text-gray-400"
@@ -90,21 +92,54 @@
                                         clip-rule="evenodd" />
                                 </svg>
                             </div>
-                            <input type="text" wire:model.lazy="search"
+                            <input type="text" wire:model.live.debounce.300ms="search"
                                 class="block w-64 p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                                 placeholder="Search Agent...">
                         </div>
 
-                        <!-- Status Filter Dropdown -->
-                        <select wire:model.live="statusFilter"
-                            class="px-4 py-2 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
-                            <option value="all">All Status</option>
-                            <option value="deployed">Deployed</option>
-                            <option value="active">Active</option>
+                        <div class="w-4"></div>
+
+                        {{-- Status Filter Dropdown --}}
+                            <select wire:model.live="statusFilter"
+                                class="px-4 py-2 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+                                <option value="all">All Status</option>
+                                <option value="deployed">Deployed</option>
+                                <option value="active">Active</option>
+                            </select>
+                    </div>
+
+                    {{-- Per Page Selector --}}
+                    <div class="flex items-center space-x-3">
+                        <label class="text-sm font-medium text-gray-900 dark:text-white whitespace-nowrap">
+                            Per Page
+                        </label>
+                        <select wire:model.live="perPage"
+                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-24 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+                            <option value="5">5</option>
+                            <option value="10">10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
                         </select>
                     </div>
                 </div>
 
+                {{-- Results Info --}}
+                <div class="py-3 px-4 text-sm text-gray-700 dark:text-gray-400">
+                    @if($items->total() > 0)
+                        Showing 
+                        <span class="font-semibold text-gray-900 dark:text-white">{{ $items->firstItem() }}</span>
+                        to 
+                        <span class="font-semibold text-gray-900 dark:text-white">{{ $items->lastItem() }}</span>
+                        of 
+                        <span class="font-semibold text-gray-900 dark:text-white">{{ $items->total() }}</span>
+                        results
+                    @else
+                        <span class="font-semibold text-gray-900 dark:text-white">No results found</span>
+                    @endif
+                </div>
+
+                {{-- Table --}}
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
                         <thead class="text-sm text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
@@ -119,51 +154,67 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($items as $item)
+                            @forelse($items as $item)
                                 @php
                                     $isDeployed = $item->branchAssignments->where('released_at', null)->count() > 0;
-                                    $createdRecent = $item->created_at && now()->diffInSeconds($item->created_at) <= 5;
                                 @endphp
-                                <tr class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700 border-gray-200">
-                                    <td class="px-6 py-4 font-medium text-gray-900 dark:text-white">{{ $item->agent_code }}</td>
+                                <tr class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700 border-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                    <td class="px-6 py-4 font-medium text-gray-900 dark:text-white">
+                                        {{ $item->agent_code }}
+                                    </td>
                                     <td class="px-6 py-4">{{ $item->name }}</td>
                                     <td class="px-6 py-4">{{ $item->address }}</td>
                                     <td class="px-6 py-4">{{ $item->contact_num }}</td>
                                     <td class="px-6 py-4">{{ $item->tin_num }}</td>
                                     <td class="px-6 py-4 text-center">
                                         @if($isDeployed)
-                                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">Deployed</span>
+                                            <span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
+                                                Deployed
+                                            </span>
                                         @else
-                                            <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">Active</span>
+                                            <span class="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+                                                Active
+                                            </span>
                                         @endif
                                     </td>
                                     <td class="px-6 py-4 text-center">
-                                        <x-button href="#" wire:click.prevent="toggleDeployment({{ $item->id }})" variant="info">
-                                            {{ in_array($item->id, $deployedAgentIds ?? []) ? 'Release' : 'Deploy' }}
-                                        </x-button>
-                                        <x-button href="#" wire:click.prevent="edit({{ $item->id }})" variant="warning">Edit</x-button>
-                                        <x-button href="#" wire:click.prevent="confirmDelete({{ $item->id }})" variant="danger">Delete</x-button>
+                                        <div class="flex items-center justify-center space-x-2">
+                                            <x-button href="#" wire:click.prevent="toggleDeployment({{ $item->id }})" variant="info">
+                                                {{ $isDeployed ? 'Release' : 'Deploy' }}
+                                            </x-button>
+                                            <x-button href="#" wire:click.prevent="edit({{ $item->id }})" variant="warning">
+                                                Edit
+                                            </x-button>
+                                            <x-button href="#" wire:click.prevent="confirmDelete({{ $item->id }})" variant="danger">
+                                                Delete
+                                            </x-button>
+                                        </div>
                                     </td>
                                 </tr>
-                            @endforeach
+                            @empty
+                                <tr>
+                                    <td colspan="7" class="px-6 py-12 text-center">
+                                        <div class="flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
+                                            <svg class="w-16 h-16 mb-4 text-gray-400 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                            </svg>
+                                            <p class="text-lg font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                No agents found
+                                            </p>
+                                            <p class="text-sm text-gray-500 dark:text-gray-400">
+                                                Try adjusting your search or filter criteria
+                                            </p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
 
-                <div class="py-4 px-3">
-                    <div class="flex">
-                        <div class="flex space-x-4 items-center mb-3">
-                            <label class="w-32 text-sm font-medium text-gray-900 dark:text-white">Per Page</label>
-                            <select wire:model="perPage"
-                                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
-                                <option value="5">5</option>
-                                <option value="10" selected>10</option>
-                                <option value="20">20</option>
-                                <option value="50">50</option>
-                                <option value="100">100</option>
-                            </select>
-                        </div>
-                    </div>
+                {{-- Pagination --}}
+                <div class="py-4 px-3 border-t border-gray-200 dark:border-gray-700">
+                    {{ $items->links() }}
                 </div>
             </div>
         </section>

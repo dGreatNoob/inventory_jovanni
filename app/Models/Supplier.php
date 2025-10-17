@@ -4,43 +4,76 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 
 class Supplier extends Model
 {
-    /** @use HasFactory<\Database\Factories\SupplierFactory> */
-    use HasFactory, LogsActivity;
+    use HasFactory, SoftDeletes, LogsActivity;
 
     protected $fillable = [
-    'name',
-    'code',
-    'address',
-    'contact_person',
-    'contact_num',
-    'email',
-    'tin_num',
-    'status',
-    'categories'
+        'entity_id',
+        'name',
+        'contact_person',
+        'email',
+        'phone',
+        'address',
+        'city',
+        'country',
+        'postal_code',
+        'terms',
+        'tax_id',
+        'credit_limit',
+        'payment_terms_days',
+        'is_active'
     ];
 
     protected $casts = [
-    'categories' => 'array',
+        'is_active' => 'boolean',
+        'credit_limit' => 'decimal:2',
     ];
 
-    const CATEGORIES = [
-    'Bag',
-    'Travel Bag', 
-    'Sports Bag',
-    'Purse',
-    'Accessories',
-    'Wallets'
-    ];
-
-    // In Livewire component
-    public function mount()
+    // Relationships
+    public function products(): HasMany
     {
-        $this->availableCategories = Supplier::CATEGORIES;
+        return $this->hasMany(Product::class);
+    }
+
+    // Scopes
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    public function scopeByEntity($query, $entityId)
+    {
+        return $query->where('entity_id', $entityId);
+    }
+
+    // Accessors
+    public function getFullAddressAttribute(): string
+    {
+        $parts = array_filter([
+            $this->address,
+            $this->city,
+            $this->country,
+            $this->postal_code
+        ]);
+        
+        return implode(', ', $parts);
+    }
+
+    public function getContactInfoAttribute(): string
+    {
+        $parts = array_filter([
+            $this->contact_person,
+            $this->phone,
+            $this->email
+        ]);
+        
+        return implode(' | ', $parts);
     }
 
     public function getActivitylogOptions(): LogOptions
@@ -80,9 +113,5 @@ class Supplier extends Model
 
                 return "Name: {$name}<br>Address: {$address}<br>Contact: {$contact}<br>TIN: {$tin}";
             });
-    }
-    public function purchaseOrders()
-    {
-        return $this->hasMany(PurchaseOrder::class);
     }
 }

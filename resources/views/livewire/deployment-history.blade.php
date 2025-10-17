@@ -9,7 +9,8 @@
                     placeholder="Search agent..." 
                     class="border p-2 rounded-lg"
                 />
-                <select wire:model="perPage" class="border p-2 rounded-lg">
+                <select wire:model.live.debounce.500ms="perPage"
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
                     <option value="5">5</option>
                     <option value="10">10</option>
                     <option value="25">25</option>

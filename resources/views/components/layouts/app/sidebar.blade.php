@@ -144,10 +144,6 @@
                         :current="request()->routeIs('branch.profile')" wire:navigate>{{ __('Branch management') }}
                     </flux:navlist.item>
 
-                    <flux:navlist.item icon="inbox-stack" href="{{ route('prw.purchaseorder') }}"
-                        :current="request()->routeIs('prw.purchaseorder')" wire:navigate>
-                        {{ __('Purchase Order') }}
-                    </flux:navlist.item>
 
 
                     {{-- <flux:navlist.item icon="banknotes" href=""

@@ -10,10 +10,19 @@ return new class extends Migration
     {
         Schema::create('agent_branch_assignments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('agent_id')->constrained('agents')->onDelete('cascade');
-            $table->foreignId('branch_id')->constrained()->onDelete('cascade');
+            
+            // Foreign keys with proper constraints
+            $table->foreignId('agent_id')
+                  ->constrained('agents')
+                  ->onDelete('cascade');
+                  
+            $table->foreignId('branch_id')
+                  ->constrained('branches')
+                  ->onDelete('cascade');
+            
+            $table->string('subclass')->nullable();
             $table->timestamp('assigned_at')->nullable();
-            $table->timestamp('released_at')->nullable(); // null if currently assigned
+            $table->timestamp('released_at')->nullable();
             $table->timestamps();
         });
     }

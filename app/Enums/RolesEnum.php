@@ -11,6 +11,12 @@ enum RolesEnum: string
     case SUPPLY = 'Supply Personnel'; 
     case SUPERADMIN = 'Super Admin';
 
+    case PRODUCTMANAGEMENT = 'Product Management';
+    case ABMANAGEMENT = 'Agent & Branch Management';
+    case SUPPLIERMANAGEMENT = 'Supplier Management';
+    case POMANAGEMENT = 'Purchase Order Management';
+    case USERMANAGEMENT = 'User Management (Admin Only)';
+
     // extra helper to allow for greater customization of displayed values, without disclosing the name/value data directly
     public function label(): string
     {

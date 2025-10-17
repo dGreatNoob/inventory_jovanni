@@ -209,6 +209,7 @@ class Index extends Component
                     ->orWhere('contact_person', 'like', "%{$search}%")
                     ->orWhere('contact_num', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('status', 'like', "%{$search}%")
                     ->orWhereJsonContains('categories', $search)
                     ->orWhereRaw('LOWER(JSON_EXTRACT(categories, "$")) LIKE ?', ['%' . strtolower($search) . '%']);
             });

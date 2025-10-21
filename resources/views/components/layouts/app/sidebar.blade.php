@@ -65,21 +65,54 @@
                     </flux:navlist.item>
                 </flux:navlist.group> --}}
 
-                <flux:navlist.group expandable :expanded="request()->routeIs('supplies.*')"
-                    :heading="__('Product Management')" class="lg:grid">
-                    <flux:navlist.item icon="inbox-stack" href="{{ route('supplies.inventory') }}"
-                        :current="request()->routeIs('supplies.inventory')" wire:navigate>{{ __('Inventory') }}
+                <flux:navlist.group 
+                    expandable 
+                    :expanded="request()->routeIs('product-management.*')" 
+                    :heading="__('Product Management')" 
+                    class="lg:grid text-left"
+                >
+                    <flux:navlist.item 
+                        icon="cube" 
+                        href="{{ route('product-management.index') }}" 
+                        :current="request()->routeIs('product-management.index')" 
+                        wire:navigate
+                    >
+                        {{ __('Products') }}
                     </flux:navlist.item>
 
-                    <flux:navlist.item icon="inbox-stack" href="{{ route('supplies.PurchaseOrder') }}"
-                        :current="request()->routeIs('supplies.PurchaseOrder')" wire:navigate>{{ __('Purchase Order') }}
+                    <flux:navlist.item 
+                        icon="tag" 
+                        href="{{ route('product-management.categories') }}" 
+                        :current="request()->routeIs('product-management.categories')" 
+                        wire:navigate
+                    >
+                        {{ __('Categories') }}
                     </flux:navlist.item>
-                    {{-- <flux:navlist.item icon="inbox-stack" href=""  wire:navigate>{{ __('Restock') }}
-                    </flux:navlist.item> --}}
+
+                    <flux:navlist.item 
+                        icon="photo" 
+                        href="{{ route('product-management.images') }}" 
+                        :current="request()->routeIs('product-management.images')" 
+                        wire:navigate
+                    >
+                        {{ __('Images') }}
+                    </flux:navlist.item>
+
+                    <flux:navlist.item 
+                        icon="chart-bar" 
+                        href="{{ route('product-management.dashboard') }}" 
+                        :current="request()->routeIs('product-management.dashboard')" 
+                        wire:navigate
+                    >
+                        {{ __('Analytics') }}
+                    </flux:navlist.item>
                 </flux:navlist.group>
-                <flux:navlist.group expandable
+                                
+
+
+                {{-- <flux:navlist.group expandable
                     :expanded="request()->routeIs('salesorder.*') || request()->routeIs('salesreturn.*')"
-                    :heading="__('Sales Management')" class="lg:grid">
+                    :heading="__('Sales Management')" class="lg:grid text-left">
 
                     <flux:navlist.item icon="inbox-stack" href="{{ route('salesorder.index') }}"
                         :current="request()->routeIs('salesorder.index')" wire:navigate>{{ __('Sales Order') }}
@@ -87,8 +120,9 @@
                     <flux:navlist.item icon="inbox-stack" href="{{ route('salesorder.return') }}"
                         :current="request()->routeIs('salesorder.return')" wire:navigate>{{ __('Sales Return') }}
                     </flux:navlist.item>
-                </flux:navlist.group>
-                <flux:navlist.group expandable :expanded="request()->routeIs('finance.*')" :heading="__('Finance')"
+                </flux:navlist.group> --}}
+
+                {{-- <flux:navlist.group expandable :expanded="request()->routeIs('finance.*')" :heading="__('Finance')"
                     class="lg:grid">
                     <flux:navlist.item icon="banknotes" href="{{ route('finance.receivables') }}"
                         :current="request()->routeIs('finance.receivables')" wire:navigate>{{ __('Receivables') }}
@@ -101,9 +135,9 @@
                     </flux:navlist.item>
                     <!-- <flux:navlist.item icon="banknotes" href="{{ route('finance.currency-conversion') }}"  wire:navigate>{{ __('Currency Conversion') }}
                     </flux:navlist.item> -->
-                </flux:navlist.group>
+                </flux:navlist.group> --}}
 
-                <flux:navlist.group expandable :expanded="request()->routeIs('shipment.*')"
+                {{--<flux:navlist.group expandable :expanded="request()->routeIs('shipment.*')"
                     :heading="__('Shipment Management')" class="lg:grid">
                     <flux:navlist.item icon="banknotes" href="{{ route('shipment.index') }}"
                         :current="request()->routeIs('shipment.index')" wire:navigate>{{ __('Shipments') }}
@@ -112,7 +146,7 @@
                     <flux:navlist.item icon="banknotes" href="{{ route('shipment.qrscanner') }}"
                         :current="request()->routeIs('shipment.qrscanner')" wire:navigate>{{ __('QR Scanner') }}
                     </flux:navlist.item>
-                </flux:navlist.group>
+                </flux:navlist.group>--}}
 
                 {{-- <flux:navlist.group expandable :expanded="request()->routeIs('shipping.*')" :heading="__('Shipping Management')"
                     class="lg:grid">
@@ -127,19 +161,33 @@
                     <flux:navlist.item icon="users" href="{{ route('supplier.profile') }}"
                         :current="request()->routeIs('supplier.profile')" wire:navigate>{{ __('Profile') }}
                     </flux:navlist.item>
-
-                </flux:navlist.group>
-                <flux:navlist.group expandable :expanded="request()->routeIs('customer.*')"
-                    :heading="__('Customer Management')" class="lg:grid">
-                    <flux:navlist.item icon="users" href="{{ route('customer.profile') }}"
-                        :current="request()->routeIs('customer.profile')" wire:navigate>{{ __('Profile') }}
-                    </flux:navlist.item>
-                    {{-- <flux:navlist.item icon="banknotes" href=""
-                        :current="request()->routeIs('customer.rebate')" wire:navigate>{{ __('Rebate Criteria') }}
+                    {{-- <flux:navlist.item icon="building-office" href="{{ route('product-management.suppliers') }}"
+                        :current="request()->routeIs('product-management.suppliers')" wire:navigate>{{ __('Suppliers') }}
                     </flux:navlist.item> --}}
                 </flux:navlist.group>
 
-                @role(['Super Admin', 'Admin'])
+                <flux:navlist.group expandable :expanded="request()->routeIs('customer.*', 'branch.*', 'agent.*')"
+                    :heading="__('Operational Management')" class="lg:grid">
+                     {{-- <flux:navlist.item icon="users" href="{{ route('customer.profile') }}"
+                        :current="request()->routeIs('customer.profile')" wire:navigate>{{ __('Agent Management') }}
+                    </flux:navlist.item>--}}
+
+                    <flux:navlist.item icon="users" href="{{ route('agent.profile') }}"
+                        :current="request()->routeIs('agent.profile')" wire:navigate>{{ __('Agent management') }}
+                    </flux:navlist.item>
+
+                    <flux:navlist.item icon="building-storefront" href="{{ route('branch.profile') }}"
+                        :current="request()->routeIs('branch.profile')" wire:navigate>{{ __('Branch management') }}
+                    </flux:navlist.item>
+
+                    {{-- <flux:navlist.item icon="banknotes" href=""
+                        :current="request()->routeIs('customer.rebate')" wire:navigate>{{ __('Rebate Criteria') }}
+                    </flux:navlist.item> --}}
+
+
+                </flux:navlist.group>
+
+                {{--@role(['Super Admin', 'Admin'])
                     <flux:navlist.group expandable :expanded="request()->routeIs('setup.*')"
                         :heading="__('Setup Section')" class="lg:grid">
                         <flux:navlist.item icon="inbox-stack" href="{{ route('setup.department') }}"
@@ -154,8 +202,8 @@
                             :current="request()->routeIs('setup.allocation')" wire:navigate>{{ __('Allocation') }}
                         </flux:navlist.item>
                     </flux:navlist.group>
-                @endrole
-                <flux:navlist.group expandable :expanded="request()->routeIs('bodegero.*')"
+                @endrole--}}
+                {{--<flux:navlist.group expandable :expanded="request()->routeIs('bodegero.*')"
                     :heading="__('Warehouse Staff')" class="lg:grid">
                     <flux:navlist.item icon="qr-code" href="{{ route('bodegero.stockin') }}"
                         :current="request()->routeIs('bodegero.stockin')" wire:navigate>{{ __('Stock In') }}
@@ -165,9 +213,9 @@
                     </flux:navlist.item>
                     <!-- <flux:navlist.item icon="banknotes" href=""  wire:navigate>{{ __('Returns') }}
                     </flux:navlist.item> -->
-                </flux:navlist.group>
+                </flux:navlist.group>--}}
 
-                <flux:navlist.group expandable :expanded="request()->routeIs('reports.*')" :heading="__('Reports')"
+                {{--<flux:navlist.group expandable :expanded="request()->routeIs('reports.*')" :heading="__('Reports')"
                     class="lg:grid">
                     <flux:navlist.item icon="chart-bar" href="{{ route('dashboard') }}" 
                         :current="request()->routeIs('dashboard')" wire:navigate>
@@ -211,7 +259,9 @@
                     <flux:navlist.item icon="chart-bar" href="{{ route('reports.financial-summary') }}"
                         :current="request()->routeIs('reports.financial-summary')" wire:navigate>
                         {{ __('Financial Summary') }}
-                    </flux:navlist.item>
+                    </flux:navlist.item>--}}
+
+                    
                     {{-- <flux:navlist.item icon="banknotes" href="{{ route('finance.receivables') }}"
                         :current="request()->routeIs('finance.receivables')" wire:navigate>
                         {{ __('Receivables') }}
@@ -224,13 +274,15 @@
                         :current="request()->routeIs('finance.expenses')" wire:navigate>
                         {{ __('Expenses') }}
                     </flux:navlist.item> --}}
-                    <flux:navlist.item icon="clipboard-document-list" href="{{ route('activity.logs') }}"
+
+
+                    {{--<flux:navlist.item icon="clipboard-document-list" href="{{ route('activity.logs') }}"
                         :current="request()->routeIs('activity.logs')" wire:navigate>
                         {{ __('Activity Logs') }}
                     </flux:navlist.item>
-                </flux:navlist.group>
+                </flux:navlist.group>--}}
 
-                @role(['Super Admin', 'Admin'])
+                {{-- @role(['Super Admin', 'Admin'])
                     <flux:navlist.group expandable
                         :expanded="request()->routeIs('user.index') || request()->routeIs('roles.index')"
                         :heading="__('User Management')" class="lg:grid">
@@ -243,13 +295,13 @@
                             {{ __('Roles & Permissions') }}
                         </flux:navlist.item>
                     </flux:navlist.group>
-                @endrole
+                @endrole--}}
 
                 {{-- Activity Logs moved to top level for easier access --}}
-                <flux:navlist.item icon="clipboard-document-list" href="{{ route('activity.logs') }}"
+                {{--<flux:navlist.item icon="clipboard-document-list" href="{{ route('activity.logs') }}"
                     :current="request()->routeIs('activity.logs')" wire:navigate>
                     {{ __('Activity Logs') }}
-                </flux:navlist.item>
+                </flux:navlist.item>--}}
             </flux:navlist.group>
         </flux:navlist>
 

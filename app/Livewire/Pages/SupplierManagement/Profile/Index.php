@@ -5,14 +5,16 @@ namespace App\Livewire\Pages\SupplierManagement\Profile;
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\Supplier;
+use App\Models\Category;
 
 class Index extends Component
 {
     use WithPagination;
 
+    public $availableCategories = [];
     public $categories = [];
     public $edit_categories = [];
-    public $supplier_name, $supplier_code, $supplier_address, $contact_person, $contact_num, $email, $status;
+    public $supplier_name, $supplier_code, $supplier_address, $contact_person, $contact_num, $email, $tin_num, $status;
     public $edit_name, $edit_code, $edit_address, $edit_contact_person, $edit_contact_num, $edit_email, $edit_tin_num, $edit_status;
     public $perPage = 10;
     public $search = '';
@@ -32,17 +34,17 @@ class Index extends Component
 
     public function getTotalSuppliersProperty()
     {
-        return \App\Models\Supplier::count();
+        return Supplier::count();
     }
 
     public function getActiveSuppliersProperty()
     {
-        return \App\Models\Supplier::where('status', 'active')->count();
+        return Supplier::where('status', 'active')->count();
     }
 
     public function getPendingSuppliersProperty()
     {
-        return \App\Models\Supplier::where('status', 'pending')->count();
+        return Supplier::where('status', 'pending')->count();
     }
 
     public function updatedPerPage()
@@ -50,34 +52,86 @@ class Index extends Component
         $this->resetPage();
     }
 
+    public function mount()
+    {
+        $this->availableCategories = Category::active()
+            ->orderBy('name')
+            ->pluck('name', 'id')
+            ->toArray();
+    }
+
+    /**
+     * ✅ Dynamic validation rules for create/edit
+     */
+    public function rules()
+    {
+        if ($this->selectedItemId) {
+            // 🔹 Edit mode
+            return [
+                'edit_name' => 'required|string|max:255',
+                'edit_code' => 'required|string|max:50|unique:suppliers,code,' . $this->selectedItemId,
+                'edit_address' => 'required|string|max:500',
+                'edit_contact_person' => 'required|string|max:255',
+                'edit_contact_num' => ['required', 'regex:/^[0-9+\-\(\)\s]+$/'],
+                'edit_email' => 'required|email|unique:suppliers,email,' . $this->selectedItemId,
+                'edit_tin_num' => 'nullable|string|max:255',
+                'edit_status' => 'required|string',
+                'edit_categories' => 'required|array|min:1',
+                'edit_categories.*' => 'integer|exists:categories,id',
+            ];
+        }
+
+        // 🔹 Create mode
+        return [
+            'supplier_name' => 'required|string|max:255',
+            'supplier_code' => 'required|string|max:50|unique:suppliers,code',
+            'supplier_address' => 'required|string|max:500',
+            'contact_person' => 'required|string|max:255',
+            'contact_num' => ['required', 'regex:/^[0-9+\-\(\)\s]+$/'],
+            'email' => 'required|email|unique:suppliers,email',
+            'tin_num' => 'nullable|string|max:255',
+            'categories' => 'required|array|min:1',
+            'categories.*' => 'integer|exists:categories,id',
+        ];
+    }
+
+    /**
+     * ✅ Create new supplier
+     */
     public function submit()
     {
-        $this->validate([
-            'supplier_name' => 'required|string',
-            'supplier_code' => 'required|string',
-            'supplier_address' => 'required|string',
-            'contact_person' => 'required|string',
-            'contact_num' => 'required|string',
-            'email' => 'required|email',
-            'categories' => 'required|array',
-            'categories.*' => 'string',
-        ]);
+        $this->validate(); // runs create-mode rules
 
         Supplier::create([
+            'entity_id' => 1, // Default entity ID
             'name' => $this->supplier_name,
             'code' => $this->supplier_code,
             'address' => $this->supplier_address,
             'contact_person' => $this->contact_person,
             'contact_num' => $this->contact_num,
             'email' => $this->email,
+            'tin_num' => $this->tin_num ?? '',
             'status' => 'pending',
+            'is_active' => true,
             'categories' => $this->categories,
         ]);
 
         session()->flash('message', 'Supplier Profile Added Successfully.');
-        $this->reset(['supplier_name', 'supplier_code', 'supplier_address', 'contact_person', 'contact_num', 'email', 'categories']);
+        $this->reset([
+            'supplier_name',
+            'supplier_code',
+            'supplier_address',
+            'contact_person',
+            'contact_num',
+            'email',
+            'tin_num',
+            'categories',
+        ]);
     }
 
+    /**
+     * ✅ Load supplier into edit modal
+     */
     public function edit($id)
     {
         $supplier = Supplier::findOrFail($id);
@@ -96,20 +150,12 @@ class Index extends Component
         $this->showEditModal = true;
     }
 
+    /**
+     * ✅ Update supplier record safely
+     */
     public function update()
     {
-        $this->validate([
-            'edit_name' => 'required|string',
-            'edit_code' => 'required|string',
-            'edit_address' => 'required|string',
-            'edit_contact_person' => 'required|string',
-            'edit_contact_num' => 'required|string',
-            'edit_email' => 'required|email',
-            'edit_tin_num' => 'nullable|string',
-            'edit_status' => 'required|string',
-            'edit_categories' => 'required|array',
-            'edit_categories.*' => 'string',
-        ]);
+        $this->validate(); // runs edit-mode rules
 
         $supplier = Supplier::findOrFail($this->selectedItemId);
 
@@ -129,7 +175,6 @@ class Index extends Component
         session()->flash('message', 'Supplier profile updated successfully.');
     }
 
-    // 🔴 Delete Supplier
     public function confirmDelete($id)
     {
         $this->deleteId = $id;
@@ -144,7 +189,6 @@ class Index extends Component
         $this->cancel();
     }
 
-    // Cancel resets modal states
     public function cancel()
     {
         $this->resetValidation();
@@ -159,19 +203,25 @@ class Index extends Component
             'contact_person',
             'contact_num',
             'email',
+            'tin_num',
         ]);
     }
 
-    // 🔍 Render and filter suppliers
     public function render()
     {
-        $items = Supplier::when($this->search, function ($query) {
-            $query->where(function ($q) {
-                $q->where('name', 'like', '%' . $this->search . '%')
-                  ->orWhere('address', 'like', '%' . $this->search . '%')
-                  ->orWhere('contact_person', 'like', '%' . $this->search . '%')
-                  ->orWhere('contact_num', 'like', '%' . $this->search . '%')
-                  ->orWhere('email', 'like', '%' . $this->search . '%');
+        $search = trim($this->search);
+
+        $items = Supplier::when($search, function ($query) use ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('code', 'like', "%{$search}%")
+                    ->orWhere('address', 'like', "%{$search}%")
+                    ->orWhere('contact_person', 'like', "%{$search}%")
+                    ->orWhere('contact_num', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('status', 'like', "%{$search}%")
+                    ->orWhereJsonContains('categories', $search)
+                    ->orWhereRaw('LOWER(JSON_EXTRACT(categories, "$")) LIKE ?', ['%' . strtolower($search) . '%']);
             });
         })
         ->latest()
@@ -180,3 +230,4 @@ class Index extends Component
         return view('livewire.pages.supplier-management.profile.index', compact('items'));
     }
 }
+

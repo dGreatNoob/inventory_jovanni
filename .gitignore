@@ -9,6 +9,9 @@
 .env
 .env.backup
 .env.production
+
+# Database backups
+/backups/
 .phpactor.json
 .phpunit.result.cache
 Homestead.json
@@ -22,3 +25,6 @@ yarn-error.log
 /.vscode
 /.zed
 db_schema/
+/storage/app/public/photos
+/public/storage/photos
+

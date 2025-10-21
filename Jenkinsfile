@@ -25,6 +25,24 @@ pipeline {
             }
         }
 
+        stage('Install Dependencies') {
+            steps {
+                sh '''
+                cd ${DOCKER_COMPOSE_DIR}
+                docker-compose -p spc build app
+                '''
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                sh '''
+                cd ${DOCKER_COMPOSE_DIR}
+                docker-compose -p spc run --rm app php artisan test
+                '''
+            }
+        }
+
         stage('QA Test Environment') {
             steps {
                 script {

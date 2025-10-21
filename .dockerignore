@@ -1,54 +1,19 @@
-# Node modules (front-end packages)
-node_modules
-
-# Vendor (you'll install it during build)
-vendor
-
-# Laravel environment file
-.env
-
-# Composer lock file (optional, if building fresh each time)
-# composer.lock
-
-# NPM/Yarn lock files
-# package-lock.json
-yarn.lock
-
-# Laravel storage and cache files
-storage/*.key
-storage/*.log
-storage/framework/*
-storage/logs/*
-storage/app/public/*
-bootstrap/cache/*.php
-
-# OS-specific files
-.DS_Store
-Thumbs.db
-
-# Git files
 .git
 .gitignore
-
-# Docker files (if unnecessary in image)
-docker-compose.yml
-.dockerignore
+.env
+.env.local
+.env.production
+.vscode
+node_modules
+vendor
+npm-debug.log
 Dockerfile
-
-# Tests (optional if not needed in image)
-phpunit.xml
-tests/
-
-# Exclude files and folders
-exclude node_modules
-exclude vendor
-exclude storage/app/public
-exclude storage/framework
-exclude storage/logs
-exclude .git
-exclude .env
-exclude .DS_Store
-exclude npm-debug.log
-exclude yarn-error.log
-exclude .idea
-exclude .vscode
+docker-compose.yml
+docker-compose.prod.yml
+README.md
+*.md
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+bootstrap/cache/*

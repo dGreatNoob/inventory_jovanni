@@ -1,18 +1,4 @@
-# syntax=docker/dockerfile:1
-
-# --- Build Stage ---
-FROM composer:2.7 AS vendor
-WORKDIR /app
-COPY composer.json composer.lock ./
-RUN composer install --ignore-platform-reqs --no-scripts --no-autoloader
-
-# --- Node Build Stage ---
-FROM node:20 AS node_modules
-WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm install
-
-# --- App Stage ---
+# Laravel + Livewire Dockerfile
 FROM php:8.2-fpm
 
 # Install system dependencies
@@ -26,31 +12,99 @@ RUN apt-get update && apt-get install -y \
     curl \
     libzip-dev \
     libpq-dev \
-    && docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd zip
+    sqlite3 \
+    libsqlite3-dev \
+    nodejs \
+    npm \
+    netcat-openbsd \
+    && docker-php-ext-install pdo pdo_mysql pdo_sqlite mbstring exif pcntl bcmath gd zip \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install Composer
-COPY --from=vendor /usr/bin/composer /usr/bin/composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
 # Set working directory
 WORKDIR /var/www
 
-# Copy existing application
+# Copy application code
 COPY . .
 
-# Copy vendor and node_modules
-COPY --from=vendor /app/vendor ./vendor
-COPY --from=node_modules /app/node_modules ./node_modules
+# Create necessary directories
+RUN mkdir -p storage/framework/cache/data \
+    storage/framework/sessions \
+    storage/framework/views \
+    storage/logs \
+    storage/app/public \
+    bootstrap/cache
 
 # Install PHP dependencies
-RUN composer install --no-interaction --prefer-dist --optimize-autoloader
+RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-scripts
 
 # Install Node dependencies and build assets
-RUN npm run build || npm run dev
+RUN npm install && npm run build
+
+# Run post-install scripts
+RUN php artisan package:discover --ansi
 
 # Set permissions
-RUN chown -R www-data:www-data /var/www && chmod -R 755 /var/www/storage
+RUN chown -R www-data:www-data /var/www && \
+    chmod -R 755 /var/www && \
+    chmod -R 775 /var/www/storage /var/www/bootstrap/cache
 
-EXPOSE 8000
+# Create entrypoint script
+RUN echo '#!/bin/bash\n\
+set -e\n\
+\n\
+echo "🚀 Starting Laravel application..."\n\
+\n\
+# Wait for MySQL\n\
+echo "⏳ Waiting for database connection..."\n\
+while ! nc -z db 3306; do\n\
+  sleep 1\n\
+done\n\
+echo "✅ Database connection established"\n\
+\n\
+# Wait for Redis\n\
+echo "⏳ Waiting for Redis connection..."\n\
+while ! nc -z redis 6379; do\n\
+  sleep 1\n\
+done\n\
+echo "✅ Redis connection established"\n\
+\n\
+# Generate application key if not set\n\
+if [ -z "$APP_KEY" ] || [ "$APP_KEY" = "" ]; then\n\
+    echo "🔑 Generating application key..."\n\
+    php artisan key:generate --force\n\
+fi\n\
+\n\
+# Run migrations\n\
+echo "📊 Running database migrations..."\n\
+php artisan migrate --force\n\
+\n\
+# Create storage link\n\
+echo "🔗 Creating storage link..."\n\
+php artisan storage:link\n\
+\n\
+# Clear and cache config\n\
+echo "⚡ Optimizing application..."\n\
+php artisan config:cache\n\
+php artisan route:cache\n\
+php artisan view:cache\n\
+\n\
+echo "✅ Laravel application ready!"\n\
+\n\
+exec "$@"' > /usr/local/bin/entrypoint.sh
 
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
+# Expose PHP-FPM port
+EXPOSE 9000
+
+# Use entrypoint script
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+
+# Start PHP-FPM
+CMD ["php-fpm"]

@@ -30,7 +30,7 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
-            'department_id' => Department::inRandomOrder()->first()?->id ?? Department::factory(), // Assuming department_id is nullable
+            'department_id' => Department::inRandomOrder()->first()?->id, // Will be null if no departments exist
         ];
     }
 

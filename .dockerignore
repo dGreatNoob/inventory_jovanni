@@ -1,62 +1,19 @@
-# Git
 .git
 .gitignore
-.gitattributes
-
-# Documentation
-*.md
-docs/
-
-# Development files
 .env
-.env.*
-!.env.example
-
-# Dependencies (will be installed in container)
-node_modules/
-vendor/
-
-# Build artifacts
-public/build/
-public/hot
-public/storage
-
-# IDE files
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# Logs
+.env.local
+.env.production
+.vscode
+node_modules
+vendor
+npm-debug.log
+Dockerfile
+docker-compose.yml
+docker-compose.prod.yml
+README.md
+*.md
 storage/logs/*
-!storage/logs/.gitkeep
-
-# Cache
 storage/framework/cache/*
-!storage/framework/cache/.gitkeep
 storage/framework/sessions/*
-!storage/framework/sessions/.gitkeep
 storage/framework/views/*
-!storage/framework/views/.gitkeep
-
-# Testing
-tests/
-phpunit.xml
-.phpunit.result.cache
-
-# Docker
-Dockerfile*
-docker-compose*
-.dockerignore
-
-# CI/CD
-.github/
-Jenkinsfile
-
-# Temporary files
-*.tmp
-*.temp
+bootstrap/cache/*

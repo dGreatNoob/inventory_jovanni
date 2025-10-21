@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem@latest",
+        "--root",
+        "/home/biiieem/repos/inventory_jovanni",
+        "--allow",
+        "read",
+        "--allow",
+        "write",
+        "--allow",
+        "list",
+        "--allow",
+        "stat"
+      ]
+    }
+  }
+}

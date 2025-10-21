@@ -1,0 +1,99 @@
+# Laravel Application Dockerfile
+FROM php:8.3-fpm-alpine
+
+# Install system dependencies
+RUN apk add --no-cache \
+    supervisor \
+    curl \
+    libpng-dev \
+    libzip-dev \
+    libxml2-dev \
+    oniguruma-dev \
+    icu-dev \
+    freetype-dev \
+    libjpeg-turbo-dev \
+    mysql-client \
+    nodejs \
+    npm \
+    git \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install \
+        pdo_mysql \
+        mbstring \
+        xml \
+        intl \
+        zip \
+        gd \
+        opcache \
+        pcntl \
+        bcmath \
+    && apk add --no-cache --virtual .build-deps $PHPIZE_DEPS \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
+    && apk del .build-deps
+
+# Install Composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+# Configure PHP for production
+RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" \
+    && echo "opcache.enable=1" >> /usr/local/etc/php/conf.d/opcache.ini \
+    && echo "opcache.memory_consumption=128" >> /usr/local/etc/php/conf.d/opcache.ini \
+    && echo "opcache.interned_strings_buffer=8" >> /usr/local/etc/php/conf.d/opcache.ini \
+    && echo "opcache.max_accelerated_files=4000" >> /usr/local/etc/php/conf.d/opcache.ini \
+    && echo "opcache.revalidate_freq=2" >> /usr/local/etc/php/conf.d/opcache.ini \
+    && echo "opcache.fast_shutdown=1" >> /usr/local/etc/php/conf.d/opcache.ini
+
+# Set working directory
+WORKDIR /var/www/html
+
+# Copy composer files first for better caching
+COPY composer.json composer.lock ./
+
+# Install PHP dependencies
+RUN composer install --no-scripts --no-autoloader --no-interaction --prefer-dist --ignore-platform-reqs
+
+# Copy package files and install Node.js dependencies
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# Copy application code
+COPY . .
+
+# Generate optimized autoloader
+RUN composer dump-autoload --optimize --no-scripts
+
+# Build assets for production
+RUN npm run build
+
+# Match host user UID/GID to avoid permission issues (Alpine-compatible)
+# Host user biiieem is 1000:1000, so we change www-data to match
+# Do this AFTER all file operations but BEFORE final permissions
+RUN deluser www-data || true \
+    && addgroup -g 1000 www-data \
+    && adduser -D -u 1000 -G www-data www-data
+
+# Create necessary directories and set permissions
+RUN mkdir -p \
+    storage/framework/cache \
+    storage/framework/sessions \
+    storage/framework/views \
+    storage/logs \
+    bootstrap/cache \
+    && chown -R www-data:www-data /var/www/html \
+    && chmod -R 775 storage bootstrap/cache \
+    && chmod -R 775 storage/framework/cache \
+    && chmod -R 775 storage/framework/sessions \
+    && chmod -R 775 storage/framework/views \
+    && chmod -R 775 storage/logs
+
+# Copy Supervisor configuration
+COPY docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Copy startup script
+COPY docker/scripts/start.sh /usr/local/bin/start.sh
+RUN chmod +x /usr/local/bin/start.sh
+
+# No HTTP listener in the app container (nginx runs in the separate web container)
+
+CMD ["/usr/local/bin/start.sh"]

@@ -83,7 +83,7 @@
                                 <div class="flex-shrink-0 h-10 w-10">
                                     @if($product->primary_image)
                                         <img class="h-10 w-10 rounded-lg object-cover" 
-                                             src="{{ Storage::url('photos/' . $product->primary_image) }}" 
+                                             src="{{ asset('storage/photos/' . $product->primary_image) }}" 
                                              alt="{{ $product->name }}">
                                     @else
                                         <div class="h-10 w-10 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center">

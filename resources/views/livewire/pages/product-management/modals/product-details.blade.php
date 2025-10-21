@@ -7,7 +7,7 @@
                 <div class="flex items-center space-x-4">
                     <div class="flex-shrink-0 h-12 w-12 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700">
                         @if($editingProduct->primary_image)
-                            <img src="{{ Storage::url('photos/' . $editingProduct->primary_image) }}" alt="{{ $editingProduct->name }}" class="h-12 w-12 object-cover">
+                            <img src="{{ asset('storage/photos/' . $editingProduct->primary_image) }}" alt="{{ $editingProduct->name }}" class="h-12 w-12 object-cover">
                         @endif
                     </div>
                     <div>

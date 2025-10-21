@@ -33,7 +33,7 @@
                     <flux:modal.trigger name="product-details">
                     <div class="aspect-square bg-gray-100 dark:bg-gray-600 overflow-hidden cursor-pointer" wire:click="openProductViewer({{ $product->id }})">
                         @if($product->primary_image)
-                            <img src="{{ Storage::url('photos/' . $product->primary_image) }}" 
+                            <img src="{{ asset('storage/photos/' . $product->primary_image) }}" 
                                  alt="{{ $product->name }}" 
                                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200">
                         @else

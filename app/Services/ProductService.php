@@ -7,7 +7,6 @@ use App\Models\ProductInventory;
 use App\Models\InventoryMovement;
 use App\Models\Category;
 use App\Models\Supplier;
-use App\Models\InventoryLocation;
 use App\Models\ProductImage;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -21,7 +20,7 @@ class ProductService
      */
     public function searchProducts(string $query = '', array $filters = [], int $perPage = 20): LengthAwarePaginator
     {
-        $products = Product::with(['category', 'supplier', 'images', 'inventory.location'])
+        $products = Product::with(['category', 'supplier', 'images', 'inventory'])
             ->active()
             ->when($query, fn($q) => $q->search($query))
             ->when($filters['category'] ?? null, fn($q) => $q->byCategory($filters['category']))
@@ -81,9 +80,9 @@ class ProductService
                 'updated_by' => auth()->id() ?? 1,
             ]);
 
-            // Create initial inventory for default location
+            // Create initial inventory
             if (isset($data['initial_quantity']) && $data['initial_quantity'] > 0) {
-                $this->createInitialInventory($product, $data['initial_quantity'], $data['location_id'] ?? 1);
+                $this->createInitialInventory($product, $data['initial_quantity']);
             }
 
             return $product->load(['category', 'supplier', 'images', 'inventory']);
@@ -129,7 +128,7 @@ class ProductService
             'category',
             'supplier',
             'images',
-            'inventory.location',
+            'inventory',
             'movements' => function($query) {
                 $query->with(['location', 'creator'])->latest()->limit(10);
             }
@@ -141,7 +140,7 @@ class ProductService
      */
     public function getLowStockProducts(): Collection
     {
-        return Product::with(['category', 'supplier', 'inventory.location'])
+        return Product::with(['category', 'supplier', 'inventory'])
             ->whereHas('inventory', function($q) {
                 $q->where('quantity', '<', 10)
                   ->where('quantity', '>', 0);
@@ -155,7 +154,7 @@ class ProductService
      */
     public function getOutOfStockProducts(): Collection
     {
-        return Product::with(['category', 'supplier', 'inventory.location'])
+        return Product::with(['category', 'supplier', 'inventory'])
             ->whereHas('inventory', fn($q) => $q->where('quantity', '<=', 0))
             ->active()
             ->get();
@@ -216,11 +215,10 @@ class ProductService
     /**
      * Create initial inventory for a product
      */
-    protected function createInitialInventory(Product $product, float $quantity, int $locationId): ProductInventory
+    protected function createInitialInventory(Product $product, float $quantity): ProductInventory
     {
         $inventory = ProductInventory::create([
             'product_id' => $product->id,
-            'location_id' => $locationId,
             'quantity' => $quantity,
             'reserved_quantity' => 0,
             'available_quantity' => $quantity,
@@ -231,7 +229,6 @@ class ProductService
         // Create initial movement record
         InventoryMovement::create([
             'product_id' => $product->id,
-            'location_id' => $locationId,
             'movement_type' => 'adjustment',
             'quantity' => $quantity,
             'unit_cost' => $product->cost,

@@ -42,10 +42,10 @@
 - [ ] Expense Tracking
 - [ ] Currency Conversion
 
-### Operational Management (Newly Added)
-- [ ] **Agent Management** - Agent profiles, assignments, and tracking
-- [ ] **Branch Management** - Branch operations and agent assignments
-- [ ] **Deployment History** - System deployment tracking
+### Operational Management (Ready for Production)
+- [x] **Agent Management** - Agent profiles, assignments, and tracking
+- [x] **Branch Management** - Branch operations and agent assignments
+- [x] **Deployment History** - System deployment tracking
 
 ### Other Modules
 - [ ] Shipment Management
@@ -118,9 +118,11 @@ npm run build
 
 ### Module Status
 - **Product Management**: ✅ Production Ready
+- **Supplier Management**: ✅ Production Ready
+- **Operational Management**: ✅ Production Ready (Agent & Branch Management)
 - **Dashboard**: ✅ Production Ready (Product-focused)
-- **Sales Management**: ⚠️ Under Revision
-- **Finance**: ⚠️ Under Revision
+- **Sales Management**: ⚠️ Hidden for Production (Under Revision)
+- **Finance**: ⚠️ Hidden for Production (Under Revision)
 - **Other Modules**: ⚠️ Under Revision
 
 ## 🎯 Recommended Next Steps

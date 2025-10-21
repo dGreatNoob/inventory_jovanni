@@ -13,10 +13,25 @@ class Supplier extends Model
 {
     use HasFactory, SoftDeletes, LogsActivity;
 
+    // Available supplier categories
+    const CATEGORIES = [
+        'Raw Materials',
+        'Packaging',
+        'Equipment',
+        'Services',
+        'Logistics',
+        'Technology',
+        'Maintenance',
+        'Consulting',
+        'Other'
+    ];
+
     protected $fillable = [
         'entity_id',
         'name',
+        'code',
         'contact_person',
+        'contact_num',
         'email',
         'phone',
         'address',
@@ -25,14 +40,17 @@ class Supplier extends Model
         'postal_code',
         'terms',
         'tax_id',
+        'tin_num',
         'credit_limit',
         'payment_terms_days',
-        'is_active'
+        'is_active',
+        'categories'
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
         'credit_limit' => 'decimal:2',
+        'categories' => 'array',
     ];
 
     // Relationships

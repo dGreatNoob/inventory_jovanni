@@ -5,6 +5,7 @@ namespace App\Livewire\Pages\SupplierManagement\Profile;
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\Supplier;
+use App\Models\Category;
 
 class Index extends Component
 {
@@ -13,7 +14,7 @@ class Index extends Component
     public $availableCategories = [];
     public $categories = [];
     public $edit_categories = [];
-    public $supplier_name, $supplier_code, $supplier_address, $contact_person, $contact_num, $email, $status;
+    public $supplier_name, $supplier_code, $supplier_address, $contact_person, $contact_num, $email, $tin_num, $status;
     public $edit_name, $edit_code, $edit_address, $edit_contact_person, $edit_contact_num, $edit_email, $edit_tin_num, $edit_status;
     public $perPage = 10;
     public $search = '';
@@ -53,7 +54,10 @@ class Index extends Component
 
     public function mount()
     {
-        $this->availableCategories = Supplier::CATEGORIES;
+        $this->availableCategories = Category::active()
+            ->orderBy('name')
+            ->pluck('name', 'id')
+            ->toArray();
     }
 
     /**
@@ -69,11 +73,11 @@ class Index extends Component
                 'edit_address' => 'required|string|max:500',
                 'edit_contact_person' => 'required|string|max:255',
                 'edit_contact_num' => ['required', 'regex:/^[0-9+\-\(\)\s]+$/'],
-                'edit_email' => 'required|email:rfc,dns|unique:suppliers,email,' . $this->selectedItemId,
+                'edit_email' => 'required|email|unique:suppliers,email,' . $this->selectedItemId,
                 'edit_tin_num' => 'nullable|string|max:255',
                 'edit_status' => 'required|string',
                 'edit_categories' => 'required|array|min:1',
-                'edit_categories.*' => 'string|in:' . implode(',', Supplier::CATEGORIES),
+                'edit_categories.*' => 'integer|exists:categories,id',
             ];
         }
 
@@ -84,9 +88,10 @@ class Index extends Component
             'supplier_address' => 'required|string|max:500',
             'contact_person' => 'required|string|max:255',
             'contact_num' => ['required', 'regex:/^[0-9+\-\(\)\s]+$/'],
-            'email' => 'required|email:rfc,dns|unique:suppliers,email',
+            'email' => 'required|email|unique:suppliers,email',
+            'tin_num' => 'nullable|string|max:255',
             'categories' => 'required|array|min:1',
-            'categories.*' => 'string|in:' . implode(',', Supplier::CATEGORIES),
+            'categories.*' => 'integer|exists:categories,id',
         ];
     }
 
@@ -98,13 +103,16 @@ class Index extends Component
         $this->validate(); // runs create-mode rules
 
         Supplier::create([
+            'entity_id' => 1, // Default entity ID
             'name' => $this->supplier_name,
             'code' => $this->supplier_code,
             'address' => $this->supplier_address,
             'contact_person' => $this->contact_person,
             'contact_num' => $this->contact_num,
             'email' => $this->email,
+            'tin_num' => $this->tin_num ?? '',
             'status' => 'pending',
+            'is_active' => true,
             'categories' => $this->categories,
         ]);
 
@@ -116,6 +124,7 @@ class Index extends Component
             'contact_person',
             'contact_num',
             'email',
+            'tin_num',
             'categories',
         ]);
     }
@@ -194,6 +203,7 @@ class Index extends Component
             'contact_person',
             'contact_num',
             'email',
+            'tin_num',
         ]);
     }
 

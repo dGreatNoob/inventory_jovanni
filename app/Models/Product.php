@@ -115,7 +115,18 @@ class Product extends Model
     public function getPrimaryImageAttribute(): ?string
     {
         $primaryImage = $this->images()->where('is_primary', true)->first();
-        return $primaryImage ? $primaryImage->filename : $this->pict_name;
+        if ($primaryImage) {
+            return $primaryImage->filename;
+        }
+        
+        // If no primary image, return the first image
+        $firstImage = $this->images()->first();
+        if ($firstImage) {
+            return $firstImage->filename;
+        }
+        
+        // Fallback to pict_name if it exists
+        return $this->pict_name;
     }
 
     public function getTotalQuantityAttribute(): float

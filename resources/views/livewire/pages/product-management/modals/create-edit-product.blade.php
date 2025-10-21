@@ -218,17 +218,6 @@
                 />
                 @error('form.initial_quantity') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Location</label>
-                    <select wire:model="form.location_id" 
-                            class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                        <option value="">Select Location</option>
-                        @foreach($locations as $location)
-                            <option value="{{ $location->id }}">{{ $location->name }} ({{ $location->type }})</option>
-                        @endforeach
-                    </select>
-                </div>
-                @error('form.location_id') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
             </div>
         </div>
 

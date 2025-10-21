@@ -8,7 +8,6 @@ use Livewire\Attributes\Layout;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\Supplier;
-use App\Models\InventoryLocation;
 use App\Models\InventoryMovement;
 use App\Models\ProductInventory;
 use App\Services\InventoryService;
@@ -84,7 +83,7 @@ class InventoryDashboard extends Component
         $activeProducts = Product::where('disabled', false)->count();
         $totalCategories = Category::where('is_active', true)->count();
         $totalSuppliers = Supplier::where('is_active', true)->count();
-        $totalLocations = InventoryLocation::where('is_active', true)->count();
+        // Location tracking removed
 
         // Inventory value calculation (guard against NULL cost and exclude soft-deleted products)
         $inventoryValue = ProductInventory::join('products', 'product_inventory.product_id', '=', 'products.id')
@@ -106,7 +105,6 @@ class InventoryDashboard extends Component
             'active_products' => $activeProducts,
             'total_categories' => $totalCategories,
             'total_suppliers' => $totalSuppliers,
-            'total_locations' => $totalLocations,
             'inventory_value' => $inventoryValue,
             'low_stock_products' => $lowStockProducts,
             'out_of_stock_products' => $outOfStockProducts,
@@ -115,7 +113,7 @@ class InventoryDashboard extends Component
 
     public function getInventoryMovementsProperty()
     {
-        $query = InventoryMovement::with(['product', 'location'])
+        $query = InventoryMovement::with(['product'])
             ->whereBetween('created_at', [$this->dateFrom, $this->dateTo . ' 23:59:59']);
 
         return [
@@ -175,14 +173,6 @@ class InventoryDashboard extends Component
             ->get();
     }
 
-    public function getLocationDistributionProperty()
-    {
-        return InventoryLocation::withCount(['productInventory as total_products'])
-            ->where('is_active', true)
-            ->orderBy('total_products', 'desc')
-            ->limit(10)
-            ->get();
-    }
 
     public function getInventoryTrendsProperty()
     {
@@ -222,26 +212,6 @@ class InventoryDashboard extends Component
             ->get();
     }
 
-    public function getInventoryValueByLocationProperty()
-    {
-        return InventoryLocation::with(['productInventory.product'])
-            ->where('is_active', true)
-            ->get()
-            ->map(function ($location) {
-                $totalValue = $location->productInventory->sum(function ($inventory) {
-                    $cost = optional($inventory->product)->cost ?? 0;
-                    return $inventory->quantity * $cost;
-                });
-
-                return [
-                    'location' => $location->name,
-                    'value' => $totalValue,
-                    'product_count' => $location->productInventory->count(),
-                ];
-            })
-            ->sortByDesc('value')
-            ->values();
-    }
 
     public function getAlertsProperty()
     {
@@ -292,10 +262,8 @@ class InventoryDashboard extends Component
             'lowStockProducts' => $this->lowStockProducts,
             'recentMovements' => $this->recentMovements,
             'categoryDistribution' => $this->categoryDistribution,
-            'locationDistribution' => $this->locationDistribution,
             'inventoryTrends' => $this->inventoryTrends,
             'supplierPerformance' => $this->supplierPerformance,
-            'inventoryValueByLocation' => $this->inventoryValueByLocation,
             'alerts' => $this->alerts,
         ]);
     }

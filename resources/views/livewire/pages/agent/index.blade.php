@@ -2,70 +2,56 @@
 <x-slot:subheader>Profile</x-slot:subheader>
 
 <div class="pt-4">
-    <!-- Under Revision Notice -->
-    <div class="mb-6 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
-        <div class="flex items-start">
-            <div class="flex-shrink-0">
-                <svg class="h-5 w-5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
-                </svg>
-            </div>
-            <div class="ml-3">
-                <h3 class="text-sm font-medium text-amber-800 dark:text-amber-200">
-                    Module Under Revision
-                </h3>
-                <div class="mt-2 text-sm text-amber-700 dark:text-amber-300">
-                    <p>The Agent Management module is currently under revision and may not be fully functional. Some features may be incomplete or unavailable. Please use the Product Management module for core inventory operations.</p>
-                </div>
-            </div>
-        </div>
-    </div>
     <div class="">
-        <section
-            class="mb-5 max-w-xlg p-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
-            <form wire:submit.prevent="submit">
+        <section class="mb-6 bg-white dark:bg-gray-800 shadow rounded-lg">
+            <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white">Create New Agent</h3>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Add a new agent to the system</p>
+            </div>
+            <form wire:submit.prevent="submit" class="p-6">
                 <div class="grid gap-6 mb-6 md:grid-cols-2">
                     <div>
-                        <label for="agent_code"
-                            class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Agent Code</label>
+                        <label for="agent_code" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Agent Code</label>
                         <input type="text" id="agent_code" wire:model="agent_code"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                            class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                             placeholder="AGT-001" required />
+                        @error('agent_code') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                     </div>
                     <div>
-                        <label for="name"
-                            class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Name</label>
+                        <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
                         <input type="text" id="name" wire:model="name"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                            placeholder="Name" required />
+                            class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                            placeholder="Full Name" required />
+                        @error('name') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                     </div>
                     <div>
-                        <label for="address" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Address</label>
+                        <label for="address" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Address</label>
                         <input type="text" id="address" wire:model="address"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                            placeholder="Unit No, Street Name., City" required />
+                            class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                            placeholder="Unit No, Street Name, City" required />
+                        @error('address') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                     </div>
                     <div>
-                        <label for="contact_num"
-                            class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Contact Number</label>
+                        <label for="contact_num" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Contact Number</label>
                         <input type="tel" id="contact_num" wire:model="contact_num"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                            class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                             placeholder="+639474720112" required />
+                        @error('contact_num') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                     </div>
                     <div>
-                        <label for="tin_num" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tin Number</label>
-                        <input type="number" id="tin_num" wire:model="tin_num"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        <label for="tin_num" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">TIN Number</label>
+                        <input type="text" id="tin_num" wire:model="tin_num"
+                            class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                             placeholder="123456789" required />
+                        @error('tin_num') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                     </div>
                 </div>
 
                 <div class="h-4"></div> <!-- Space between assign branch and submit -->
                 <div class="flex justify-end">
-                    <button type="submit"
-                        class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+                    <flux:button type="submit">
                         Submit
-                    </button>
+                    </flux:button>
                 </div>
                 </div>
             </form>
@@ -78,116 +64,110 @@
         @endif
 
         <section>
-            <div class="mb-5 max-w-xlg p-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
+            <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
                 {{-- Search and Filter Section --}}
-                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 p-4 pr-10 border-b border-gray-200 dark:border-gray-700">
-                    <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
-                        {{-- Search Input --}}
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                <svg aria-hidden="true" class="w-5 h-5 text-gray-500 dark:text-gray-400"
-                                    fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                    <path fill-rule="evenodd"
-                                        d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                                        clip-rule="evenodd" />
-                                </svg>
+                <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                        <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
+                            {{-- Search Input --}}
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                    <svg aria-hidden="true" class="w-5 h-5 text-gray-500 dark:text-gray-400"
+                                        fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                        <path fill-rule="evenodd"
+                                            d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                                            clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                                <input type="text" wire:model.live.debounce.300ms="search"
+                                    class="block w-64 p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-indigo-500 dark:focus:border-indigo-500"
+                                    placeholder="Search Agent...">
                             </div>
-                            <input type="text" wire:model.live.debounce.300ms="search"
-                                class="block w-64 p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                placeholder="Search Agent...">
-                        </div>
 
-                        <div class="w-4"></div>
-
-                        {{-- Status Filter Dropdown --}}
+                            {{-- Status Filter Dropdown --}}
                             <select wire:model.live="statusFilter"
-                                class="px-4 py-2 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+                                class="px-4 py-2 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-indigo-500 dark:focus:border-indigo-500">
                                 <option value="all">All Status</option>
                                 <option value="deployed">Deployed</option>
                                 <option value="active">Active</option>
                             </select>
-                    </div>
+                        </div>
 
-                    {{-- Per Page Selector --}}
-                    <div class="flex items-center space-x-3">
-                        <label class="text-sm font-medium text-gray-900 dark:text-white whitespace-nowrap">
-                            Per Page
-                        </label>
-                        <select wire:model.live="perPage"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-24 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
-                            <option value="5">5</option>
-                            <option value="10">10</option>
-                            <option value="20">20</option>
-                            <option value="50">50</option>
-                            <option value="100">100</option>
-                        </select>
+                        {{-- Per Page Selector --}}
+                        <div class="flex items-center space-x-3">
+                            <label class="text-sm font-medium text-gray-900 dark:text-white whitespace-nowrap">
+                                Per Page
+                            </label>
+                            <select wire:model.live="perPage"
+                                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-24 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-indigo-500 dark:focus:border-indigo-500">
+                                <option value="5">5</option>
+                                <option value="10">10</option>
+                                <option value="20">20</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
                 {{-- Results Info --}}
-                <div class="py-3 px-4 text-sm text-gray-700 dark:text-gray-400">
+                <div class="px-6 py-3 text-sm text-gray-700 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50">
                     @if($items->total() > 0)
-                        Showing 
-                        <span class="font-semibold text-gray-900 dark:text-white">{{ $items->firstItem() }}</span>
-                        to 
-                        <span class="font-semibold text-gray-900 dark:text-white">{{ $items->lastItem() }}</span>
-                        of 
-                        <span class="font-semibold text-gray-900 dark:text-white">{{ $items->total() }}</span>
-                        results
+                        <span class="font-semibold text-gray-900 dark:text-white">{{ $items->total() }}</span> agents found
                     @else
-                        <span class="font-semibold text-gray-900 dark:text-white">No results found</span>
+                        <span class="font-semibold text-gray-900 dark:text-white">No agents found</span>
                     @endif
                 </div>
 
                 {{-- Table --}}
                 <div class="overflow-x-auto">
-                    <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-                        <thead class="text-sm text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead class="bg-gray-50 dark:bg-gray-700">
                             <tr>
-                                <th scope="col" class="px-6 py-3">Agent Code</th>
-                                <th scope="col" class="px-6 py-3">Name</th>
-                                <th scope="col" class="px-6 py-3">Address</th>
-                                <th scope="col" class="px-6 py-3">Contact Number</th>
-                                <th scope="col" class="px-6 py-3">Tin Number</th>
-                                <th scope="col" class="px-6 py-3 text-center">Status</th>
-                                <th scope="col" class="px-6 py-3 text-center">Action</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Agent Code</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Name</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Address</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Contact Number</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">TIN Number</th>
+                                <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                                <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Action</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                             @forelse($items as $item)
                                 @php
                                     $isDeployed = $item->branchAssignments->where('released_at', null)->count() > 0;
                                 @endphp
-                                <tr class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700 border-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                                    <td class="px-6 py-4 font-medium text-gray-900 dark:text-white">
+                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                                         {{ $item->agent_code }}
                                     </td>
-                                    <td class="px-6 py-4">{{ $item->name }}</td>
-                                    <td class="px-6 py-4">{{ $item->address }}</td>
-                                    <td class="px-6 py-4">{{ $item->contact_num }}</td>
-                                    <td class="px-6 py-4">{{ $item->tin_num }}</td>
-                                    <td class="px-6 py-4 text-center">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{{ $item->name }}</td>
+                                    <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{{ $item->address }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ $item->contact_num }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ $item->tin_num }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-center">
                                         @if($isDeployed)
-                                            <span class="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
+                                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400">
                                                 Deployed
                                             </span>
                                         @else
-                                            <span class="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300">
+                                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
                                                 Active
                                             </span>
                                         @endif
                                     </td>
-                                    <td class="px-6 py-4 text-center">
+                                    <td class="px-6 py-4 whitespace-nowrap text-center">
                                         <div class="flex items-center justify-center space-x-2">
-                                            <x-button href="#" wire:click.prevent="toggleDeployment({{ $item->id }})" variant="info">
+                                            <flux:button wire:click.prevent="toggleDeployment({{ $item->id }})" variant="outline" size="sm">
                                                 {{ $isDeployed ? 'Release' : 'Deploy' }}
-                                            </x-button>
-                                            <x-button href="#" wire:click.prevent="edit({{ $item->id }})" variant="warning">
+                                            </flux:button>
+                                            <flux:button wire:click.prevent="edit({{ $item->id }})" variant="outline" size="sm">
                                                 Edit
-                                            </x-button>
-                                            <x-button href="#" wire:click.prevent="confirmDelete({{ $item->id }})" variant="danger">
+                                            </flux:button>
+                                            <flux:button wire:click.prevent="confirmDelete({{ $item->id }})" variant="outline" size="sm" class="text-red-600 hover:text-red-700">
                                                 Delete
-                                            </x-button>
+                                            </flux:button>
                                         </div>
                                     </td>
                                 </tr>
@@ -213,7 +193,7 @@
                 </div>
 
                 {{-- Pagination --}}
-                <div class="py-4 px-3 border-t border-gray-200 dark:border-gray-700">
+                <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
                     {{ $items->links() }}
                 </div>
             </div>
@@ -241,55 +221,56 @@
                         <!-- Modal Body -->
                         <div class="p-6 space-y-6">
                             <div class="grid gap-6 md:grid-cols-2">
-                                
                                 <div>
-                                    <label for="edit_agent_code" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Agent Code</label>
+                                    <label for="edit_agent_code" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Agent Code</label>
                                     <input type="text" wire:model="edit_agent_code" id="edit_agent_code" 
-                                        class="w-full p-2 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:text-white" placeholder="AGT-001" />
-                                    @error('edit_agent_code') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                        class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
+                                        placeholder="AGT-001" />
+                                    @error('edit_agent_code') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                                 </div>
 
                                 <div>
-                                    <label for="edit_name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Name</label>
+                                    <label for="edit_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
                                     <input type="text" wire:model="edit_name" id="edit_name" 
-                                        class="w-full p-2 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:text-white" placeholder="Zach Agbalo" />
-                                    @error('edit_name') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                        class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
+                                        placeholder="Full Name" />
+                                    @error('edit_name') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                                 </div>
 
                                 <div>
-                                    <label for="edit_address" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Address</label>
+                                    <label for="edit_address" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Address</label>
                                     <input type="text" wire:model="edit_address" id="edit_address" 
-                                        class="w-full p-2 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:text-white" placeholder="Address" />
-                                    @error('edit_address') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                        class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
+                                        placeholder="Unit No, Street Name, City" />
+                                    @error('edit_address') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                                 </div>
 
                                 <div>
-                                    <label for="edit_contact_num" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Contact Number</label>
+                                    <label for="edit_contact_num" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Contact Number</label>
                                     <input type="text" wire:model="edit_contact_num" id="edit_contact_num" 
-                                        class="w-full p-2 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:text-white" placeholder="+639474720112" />
-                                    @error('edit_contact_num') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                        class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
+                                        placeholder="+639474720112" />
+                                    @error('edit_contact_num') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                                 </div>
 
                                 <div>
-                                    <label for="edit_tin_num" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">TIN Number</label>
+                                    <label for="edit_tin_num" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">TIN Number</label>
                                     <input type="text" wire:model="edit_tin_num" id="edit_tin_num" 
-                                        class="w-full p-2 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:text-white" placeholder="123456789" />
-                                    @error('edit_tin_num') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                        class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
+                                        placeholder="123456789" />
+                                    @error('edit_tin_num') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                                 </div>
-
                             </div>
                         </div>
 
                         <!-- Modal Footer -->
                         <div class="flex items-center p-6 space-x-2 border-t border-gray-200 rounded-b dark:border-gray-600">
-                            <button type="button" wire:click="update"
-                                    class="text-white bg-blue-600 hover:bg-blue-700 px-5 py-2.5 rounded-lg">
+                            <flux:button wire:click="update">
                                 Save changes
-                            </button>
-                            <button type="button" wire:click="cancel"
-                                    class="text-gray-500 bg-white hover:bg-gray-100 px-5 py-2.5 rounded-lg border border-gray-200">
+                            </flux:button>
+                            <flux:button wire:click="cancel" variant="outline">
                                 Cancel
-                            </button>
+                            </flux:button>
                         </div>
 
                     </div>
@@ -303,12 +284,12 @@
                                 Are you sure you want to delete this agent profile?
                             </h3>
                             <div class="flex justify-center space-x-3">
-                                <button wire:click="delete" class="bg-red-600 text-white px-5 py-2.5 rounded-lg hover:bg-red-700">
+                                <flux:button wire:click="delete" class="bg-red-600 hover:bg-red-700 text-white">
                                     Yes, Delete
-                                </button>
-                                <button wire:click="cancel" class="bg-gray-200 text-gray-700 px-5 py-2.5 rounded-lg hover:bg-gray-300">
+                                </flux:button>
+                                <flux:button wire:click="cancel" variant="outline">
                                     Cancel
-                                </button>
+                                </flux:button>
                             </div>
                         </div>
                     </div>
@@ -345,45 +326,43 @@
                         </div>
 
                         <!-- Modal Body -->
-                        <div class="p-6 space-y-4">
+                        <div class="p-6 space-y-6">
                             <div>
-                                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Branch</label>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Branch</label>
                                 <select x-model="branchId" @change="updateSubclassOptions()" wire:model="assign_branch_id"
-                                    class="w-full p-2 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:text-white">
+                                    class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                                     <option value="">Select a branch</option>
                                     @foreach($branches as $branch)
                                         <option value="{{ $branch->id }}">{{ $branch->name }}</option>
                                     @endforeach
                                 </select>
-                                @error('assign_branch_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                @error('assign_branch_id') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                             </div>
 
                             <div>
-                                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                     Subclass {{ empty($subclassOptions) ? '(none)' : '' }}
                                 </label>
                                 <select wire:model="assign_subclass"
-                                    class="w-full p-2 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:text-white"
+                                    class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm disabled:bg-gray-100 disabled:text-gray-500"
                                     @disabled(empty($subclassOptions))>
                                     <option value="">{{ empty($subclassOptions) ? 'No subclasses' : 'Select a subclass' }}</option>
                                     @foreach($subclassOptions as $opt)
                                         <option value="{{ $opt }}">{{ $opt }}</option>
                                     @endforeach
                                 </select>
-                                @error('assign_subclass') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                @error('assign_subclass') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                             </div>
                         </div>
 
                         <!-- Modal Footer -->
                         <div class="flex items-center p-6 space-x-2 border-t border-gray-200 rounded-b dark:border-gray-600">
-                            <button type="button" wire:click="assignToBranch"
-                                class="text-white bg-blue-600 hover:bg-blue-700 px-5 py-2.5 rounded-lg">
+                            <flux:button wire:click="assignToBranch">
                                 Assign
-                            </button>
-                            <button type="button" wire:click="cancel"
-                                class="text-gray-500 bg-white hover:bg-gray-100 px-5 py-2.5 rounded-lg border border-gray-200">
+                            </flux:button>
+                            <flux:button wire:click="cancel" variant="outline">
                                 Cancel
-                            </button>
+                            </flux:button>
                         </div>
                     </div>
                 </div>

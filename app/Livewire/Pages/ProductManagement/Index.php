@@ -9,7 +9,6 @@ use Livewire\Attributes\Layout;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\Supplier;
-use App\Models\InventoryLocation;
 use App\Models\ProductImage;
 use App\Services\ProductService;
 use Illuminate\Support\Facades\DB;
@@ -36,7 +35,6 @@ class Index extends Component
     // public $products = []; // Removed - using computed property instead
     public $categories = [];
     public $suppliers = [];
-    public $locations = [];
     public $selectedProducts = [];
     public $showFilters = false;
 
@@ -66,7 +64,6 @@ class Index extends Component
         'shelf_life_days' => '',
         'disabled' => false,
         'initial_quantity' => '',
-        'location_id' => '',
     ];
     
     // Filtered subcategories based on root selection
@@ -102,9 +99,6 @@ class Index extends Component
             ->orderBy('name')
             ->get(['id', 'name']);
 
-        $this->locations = InventoryLocation::active()
-            ->orderBy('name')
-            ->get(['id', 'name', 'type']);
     }
     
     // Get root categories only (for first dropdown)
@@ -373,7 +367,6 @@ class Index extends Component
             'shelf_life_days' => '',
             'disabled' => false,
             'initial_quantity' => '',
-            'location_id' => '',
         ];
         $this->filteredSubcategories = [];
     }
@@ -420,7 +413,6 @@ class Index extends Component
                 'shelf_life_days' => $this->editingProduct->shelf_life_days,
                 'disabled' => $this->editingProduct->disabled,
                 'initial_quantity' => '',
-                'location_id' => '',
             ]);
         }
     }
@@ -450,7 +442,6 @@ class Index extends Component
                 'form.uom' => 'required|string|max:255',
                 'form.shelf_life_days' => 'nullable|integer|min:0',
                 'form.initial_quantity' => 'nullable|numeric|min:0',
-                'form.location_id' => 'nullable|exists:inventory_locations,id',
             ]);
             
             // Update form with final category_id for saving

@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\DB;
 class Index extends Component
 {
     public $name, $address, $contact_num, $manager_name;
+    public $subclass1, $subclass2, $subclass3, $subclass4;
+    public $code, $category, $remarks, $batch, $branch_code, $company_name, $company_tin, $dept_code, $pull_out_addresse, $vendor_code;
 
     public $editData = [];
     public $perPage = 10;
@@ -28,6 +30,8 @@ class Index extends Component
 
     // Edit properties
     public $edit_name, $edit_address, $edit_contact_num, $edit_manager_name;
+    public $edit_subclass1, $edit_subclass2, $edit_subclass3, $edit_subclass4;
+    public $edit_code, $edit_category, $edit_remarks, $edit_batch, $edit_branch_code, $edit_company_name, $edit_company_tin, $edit_dept_code, $edit_pull_out_addresse, $edit_vendor_code;
 
     public function sortByColumn($column)
     {
@@ -43,21 +47,52 @@ class Index extends Component
     {
         $this->validate([
             'name' => 'required|string',
+            'code' => 'required|string',
+            'category' => 'required|string',
             'address' => 'required|string',
             'contact_num' => 'nullable|string',
             'manager_name' => 'nullable|string',
+            'subclass1' => 'nullable|string',
+            'subclass2' => 'nullable|string',
+            'subclass3' => 'nullable|string',
+            'subclass4' => 'nullable|string',
+            'remarks' => 'nullable|string',
+            'batch' => 'nullable|string',
+            'branch_code' => 'nullable|string',
+            'company_name' => 'nullable|string',
+            'company_tin' => 'nullable|string',
+            'dept_code' => 'nullable|string',
+            'pull_out_addresse' => 'nullable|string',
+            'vendor_code' => 'nullable|string',
         ]);
 
         Branch::create([
             'name' => $this->name,
+            'code' => $this->code,
+            'category' => $this->category,
             'address' => $this->address,
             'contact_num' => $this->contact_num,
             'manager_name' => $this->manager_name,
+            'subclass1' => $this->subclass1,
+            'subclass2' => $this->subclass2,
+            'subclass3' => $this->subclass3,
+            'subclass4' => $this->subclass4,
+            'remarks' => $this->remarks,
+            'batch' => $this->batch,
+            'branch_code' => $this->branch_code,
+            'company_name' => $this->company_name,
+            'company_tin' => $this->company_tin,
+            'dept_code' => $this->dept_code,
+            'pull_out_addresse' => $this->pull_out_addresse,
+            'vendor_code' => $this->vendor_code,
         ]);
 
         session()->flash('message', 'Branch Profile Added Successfully.');
         $this->reset([
-            'name', 'address', 'contact_num', 'manager_name'
+            'name', 'code', 'category', 'address', 'contact_num', 'manager_name',
+            'subclass1', 'subclass2', 'subclass3', 'subclass4',
+            'remarks', 'batch', 'branch_code', 'company_name', 'company_tin',
+            'dept_code', 'pull_out_addresse', 'vendor_code'
         ]);
     }
 
@@ -67,9 +102,23 @@ class Index extends Component
 
         $this->selectedItemId = $id;
         $this->edit_name = $branch->name;
+        $this->edit_code = $branch->code;
+        $this->edit_category = $branch->category;
         $this->edit_address = $branch->address;
         $this->edit_contact_num = $branch->contact_num;
         $this->edit_manager_name = $branch->manager_name;
+        $this->edit_subclass1 = $branch->subclass1;
+        $this->edit_subclass2 = $branch->subclass2;
+        $this->edit_subclass3 = $branch->subclass3;
+        $this->edit_subclass4 = $branch->subclass4;
+        $this->edit_remarks = $branch->remarks;
+        $this->edit_batch = $branch->batch;
+        $this->edit_branch_code = $branch->branch_code;
+        $this->edit_company_name = $branch->company_name;
+        $this->edit_company_tin = $branch->company_tin;
+        $this->edit_dept_code = $branch->dept_code;
+        $this->edit_pull_out_addresse = $branch->pull_out_addresse;
+        $this->edit_vendor_code = $branch->vendor_code;
 
         $this->showEditModal = true;
     }
@@ -78,17 +127,45 @@ class Index extends Component
     {
         $this->validate([
             'edit_name' => 'required|string',
+            'edit_code' => 'required|string',
+            'edit_category' => 'required|string',
             'edit_address' => 'required|string',
             'edit_contact_num' => 'nullable|string',
             'edit_manager_name' => 'nullable|string',
+            'edit_subclass1' => 'nullable|string',
+            'edit_subclass2' => 'nullable|string',
+            'edit_subclass3' => 'nullable|string',
+            'edit_subclass4' => 'nullable|string',
+            'edit_remarks' => 'nullable|string',
+            'edit_batch' => 'nullable|string',
+            'edit_branch_code' => 'nullable|string',
+            'edit_company_name' => 'nullable|string',
+            'edit_company_tin' => 'nullable|string',
+            'edit_dept_code' => 'nullable|string',
+            'edit_pull_out_addresse' => 'nullable|string',
+            'edit_vendor_code' => 'nullable|string',
         ]);
 
         $branch = Branch::findOrFail($this->selectedItemId);
         $branch->update([
             'name' => $this->edit_name,
+            'code' => $this->edit_code,
+            'category' => $this->edit_category,
             'address' => $this->edit_address,
             'contact_num' => $this->edit_contact_num,
             'manager_name' => $this->edit_manager_name,
+            'subclass1' => $this->edit_subclass1,
+            'subclass2' => $this->edit_subclass2,
+            'subclass3' => $this->edit_subclass3,
+            'subclass4' => $this->edit_subclass4,
+            'remarks' => $this->edit_remarks,
+            'batch' => $this->edit_batch,
+            'branch_code' => $this->edit_branch_code,
+            'company_name' => $this->edit_company_name,
+            'company_tin' => $this->edit_company_tin,
+            'dept_code' => $this->edit_dept_code,
+            'pull_out_addresse' => $this->edit_pull_out_addresse,
+            'vendor_code' => $this->edit_vendor_code,
         ]);
 
         $this->showEditModal = false;

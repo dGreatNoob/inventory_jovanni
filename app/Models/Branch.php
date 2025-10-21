@@ -21,6 +21,8 @@ class Branch extends Model
         'code',
         'category',
         'address',
+        'contact_num',
+        'manager_name',
         'remarks',
         'batch',
         'branch_code',

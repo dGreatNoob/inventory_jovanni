@@ -11,10 +11,27 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('product_inventory', function (Blueprint $table) {
-            $table->dropForeign(['location_id']);
-            $table->dropColumn('location_id');
-        });
+        // Check if the column exists before trying to drop it
+        if (Schema::hasColumn('product_inventory', 'location_id')) {
+            Schema::table('product_inventory', function (Blueprint $table) {
+                // Drop foreign key first if it exists (must be done before dropping index)
+                try {
+                    $table->dropForeign(['location_id']);
+                } catch (\Exception $e) {
+                    // Foreign key might not exist, continue
+                }
+                
+                // Drop the index if it exists
+                try {
+                    $table->dropIndex('product_inventory_location_id_available_quantity_index');
+                } catch (\Exception $e) {
+                    // Index might not exist, continue
+                }
+                
+                // Drop the column
+                $table->dropColumn('location_id');
+            });
+        }
     }
 
     /**

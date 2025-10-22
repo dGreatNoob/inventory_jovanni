@@ -131,7 +131,7 @@
 
 
                 <flux:navlist.group expandable
-                    :expanded="request()->routeIs('salesorder.*') || request()->routeIs('salesreturn.*') || request()->routeIs('sales-price.*')"
+                    :expanded="request()->routeIs('salesorder.*') || request()->routeIs('salesreturn.*') || request()->routeIs('sales-price.*') || request()->routeIs('sales-profile.*')"
                     :heading="__('Sales Management')" class="lg:grid text-left">
 
                     <flux:navlist.item icon="inbox-stack" href="{{ route('salesorder.index') }}"
@@ -142,6 +142,9 @@
                     </flux:navlist.item>
                     <flux:navlist.item icon="tag" href="{{ route('sales-price.index') }}"
                         :current="request()->routeIs('sales-price.*')" wire:navigate>{{ __('Sales Price') }}
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="user" href="{{ route('sales-profile.index') }}"
+                        :current="request()->routeIs('sales-profile.*')" wire:navigate>{{ __('Profile') }}
                     </flux:navlist.item>
                 </flux:navlist.group>
 
@@ -158,6 +161,28 @@
                     </flux:navlist.item>
                     <!-- <flux:navlist.item icon="banknotes" href="{{ route('finance.currency-conversion') }}"  wire:navigate>{{ __('Currency Conversion') }}
                     </flux:navlist.item> -->
+                </flux:navlist.group>
+
+
+                <!-- Warehouse and Sales Allocation Setup -->
+                <flux:navlist.group expandable :expanded="request()->routeIs('setup.*')"
+                    :heading="__('Setup')" class="lg:grid">
+                    
+                    <flux:navlist.group expandable :expanded="request()->routeIs('setup.allocation.*')"
+                        :heading="__('Allocations')" class="lg:grid">
+                        
+                        <flux:navlist.item icon="shopping-cart" href="{{ route('setup.allocation.sales') }}"
+                            :current="request()->routeIs('setup.allocation.sales')" wire:navigate>
+                            {{ __('Sales') }}
+                        </flux:navlist.item>
+                        
+                        <flux:navlist.item icon="building-office" href="{{ route('setup.allocation.warehouse') }}"
+                            :current="request()->routeIs('setup.allocation.warehouse')" wire:navigate>
+                            {{ __('Warehouse') }}
+                        </flux:navlist.item>
+                        
+                    </flux:navlist.group>
+                    
                 </flux:navlist.group>
 
                 {{--<flux:navlist.group expandable :expanded="request()->routeIs('shipment.*')"

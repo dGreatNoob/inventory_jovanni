@@ -29,6 +29,9 @@ use App\Livewire\Pages\Branch\Index as BranchProfile;
 use App\Livewire\Pages\Setup\Department\Index as DepartmentSetup;
 use App\Livewire\Pages\Setup\ItemType\Index as ItemTypeSetup;
 use App\Livewire\Pages\Setup\Allocation\Index as AllocationSetup;
+use App\Livewire\Pages\Setup\Allocation\Sales as SalesAllocationSetup;
+use App\Livewire\Pages\Setup\Allocation\Warehouse as WarehouseAllocationSetup;
+use App\Livewire\SalesProfile\Index as SalesProfileIndex;
 use App\Livewire\Pages\Notifications\Index as Notifications;
 
 // Product Management
@@ -117,6 +120,15 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/Setup/Allocation', AllocationSetup::class)
         ->name('setup.allocation');
+
+    Route::get('/Setup/Allocation/Sales', SalesAllocationSetup::class)
+        ->name('setup.allocation.sales');
+
+    Route::get('/Setup/Allocation/Warehouse', WarehouseAllocationSetup::class)
+        ->name('setup.allocation.warehouse');
+
+    Route::get('/sales-profile', SalesProfileIndex::class)
+        ->name('sales-profile.index');
 
     Route::get('/user-management', UserIndex::class)
         ->name('user.index');

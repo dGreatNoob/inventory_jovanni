@@ -4,68 +4,66 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+
 class PurchaseOrder extends Model
 {
-    /**
-     * Get the purchase order items for this purchase order.
-     */
-    public function purchaseOrderItems(): HasMany
-    {
-        return $this->hasMany(PurchaseOrderItem::class);
-    }
-    /** @use HasFactory<\Database\Factories\PurchaseOrderFactory> */
     use HasFactory;
 
     protected $fillable = [
-        'del_to',
-        'supplier_id',
         'po_num',
         'status',
-        'total_price',
+        'po_type',
+        'supplier_id',
         'order_date',
+        'expected_delivery_date',
+        'ordered_by',
+        'del_to',
         'del_on',
         'payment_terms',
         'quotation',
-        'total_est_weight',
-        'po_type',
         'total_qty',
-        'ordered_by',
+        'total_price',
+        'total_est_weight',
         'approver',
     ];
 
     protected $casts = [
         'order_date' => 'date',
-        'del_on' => 'date',
+        'expected_delivery_date' => 'date',
+        'del_on' => 'datetime',
+        'total_qty' => 'decimal:2',
+        'total_price' => 'decimal:2',
     ];
 
-    public function supplier(): BelongsTo
+    // Relationships
+    public function supplier()
     {
         return $this->belongsTo(Supplier::class);
     }
 
-    public function supplyOrders(): HasMany
+    public function department()
     {
-        return $this->hasMany(SupplyOrder::class);
-    }
-    public function rawMatOrders(): HasMany
-    {
-        return $this->hasMany(RawMatOrder::class);
+        return $this->belongsTo(Department::class, 'del_to');
     }
 
-    public function orderedBy(): BelongsTo
+    public function orderedByUser()
     {
         return $this->belongsTo(User::class, 'ordered_by');
     }
 
-    public function approverInfo(): BelongsTo
+    // ✅ ADD THIS METHOD
+    public function approverInfo()
     {
         return $this->belongsTo(User::class, 'approver');
     }
 
-    public function department(): BelongsTo
+    public function productOrders()
     {
-        return $this->belongsTo(Department::class, 'del_to');
+        return $this->hasMany(ProductOrder::class);
+    }
+
+    public function products()
+    {
+        return $this->hasManyThrough(Product::class, ProductOrder::class);
     }
 }

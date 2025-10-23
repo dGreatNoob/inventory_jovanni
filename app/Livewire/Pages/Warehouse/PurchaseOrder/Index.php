@@ -1,0 +1,184 @@
+<?php
+
+namespace App\Livewire\Pages\Warehouse\PurchaseOrder;
+
+use App\Models\PurchaseOrder;
+use Livewire\Component;
+use Livewire\WithPagination;
+use Illuminate\Support\Facades\DB;
+
+class Index extends Component
+{
+    use WithPagination;
+
+    public $search = '';
+    public $perPage = 10;
+    public $statusFilter = '';
+    public $deletingPurchaseOrderId = null;
+    public $showDeleteModal = false;
+    public $receivingPurchaseOrderId = null;
+    public $showReceiveModal = false;
+    
+    // ✅ ADD THESE TWO NEW PROPERTIES
+    public $deliveringPurchaseOrderId = null;
+    public $showDeliverModal = false;
+
+    protected $queryString = [
+        'search' => ['except' => ''],
+        'statusFilter' => ['except' => ''],
+    ];
+
+    public function updatingSearch()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingStatusFilter()
+    {
+        $this->resetPage();
+    }
+
+    public function confirmDelete($id)
+    {
+        $this->deletingPurchaseOrderId = $id;
+        $this->showDeleteModal = true;
+    }
+
+    public function delete()
+    {
+        try {
+            DB::beginTransaction();
+
+            $purchaseOrder = PurchaseOrder::with('productOrders')->findOrFail($this->deletingPurchaseOrderId);
+            
+            $purchaseOrder->productOrders()->delete();
+            $purchaseOrder->delete();
+
+            DB::commit();
+
+            $this->reset(['deletingPurchaseOrderId', 'showDeleteModal']);
+            session()->flash('message', 'Purchase order and its associated items have been deleted successfully.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            session()->flash('error', 'Failed to delete purchase order: ' . $e->getMessage());
+        }
+    }
+
+    public function cancel()
+    {
+        $this->reset(['deletingPurchaseOrderId', 'showDeleteModal']);
+    }
+
+    // ✅ ADD THESE THREE NEW METHODS FOR DELIVERED
+    public function confirmDeliver($id)
+    {
+        $this->deliveringPurchaseOrderId = $id;
+        $this->showDeliverModal = true;
+    }
+
+    public function markAsDelivered()
+    {
+        try {
+            $purchaseOrder = PurchaseOrder::findOrFail($this->deliveringPurchaseOrderId);
+            
+            if ($purchaseOrder->status === 'delivered') {
+                session()->flash('error', 'This purchase order has already been marked as delivered.');
+                $this->cancelDeliver();
+                return;
+            }
+
+            if ($purchaseOrder->status !== 'approved') {
+                session()->flash('error', 'Only approved purchase orders can be marked as delivered.');
+                $this->cancelDeliver();
+                return;
+            }
+
+            $purchaseOrder->update([
+                'status' => 'delivered',
+            ]);
+
+            session()->flash('message', 'Purchase order #' . $purchaseOrder->po_num . ' marked as delivered successfully.');
+            $this->cancelDeliver();
+
+        } catch (\Exception $e) {
+            session()->flash('error', 'Failed to mark as delivered: ' . $e->getMessage());
+        }
+    }
+
+    public function cancelDeliver()
+    {
+        $this->reset(['deliveringPurchaseOrderId', 'showDeliverModal']);
+    }
+
+    // EXISTING RECEIVE METHODS
+    public function confirmReceive($id)
+    {
+        $this->receivingPurchaseOrderId = $id;
+        $this->showReceiveModal = true;
+    }
+
+    public function markAsReceived()
+    {
+        try {
+            $purchaseOrder = PurchaseOrder::findOrFail($this->receivingPurchaseOrderId);
+            
+            if ($purchaseOrder->status === 'received') {
+                session()->flash('error', 'This purchase order has already been marked as received.');
+                $this->cancelReceive();
+                return;
+            }
+
+            if ($purchaseOrder->status !== 'delivered') {
+                session()->flash('error', 'Only delivered purchase orders can be marked as received.');
+                $this->cancelReceive();
+                return;
+            }
+
+            $purchaseOrder->update([
+                'status' => 'received',
+                'del_on' => now(),
+            ]);
+
+            session()->flash('message', 'Purchase order #' . $purchaseOrder->po_num . ' marked as received successfully.');
+            $this->cancelReceive();
+
+        } catch (\Exception $e) {
+            session()->flash('error', 'Failed to mark as received: ' . $e->getMessage());
+        }
+    }
+
+    public function cancelReceive()
+    {
+        $this->reset(['receivingPurchaseOrderId', 'showReceiveModal']);
+    }
+
+    public function render()
+    {
+        $purchaseOrders = PurchaseOrder::query()
+            ->where('po_type', 'products')
+            ->when($this->search, function ($query) {
+                $query->where(function ($q) {
+                    $q->where('po_num', 'like', '%' . $this->search . '%')
+                        ->orWhere('payment_terms', 'like', '%' . $this->search . '%')
+                        ->orWhere('quotation', 'like', '%' . $this->search . '%')
+                        ->orWhereHas('supplier', function ($query) {
+                            $query->where('name', 'like', '%' . $this->search . '%');
+                        })
+                        ->orWhereHas('department', function ($query) {
+                            $query->where('name', 'like', '%' . $this->search . '%');
+                        });
+                });
+            })
+            ->when($this->statusFilter, function ($query) {
+                $query->where('status', $this->statusFilter);
+            })
+            ->with(['supplier', 'department', 'orderedByUser'])
+            ->latest()
+            ->paginate($this->perPage);
+
+        return view('livewire.pages.warehouse.purchase-order.index', [
+            'purchaseOrders' => $purchaseOrders
+        ]);
+    }
+}

@@ -52,6 +52,18 @@ use App\Livewire\Pages\Shipment\View as createShipmentView;
 use App\Livewire\Pages\Shipment\QrScannder as ShipmentQrScannder;
 use App\Models\Branch;
 
+
+
+use App\Livewire\Pages\Warehouse\Inventory\Index as WarehouseInventory;
+use App\Livewire\Pages\Warehouse\Inventory\Create as WarehouseInventoryCreate;
+use App\Livewire\Pages\Warehouse\PurchaseOrder\Index as WarehousePurchaseOrder;
+use App\Livewire\Pages\Warehouse\PurchaseOrder\Create as WarehousePurchaseOrderCreate;
+use App\Livewire\Pages\Warehouse\PurchaseOrder\Edit as WarehousePurchaseOrderEdit;
+use App\Livewire\Pages\Warehouse\PurchaseOrder\Show as WarehousePurchaseOrderShow;
+use App\Livewire\Pages\Warehouse\Profile\Index as WarehouseProfile;
+use App\Livewire\Pages\Warehouse\PurchaseOrder\ViewItem as WarehousePurchaseOrderViewItem;
+
+
 Route::redirect('', '/login')->name('home');
 
 Route::middleware(['auth'])->group(function () {
@@ -81,6 +93,15 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/purchase-order/show/{Id}', PRWPurchaseOrderShow::class)->name('purchaseorder.show');
         Route::get('/profile', PRWProfile::class)->name('profile');
         Route::get('/purchase-order/view-item/{poId?}', PRWPurchaseOrderViewItem::class)->name('purchaseorder.viewItem');
+    });
+
+
+    Route::prefix('warehouse')->name('warehouse.')->group(function () {
+        Route::get('/purchase-order', WarehousePurchaseOrder::class)->name('purchaseorder');
+        Route::get('/purchase-order/create', WarehousePurchaseOrderCreate::class)->name('purchaseorder.create');
+        Route::get('/purchase-order/edit/{Id}', WarehousePurchaseOrderEdit::class)->name('purchaseorder.edit');
+        Route::get('/purchase-order/show/{Id}', WarehousePurchaseOrderShow::class)->name('purchaseorder.show');
+        Route::get('/purchase-order/view-item/{poId?}', WarehousePurchaseOrderViewItem::class)->name('purchaseorder.viewItem');
     });
 
     Route::get('/suppliermanagement/profile', SupplierProfile::class)

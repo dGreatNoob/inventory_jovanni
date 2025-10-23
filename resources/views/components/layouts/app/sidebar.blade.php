@@ -48,22 +48,16 @@
                     </flux:navlist.item>
                 </flux:navlist.group> --}}
 
-                {{-- <flux:navlist.group expandable :expanded="false" :heading="__('Paper Roll Warehouse')" class="lg:grid">
-                    <flux:navlist.item icon="inbox-stack" href="{{ route('prw.inventory') }}"
-                        :current="request()->routeIs('prw.inventory')" wire:navigate>
-                        {{ __('Inventory') }}
-                    </flux:navlist.item>
+                <flux:navlist.group expandable :expanded="request()->routeIs('warehouse.*')" :heading="__('Warehouse')" class="lg:grid">
 
-                    <flux:navlist.item icon="inbox-stack" href="{{ route('prw.purchaseorder') }}"
-                        :current="request()->routeIs('prw.purchaseorder')" wire:navigate>
+
+                    <flux:navlist.item icon="inbox-stack" href="{{ route('warehouse.purchaseorder') }}"
+                        :current="request()->routeIs('warehouse.purchaseorder')" wire:navigate>
                         {{ __('Purchase Order') }}
                     </flux:navlist.item>
 
-                    <flux:navlist.item icon="inbox-stack" href="{{ route('prw.profile') }}"
-                        :current="request()->routeIs('prw.profile')" wire:navigate>
-                        {{ __('Profile') }}
-                    </flux:navlist.item>
-                </flux:navlist.group> --}}
+
+                </flux:navlist.group>
 
                 <flux:navlist.group 
                     expandable 
@@ -106,6 +100,8 @@
                     >
                         {{ __('Analytics') }}
                     </flux:navlist.item>
+
+                    
                 </flux:navlist.group>
                                 
 

@@ -229,8 +229,8 @@
                                                 <tr class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700 border-gray-200">
                                                     <td class="px-6 py-4">{{ $item['product_name'] }}</td>
                                                     <td class="px-6 py-4">{{ $item['quantity'] }}</td>
-                                                    <td class="px-6 py-4">${{ number_format($item['unit_price'], 2) }}</td>
-                                                    <td class="px-6 py-4">${{ number_format($item['total_price'], 2) }}</td>
+                                                    <td class="px-6 py-4">₱{{ number_format($item['unit_price'], 2) }}</td>
+                                                    <td class="px-6 py-4">₱{{ number_format($item['total_price'], 2) }}</td>
                                                     <td class="px-6 py-4">
                                                         <x-button type="button" wire:click="removeItem({{ $index }})" variant="danger" size="sm">Remove</x-button>
                                                     </td>
@@ -240,7 +240,7 @@
                                             <tfoot>
                                                 <tr class="bg-gray-100 dark:bg-gray-800">
                                                     <td colspan="3" class="px-6 py-4 font-semibold">Total Amount:</td>
-                                                    <td class="px-6 py-4 font-semibold">${{ number_format(collect($items)->sum('total_price'), 2) }}</td>
+                                                    <td class="px-6 py-4 font-semibold">₱{{ number_format(collect($items)->sum('total_price'), 2) }}</td>
                                                     <td></td>
                                                 </tr>
                                             </tfoot>

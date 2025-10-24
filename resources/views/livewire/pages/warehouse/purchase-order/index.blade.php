@@ -2,6 +2,34 @@
 <x-slot:subheader>Jovanni Bag's Purchase Order</x-slot:subheader>
 <div class="">
     <div class="">
+        <!-- Tab Navigation -->
+        <div class="mb-4 border-b border-gray-200 dark:border-gray-700">
+            <ul class="flex flex-wrap -mb-px text-sm font-medium text-center" role="tablist">
+                <li class="mr-2" role="presentation">
+                    <button wire:click="$set('activeTab', 'list')" 
+                        class="inline-block p-4 border-b-2 rounded-t-lg {{ $activeTab === 'list' ? 'text-blue-600 border-blue-600 dark:text-blue-500 dark:border-blue-500' : 'border-transparent hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300' }}" 
+                        type="button" role="tab">
+                        <svg class="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                        </svg>
+                        Purchase Orders
+                    </button>
+                </li>
+                <li class="mr-2" role="presentation">
+                    <button wire:click="$set('activeTab', 'analytics')" 
+                        class="inline-block p-4 border-b-2 rounded-t-lg {{ $activeTab === 'analytics' ? 'text-blue-600 border-blue-600 dark:text-blue-500 dark:border-blue-500' : 'border-transparent hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300' }}" 
+                        type="button" role="tab">
+                        <svg class="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                        Reports & Analytics
+                    </button>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Purchase Orders List Tab -->
+        @if($activeTab === 'list')
         <section>
             <div>
                 <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
@@ -58,6 +86,7 @@
                                     <th scope="col" class="px-6 py-3">Total Qty</th>
                                     <th scope="col" class="px-6 py-3">Total Price</th>
                                     <th scope="col" class="px-6 py-3">Action</th>
+                                    <th scope="col" class="px-6 py-3">Approval History</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -78,7 +107,7 @@
                                         </td>
                                         <td class="px-6 py-4">{{ $po->order_date ? $po->order_date->format('M d, Y') : 'N/A' }}</td>
                                         <td class="px-6 py-4">{{ $po->expected_delivery_date ? $po->expected_delivery_date->format('M d, Y') : 'N/A' }}</td>
-                                        <td class="px-6 py-4">{{ $po->del_on ? $po->del_on->format('M d, Y H:i') : 'N/A' }}</td>
+                                        <td class="px-6 py-4">{{ $po->del_on ? $po->del_on->format('M d, Y') : 'N/A' }}</td>
                                         <td class="px-6 py-4">{{ $po->department->name ?? 'N/A' }}</td>
                                         <td class="px-6 py-4">{{ number_format($po->total_qty, 2) }}</td>
                                         <td class="px-6 py-4">₱{{ number_format($po->total_price, 2) }}</td>
@@ -107,6 +136,17 @@
                                                         class="font-medium text-red-600 dark:text-red-500 hover:underline">Delete</button>
                                                 @endif
                                             </div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            @if($po->approvalLogs->count() > 0)
+                                                <button type="button" 
+                                                    wire:click="$set('viewingLogsForPO', {{ $po->id }})"
+                                                    class="font-medium text-indigo-600 dark:text-indigo-500 hover:underline">
+                                                    View Logs ({{ $po->approvalLogs->count() }})
+                                                </button>
+                                            @else
+                                                <span class="text-gray-400 text-xs">No logs</span>
+                                            @endif
                                         </td>
                                     </tr>
                                 @empty
@@ -139,6 +179,14 @@
                 </div>
             </div>
         </section>
+        @endif
+
+        <!-- Analytics Tab -->
+        @if($activeTab === 'analytics')
+        <section>
+            @livewire('pages.warehouse.purchase-order.analytics')
+        </section>
+        @endif
         
         <!-- Modals Section -->
         <section>
@@ -238,7 +286,7 @@
                                     Mark this purchase order as received?
                                 </h3>
                                 <p class="mb-5 text-sm text-gray-400 dark:text-gray-500">
-                                    This will set the status to "Received" and record the current date/time as <strong>2025-10-23 09:53:59 UTC</strong>.
+                                    This will set the status to "Received" and record the current date.
                                 </p>
                                 <button type="button" wire:click="markAsReceived"
                                     class="text-white bg-green-600 hover:bg-green-800 focus:ring-4 focus:outline-none focus:ring-green-300 dark:focus:ring-green-800 font-medium rounded-lg text-sm inline-flex items-center px-5 py-2.5 text-center mr-2">
@@ -248,6 +296,81 @@
                                     class="text-gray-500 bg-white hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-200 rounded-lg border border-gray-200 text-sm font-medium px-5 py-2.5 hover:text-gray-900 focus:z-10 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-500 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-600">
                                     Cancel
                                 </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+                        <!-- Approval Logs Modal -->
+            @if ($viewingLogsForPO)
+                @php
+                    $po = \App\Models\PurchaseOrder::with(['approvalLogs.user'])->find($viewingLogsForPO);
+                @endphp
+                <div class="fixed top-0 left-0 right-0 z-50 w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] max-h-full flex items-center justify-center bg-black bg-opacity-50">
+                    <div class="relative w-full max-w-3xl max-h-full">
+                        <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
+                            <button type="button"
+                                class="absolute top-3 right-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ml-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white"
+                                wire:click="$set('viewingLogsForPO', null)">
+                                <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
+                                </svg>
+                                <span class="sr-only">Close modal</span>
+                            </button>
+                            <div class="p-6">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                                    Approval History - PO #{{ $po->po_num }}
+                                </h3>
+                                
+                                <div class="relative overflow-x-auto">
+                                    <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                                        <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-600 dark:text-gray-400">
+                                            <tr>
+                                                <th scope="col" class="px-4 py-3">Date & Time</th>
+                                                <th scope="col" class="px-4 py-3">User</th>
+                                                <th scope="col" class="px-4 py-3">Action</th>
+                                                <th scope="col" class="px-4 py-3">Remarks</th>
+                                                <th scope="col" class="px-4 py-3">IP Address</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @forelse($po->approvalLogs as $log)
+                                                <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
+                                                    <td class="px-4 py-3 whitespace-nowrap">
+                                                        {{ $log->created_at->format('M d, Y H:i:s') }}
+                                                    </td>
+                                                    <td class="px-4 py-3">
+                                                        {{ $log->user->name ?? 'System' }}
+                                                    </td>
+                                                    <td class="px-4 py-3">
+                                                        <span class="px-2 py-1 text-xs font-semibold rounded-full
+                                                            @if ($log->action === 'approved') bg-green-100 text-green-800
+                                                            @elseif($log->action === 'rejected') bg-red-100 text-red-800
+                                                            @elseif($log->action === 'delivered') bg-blue-100 text-blue-800
+                                                            @elseif($log->action === 'received') bg-purple-100 text-purple-800
+                                                            @else bg-gray-100 text-gray-800
+                                                            @endif">
+                                                            {{ ucfirst($log->action) }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-4 py-3">{{ $log->remarks ?? '-' }}</td>
+                                                    <td class="px-4 py-3 text-xs">{{ $log->ip_address ?? '-' }}</td>
+                                                </tr>
+                                            @empty
+                                                <tr>
+                                                    <td colspan="5" class="px-4 py-3 text-center">No approval logs found</td>
+                                                </tr>
+                                            @endforelse
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <div class="mt-4 flex justify-end">
+                                    <button type="button" wire:click="$set('viewingLogsForPO', null)"
+                                        class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+                                        Close
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>

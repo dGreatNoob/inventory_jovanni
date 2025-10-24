@@ -48,7 +48,7 @@
                     </flux:navlist.item>
                 </flux:navlist.group> --}}
 
-                <flux:navlist.group expandable :expanded="request()->routeIs('warehouse.*')" :heading="__('Warehouse')" class="lg:grid">
+                <flux:navlist.group expandable :expanded="request()->routeIs('warehouse.*')" :heading="__('PO Management')" class="lg:grid">
 
 
                     <flux:navlist.item icon="inbox-stack" href="{{ route('warehouse.purchaseorder') }}"
@@ -278,7 +278,7 @@
                     </flux:navlist.item>
                 </flux:navlist.group>--}}
 
-                {{-- @role(['Super Admin', 'Admin'])
+                 @role(['Super Admin', 'Admin'])
                     <flux:navlist.group expandable
                         :expanded="request()->routeIs('user.index') || request()->routeIs('roles.index')"
                         :heading="__('User Management')" class="lg:grid">
@@ -291,7 +291,7 @@
                             {{ __('Roles & Permissions') }}
                         </flux:navlist.item>
                     </flux:navlist.group>
-                @endrole--}}
+                @endrole
 
                 {{-- Activity Logs moved to top level for easier access --}}
                 {{--<flux:navlist.item icon="clipboard-document-list" href="{{ route('activity.logs') }}"

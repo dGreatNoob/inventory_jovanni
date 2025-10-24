@@ -6,6 +6,7 @@ use App\Models\PurchaseOrder;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Illuminate\Support\Facades\DB;
+use App\Models\PurchaseOrderApprovalLog;
 
 class Index extends Component
 {
@@ -18,15 +19,16 @@ class Index extends Component
     public $showDeleteModal = false;
     public $receivingPurchaseOrderId = null;
     public $showReceiveModal = false;
-    
-    // ✅ ADD THESE TWO NEW PROPERTIES
     public $deliveringPurchaseOrderId = null;
     public $showDeliverModal = false;
-
+    public $activeTab = 'list';
+    public $viewingLogsForPO = null;  // ✅ Added for approval logs modal
+    
     protected $queryString = [
         'search' => ['except' => ''],
         'statusFilter' => ['except' => ''],
     ];
+    
 
     public function updatingSearch()
     {
@@ -70,7 +72,7 @@ class Index extends Component
         $this->reset(['deletingPurchaseOrderId', 'showDeleteModal']);
     }
 
-    // ✅ ADD THESE THREE NEW METHODS FOR DELIVERED
+    // ✅ UPDATED: Mark as Delivered with Logging
     public function confirmDeliver($id)
     {
         $this->deliveringPurchaseOrderId = $id;
@@ -82,8 +84,8 @@ class Index extends Component
         try {
             $purchaseOrder = PurchaseOrder::findOrFail($this->deliveringPurchaseOrderId);
             
-            if ($purchaseOrder->status === 'delivered') {
-                session()->flash('error', 'This purchase order has already been marked as delivered.');
+            if ($purchaseOrder->status === 'delivered' || $purchaseOrder->status === 'received') {
+                session()->flash('error', 'This purchase order has already been delivered.');
                 $this->cancelDeliver();
                 return;
             }
@@ -94,8 +96,18 @@ class Index extends Component
                 return;
             }
 
+            // Update status
             $purchaseOrder->update([
                 'status' => 'delivered',
+            ]);
+
+            // ✅ Log the action
+            PurchaseOrderApprovalLog::create([
+                'purchase_order_id' => $purchaseOrder->id,
+                'user_id' => auth()->id(),
+                'action' => 'delivered',
+                'remarks' => 'Purchase order marked as delivered by ' . auth()->user()->name,
+                'ip_address' => request()->ip(),
             ]);
 
             session()->flash('message', 'Purchase order #' . $purchaseOrder->po_num . ' marked as delivered successfully.');
@@ -111,7 +123,7 @@ class Index extends Component
         $this->reset(['deliveringPurchaseOrderId', 'showDeliverModal']);
     }
 
-    // EXISTING RECEIVE METHODS
+    // ✅ UPDATED: Mark as Received with Logging
     public function confirmReceive($id)
     {
         $this->receivingPurchaseOrderId = $id;
@@ -135,9 +147,19 @@ class Index extends Component
                 return;
             }
 
+            // Update status and delivery date with current timestamp
             $purchaseOrder->update([
                 'status' => 'received',
                 'del_on' => now(),
+            ]);
+
+            // ✅ Log the action
+            PurchaseOrderApprovalLog::create([
+                'purchase_order_id' => $purchaseOrder->id,
+                'user_id' => auth()->id(),
+                'action' => 'received',
+                'remarks' => 'Purchase order marked as received by ' . auth()->user()->name,
+                'ip_address' => request()->ip(),
             ]);
 
             session()->flash('message', 'Purchase order #' . $purchaseOrder->po_num . ' marked as received successfully.');
@@ -173,7 +195,7 @@ class Index extends Component
             ->when($this->statusFilter, function ($query) {
                 $query->where('status', $this->statusFilter);
             })
-            ->with(['supplier', 'department', 'orderedByUser'])
+            ->with(['supplier', 'department', 'orderedByUser', 'approvalLogs'])  // ✅ Added approvalLogs
             ->latest()
             ->paginate($this->perPage);
 

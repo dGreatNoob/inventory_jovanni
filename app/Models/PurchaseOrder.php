@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PurchaseOrder extends Model
 {
@@ -65,5 +66,10 @@ class PurchaseOrder extends Model
     public function products()
     {
         return $this->hasManyThrough(Product::class, ProductOrder::class);
+    }
+
+    public function approvalLogs(): HasMany
+    {
+        return $this->hasMany(PurchaseOrderApprovalLog::class)->orderBy('created_at', 'desc');
     }
 }

@@ -34,7 +34,7 @@ return new class extends Migration
             $table->bigInteger('po_num')->unique();
             $table->decimal('total_price');
             $table->date('order_date');
-            $table->date('del_on')->nullable();
+            $table->dateTime('del_on')->nullable();
             $table->string('payment_terms');
             $table->string('quotation');
             $table->decimal('total_est_weight')->nullable();

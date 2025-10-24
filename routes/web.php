@@ -29,6 +29,9 @@ use App\Livewire\Pages\Branch\Index as BranchProfile;
 use App\Livewire\Pages\Setup\Department\Index as DepartmentSetup;
 use App\Livewire\Pages\Setup\ItemType\Index as ItemTypeSetup;
 use App\Livewire\Pages\Setup\Allocation\Index as AllocationSetup;
+use App\Livewire\Pages\Setup\Allocation\Sales as SalesAllocationSetup;
+use App\Livewire\Pages\Setup\Allocation\Warehouse as WarehouseAllocationSetup;
+use App\Livewire\SalesProfile\Index as SalesProfileIndex;
 use App\Livewire\Pages\Notifications\Index as Notifications;
 
 // Product Management
@@ -47,6 +50,7 @@ use App\Livewire\Pages\SalesManagement\Index as SalesManagementIndex;
 use App\Livewire\Pages\SalesManagement\SalesReturn as SalesManagementSalesReturn;
 use App\Livewire\Pages\SalesManagement\View as Viewsalesorder;
 use App\Livewire\Pages\SalesManagement\ViewSalesReturn;
+use App\Livewire\SalesPrice\Index as SalesPriceIndex;
 use App\Livewire\Pages\Shipment\Index as createShipmentIndex;
 use App\Livewire\Pages\Shipment\View as createShipmentView;
 use App\Livewire\Pages\Shipment\QrScannder as ShipmentQrScannder;
@@ -117,6 +121,15 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/Setup/Allocation', AllocationSetup::class)
         ->name('setup.allocation');
 
+    Route::get('/Setup/Allocation/Sales', SalesAllocationSetup::class)
+        ->name('setup.allocation.sales');
+
+    Route::get('/Setup/Allocation/Warehouse', WarehouseAllocationSetup::class)
+        ->name('setup.allocation.warehouse');
+
+    Route::get('/sales-profile', SalesProfileIndex::class)
+        ->name('sales-profile.index');
+
     Route::get('/user-management', UserIndex::class)
         ->name('user.index');
     Route::get('/roles-permissions', RolePermissionIndex::class)->name('roles.index');
@@ -138,6 +151,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/sales-order/{salesOrderId}', Viewsalesorder::class)->name('salesorder.view');
     Route::get('/sales-return', SalesManagementSalesReturn::class)->name('salesorder.return');
     Route::get('/sales-return/{salesreturnId}', ViewSalesReturn::class)->name('salesreturn.view');
+    Route::get('/sales-price', SalesPriceIndex::class)->name('sales-price.index');
 
     // Product Management
     Route::prefix('product-management')->name('product-management.')->group(function () {

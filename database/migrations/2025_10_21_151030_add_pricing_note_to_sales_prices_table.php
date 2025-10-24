@@ -11,11 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('allocations', function (Blueprint $table) {
-            $table->id();
-            $table->string('name', 100);
-            $table->text('description')->nullable();
-            $table->timestamps();
+        Schema::table('sales_prices', function (Blueprint $table) {
+            $table->text('pricing_note')->nullable()->after('less_percentage');
         });
     }
 
@@ -24,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('allocations');
+        Schema::table('sales_prices', function (Blueprint $table) {
+            $table->dropColumn('pricing_note');
+        });
     }
 };

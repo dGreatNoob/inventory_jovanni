@@ -11,10 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('allocations', function (Blueprint $table) {
+        Schema::create('sales_prices', function (Blueprint $table) {
             $table->id();
-            $table->string('name', 100);
-            $table->text('description')->nullable();
+            $table->string('description');
+            $table->decimal('less_percentage', 5, 2); // Less in %
             $table->timestamps();
         });
     }
@@ -24,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('allocations');
+        Schema::dropIfExists('sales_prices');
     }
 };

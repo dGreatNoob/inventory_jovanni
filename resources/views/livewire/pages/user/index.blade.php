@@ -9,24 +9,19 @@
                     <div>
                         <x-input type="text" wire:model="name" name="name" label="User Name"
                             placeholder="Enter user name" />
-                        @error('name')
-                            <span class="text-red-500 text-sm">{{ $message }}</span>
-                        @enderror
                     </div>
                     <div>
                         <x-input type="email" wire:model="email" name="email" label="User Email"
                             placeholder="Enter user email" />
-                        @error('email')
-                            <span class="text-red-500 text-sm">{{ $message }}</span>
-                        @enderror
                     </div>
                     <div>
                         <x-dropdown name="department_id" wire:model="department_id" label="Department"
                             :options="$this->departments->pluck('name', 'id')->toArray()" />
                     </div>
                     <div>
-                        <x-dropdown label="Role(s)" name="roles" wire:model="selectedRole" :options="$roles->pluck('name', 'id')->toArray()"
-                            multiselect />
+                        <x-dropdown label="Role(s)" name="roles" wire:model="selectedRole" :options="$roles->pluck('name', 'id')->toArray()"  multiselect
+                            class="{{ $errors->has('selectedRole') ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : '' }}"
+                        />
                         @error('selectedRole')
                             <span class="text-red-500 text-sm">{{ $message }}</span>
                         @enderror
@@ -44,9 +39,12 @@
                             label="Confirm Password" placeholder="Confirm password" />
                     </div>
                 </div>
-                <div class="flex justify-end">
-                    <x-button type="submit" variant="primary">Submit</x-button>
-                </div>
+                <div class="flex justify-end mt-4">
+                <flux:button type="submit" wire:loading.attr="disabled" wire:target="store">
+                    <span wire:loading.remove wire:target="store">Submit</span>
+                    <span wire:loading wire:target="store">Saving...</span>
+                </flux:button>
+            </div>
             </form>
         </x-collapsible-card>
 
@@ -58,11 +56,26 @@
         @endif
 
         <x-collapsible-card title="Users List" open="true" size="full">
-            <div class="flex items-center justify-between p-4 pr-10">
-                <div class="flex space-x-6">
+            <div class="w-full">
+                <div class="flex items-center justify-start pl-6 pr-0 py-4">
                     <div class="relative">
-                        <x-input type="text" wire:model.live="search" name="search" label="Search"
-                            placeholder="Search users..." />
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                            <svg aria-hidden="true" class="w-5 h-5 text-gray-500 dark:text-gray-400"
+                                fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd"
+                                    d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                        </div>
+
+                        <input 
+                            type="text" 
+                            wire:model.live.debounce.500ms="search"
+                            class="block w-64 p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg 
+                                bg-gray-50 focus:ring-blue-500 focus:border-blue-500 
+                                dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 
+                                dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                            placeholder="Search User...">
                     </div>
                 </div>
             </div>
@@ -95,11 +108,9 @@
 
 
                                 <td class="px-6 py-4">
-                                    <div class="flex space-x-2">
-                                        <x-button type="button" wire:click="edit({{ $user->id }})"
-                                            variant="warning" size="sm">Edit</x-button>
-                                        <x-button type="button" wire:click="confirmDelete({{ $user->id }})"
-                                            variant="danger" size="sm">Delete</x-button>
+                                    <div class="flex gap-2">
+                                        <flux:button wire:click="edit({{ $user->id }})" size="sm" variant="outline"> Edit </flux:button>
+                                        <flux:button wire:click="confirmDelete({{ $user->id }})" size="sm" variant="outline" class="text-red-600 hover:text-red-700"> Delete </flux:button>
                                     </div>
                                 </td>
                             </tr>
@@ -163,11 +174,13 @@
                             </div>
                         </div>
 
-                        <div class="flex items-center justify-end p-6 space-x-2 border-t">
-                            <x-button type="button" wire:click="update" variant="primary">
-                                Save Changes
-                            </x-button>
-                            <x-button type="button" wire:click="cancel" variant="secondary">Cancel</x-button>
+                        <div class="flex items-center p-6 space-x-2 border-t border-gray-200 rounded-b dark:border-gray-600">
+                            <flux:button wire:click="update">
+                                Save changes
+                            </flux:button>
+                            <flux:button wire:click="cancel" variant="outline">
+                                Cancel
+                            </flux:button>
                         </div>
                     </div>
                 </div>
@@ -175,42 +188,52 @@
 
 
             <!-- Delete Modal -->
-            <div x-data="{ show: @entangle('showDeleteModal') }" x-show="show" x-cloak
-                class="fixed top-0 left-0 right-0 z-50 flex items-center justify-center w-full p-4 overflow-x-hidden overflow-y-auto h-[calc(100%-1rem)] max-h-full">
-                <div class="relative w-full max-w-md max-h-full">
-                    <div class="bg-white rounded-lg shadow dark:bg-gray-700 p-6 text-center">
-                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" stroke-width="2"
-                            viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M12 9v2m0 4h.01M4.93 4.93a10 10 0 0114.14 0M4.93 19.07a10 10 0 0014.14 0" />
-                        </svg>
-                        <h3 class="mb-5 text-lg font-normal text-gray-500 dark:text-gray-400">
-                            Are you sure you want to delete this user?
-                        </h3>
-                        <div class="flex justify-center space-x-2">
-                            <x-button type="button" wire:click="delete" variant="danger">Yes, I'm sure</x-button>
-                            <x-button type="button" wire:click="cancel" variant="secondary">No, cancel</x-button>
+            @if($showDeleteModal)
+                <div class="fixed top-0 left-0 right-0 z-50 w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] max-h-full flex items-center justify-center">
+                    <div class="relative w-full max-w-md max-h-full">
+                        <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
+                            <button type="button" class="absolute top-3 right-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ml-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white" wire:click="cancelDelete">
+                                <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                                </svg>
+                                <span class="sr-only">Close modal</span>
+                            </button>
+                            <div class="p-6 text-center">
+                                <svg class="mx-auto mb-4 text-gray-400 w-12 h-12 dark:text-gray-200" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 11V6m0 8h.01M19 10a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+                                </svg>
+                                <h3 class="mb-5 text-lg font-normal text-gray-500 dark:text-gray-400">Are you sure you want to delete this user?</h3>
+                                <flux:button wire:click="delete" class="mr-2 bg-red-600 hover:bg-red-700 text-white">
+                                    Yes, I'm sure
+                                </flux:button>
+                                <flux:button wire:click="cancelDelete" variant="outline">
+                                    No, cancel
+                                </flux:button>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            @endif
 
             <!-- Pagination and Per Page -->
-            <div class="py-4 px-3">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-4">
-                        <label class="text-sm font-medium text-gray-900 dark:text-white">Per Page:</label>
-                        <x-dropdown wire:model.live="perPage" name="perPage" :options="[
-                            '5' => '5',
-                            '10' => '10',
-                            '25' => '25',
-                            '50' => '50',
-                            '100' => '100',
-                        ]" />
-                    </div>
-                    <div>
-                        {{ $users->links() }}
-                    </div>
+            <div class="py-4 px-3 flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <label class="text-sm font-medium text-gray-900 dark:text-white">Per Page:</label>
+                    <select wire:model.live="perPage"
+                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
+                               focus:ring-blue-500 focus:border-blue-500 block p-2.5 
+                               dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 
+                               dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+                        <option value="5">5</option>
+                        <option value="10">10</option>
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+
+                <div>
+                    {{ $users->links() }}
                 </div>
             </div>
         </x-collapsible-card>

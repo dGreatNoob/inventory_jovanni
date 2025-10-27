@@ -4,7 +4,6 @@ namespace Database\Factories;
 
 use App\Models\SupplyProfile;
 use App\Models\ItemType;
-use App\Models\Allocation;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -22,7 +21,6 @@ class SupplyProfileFactory extends Factory
         return [
             'supply_item_class' => $this->faker->randomElement(['consumable', 'non-consumable']),
             'item_type_id' => ItemType::factory(),
-            'allocation_id' => Allocation::factory(),
             'supply_description' => $this->faker->sentence(3),
             'supply_qty' => $this->faker->randomFloat(2, 1, 1000),
             'supply_uom' => $this->faker->randomElement(['pcs', 'kg', 'box', 'roll', 'set', 'bottle', 'can']),

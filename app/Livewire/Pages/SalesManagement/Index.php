@@ -32,7 +32,6 @@ class Index extends Component
     public $email = '';
     public $billingAddress = '';
     public $shippingAddress = '';
-    public $customerReference = '';
 
     public $paymentMethod = '';
     public $shippingMethod = '';
@@ -90,7 +89,7 @@ class Index extends Component
             $this->product_list = $thisProducList->pluck('supply_description','id')->toArray();
         }
         
-        $this->company_results = \App\Models\Customer::all()->pluck('name', 'id');
+        $this->company_results = \App\Models\Branch::all()->pluck('name', 'id');
     }            
        
     public function addItem()
@@ -154,7 +153,6 @@ class Index extends Component
         $this->email = $salesOrders->email;
         $this->billingAddress = $salesOrders->billing_address;
         $this->shippingAddress = $salesOrders->shipping_address;
-        $this->customerReference = $salesOrders->customer_reference;         
         
         //$this->discounts = $salesOrders->discounts;
         $this->paymentMethod = $salesOrders->payment_method;
@@ -194,27 +192,27 @@ class Index extends Component
     public function updatedCustomerSelected($value)
     {
         if ($value) {
-            $customer = \App\Models\Customer::find($value);
-            if ($customer) {
+            $branch = \App\Models\Branch::find($value);
+            if ($branch) {
                 $this->customerData = [
-                    'name' => $customer->name,
-                    'address' => $customer->address,
-                    'contact_num' => $customer->contact_num,
-                    'tin_num' => $customer->tin_num,
+                    'name' => $branch->name,
+                    'address' => $branch->address,
+                    'contact_num' => $branch->contact_num,
+                    'manager_name' => $branch->manager_name,
                 ];
-                
+
                 // Auto-populate fields if they're empty
                 if (empty($this->contactPersonName)) {
-                    $this->contactPersonName = $customer->name;
+                    $this->contactPersonName = $branch->name;
                 }
                 if (empty($this->phone)) {
-                    $this->phone = $customer->contact_num;
+                    $this->phone = $branch->contact_num;
                 }
                 if (empty($this->billingAddress)) {
-                    $this->billingAddress = $customer->address;
+                    $this->billingAddress = $branch->address;
                 }
                 if (empty($this->shippingAddress)) {
-                    $this->shippingAddress = $customer->address;
+                    $this->shippingAddress = $branch->address;
                 }
             }
         } else {
@@ -271,13 +269,12 @@ class Index extends Component
             //code...
             $this->validate([
                 'status' => ['required', 'string', Rule::in(['pending','approved','rejected','confirmed','processing','shipped','delivered','cancelled','returned','on hold'])],        
-                'customerSelected' => 'required|exists:customers,id',
+                'customerSelected' => 'required|exists:branches,id',
                 'contactPersonName' => 'nullable|string|max:255',
                 'phone' => 'required|digits_between:7,15',
                 'email' => 'required|email|max:150',
                 'billingAddress' => 'required|string',
                 'shippingAddress' => 'required|string',
-                'customerReference' => 'nullable|alpha_num|max:50', 
                 'deliveryDate' => 'required|date|after_or_equal:today',
                 'paymentMethod' => 'required|string|max:50',
                 'shippingMethod' => 'required|string|max:50',
@@ -313,7 +310,6 @@ class Index extends Component
                 'email' => $this->email,
                 'billing_address' => $this->billingAddress,
                 'shipping_address' => $this->shippingAddress,
-                'customer_reference' => $this->customerReference,
                 //'discounts' => $this->discounts,
                 'payment_method' => $this->paymentMethod,
                 'shipping_method' => $this->shippingMethod,
@@ -569,7 +565,6 @@ class Index extends Component
             'email', 
             'billingAddress', 
             'shippingAddress', 
-            'customerReference',             
             'paymentMethod',
             'shippingMethod', 
             'paymentTerms', 

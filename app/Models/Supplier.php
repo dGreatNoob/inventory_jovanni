@@ -40,6 +40,7 @@ class Supplier extends Model
         'postal_code',
         'terms',
         'tax_id',
+        'status',
         'tin_num',
         'credit_limit',
         'payment_terms_days',

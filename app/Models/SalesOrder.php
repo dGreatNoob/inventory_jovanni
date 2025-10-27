@@ -20,7 +20,6 @@ class SalesOrder extends Model
         'email',
         'billing_address',
         'shipping_address',
-        'customer_reference',
         'product',
         'product_code',
         'quantity',
@@ -114,7 +113,7 @@ class SalesOrder extends Model
 
     public function customer()
     {
-        return $this->belongsTo(Customer::class);
+        return $this->belongsTo(Branch::class, 'customer_id');
     }
 
     public function product()
@@ -150,12 +149,12 @@ class SalesOrder extends Model
                         })->implode('<br>');
                 }
                 
-                $getCustomer = \App\Models\Customer::find($this->customer_id);
+                $getBranch = \App\Models\Branch::find($this->customer_id);
                 $customerName = '';
-                
-                if($getCustomer){
-                    $customerName = $getCustomer->name;
-                }                          
+
+                if($getBranch){
+                    $customerName = $getBranch->name;
+                }
                 
                 $fields =  [                 
                     'status' => $this->status ?? 'N/A',
@@ -165,7 +164,6 @@ class SalesOrder extends Model
                     'email'=> $this->email ?? 'N/A',
                     'billing_address'=> $this->billing_address ?? 'N/A',
                     'shipping_address'=> $this->shipping_address ?? 'N/A',
-                    'customer_reference'=> $this->customer_reference ?? 'N/A',                
                     'payment_method'=> $this->payment_method ?? 'N/A',
                     'shipping_method'=> $this->shipping_method ?? 'N/A',
                     'payment_terms'=> $this->payment_terms ?? 'N/A',

@@ -209,36 +209,26 @@
                                 </div>
                                 
                                 <div>
-                                    <x-dropdown 
-                                        wire:model.live="customerSelected" 
-                                        name="customerSelected" 
-                                        label="Customer" 
-                                        :options="$company_results" 
-                                        placeholder="Select Customer"
+                                    <x-dropdown
+                                        wire:model.live="customerSelected"
+                                        name="customerSelected"
+                                        label="Branch"
+                                        :options="$company_results"
+                                        placeholder="Select Branch"
                                         class="w-full"
                                     />
                                 </div>
                                 
-                                <div>
-                                    <x-input 
-                                        type="text" 
-                                        wire:model.defer="customerReference" 
-                                        name="customerReference" 
-                                        label="Customer Reference #" 
-                                        placeholder="Enter reference number"
-                                        class="w-full"
-                                    />
-                                </div>
                             </div>
                             
-                            <!-- Customer Information Display -->
+                            <!-- Branch Information Display -->
                             @if(!empty($customerData))
                             <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                                 <h4 class="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2 flex items-center">
                                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                     </svg>
-                                    Selected Customer Information
+                                    Selected Branch Information
                                 </h4>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                                     <div>
@@ -250,8 +240,8 @@
                                         <span class="text-blue-900 dark:text-blue-100 ml-1">{{ $customerData['contact_num'] ?? 'N/A' }}</span>
                                     </div>
                                     <div>
-                                        <span class="text-blue-700 dark:text-blue-300 font-medium">TIN:</span>
-                                        <span class="text-blue-900 dark:text-blue-100 ml-1">{{ $customerData['tin_num'] ?? 'N/A' }}</span>
+                                        <span class="text-blue-700 dark:text-blue-300 font-medium">Manager:</span>
+                                        <span class="text-blue-900 dark:text-blue-100 ml-1">{{ $customerData['manager_name'] ?? 'N/A' }}</span>
                                     </div>
                                     <div class="md:col-span-2">
                                         <span class="text-blue-700 dark:text-blue-300 font-medium">Address:</span>
@@ -262,13 +252,13 @@
                             @endif
                         </div>
 
-                        <!-- Customer Information Section -->
+                        <!-- Branch Information Section -->
                         <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                                 <svg class="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                                 </svg>
-                                Customer Information
+                                Branch Information
                             </h3>
                             
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -654,7 +644,7 @@
                                         SO#
                                     </th>
                                     <th scope="col" class="px-6 py-3">
-                                        Customer
+                                        Branch
                                     </th>
                                      <th scope="col" class="px-6 py-3">
                                         Status

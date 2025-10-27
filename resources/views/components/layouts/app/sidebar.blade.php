@@ -144,26 +144,6 @@
                 </flux:navlist.group> --}}
 
 
-                <!-- Warehouse and Sales Allocation Setup -->
-                <flux:navlist.group expandable :expanded="request()->routeIs('setup.*')"
-                    :heading="__('Setup')" class="lg:grid">
-                    
-                    <flux:navlist.group expandable :expanded="request()->routeIs('setup.allocation.*')"
-                        :heading="__('Allocations')" class="lg:grid">
-                        
-                        <flux:navlist.item icon="shopping-cart" href="{{ route('setup.allocation.sales') }}"
-                            :current="request()->routeIs('setup.allocation.sales')" wire:navigate>
-                            {{ __('Sales') }}
-                        </flux:navlist.item>
-                        
-                        <flux:navlist.item icon="building-office" href="{{ route('setup.allocation.warehouse') }}"
-                            :current="request()->routeIs('setup.allocation.warehouse')" wire:navigate>
-                            {{ __('Warehouse') }}
-                        </flux:navlist.item>
-                        
-                    </flux:navlist.group>
-                    
-                </flux:navlist.group>
 
                 {{--<flux:navlist.group expandable :expanded="request()->routeIs('shipment.*')"
                     :heading="__('Shipment Management')" class="lg:grid">

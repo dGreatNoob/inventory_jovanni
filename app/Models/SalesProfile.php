@@ -11,7 +11,7 @@ class SalesProfile extends Model
     protected $fillable = [
         'sales_number',
         'sales_date',
-        'branch_id',
+        'branch_ids',
         'agent_id',
         'total_amount',
         'remarks'
@@ -19,12 +19,13 @@ class SalesProfile extends Model
 
     protected $casts = [
         'sales_date' => 'date',
-        'total_amount' => 'decimal:2'
+        'total_amount' => 'decimal:2',
+        'branch_ids' => 'array'
     ];
 
-    public function branch(): BelongsTo
+    public function branches()
     {
-        return $this->belongsTo(Branch::class);
+        return $this->belongsToMany(Branch::class, 'sales_profile_branches', 'sales_profile_id', 'branch_id');
     }
 
     public function agent(): BelongsTo

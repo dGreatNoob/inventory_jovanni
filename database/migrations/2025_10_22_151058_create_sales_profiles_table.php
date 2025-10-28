@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('sales_number')->unique();
             $table->date('sales_date');
-            $table->foreignId('branch_id')->constrained('branches')->onDelete('cascade');
+            $table->json('branch_ids');
             $table->foreignId('agent_id')->constrained('agents')->onDelete('cascade');
             $table->decimal('total_amount', 15, 2);
             $table->text('remarks')->nullable();

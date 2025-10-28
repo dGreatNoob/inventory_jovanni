@@ -96,7 +96,6 @@ if [ ! -z "$LOCAL_IP" ]; then
     echo -e "   • phpMyAdmin:     ${GREEN}http://${LOCAL_IP}:8081${NC}"
     echo ""
 fi
-
 echo -e "${GREEN}🗄️  Database Info:${NC}"
 echo -e "   • MySQL:          ${GREEN}localhost:3307${NC}"
 echo -e "   • Redis:          ${GREEN}localhost:6380${NC}"
@@ -105,7 +104,6 @@ if [ ! -z "$LOCAL_IP" ]; then
     echo -e "${YELLOW}📱 Network Access: Other devices can connect using the IP above${NC}"
 fi
 echo ""
-
 echo -e "${YELLOW}💡 Starting Laravel development server...${NC}"
 echo -e "${YELLOW}Press Ctrl+C to stop${NC}"
 echo ""

@@ -63,19 +63,32 @@ echo -e "${YELLOW}🔧 Optimizing Laravel...${NC}"
 php artisan config:clear
 php artisan cache:clear
 
+# Get local IP address for network access
+LOCAL_IP=$(hostname -I 2>/dev/null | awk '{print $1}' || ip -4 addr show scope global | grep inet | awk '{print $2}' | cut -d/ -f1 | head -1)
+
 # Display service information
 echo ""
 echo -e "${GREEN}═══════════════════════════════════════════════════════════${NC}"
 echo -e "${GREEN}✅ Development Environment Started Successfully!${NC}"
 echo -e "${GREEN}═══════════════════════════════════════════════════════════${NC}"
 echo ""
-echo -e "${GREEN}📍 Service URLs:${NC}"
+echo -e "${GREEN}📍 Service URLs (Local):${NC}"
 echo -e "   • Laravel App:    ${GREEN}http://localhost:8000${NC}"
 echo -e "   • phpMyAdmin:     ${GREEN}http://localhost:8081${NC}"
 echo ""
+if [ ! -z "$LOCAL_IP" ]; then
+    echo -e "${GREEN}🌐 Service URLs (Network Access):${NC}"
+    echo -e "   • Laravel App:    ${GREEN}http://${LOCAL_IP}:8000${NC}"
+    echo -e "   • phpMyAdmin:     ${GREEN}http://${LOCAL_IP}:8081${NC}"
+    echo ""
+fi
 echo -e "${GREEN}🗄️  Database Info:${NC}"
 echo -e "   • MySQL:          ${GREEN}localhost:3307${NC}"
 echo -e "   • Redis:          ${GREEN}localhost:6380${NC}"
+echo ""
+if [ ! -z "$LOCAL_IP" ]; then
+    echo -e "${YELLOW}📱 Network Access: Other devices can connect using the IP above${NC}"
+fi
 echo ""
 echo -e "${YELLOW}💡 Starting Laravel development server...${NC}"
 echo -e "${YELLOW}Press Ctrl+C to stop${NC}"

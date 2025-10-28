@@ -41,13 +41,13 @@ RUN mkdir -p storage/framework/cache/data \
     bootstrap/cache
 
 # Install PHP dependencies
-RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-scripts
-
-# Install Node dependencies and build assets
-RUN npm install && npm run build
+RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
 # Run post-install scripts
 RUN php artisan package:discover --ansi
+
+# Install Node dependencies and build assets
+RUN npm install && npm run build
 
 # Set permissions
 RUN chown -R www-data:www-data /var/www && \
@@ -74,25 +74,32 @@ while ! nc -z redis 6379; do\n\
 done\n\
 echo "✅ Redis connection established"\n\
 \n\
-# Generate application key if not set\n\
-if [ -z "$APP_KEY" ] || [ "$APP_KEY" = "" ]; then\n\
-    echo "🔑 Generating application key..."\n\
-    php artisan key:generate --force\n\
-fi\n\
+# Fix permissions\n\
+echo "🔐 Setting proper permissions..."\n\
+chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache\n\
+chmod -R 775 /var/www/storage /var/www/bootstrap/cache\n\
 \n\
 # Run migrations\n\
 echo "📊 Running database migrations..."\n\
 php artisan migrate --force\n\
 \n\
-# Create storage link\n\
-echo "🔗 Creating storage link..."\n\
-php artisan storage:link\n\
+# Create storage link if it doesn'\''t exist\n\
+if [ ! -L /var/www/public/storage ]; then\n\
+    echo "🔗 Creating storage link..."\n\
+    php artisan storage:link\n\
+fi\n\
 \n\
 # Clear and cache config\n\
 echo "⚡ Optimizing application..."\n\
 php artisan config:cache\n\
 php artisan route:cache\n\
 php artisan view:cache\n\
+\n\
+# Check if we need to seed\n\
+if [ "$DB_SEED" = "true" ]; then\n\
+    echo "🌱 Seeding database..."\n\
+    php artisan db:seed --force || echo "⚠️  Seeding failed"\n\
+fi\n\
 \n\
 echo "✅ Laravel application ready!"\n\
 \n\

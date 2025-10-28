@@ -3,6 +3,9 @@ import { initFlowbite } from 'flowbite';
 import ApexCharts from 'apexcharts';
 import Swal from 'sweetalert2';
 import { Html5Qrcode } from 'html5-qrcode';
+
+// Note: Alpine.js is loaded by Flux via @fluxScripts
+// No need to initialize it here as it will be initialized by Flux
 // import 'flowbite';
 
 document.addEventListener('livewire:navigated', () => {

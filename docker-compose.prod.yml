@@ -11,9 +11,8 @@ services:
     volumes:
       - ./nginx/conf.d/production.conf:/etc/nginx/conf.d/default.conf
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ./public:/var/www/public:ro
-      - ./storage/app/public:/var/www/storage/app/public:ro
-      - image_uploads:/var/www/storage/app/public/photos:ro
+      - app_vendor:/var/www/vendor:ro
+      - app_public:/var/www/public:ro
     depends_on:
       - app
     networks:
@@ -29,10 +28,13 @@ services:
       - ./storage:/var/www/storage
       - ./bootstrap/cache:/var/www/bootstrap/cache
       - image_uploads:/var/www/storage/app/public/photos
+      - app_vendor:/var/www/vendor
+      - app_public:/var/www/public
     environment:
       - APP_ENV=production
-      - APP_DEBUG=false
+      - APP_DEBUG=true
       - APP_URL=http://localhost
+      - APP_KEY=base64:xFOCHxqN1ALCeUH5ACAQgzO7y5VTky8rRI5x3t74z0w=
       - DB_CONNECTION=mysql
       - DB_HOST=db
       - DB_PORT=3306
@@ -44,6 +46,7 @@ services:
       - CACHE_DRIVER=redis
       - SESSION_DRIVER=redis
       - QUEUE_CONNECTION=redis
+      - DB_SEED=true
     depends_on:
       db:
         condition: service_healthy
@@ -110,6 +113,10 @@ volumes:
   redisdata:
     driver: local
   image_uploads:
+    driver: local
+  app_public:
+    driver: local
+  app_vendor:
     driver: local
 
 networks:

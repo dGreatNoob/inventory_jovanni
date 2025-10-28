@@ -23,8 +23,9 @@ class Index extends Component
     #[Validate('required|date')]
     public $sales_date = '';
 
-    #[Validate('required|exists:branches,id')]
-    public $branch_id = '';
+    #[Validate('required|array|min:1')]
+    public $branch_ids = [];
+
 
     #[Validate('required|exists:agents,id')]
     public $agent_id = '';
@@ -50,12 +51,18 @@ class Index extends Component
     public $showCreateModal = false;
     public $showEditModal = false;
     public $showDeleteModal = false;
+    public $showViewModal = false;
+
+    // View property
+    public $viewingSalesProfile = null;
 
     protected $messages = [
         'sales_date.required' => 'Sales date is required.',
         'sales_date.date' => 'Sales date must be a valid date.',
-        'branch_id.required' => 'Branch is required.',
-        'branch_id.exists' => 'Selected branch does not exist.',
+        'branch_ids.required' => 'At least one branch is required.',
+        'branch_ids.array' => 'Branches must be an array.',
+        'branch_ids.min' => 'At least one branch must be selected.',
+        'branch_ids.*' => 'One or more selected branches do not exist.',
         'agent_id.required' => 'Agent is required.',
         'agent_id.exists' => 'Selected agent does not exist.',
         'remarks.string' => 'Remarks must be text.',
@@ -80,11 +87,9 @@ class Index extends Component
 
     public function addItem()
     {
-        $this->validate([
-            'selectedProduct' => 'required|exists:products,id',
-            'quantity' => 'required|integer|min:1',
-            'unitPrice' => 'required|numeric|min:0'
-        ]);
+        $this->validateOnly('selectedProduct');
+        $this->validateOnly('quantity');
+        $this->validateOnly('unitPrice');
 
         $product = Product::find($this->selectedProduct);
 
@@ -129,11 +134,13 @@ class Index extends Component
 
             $salesProfile = SalesProfile::create([
                 'sales_date' => $this->sales_date,
-                'branch_id' => $this->branch_id,
                 'agent_id' => $this->agent_id,
                 'total_amount' => $totalAmount,
                 'remarks' => $this->remarks
             ]);
+
+            // Attach branches
+            $salesProfile->branches()->attach($this->branch_ids);
 
             foreach ($this->items as $item) {
                 $salesProfile->items()->create([
@@ -154,7 +161,7 @@ class Index extends Component
         $salesProfile = SalesProfile::with('items.product')->findOrFail($id);
         $this->editingSalesId = $id;
         $this->sales_date = $salesProfile->sales_date->format('Y-m-d');
-        $this->branch_id = $salesProfile->branch_id;
+        $this->branch_ids = $salesProfile->branches->pluck('id')->toArray();
         $this->agent_id = $salesProfile->agent_id;
         $this->remarks = $salesProfile->remarks;
 
@@ -186,11 +193,13 @@ class Index extends Component
 
             $salesProfile->update([
                 'sales_date' => $this->sales_date,
-                'branch_id' => $this->branch_id,
                 'agent_id' => $this->agent_id,
                 'total_amount' => $totalAmount,
                 'remarks' => $this->remarks
             ]);
+
+            // Sync branches
+            $salesProfile->branches()->sync($this->branch_ids);
 
             // Delete existing items and create new ones
             $salesProfile->items()->delete();
@@ -224,6 +233,12 @@ class Index extends Component
         session()->flash('message', 'Sales profile deleted successfully.');
     }
 
+    public function view($id)
+    {
+        $this->viewingSalesProfile = SalesProfile::with(['branches', 'agent', 'items.product'])->findOrFail($id);
+        $this->showViewModal = true;
+    }
+
     public function cancel()
     {
         $this->resetForm();
@@ -234,7 +249,7 @@ class Index extends Component
         $this->reset([
             'editingSalesId',
             'sales_date',
-            'branch_id',
+            'branch_ids',
             'agent_id',
             'remarks',
             'items',
@@ -243,7 +258,9 @@ class Index extends Component
             'unitPrice',
             'showCreateModal',
             'showEditModal',
-            'showDeleteModal'
+            'showDeleteModal',
+            'showViewModal',
+            'viewingSalesProfile'
         ]);
         $this->sales_date = now()->format('Y-m-d');
         $this->quantity = 1;
@@ -259,15 +276,15 @@ class Index extends Component
     public function render()
     {
         return view('livewire.sales-profile.index', [
-            'salesProfiles' => SalesProfile::with(['branch', 'agent', 'items'])
+            'salesProfiles' => SalesProfile::with(['branches', 'agent', 'items'])
                 ->where(function($query) {
                     $query->where('sales_number', 'like', '%' . $this->search . '%')
-                          ->orWhereHas('branch', function($q) {
-                              $q->where('name', 'like', '%' . $this->search . '%');
-                          })
-                          ->orWhereHas('agent', function($q) {
-                              $q->where('name', 'like', '%' . $this->search . '%');
-                          });
+                           ->orWhereHas('branches', function($q) {
+                               $q->where('name', 'like', '%' . $this->search . '%');
+                           })
+                           ->orWhereHas('agent', function($q) {
+                               $q->where('name', 'like', '%' . $this->search . '%');
+                           });
                 })
                 ->orderBy('created_at', 'desc')
                 ->paginate($this->perPage),

@@ -42,6 +42,20 @@ if [ ! -f .env ]; then
     exit 1
 fi
 
+# Fix permissions for Laravel
+echo -e "${YELLOW}🔐 Fixing permissions...${NC}"
+# Create directories if they don't exist
+mkdir -p storage/framework/cache/data
+mkdir -p storage/framework/sessions
+mkdir -p storage/framework/views
+mkdir -p storage/logs
+mkdir -p bootstrap/cache
+
+# Set proper permissions
+chmod -R 775 storage bootstrap/cache 2>/dev/null || true
+
+echo -e "${GREEN}✅ Permissions fixed${NC}"
+
 # Install/update dependencies if needed
 echo -e "${YELLOW}📥 Checking dependencies...${NC}"
 if [ ! -d "vendor" ]; then

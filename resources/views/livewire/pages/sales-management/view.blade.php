@@ -26,25 +26,24 @@
                     disabled  
                 />
 
-               <x-input 
-                    type="text" 
-                    value="{{$sales_order_view->customer_reference}}" 
-                    name="customer_reference" 
-                    label="Customer Reference" 
-                    readonly 
-                    disabled   
-                />  
+               <x-input
+                    type="text"
+                    value="{{ $sales_order_view->agents->pluck('name')->join(', ') }}"
+                    name="selected_agents"
+                    label="Selected Agent/s"
+                    readonly
+                    disabled
+                />
             </div>
 
             <div class="grid gap-6 mb-2 md:grid-cols-2">
-                <x-dropdown 
-                    readonly 
-                    disabled 
-                    value="{{$sales_order_view->customer_id}}" 
-                    name="customerSelected" 
-                    label="Customer Name"  
-                    :options="$company_results" 
-                    placeholder="Select a Customer"
+                <x-input
+                    type="text"
+                    value="{{ $sales_order_view->customers->pluck('name')->join(', ') }}"
+                    name="selected_branches"
+                    label="Selected Branch/es"
+                    readonly
+                    disabled
                 />
                 <x-input 
                     type="text" 
@@ -176,8 +175,8 @@
                                     class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700 border-gray-200">
                                     <th scope="row"
                                         class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">                                       
-                                        <?php 
-                                            print_r($data->product->supply_sku);
+                                        <?php
+                                            echo $data->product ? ($data->product->sku ?? 'N/A') : 'Product Not Found';
                                         ?>
                                     </th>                                      
                                     <td class="px-6 py-4">

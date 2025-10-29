@@ -13,7 +13,7 @@ class SalesOrder extends Model
     use HasFactory, LogsActivity;
     protected $fillable = [
         'status',
-        'customer_id',
+        'customer_ids',
         'product_id',
         'contact_person_name',
         'phone',
@@ -33,6 +33,7 @@ class SalesOrder extends Model
 
     protected $casts = [
         'delivery_date' => 'date',
+        'customer_ids' => 'array',
     ];
 
     // Static method to access dropdown options
@@ -92,10 +93,27 @@ class SalesOrder extends Model
 
     protected static function boot()
     {
-        parent::boot();       
-        static::creating(function ($salesOrder) {            
-            $salesOrder->sales_order_number = 'SO-' . strtoupper(uniqid());
-        });   
+        parent::boot();
+        static::creating(function ($salesOrder) {
+            $salesOrder->sales_order_number = self::generateSalesOrderNumber();
+        });
+    }
+
+    public static function generateSalesOrderNumber(): string
+    {
+        $date = now()->format('Ym');
+        $lastRecord = self::where('sales_order_number', 'like', "SLS-{$date}-%")
+                          ->orderBy('id', 'desc')
+                          ->first();
+
+        if ($lastRecord) {
+            $lastNumber = (int) substr($lastRecord->sales_order_number, -4);
+            $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+        } else {
+            $newNumber = '0001';
+        }
+
+        return "SLS-{$date}-{$newNumber}";
     }
 
     public function scopeSearch($query, $search)
@@ -111,9 +129,14 @@ class SalesOrder extends Model
         return $this->hasMany(SalesReturn::class, 'sales_order_id');
     }
 
-    public function customer()
+    public function customers()
     {
-        return $this->belongsTo(Branch::class, 'customer_id');
+        return $this->belongsToMany(Branch::class, 'sales_order_branches', 'sales_order_id', 'branch_id');
+    }
+
+    public function agents()
+    {
+        return $this->belongsToMany(\App\Models\Agent::class, 'sales_order_agents', 'sales_order_id', 'agent_id');
     }
 
     public function product()

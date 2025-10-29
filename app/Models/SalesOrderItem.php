@@ -28,11 +28,11 @@ class SalesOrderItem extends Model
     }
 
     /**
-     * Relationship: belongs to ProfileSupply (instead of Product)
+     * Relationship: belongs to Product
      */
     public function product()
     {
-        return $this->belongsTo(SupplyProfile::class, 'product_id');
+        return $this->belongsTo(Product::class, 'product_id');
     }
 
    

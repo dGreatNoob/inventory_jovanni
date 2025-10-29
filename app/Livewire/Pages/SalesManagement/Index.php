@@ -26,7 +26,7 @@ class Index extends Component
 
 
 
-    public $status = '';    
+    // Status is now always 'pending' for new orders
     public $contactPersonName = '';   
     public $phone = '';
     public $email = '';
@@ -39,7 +39,8 @@ class Index extends Component
     public $deliveryDate ='';
     public $search = '';
     public $editValue = null;
-    public $customerSelected = null;
+    public $customerSelected = [];
+    public $agentSelected = [];
          
     public $shippingMethodDropDown = [];
     public $paymentMethodDropdown = []; 
@@ -57,6 +58,7 @@ class Index extends Component
     public $years = [];  
 
     public $company_results = [];
+    public $agent_results = [];
     public $product_list = [];
     public $getSalesOrderDetails = [];
     public $product_taken_ids = [];
@@ -80,16 +82,19 @@ class Index extends Component
             ]
         ];  
         
-        $thisProducList = SupplyProfile::select('id','supply_description','supply_sku','supply_qty','supply_uom')
-            ->where('supply_qty', '>', 0) // Only show products with stock
-            ->orderBy('supply_description')
+        // Get products from Product model with inventory instead of SupplyProfile
+        $thisProducList = \App\Models\Product::select('products.id','products.name','products.sku','product_inventory.available_quantity as stock_quantity','products.uom as unit')
+            ->join('product_inventory', 'products.id', '=', 'product_inventory.product_id')
+            ->where('product_inventory.available_quantity', '>', 0) // Only show products with stock
+            ->orderBy('products.name')
             ->get();
-              
+
         if($thisProducList->isNotEmpty()){
-            $this->product_list = $thisProducList->pluck('supply_description','id')->toArray();
+            $this->product_list = $thisProducList->pluck('name','id')->toArray();
         }
         
         $this->company_results = \App\Models\Branch::all()->pluck('name', 'id');
+        $this->agent_results = \App\Models\Agent::all()->pluck('name', 'id');
     }            
        
     public function addItem()
@@ -109,26 +114,34 @@ class Index extends Component
         $this->items = array_values($this->items); // Re-index
     }
 
-    public function edit($id) 
+    public function edit($id)
     {
-        $salesOrders = SalesOrder::with('items.product')->where('id',$id)->first();
+        $salesOrders = SalesOrder::with(['items' => function($query) {
+            $query->with('product');
+        }, 'customers', 'agents'])->where('id',$id)->first();
         $this->items = []; // reset array
 
         if ($salesOrders->items->isNotEmpty()) {
             foreach ($salesOrders->items as $item) {
+                $priceOptions = [];
+                if ($item->product) {
+                    $price = $item->product->price;
+                    $priceOptions = [
+                        $price => $price,
+                        $price => $price,
+                        $price => $price
+                    ];
+                }
+
                 $this->items[] = [
                     'id' => $item->id,
-                    'product_id' =>  $item->product_id, 
-                    'quantity' => $item->quantity,  
-                    'price_option' => [ 
-                        $item->product->supply_price1 => $item->product->supply_price1,
-                        $item->product->supply_price2 => $item->product->supply_price2,
-                        $item->product->supply_price3 => $item->product->supply_price3
-                    ], 
-                    'unit_price' => (string)$item->unit_price
+                    'product_id' =>  $item->product_id,
+                    'quantity' => $item->quantity,
+                    'price_option' => $priceOptions,
+                    'unit_price' => (float)$item->unit_price
                 ];
             }
-        }  
+        }
 
         if (!$salesOrders) {
             session()->flash('error', 'Sales Order not found.');
@@ -146,8 +159,9 @@ class Index extends Component
        
       
 
-        $this->status = $salesOrders->status;       
-        $this->customerSelected = $salesOrders->customer_id; 
+        // Status is now always 'pending' for new orders, so we don't set it from edit
+        $this->customerSelected = $salesOrders->customers->pluck('id')->toArray();
+        $this->agentSelected = $salesOrders->agents->pluck('id')->toArray();
         $this->contactPersonName = $salesOrders->contact_person_name;
         $this->phone = $salesOrders->phone;  
         $this->email = $salesOrders->email;
@@ -191,8 +205,10 @@ class Index extends Component
 
     public function updatedCustomerSelected($value)
     {
-        if ($value) {
-            $branch = \App\Models\Branch::find($value);
+        if (is_array($value) && !empty($value)) {
+            // For multi-select, get the first selected branch for auto-population
+            $branchId = $value[0];
+            $branch = \App\Models\Branch::find($branchId);
             if ($branch) {
                 $this->customerData = [
                     'name' => $branch->name,
@@ -235,15 +251,15 @@ class Index extends Component
 
                 if(!empty($item)){
                     $itemProductId = $item['product_id'];
-                    $getProducTable = SupplyProfile::select('supply_price1','supply_price2','supply_price3')->where('id',$itemProductId)->first();
-                    if($getProducTable){    
-                        $this->items[$index]['unit_price'] = 0;       
+                    $getProducTable = \App\Models\Product::selectRaw('price as price_tier_1, price as price_tier_2, price as price_tier_3')->where('id',$itemProductId)->first();
+                    if($getProducTable){
+                        $this->items[$index]['unit_price'] = 0;
                         $this->items[$index]['price_option'] = $getProducTable->toArray();
                     }else{
-                        $this->items[$index]['price_option'] = []; 
-                        $this->items[$index]['unit_price'] = 0; 
+                        $this->items[$index]['price_option'] = [];
+                        $this->items[$index]['unit_price'] = 0;
                     }
-                } 
+                }
             }
         } 
     }
@@ -268,8 +284,10 @@ class Index extends Component
         try {
             //code...
             $this->validate([
-                'status' => ['required', 'string', Rule::in(['pending','approved','rejected','confirmed','processing','shipped','delivered','cancelled','returned','on hold'])],        
-                'customerSelected' => 'required|exists:branches,id',
+                'customerSelected' => 'required|array|min:1',
+                'customerSelected.*' => 'exists:branches,id',
+                'agentSelected' => 'nullable|array',
+                'agentSelected.*' => 'exists:agents,id',
                 'contactPersonName' => 'nullable|string|max:255',
                 'phone' => 'required|digits_between:7,15',
                 'email' => 'required|email|max:150',
@@ -279,7 +297,7 @@ class Index extends Component
                 'paymentMethod' => 'required|string|max:50',
                 'shippingMethod' => 'required|string|max:50',
                 'paymentTerms' => 'required|string|max:100',          
-                'items.*.product_id' => ['required', 'exists:supply_profiles,id', 'distinct'],
+                'items.*.product_id' => ['required', 'exists:products,id', 'distinct'],
                 'items.*.quantity' => [
                         'required',
                         'integer',
@@ -302,9 +320,8 @@ class Index extends Component
             
 
         
-            $salesOrderData = [               
-                'status' => $this->status,
-                'customer_id' => $this->customerSelected,               
+            $salesOrderData = [
+                'status' => 'pending',
                 'contact_person_name' => $this->contactPersonName,
                 'phone' => $this->phone,
                 'email' => $this->email,
@@ -314,15 +331,21 @@ class Index extends Component
                 'payment_method' => $this->paymentMethod,
                 'shipping_method' => $this->shippingMethod,
                 'payment_terms' => $this->paymentTerms,
-                'delivery_date' => $formattedDeliveryDate                
-            ];  
+                'delivery_date' => $formattedDeliveryDate
+            ];
 
             if($this->editValue) {
                 $SalesOrder = SalesOrder::find($this->editValue);
-                $success = $SalesOrder->update($salesOrderData);                        
+                $success = $SalesOrder->update($salesOrderData);
+                // Sync branches and agents for editing
+                $SalesOrder->customers()->sync($this->customerSelected);
+                $SalesOrder->agents()->sync($this->agentSelected);
             }else{
                 // Create new Sales Order
-                $SalesOrder = SalesOrder::create($salesOrderData); 
+                $SalesOrder = SalesOrder::create($salesOrderData);
+                // Attach branches and agents for new order
+                $SalesOrder->customers()->attach($this->customerSelected);
+                $SalesOrder->agents()->attach($this->agentSelected);
             }
 
             // Sync items
@@ -331,7 +354,7 @@ class Index extends Component
 
             foreach ($this->items as $itemData) {
 
-                $getProduct = SupplyProfile::find( $itemData['product_id'] );
+                $getProduct = \App\Models\Product::find( $itemData['product_id'] );
 
                 if (isset($itemData['id']) && in_array($itemData['id'], $existingItemIds)) {   
 
@@ -356,7 +379,7 @@ class Index extends Component
                     SalesOrderItem::where('id', $itemData['id'])->update([
                         'product_id' => $itemData['product_id'],
                         'quantity'   => $itemData['quantity'],
-                        'unit_price' => $itemData['unit_price'],
+                        'unit_price' => (float)$itemData['unit_price'],
                         'subtotal'   => $itemData['quantity'] * $itemData['unit_price'],
                     ]);
 
@@ -366,15 +389,15 @@ class Index extends Component
                     $success = $SalesOrder->items()->create([
                         'product_id' => $itemData['product_id'],
                         'quantity'   => $itemData['quantity'],
-                        'unit_price' => $itemData['unit_price'],
+                        'unit_price' => (float)$itemData['unit_price'],
                         'subtotal'   => $itemData['quantity'] * $itemData['unit_price'],
                     ]);
 
                     // temporarily commented out
                     if($success ){                      
                         if($getProduct){
-                            if( ( $getProduct->supply_qty -  $itemData['quantity'] ) >= 0 ){
-                                $getProduct->supply_qty = $getProduct->supply_qty -  $itemData['quantity'];
+                            if( ( $getProduct->stock_quantity -  $itemData['quantity'] ) >= 0 ){
+                                $getProduct->stock_quantity = $getProduct->stock_quantity -  $itemData['quantity'];
                                 //$getProduct->save();
                             }
                         }
@@ -413,48 +436,12 @@ class Index extends Component
     {
       
         collect($this->items)->each(function ($item, $index) {          
-            $getProduct = SupplyProfile::find($item['product_id']);
+            $getProduct = \App\Models\Product::find($item['product_id']);
             if($getProduct){
                 $qtyToDeduct = $item['quantity'];
                 
-                // For consumable items, use FIFO batch deduction
-                if ($getProduct->isConsumable()) {
-                    $batchDeduction = SupplyBatch::getBatchesForFifoDeduction($getProduct->id, $qtyToDeduct);
-                    
-                    if ($batchDeduction['shortage'] > 0) {
-                        // Not enough stock in batches
-                        session()->flash('error', "Insufficient stock for {$getProduct->supply_description}. Available: {$batchDeduction['total_available']}, Requested: {$qtyToDeduct}");
-                        return;
-                    }
-                    
-                    // Deduct from batches using FIFO
-                    foreach ($batchDeduction['batches'] as $batchInfo) {
-                        $batch = $batchInfo['batch'];
-                        $qtyFromBatch = $batchInfo['quantity'];
-                        
-                        $batch->deductQuantity($qtyFromBatch);
-                        
-                        // Log batch deduction
-                        activity('Stock-out')
-                            ->causedBy(\Illuminate\Support\Facades\Auth::user())
-                            ->performedOn($batch)
-                            ->withProperties([
-                                'product_sku' => $getProduct->supply_sku,
-                                'batch_number' => $batch->batch_number,
-                                'qty_deducted' => $qtyFromBatch,
-                                'remaining_batch_qty' => $batch->current_qty,
-                                'sales_order' => $this->salesOrderNumber ?? 'Direct Sale',
-                            ])
-                            ->log("FIFO deduction from batch {$batch->batch_number}: {$qtyFromBatch} units");
-                    }
-                } else {
-                    // For non-consumable items, use the original logic
-                    $getProduct->supply_qty = $getProduct->supply_qty - $qtyToDeduct;
-                    $getProduct->save();
-                }
-                
-                // Update the main supply profile quantity in both cases
-                $getProduct->supply_qty = $getProduct->supply_qty - $qtyToDeduct;
+                // Deduct stock from Product model
+                $getProduct->stock_quantity = $getProduct->stock_quantity - $qtyToDeduct;
                 $getProduct->save();
             }
         });         
@@ -497,15 +484,15 @@ class Index extends Component
         }
 
         if( $value  == 0){
-            return $fail('Unit price is required in line '.( $index + 1 ) .'.');          
+            return $fail('Unit price is required in line '.( $index + 1 ) .'.');
         }else{
             $getkey = $this->collectItems($index);
-            $getProducTable = SupplyProfile::select('supply_price1','supply_price2','supply_price3')
+            $getProducTable = \App\Models\Product::selectRaw('price as price_tier_1, price as price_tier_2, price as price_tier_3')
                 ->find($getkey['product_id']);
 
             if($getProducTable){
                 if(!in_array($value,$getProducTable->toArray())){
-                    return $fail('Unit price is required in line '.( $index + 1 ) .'.');     
+                    return $fail('Unit price is required in line '.( $index + 1 ) .'.');
                 }
             }
         }
@@ -525,12 +512,14 @@ class Index extends Component
             $getkey  = $this->collectItems($index);
             $collectResult = collect($getkey);            
 
-            if ($collectResult->has('product_id')) { 
-                $getTotalQty = SupplyProfile::select('supply_qty')->find($getkey['product_id']);
+            if ($collectResult->has('product_id')) {
+                $getTotalQty = \App\Models\Product::select('product_inventory.available_quantity as stock_quantity')
+                    ->join('product_inventory', 'products.id', '=', 'product_inventory.product_id')
+                    ->find($getkey['product_id']);
                 if ($getTotalQty) {
-                    if($getkey['quantity'] >  $getTotalQty->supply_qty ){
-                        return $fail('The quantity in line'. ( $index + 1) .' exceeds the remaining quantity of ' . $getTotalQty->supply_qty .'.' );
-                    } 
+                    if($getkey['quantity'] >  $getTotalQty->stock_quantity ){
+                        return $fail('The quantity in line'. ( $index + 1) .' exceeds the remaining quantity of ' . $getTotalQty->stock_quantity .'.' );
+                    }
                 }
             }
 
@@ -559,7 +548,7 @@ class Index extends Component
     {
         // Reset form fields to empty/null/default
         $this->reset([
-            'status',            
+            // 'status', // Status is now always 'pending'
             'contactPersonName',  
             'phone', 
             'email', 
@@ -572,6 +561,7 @@ class Index extends Component
             'search', 
             'editValue',           
             'customerSelected',
+            'agentSelected',
            
             'items',
             'days',
@@ -627,12 +617,12 @@ class Index extends Component
         $this->days = $this->getdays();
 
         return view('livewire.pages.sales-management.index', [
-            'data_results' => SalesOrder::with('customer')->search($this->search)
-                ->latest()->paginate($this->perPage), 
+            'data_results' => SalesOrder::with('customers', 'agents')->search($this->search)
+                ->latest()->paginate($this->perPage),
             'months' =>  $this->months,
             'days'=> $this->days,
             'getSalesOrderDetails' => $this->getSalesOrderDetails
 
-        ]); 
+        ]);
     }
 }

@@ -135,8 +135,8 @@
                                         <tbody>
                                             @foreach($getSalesOrderDetails->items as $order)
                                             <tr class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700">
-                                                <td class="px-6 py-4 font-mono">{{ $order->product->supply_sku ?? 'N/A' }}</td>
-                                                <td class="px-6 py-4">{{ $order->product->supply_description ?? 'N/A' }}</td>
+                                                <td class="px-6 py-4 font-mono">{{ $order->product ? ($order->product->sku ?? 'N/A') : 'N/A' }}</td>
+                                                <td class="px-6 py-4">{{ $order->product ? ($order->product->name ?? 'N/A') : 'N/A' }}</td>
                                                 <td class="px-6 py-4">{{ number_format($order->quantity, 2) }}</td>
                                                 <td class="px-6 py-4">₱{{ number_format($order->unit_price, 2) }}</td>
                                                 <td class="px-6 py-4 font-semibold">₱{{ number_format($order->quantity * $order->unit_price, 2) }}</td>
@@ -152,7 +152,7 @@
                         <div class="flex items-center justify-end p-6 space-x-2 border-t border-gray-200 rounded-b dark:border-gray-600">
                             <x-button type="button" wire:click="closeQrModal" variant="secondary">Close</x-button>
                             @if($getSalesOrderDetails)
-                            <x-button type="button" onclick="window.open('/purchase-order/print/{{ $getSalesOrderDetails->sales_order_number }}', '_blank', 'width=500,height=600')" variant="primary">
+                            <x-button type="button" onclick="window.open('/sales-order/print/{{ $getSalesOrderDetails->sales_order_number }}', '_blank', 'width=500,height=600')" variant="primary">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
                                 </svg>
@@ -189,36 +189,29 @@
                             
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 <div>
-                                    <x-dropdown 
-                                        wire:model.defer="status" 
-                                        name="status" 
-                                        label="Order Status" 
-                                        :options="[
-                                            'pending' => 'Pending',
-                                            'confirmed' => 'Confirmed', 
-                                            'processing' => 'Processing',
-                                            'shipped' => 'Shipped',
-                                            'delivered' => 'Delivered',
-                                            'cancelled' => 'Cancelled',
-                                            'returned' => 'Returned',
-                                            'on hold' => 'On Hold'
-                                        ]"
-                                        placeholder="Select Status"
-                                        class="w-full"
-                                    />
-                                </div>
-                                
-                                <div>
                                     <x-dropdown
                                         wire:model.live="customerSelected"
                                         name="customerSelected"
                                         label="Branch"
                                         :options="$company_results"
                                         placeholder="Select Branch"
+                                        multiselect
                                         class="w-full"
                                     />
                                 </div>
-                                
+
+                                <div>
+                                    <x-dropdown
+                                        wire:model.live="agentSelected"
+                                        name="agentSelected"
+                                        label="Agent"
+                                        :options="$agent_results"
+                                        placeholder="Select Agent"
+                                        multiselect
+                                        class="w-full"
+                                    />
+                                </div>
+
                             </div>
                             
                             <!-- Branch Information Display -->
@@ -441,17 +434,17 @@
                                                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm"
                                                 >
                                                     <option value="">Select Product</option>
-                                                    @foreach($product_list ?? [] as $key => $supply)
-                                                        @php
-                                                            $product = \App\Models\SupplyProfile::find($key);
-                                                        @endphp
-                                                        <option value="{{ $key }}">
-                                                            {{ $supply }} 
-                                                            @if($product)
-                                                                (SKU: {{ $product->supply_sku }}, Stock: {{ $product->supply_qty }} {{ $product->supply_uom }})
-                                                            @endif
-                                                        </option>
-                                                    @endforeach
+                                                    @foreach($product_list ?? [] as $key => $product)
+                                                            @php
+                                                                $productModel = \App\Models\Product::find($key);
+                                                            @endphp
+                                                            <option value="{{ $key }}">
+                                                                {{ $product }}
+                                                                @if($productModel)
+                                                                    (SKU: {{ $productModel->sku }}, Stock: {{ $productModel->stock_quantity }} {{ $productModel->unit }})
+                                                                @endif
+                                                            </option>
+                                                        @endforeach
                                                 </select>
                                                 @error("items.{$index}.product_id") 
                                                     <span class="text-xs text-red-600">{{ $message }}</span>
@@ -460,14 +453,14 @@
                                             <td class="px-4 py-3 text-sm">
                                                 @if($item['product_id'])
                                                     @php
-                                                        $product = \App\Models\SupplyProfile::find($item['product_id']);
+                                                        $product = \App\Models\Product::find($item['product_id']);
                                                     @endphp
                                                     @if($product)
                                                         <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
-                                                            @if($product->supply_qty > 50) bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300
-                                                            @elseif($product->supply_qty > 10) bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300
+                                                            @if($product->stock_quantity > 50) bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300
+                                                            @elseif($product->stock_quantity > 10) bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300
                                                             @else bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300 @endif">
-                                                            {{ $product->supply_qty }} {{ $product->supply_uom }}
+                                                            {{ $product->stock_quantity }} {{ $product->unit }}
                                                         </span>
                                                     @else
                                                         <span class="text-gray-500 dark:text-gray-400">-</span>
@@ -678,8 +671,8 @@
                                         </th>  
                                         <th scope="row"
                                             class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                                            {{ ucfirst($data->customer->name) }}
-                                        </th>                                      
+                                            {{ $data->customers->pluck('name')->join(', ') }}
+                                        </th>
                                         <td class="px-6 py-4">
                                             <span
                                                 class="

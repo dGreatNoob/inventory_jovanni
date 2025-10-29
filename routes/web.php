@@ -169,6 +169,11 @@ Route::middleware(['auth'])->group(function () {
         return view('livewire.pages.qrcode.purchaseorderprint', compact('purchaseOrder'));
     })->name('purchase-orders.print');
 
+    Route::get('/sales-order/print/{sales_order_number}', function ($sales_order_number) {
+        $salesOrder = \App\Models\SalesOrder::with(['customers', 'agents', 'items.product'])->where('sales_order_number', $sales_order_number)->firstOrFail();
+        return view('livewire.pages.qrcode.salesorderprint', compact('salesOrder'));
+    })->name('sales-orders.print');
+
     Route::get('/sales-order', SalesManagementIndex::class)->name('salesorder.index');
     Route::get('/sales-order/{salesOrderId}', Viewsalesorder::class)->name('salesorder.view');
     Route::get('/sales-return', SalesManagementSalesReturn::class)->name('salesorder.return');

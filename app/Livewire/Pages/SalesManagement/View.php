@@ -18,8 +18,10 @@ class View extends Component
     public $company_results;
     public $product_results;
     public $shippingMethodDropDown = [];
-    public $paymentMethodDropdown = []; 
+    public $paymentMethodDropdown = [];
     public $paymentTermsDropdown = [];
+    public $editingItemId = null;
+    public $editingPrice = '';
     
     public function mount($salesOrderId)
     {
@@ -80,14 +82,44 @@ class View extends Component
         return redirect()->route('salesorder.index');
     }
 
+
+    public function editPrice($itemId)
+    {
+        $this->editingItemId = $itemId;
+        $item = \App\Models\SalesOrderBranchItem::find($itemId);
+        if ($item) {
+            $this->editingPrice = $item->unit_price;
+        }
+    }
+
+    public function savePrice()
+    {
+        if ($this->editingItemId && $this->editingPrice) {
+            $item = \App\Models\SalesOrderBranchItem::find($this->editingItemId);
+            if ($item) {
+                $item->update([
+                    'unit_price' => $this->editingPrice,
+                    'subtotal' => $item->quantity * $this->editingPrice,
+                ]);
+                session()->flash('message', 'Price updated successfully.');
+            }
+        }
+        $this->editingItemId = null;
+        $this->editingPrice = '';
+    }
+
+    public function cancelEdit()
+    {
+        $this->editingItemId = null;
+        $this->editingPrice = '';
+    }
+
     public function render()
     {
-        $results =  SalesOrder::with('items.product')->find($this->salesOrderId);
-        
-        
+        $salesOrder = SalesOrder::with(['customers', 'branchItems.product'])->find($this->salesOrderId);
 
         return view('livewire.pages.sales-management.view', [
-            'sales_order_view' => SalesOrder::with('items.product')->find($this->salesOrderId),
+            'sales_order_view' => $salesOrder,
         ]);
     }
 }

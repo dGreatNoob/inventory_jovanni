@@ -173,16 +173,7 @@ class Index extends Component
         if (!empty($this->subclassSelected)) {
             $this->updateAgentOptions($this->subclassSelected);
         }
-        $this->contactPersonName = $salesOrders->contact_person_name;
-        $this->phone = $salesOrders->phone;  
-        $this->email = $salesOrders->email;
-        $this->billingAddress = $salesOrders->billing_address;
-        $this->shippingAddress = $salesOrders->shipping_address;
-        
-        //$this->discounts = $salesOrders->discounts;
-        $this->paymentMethod = $salesOrders->payment_method;
         $this->shippingMethod = $salesOrders->shipping_method;
-        $this->paymentTerms = $salesOrders->payment_terms;
         $this->deliveryDate = $salesOrders->delivery_date ? $salesOrders->delivery_date->format('n-j-Y') : '';
            
         $this->editValue = $id;    
@@ -259,8 +250,11 @@ class Index extends Component
     {
         if (is_array($value) && !empty($value)) {
             $this->updateAgentOptions($value);
+            // Auto-select all agents for the selected subclasses
+            $this->agentSelected = array_keys($this->agent_results);
         } else {
-            $this->agent_results = \App\Models\Agent::all()->pluck('name', 'id');
+            $this->agent_results = \App\Models\Agent::all()->pluck('name', 'id')->toArray();
+            $this->agentSelected = [];
         }
     }
 
@@ -288,7 +282,7 @@ class Index extends Component
                   ->whereNull('released_at');
         })->pluck('name', 'id');
 
-        $this->agent_results = $agents;
+        $this->agent_results = $agents->toArray();
     }
 
     public function updatedItems($value, $name)
@@ -341,18 +335,11 @@ class Index extends Component
             $this->validate([
                 'customerSelected' => 'required|array|min:1',
                 'customerSelected.*' => 'exists:branches,id',
-                'subclassSelected' => 'nullable|array',
+                'subclassSelected' => 'required|array|min:1',
                 'agentSelected' => 'nullable|array',
                 'agentSelected.*' => 'exists:agents,id',
-                'contactPersonName' => 'nullable|string|max:255',
-                'phone' => 'required|digits_between:7,15',
-                'email' => 'required|email|max:150',
-                'billingAddress' => 'required|string',
-                'shippingAddress' => 'required|string',
                 'deliveryDate' => 'required|date|after_or_equal:today',
-                'paymentMethod' => 'required|string|max:50',
                 'shippingMethod' => 'required|string|max:50',
-                'paymentTerms' => 'required|string|max:100',          
                 'items.*.product_id' => ['required', 'exists:products,id', 'distinct'],
                 'items.*.quantity' => [
                         'required',
@@ -378,22 +365,14 @@ class Index extends Component
         
             $salesOrderData = [
                 'status' => 'pending',
-                'contact_person_name' => $this->contactPersonName,
-                'phone' => $this->phone,
-                'email' => $this->email,
-                'billing_address' => $this->billingAddress,
-                'shipping_address' => $this->shippingAddress,
-                //'discounts' => $this->discounts,
-                'payment_method' => $this->paymentMethod,
                 'shipping_method' => $this->shippingMethod,
-                'payment_terms' => $this->paymentTerms,
                 'delivery_date' => $formattedDeliveryDate
             ];
 
             if($this->editValue) {
                 $SalesOrder = SalesOrder::find($this->editValue);
                 $success = $SalesOrder->update($salesOrderData);
-                // Sync branches and agents for editing
+                // Sync branches and agents for editing - sync handles detach/attach automatically
                 $SalesOrder->customers()->sync($this->customerSelected);
                 $SalesOrder->agents()->sync($this->agentSelected);
 
@@ -411,6 +390,9 @@ class Index extends Component
                         }
                     }
                 }
+
+                // Update branch items for editing
+                $this->updateBranchItems($SalesOrder);
             }else{
                 // Create new Sales Order
                 $SalesOrder = SalesOrder::create($salesOrderData);
@@ -435,6 +417,9 @@ class Index extends Component
                         }
                     }
                 }
+
+                // Create branch items for new order
+                $this->createBranchItems($SalesOrder);
             }
 
             // Sync items
@@ -595,19 +580,21 @@ class Index extends Component
 
     private function callbackValidationcheck($attribute, $value, $fail)
     {
- 
+
         if (preg_match('/items\.(\d+)\.quantity/', $attribute, $matches)) {
-            $index   = (int) $matches[1];         
+            $index   = (int) $matches[1];
             $getkey  = $this->collectItems($index);
-            $collectResult = collect($getkey);            
+            $collectResult = collect($getkey);
 
             if ($collectResult->has('product_id')) {
                 $getTotalQty = \App\Models\Product::select('product_inventory.available_quantity as stock_quantity')
                     ->join('product_inventory', 'products.id', '=', 'product_inventory.product_id')
                     ->find($getkey['product_id']);
                 if ($getTotalQty) {
-                    if($getkey['quantity'] >  $getTotalQty->stock_quantity ){
-                        return $fail('The quantity in line'. ( $index + 1) .' exceeds the remaining quantity of ' . $getTotalQty->stock_quantity .'.' );
+                    // Multiply by number of branches since each branch gets the same quantity
+                    $totalRequiredQty = $value * count($this->customerSelected);
+                    if($totalRequiredQty >  $getTotalQty->stock_quantity ){
+                        return $fail('The total quantity required (' . $totalRequiredQty . ') exceeds the remaining stock of ' . $getTotalQty->stock_quantity .'.' );
                     }
                 }
             }
@@ -629,8 +616,39 @@ class Index extends Component
                     return $fail("The quantity cannot be less than the total returned quantity of {$sum}.");
                 }
             }
-        }        
-      
+        }
+
+    }
+
+    private function createBranchItems($salesOrder)
+    {
+        foreach ($this->customerSelected as $branchId) {
+            foreach ($this->items as $item) {
+                if (!empty($item['product_id'])) {
+                    $product = \App\Models\Product::find($item['product_id']);
+                    if ($product) {
+                        \App\Models\SalesOrderBranchItem::create([
+                            'sales_order_id' => $salesOrder->id,
+                            'branch_id' => $branchId,
+                            'product_id' => $item['product_id'],
+                            'original_unit_price' => $item['unit_price'],
+                            'unit_price' => $item['unit_price'],
+                            'quantity' => $item['quantity'],
+                            'subtotal' => $item['quantity'] * $item['unit_price'],
+                        ]);
+                    }
+                }
+            }
+        }
+    }
+
+    private function updateBranchItems($salesOrder)
+    {
+        // Delete existing branch items
+        $salesOrder->branchItems()->delete();
+
+        // Create new branch items
+        $this->createBranchItems($salesOrder);
     }
 
     public function resetForms()
@@ -638,14 +656,7 @@ class Index extends Component
         // Reset form fields to empty/null/default
         $this->reset([
             // 'status', // Status is now always 'pending'
-            'contactPersonName',  
-            'phone', 
-            'email', 
-            'billingAddress', 
-            'shippingAddress', 
-            'paymentMethod',
-            'shippingMethod', 
-            'paymentTerms', 
+            'shippingMethod',
             'deliveryDate',
             'search', 
             'editValue',           

@@ -154,6 +154,11 @@ class SalesOrder extends Model
         return $this->hasMany(SalesOrderItem::class, 'sales_order_id');
     }
 
+    public function branchItems()
+    {
+        return $this->hasMany(SalesOrderBranchItem::class);
+    }
+
     public function shipments()
     {
         return $this->hasMany(Shipment::class);

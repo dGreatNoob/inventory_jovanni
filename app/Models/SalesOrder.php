@@ -134,6 +134,11 @@ class SalesOrder extends Model
         return $this->belongsToMany(Branch::class, 'sales_order_branches', 'sales_order_id', 'branch_id');
     }
 
+    public function customer()
+    {
+        return $this->belongsTo(Branch::class, 'customer_id');
+    }
+
     public function agents()
     {
         return $this->belongsToMany(\App\Models\Agent::class, 'sales_order_agents', 'sales_order_id', 'agent_id');

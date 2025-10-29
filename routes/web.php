@@ -26,7 +26,6 @@ use App\Livewire\Pages\Customer\Index as CustomerProfile;
 use App\Livewire\Pages\Agent\Index as AgentProfile;
 use App\Livewire\Pages\Branch\Index as BranchProfile;
 
-use App\Livewire\SalesProfile\Index as SalesProfileIndex;
 use App\Livewire\Pages\Notifications\Index as Notifications;
 
 // Product Management
@@ -108,8 +107,6 @@ Route::middleware(['auth'])->group(function () {
     // ->name('bodegero.stockin.receive');
 
 
-    Route::get('/sales-profile', SalesProfileIndex::class)
-        ->name('sales-profile.index');
 
     Route::get('/user-management', UserIndex::class)
         ->name('user.index');

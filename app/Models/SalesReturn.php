@@ -31,7 +31,7 @@ class SalesReturn extends Model
             ->orWhere('return_date', 'like', $term)
             ->orWhereHas('salesOrder', function ($q) use ($term) {
                 $q->where('sales_order_number', 'like', $term)
-                ->orWhereHas('customer', function ($q) use ($term) {
+                ->orWhereHas('customers', function ($q) use ($term) {
                     $q->where('name', 'like', $term);
                 });
             });

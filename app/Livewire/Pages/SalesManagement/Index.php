@@ -40,6 +40,7 @@ class Index extends Component
     public $search = '';
     public $editValue = null;
     public $customerSelected = [];
+    public $subclassSelected = [];
     public $agentSelected = [];
          
     public $shippingMethodDropDown = [];
@@ -58,6 +59,7 @@ class Index extends Component
     public $years = [];  
 
     public $company_results = [];
+    public $subclass_results = [];
     public $agent_results = [];
     public $product_list = [];
     public $getSalesOrderDetails = [];
@@ -161,7 +163,16 @@ class Index extends Component
 
         // Status is now always 'pending' for new orders, so we don't set it from edit
         $this->customerSelected = $salesOrders->customers->pluck('id')->toArray();
+        $this->subclassSelected = $salesOrders->customers->pluck('pivot.subclass')->filter()->toArray();
         $this->agentSelected = $salesOrders->agents->pluck('id')->toArray();
+
+        // Update subclass and agent options based on loaded data
+        if (!empty($this->customerSelected)) {
+            $this->updateSubclassOptions($this->customerSelected);
+        }
+        if (!empty($this->subclassSelected)) {
+            $this->updateAgentOptions($this->subclassSelected);
+        }
         $this->contactPersonName = $salesOrders->contact_person_name;
         $this->phone = $salesOrders->phone;  
         $this->email = $salesOrders->email;
@@ -231,9 +242,53 @@ class Index extends Component
                     $this->shippingAddress = $branch->address;
                 }
             }
+
+            // Update subclass options based on selected branches
+            $this->updateSubclassOptions($value);
         } else {
             $this->customerData = [];
+            $this->subclass_results = [];
         }
+
+        // Reset subclass and agent selections when branches change
+        $this->subclassSelected = [];
+        $this->agentSelected = [];
+    }
+
+    public function updatedSubclassSelected($value)
+    {
+        if (is_array($value) && !empty($value)) {
+            $this->updateAgentOptions($value);
+        } else {
+            $this->agent_results = \App\Models\Agent::all()->pluck('name', 'id');
+        }
+    }
+
+    private function updateSubclassOptions($branchIds)
+    {
+        $subclasses = [];
+        $branches = \App\Models\Branch::whereIn('id', $branchIds)->get();
+
+        foreach ($branches as $branch) {
+            $branchSubclasses = $branch->getSubclasses();
+            foreach ($branchSubclasses as $subclass) {
+                if (!in_array($subclass, $subclasses)) {
+                    $subclasses[] = $subclass;
+                }
+            }
+        }
+
+        $this->subclass_results = array_combine($subclasses, $subclasses);
+    }
+
+    private function updateAgentOptions($subclasses)
+    {
+        $agents = \App\Models\Agent::whereHas('branchAssignments', function($query) use ($subclasses) {
+            $query->whereIn('subclass', $subclasses)
+                  ->whereNull('released_at');
+        })->pluck('name', 'id');
+
+        $this->agent_results = $agents;
     }
 
     public function updatedItems($value, $name)
@@ -286,6 +341,7 @@ class Index extends Component
             $this->validate([
                 'customerSelected' => 'required|array|min:1',
                 'customerSelected.*' => 'exists:branches,id',
+                'subclassSelected' => 'nullable|array',
                 'agentSelected' => 'nullable|array',
                 'agentSelected.*' => 'exists:agents,id',
                 'contactPersonName' => 'nullable|string|max:255',
@@ -340,12 +396,45 @@ class Index extends Component
                 // Sync branches and agents for editing
                 $SalesOrder->customers()->sync($this->customerSelected);
                 $SalesOrder->agents()->sync($this->agentSelected);
+
+                // Update subclass assignments if needed
+                if (!empty($this->subclassSelected)) {
+                    foreach ($this->customerSelected as $branchId) {
+                        $branch = \App\Models\Branch::find($branchId);
+                        if ($branch) {
+                            $branch->activeAgents()->update(['subclass' => null]); // Reset
+                            foreach ($this->subclassSelected as $subclass) {
+                                $branch->activeAgents()->whereHas('agent', function($q) {
+                                    $q->whereIn('id', $this->agentSelected);
+                                })->update(['subclass' => $subclass]);
+                            }
+                        }
+                    }
+                }
             }else{
                 // Create new Sales Order
                 $SalesOrder = SalesOrder::create($salesOrderData);
                 // Attach branches and agents for new order
                 $SalesOrder->customers()->attach($this->customerSelected);
                 $SalesOrder->agents()->attach($this->agentSelected);
+
+                // Handle subclass assignments for new orders
+                if (!empty($this->subclassSelected)) {
+                    foreach ($this->customerSelected as $branchId) {
+                        $branch = \App\Models\Branch::find($branchId);
+                        if ($branch) {
+                            foreach ($this->agentSelected as $agentId) {
+                                $assignment = \App\Models\AgentBranchAssignment::where('agent_id', $agentId)
+                                    ->where('branch_id', $branchId)
+                                    ->whereNull('released_at')
+                                    ->first();
+                                if ($assignment) {
+                                    $assignment->update(['subclass' => implode(',', $this->subclassSelected)]);
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             // Sync items
@@ -561,6 +650,7 @@ class Index extends Component
             'search', 
             'editValue',           
             'customerSelected',
+            'subclassSelected',
             'agentSelected',
            
             'items',

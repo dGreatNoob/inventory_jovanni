@@ -202,6 +202,18 @@
 
                                 <div>
                                     <x-dropdown
+                                        wire:model.live="subclassSelected"
+                                        name="subclassSelected"
+                                        label="Subclass Branch"
+                                        :options="$subclass_results"
+                                        placeholder="Select Subclass Branch"
+                                        multiselect
+                                        class="w-full"
+                                    />
+                                </div>
+
+                                <div>
+                                    <x-dropdown
                                         wire:model.live="agentSelected"
                                         name="agentSelected"
                                         label="Agent"

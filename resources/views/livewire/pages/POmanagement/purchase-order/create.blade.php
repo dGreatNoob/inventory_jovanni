@@ -41,12 +41,10 @@
                     </div>
                     <div>
                         <label for="deliver_to" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Receiving Department</label>
-                        <select id="deliver_to" wire:model="deliver_to" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required>
-                            <option value="">Select department</option>
-                            @foreach($departments as $department)
-                                <option value="{{ $department->id }}">{{ $department->name }}</option>
-                            @endforeach
-                        </select>
+                        <!-- Hidden input for Livewire model (must have value at render time!) -->
+                        <input type="hidden" wire:model="deliver_to" value="{{ $deliver_to ?? '' }}">
+                        <!-- Readonly display for user -->
+                        <input type="text" value="Warehouse" readonly class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
                         @error('deliver_to') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
                     <div>

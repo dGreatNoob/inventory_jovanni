@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire\Pages\Warehouse\PurchaseOrder;
+namespace App\Livewire\Pages\POManagement\PurchaseOrder;
 
 use App\Models\Product;
 use App\Models\PurchaseOrder;
@@ -20,7 +20,6 @@ class Create extends Component
 {
     use WithPagination;
 
-    public $po_type = 'products';
     public $ordered_by;
     public $supplier_id;
     public $order_date;
@@ -70,6 +69,18 @@ class Create extends Component
             ->get();
         $this->ordered_by = Auth::user()->name;
         $this->order_date = now()->format('Y-m-d');
+
+        // Ensure Warehouse department exists
+        $warehouse = Department::where('name', 'Warehouse')->first();
+        if (!$warehouse) {
+            $warehouse = Department::create([
+                'name' => 'Warehouse',
+                // add any other necessary fields here, e.g. 'description' => '', ...
+            ]);
+            // Refresh departments list after adding
+            $this->departments = Department::all();
+        }
+        $this->deliver_to = $warehouse->id;
     }
 
     public function updatedSupplierId()
@@ -213,6 +224,27 @@ class Create extends Component
         return collect($this->orderedItems)->sum('order_qty');
     }
 
+    /**
+     * Generate PO number in the format "PO-YYYY-NNNNN" (e.g., PO-2025-60000)
+     */
+    protected function generatePoNum()
+    {
+        $year = now()->year;
+        $lastPo = PurchaseOrder::where('po_num', 'like', "PO-$year-%")->orderByDesc('id')->first();
+
+        $nextSequence = 60000;
+        if ($lastPo) {
+            // Extract sequence number from last PO
+            $parts = explode('-', $lastPo->po_num);
+            if (isset($parts[2])) {
+                $lastSequence = intval($parts[2]);
+                $nextSequence = max($nextSequence, $lastSequence + 1);
+            }
+        }
+
+        return "PO-$year-$nextSequence";
+    }
+
     public function submit() 
     { 
         if (empty($this->orderedItems)) { 
@@ -225,9 +257,8 @@ class Create extends Component
         try { 
             DB::beginTransaction(); 
 
-            // Generate unique PO number starting from 60000 
-            $lastPo = PurchaseOrder::orderByDesc('po_num')->first(); 
-            $poNum = $lastPo ? $lastPo->po_num + 1 : 60000; 
+            // Generate PO number with "PO-YYYY-NNNNN" format
+            $poNum = $this->generatePoNum();
 
             $total_price = 0; 
             $total_qty = 0; 
@@ -241,7 +272,6 @@ class Create extends Component
             $purchaseOrder = PurchaseOrder::create([ 
                 'po_num' => $poNum,
                 'status' => 'pending', 
-                'po_type' => $this->po_type,
                 'supplier_id' => $this->supplier_id, 
                 'order_date' => $this->order_date,
                 'expected_delivery_date' => $this->expected_delivery_date,
@@ -249,10 +279,8 @@ class Create extends Component
                 'del_to' => $this->deliver_to,
                 'del_on' => null,
                 'payment_terms' => $this->payment_terms,
-                'quotation' => null,
                 'total_qty' => $total_qty,
                 'total_price' => $total_price, 
-                'total_est_weight' => null,
                 'approver' => null,
             ]); 
 
@@ -287,7 +315,7 @@ class Create extends Component
             DB::commit(); 
             
             session()->flash('success', 'Purchase order #' . $poNum . ' created successfully.'); 
-            return redirect()->route('warehouse.purchaseorder'); 
+            return redirect()->route('pomanagement.purchaseorder'); 
 
         } catch (\Exception $e) { 
             DB::rollBack(); 
@@ -339,7 +367,7 @@ class Create extends Component
 
     public function render()
     {
-        return view('livewire.pages.warehouse.purchase-order.create', [
+        return view('livewire.pages.POmanagement.purchase-order.create', [
             'products' => $this->getProductsProperty(),
             'suppliers' => $this->getSuppliersProperty(),
             'paginatedOrderedItems' => $this->orderedItemsPaginated,

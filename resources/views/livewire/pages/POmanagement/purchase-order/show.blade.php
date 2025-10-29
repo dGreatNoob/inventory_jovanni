@@ -2,6 +2,45 @@
 <x-slot:subheader>Purchase Order Details</x-slot:subheader>
 
 <div class="pb-20">
+
+    {{--<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <!-- QR Code Panel -->
+        <div class="bg-zinc-900 dark:bg-zinc-900 rounded-lg border border-zinc-700 p-8 flex flex-col items-center shadow">
+            <h3 class="text-lg font-semibold text-zinc-100 mb-6 text-center">QR Code</h3>
+            <div class="bg-white p-6 rounded-xl shadow-lg border-4 border-yellow-300 mb-4 flex justify-center">
+                {!! QrCode::size(220)->generate($purchaseOrder->po_num) !!}
+            </div>
+            <button onclick="window.print()" type="button"
+                class="inline-flex items-center px-5 py-2.5 text-sm font-medium text-center text-white bg-yellow-600 rounded-lg hover:bg-yellow-700 focus:ring-4 focus:outline-none focus:ring-yellow-300 dark:bg-yellow-700 dark:hover:bg-yellow-800 dark:focus:ring-yellow-800 transition-colors">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                </svg>
+                Print QR Code
+            </button>
+        </div>
+        <!-- Details Panel -->
+        <div class="bg-zinc-900 dark:bg-zinc-900 rounded-lg border border-zinc-700 p-8 shadow">
+            <h3 class="text-lg font-semibold text-zinc-100 mb-6 text-center">Purchase Order Details</h3>
+            <div class="space-y-4">
+                <div>
+                    <span class="block text-xs font-bold text-zinc-400 mb-1">Supplier:</span>
+                    <span class="block px-3 py-2 bg-blue-900 text-blue-100 rounded-lg font-semibold">{{ $purchaseOrder->supplier->name ?? 'N/A' }}</span>
+                </div>
+                <div>
+                    <span class="block text-xs font-bold text-zinc-400 mb-1">Department:</span>
+                    <span class="block px-3 py-2 bg-green-900 text-green-100 rounded-lg font-semibold">{{ $purchaseOrder->department->name ?? 'N/A' }}</span>
+                </div>
+                <div>
+                    <span class="block text-xs font-bold text-zinc-400 mb-1">Order Date:</span>
+                    <span class="block px-3 py-2 bg-purple-900 text-purple-100 rounded-lg font-semibold">{{ $purchaseOrder->order_date->format('M d, Y') }}</span>
+                </div>
+                <div>
+                    <span class="block text-xs font-bold text-zinc-400 mb-1">Ordered By:</span>
+                    <span class="block px-3 py-2 bg-yellow-900 text-yellow-100 rounded-lg font-semibold">{{ $purchaseOrder->orderedByUser ? $purchaseOrder->orderedByUser->name : 'N/A' }}</span>
+                </div>
+            </div>
+        </div>
+    </div>--}}
     <!-- Purchase Order Details Card -->
     <x-collapsible-card title="Purchase Order Details" open="true" size="full">
         <div class="grid gap-6 mb-6 md:grid-cols-2">
@@ -180,7 +219,7 @@
     <!-- Fixed Bottom Actions -->
     <div class="fixed bottom-0 right-0 left-0 p-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-40">
         <div class="flex justify-end space-x-3 max-w-screen-2xl mx-auto">
-            <a href="{{ route('warehouse.purchaseorder') }}" 
+            <a href="{{ route('pomanagement.purchaseorder') }}" 
                 class="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 focus:ring-4 focus:ring-blue-300 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600 dark:hover:text-white dark:focus:ring-gray-700">
                 Back to List
             </a>

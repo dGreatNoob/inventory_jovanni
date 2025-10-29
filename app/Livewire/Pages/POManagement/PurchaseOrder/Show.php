@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire\Pages\Warehouse\PurchaseOrder;
+namespace App\Livewire\Pages\POManagement\PurchaseOrder;
 
 use Livewire\Component;
 use App\Models\PurchaseOrder;
@@ -49,7 +49,7 @@ class Show extends Component
             ]);
             
             session()->flash('message', 'Purchase order approved successfully.');
-            return redirect()->route('warehouse.purchaseorder');
+            return redirect()->route('pomanagement.purchaseorder');
             
         } catch (\Exception $e) {
             session()->flash('error', 'Failed to approve purchase order: ' . $e->getMessage());
@@ -74,7 +74,7 @@ class Show extends Component
             ]);
             
             session()->flash('message', 'Purchase order rejected.');
-            return redirect()->route('warehouse.purchaseorder');
+            return redirect()->route('pomanagement.purchaseorder');
             
         } catch (\Exception $e) {
             session()->flash('error', 'Failed to reject purchase order: ' . $e->getMessage());
@@ -84,6 +84,6 @@ class Show extends Component
     public function render()
     {
                 // ✅ Fixed: Should render 'show' view, not 'index'
-        return view('livewire.pages.warehouse.purchase-order.show');
+        return view('livewire.pages.POmanagement.purchase-order.show');
     }
 }

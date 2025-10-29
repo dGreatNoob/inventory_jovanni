@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire\Pages\Warehouse\PurchaseOrder;
+namespace App\Livewire\Pages\POManagement\PurchaseOrder;
 
 use App\Models\PurchaseOrder;
 use App\Models\Supplier;
@@ -24,7 +24,7 @@ class Analytics extends Component
 
     private function getPurchaseOrderSummary()
     {
-        $query = PurchaseOrder::where('po_type', 'products')
+        $query = PurchaseOrder::query()
             ->whereBetween('order_date', [$this->dateFrom, $this->dateTo]);
 
         if ($this->selectedSupplier) {
@@ -43,7 +43,7 @@ class Analytics extends Component
 
     private function getOutstandingPOs()
     {
-        $query = PurchaseOrder::where('po_type', 'products')
+        $query = PurchaseOrder::query()
             ->whereIn('status', ['pending', 'approved', 'for_delivery', 'delivered'])
             ->with(['supplier', 'department'])
             ->orderBy('order_date', 'desc');
@@ -57,7 +57,7 @@ class Analytics extends Component
 
     private function getSupplierPurchaseHistory()
     {
-        $query = PurchaseOrder::where('po_type', 'products')
+        $query = PurchaseOrder::query()
             ->whereBetween('order_date', [$this->dateFrom, $this->dateTo])
             ->with('supplier')
             ->select('supplier_id', 
@@ -78,7 +78,6 @@ class Analytics extends Component
     {
         // Build query with filters
         $query = PurchaseOrder::query()
-            ->where('po_type', 'products')
             ->whereBetween('order_date', [$this->dateFrom, $this->dateTo]);
 
         // Apply supplier filter if selected
@@ -165,7 +164,7 @@ class Analytics extends Component
         
         $data = $this->getData();
 
-        return view('livewire.pages.warehouse.purchase-order.analytics', [
+        return view('livewire.pages.POmanagement.purchase-order.analytics', [
             'suppliers' => $suppliers,
             'data' => $data,
         ]);

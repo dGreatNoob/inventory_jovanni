@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire\Pages\Warehouse\PurchaseOrder;
+namespace App\Livewire\Pages\POManagement\PurchaseOrder;
 
 use App\Models\PurchaseOrder;
 use Livewire\Component;
@@ -23,7 +23,8 @@ class Index extends Component
     public $showDeliverModal = false;
     public $activeTab = 'list';
     public $viewingLogsForPO = null;  // ✅ Added for approval logs modal
-    
+    public $viewingQRForPO = null;
+
     protected $queryString = [
         'search' => ['except' => ''],
         'statusFilter' => ['except' => ''],
@@ -178,12 +179,12 @@ class Index extends Component
     public function render()
     {
         $purchaseOrders = PurchaseOrder::query()
-            ->where('po_type', 'products')
+            // Removed po_type and quotation references
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
                     $q->where('po_num', 'like', '%' . $this->search . '%')
                         ->orWhere('payment_terms', 'like', '%' . $this->search . '%')
-                        ->orWhere('quotation', 'like', '%' . $this->search . '%')
+                        // ->orWhere('quotation', 'like', '%' . $this->search . '%') // REMOVED
                         ->orWhereHas('supplier', function ($query) {
                             $query->where('name', 'like', '%' . $this->search . '%');
                         })
@@ -199,7 +200,7 @@ class Index extends Component
             ->latest()
             ->paginate($this->perPage);
 
-        return view('livewire.pages.warehouse.purchase-order.index', [
+        return view('livewire.pages.POmanagement.purchase-order.index', [
             'purchaseOrders' => $purchaseOrders
         ]);
     }

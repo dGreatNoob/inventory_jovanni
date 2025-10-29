@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Livewire\Pages\Warehouse\PurchaseOrder;
+namespace App\Livewire\Pages\POManagement\PurchaseOrder;
 
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -27,7 +27,7 @@ class ViewItem extends Component
             ->paginate($this->perPage);
 
 
-        return view('livewire.pages.warehouse.purchase-order.index', [
+        return view('livewire.pages.POmanagement.purchase-order.index', [
             'rawMatInvs' => $rawMatInvs
         ]);
     }

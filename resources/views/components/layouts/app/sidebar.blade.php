@@ -51,7 +51,7 @@
                 <flux:navlist.group expandable :expanded="request()->routeIs('warehouse.*')" :heading="__('PO Management')" class="lg:grid">
 
 
-                    <flux:navlist.item icon="inbox-stack" href="{{ route('warehouse.purchaseorder') }}"
+                    <flux:navlist.item icon="inbox-stack" href="{{ route('pomanagement.purchaseorder') }}"
                         :current="request()->routeIs('warehouse.purchaseorder')" wire:navigate>
                         {{ __('Purchase Order') }}
                     </flux:navlist.item>
@@ -199,7 +199,8 @@
                         </flux:navlist.item>
                     </flux:navlist.group>
                 @endrole--}}
-                {{--<flux:navlist.group expandable :expanded="request()->routeIs('bodegero.*')"
+
+                {{--  <flux:navlist.group expandable :expanded="request()->routeIs('bodegero.*')"
                     :heading="__('Warehouse Staff')" class="lg:grid">
                     <flux:navlist.item icon="qr-code" href="{{ route('bodegero.stockin') }}"
                         :current="request()->routeIs('bodegero.stockin')" wire:navigate>{{ __('Stock In') }}
@@ -210,6 +211,20 @@
                     <!-- <flux:navlist.item icon="banknotes" href=""  wire:navigate>{{ __('Returns') }}
                     </flux:navlist.item> -->
                 </flux:navlist.group>--}}
+
+
+                <flux:navlist.group expandable :expanded="request()->routeIs('warehousestaff.*')"
+                    :heading="__('Warehouse Staff')" class="lg:grid">
+                    <flux:navlist.item icon="qr-code" href="{{ route('warehousestaff.stockin') }}"
+                        :current="request()->routeIs('warehousestaff.stockin')" wire:navigate>{{ __('Stock In') }}
+                    </flux:navlist.item>
+                    {{--  <flux:navlist.item icon="qr-code" href="{{ route('warehousestaff.stockout') }}"
+                        :current="request()->routeIs('warehousestaff.stockout')" wire:navigate>{{ __('Stock Out') }}
+                    </flux:navlist.item>--}}
+                    <!-- <flux:navlist.item icon="banknotes" href=""  wire:navigate>{{ __('Returns') }}
+                    </flux:navlist.item> -->
+                </flux:navlist.group>
+
 
                 {{--<flux:navlist.group expandable :expanded="request()->routeIs('reports.*')" :heading="__('Reports')"
                     class="lg:grid">

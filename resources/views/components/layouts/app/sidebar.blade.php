@@ -136,9 +136,9 @@
                     <flux:navlist.item icon="inbox-stack" href="{{ route('salesorder.index') }}"
                         :current="request()->routeIs('salesorder.index')" wire:navigate>{{ __('Sales Order') }}
                     </flux:navlist.item>
-                    <flux:navlist.item icon="inbox-stack" href="{{ route('salesorder.return') }}"
+                    <!-- <flux:navlist.item icon="inbox-stack" href="{{ route('salesorder.return') }}"
                         :current="request()->routeIs('salesorder.return')" wire:navigate>{{ __('Sales Return') }}
-                    </flux:navlist.item>
+                    </flux:navlist.item> -->
                     <flux:navlist.item icon="tag" href="{{ route('sales-price.index') }}"
                         :current="request()->routeIs('sales-price.*')" wire:navigate>{{ __('Sales Price') }}
                     </flux:navlist.item>

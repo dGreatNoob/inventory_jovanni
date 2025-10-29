@@ -130,7 +130,7 @@
 
 
                 <flux:navlist.group expandable
-                    :expanded="request()->routeIs('salesorder.*') || request()->routeIs('salesreturn.*') || request()->routeIs('sales-price.*') || request()->routeIs('sales-profile.*')"
+                    :expanded="request()->routeIs('salesorder.*') || request()->routeIs('salesreturn.*') || request()->routeIs('sales-price.*')"
                     :heading="__('Sales Management')" class="lg:grid text-left">
 
                     <flux:navlist.item icon="inbox-stack" href="{{ route('salesorder.index') }}"
@@ -141,9 +141,6 @@
                     </flux:navlist.item>
                     <flux:navlist.item icon="tag" href="{{ route('sales-price.index') }}"
                         :current="request()->routeIs('sales-price.*')" wire:navigate>{{ __('Sales Price') }}
-                    </flux:navlist.item>
-                    <flux:navlist.item icon="user" href="{{ route('sales-profile.index') }}"
-                        :current="request()->routeIs('sales-profile.*')" wire:navigate>{{ __('Profile') }}
                     </flux:navlist.item>
                 </flux:navlist.group>
 

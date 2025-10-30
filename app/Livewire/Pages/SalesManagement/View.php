@@ -21,8 +21,8 @@ class View extends Component
     public $shippingMethodDropDown = [];
     public $paymentMethodDropdown = [];
     public $paymentTermsDropdown = [];
-    public $editingItemId = null;
-    public $editingPrice = '';
+    public $editingItems = []; // Track which items are being edited
+    public $editablePrices = []; // Store editable prices for each item
     
     public function mount($salesOrderId)
     {
@@ -85,61 +85,54 @@ class View extends Component
 
 
 
-    public function editPrice($itemId)
+    public function startEditing($itemId)
     {
-        // Debug logging
-        Log::info('Edit Price called', [
-            'itemId' => $itemId,
-            'currentEditingItemId' => $this->editingItemId,
-            'itemIdType' => gettype($itemId)
-        ]);
-
-        // Force refresh the component
-        $this->editingItemId = null;
-        $this->editingPrice = '';
-
-        // Small delay to ensure state reset
-        usleep(1000);
-
-        $this->editingItemId = (int) $itemId;
+        Log::info('Starting edit for item', ['itemId' => $itemId]);
+        $this->editingItems[$itemId] = true;
         $item = \App\Models\SalesOrderBranchItem::find($itemId);
         if ($item) {
-            $this->editingPrice = (float) $item->unit_price;
-            Log::info('Item found and editing price set', [
-                'itemId' => $itemId,
-                'unitPrice' => $item->unit_price,
-                'editingPrice' => $this->editingPrice,
-                'editingItemId' => $this->editingItemId
-            ]);
+            $this->editablePrices[$itemId] = (float) $item->unit_price;
+            Log::info('Item found and price set', ['itemId' => $itemId, 'price' => $item->unit_price]);
         } else {
             Log::warning('Item not found', ['itemId' => $itemId]);
         }
-
-        // Force re-render
         $this->dispatch('$refresh');
-        $this->js('$wire.$refresh()');
     }
 
-    public function savePrice()
+    public function savePrice($itemId)
     {
-        if ($this->editingItemId && $this->editingPrice) {
-            $item = \App\Models\SalesOrderBranchItem::find($this->editingItemId);
+        Log::info('Saving price for item', ['itemId' => $itemId, 'price' => $this->editablePrices[$itemId] ?? 'not set']);
+
+        if (isset($this->editablePrices[$itemId])) {
+            $item = \App\Models\SalesOrderBranchItem::find($itemId);
             if ($item) {
+                $newPrice = (float) $this->editablePrices[$itemId];
                 $item->update([
-                    'unit_price' => $this->editingPrice,
-                    'subtotal' => $item->quantity * $this->editingPrice,
+                    'unit_price' => $newPrice,
+                    'subtotal' => $item->quantity * $newPrice,
                 ]);
+                Log::info('Price updated successfully', ['itemId' => $itemId, 'newPrice' => $newPrice]);
                 session()->flash('message', 'Price updated successfully.');
+            } else {
+                Log::warning('Item not found during save', ['itemId' => $itemId]);
             }
+        } else {
+            Log::warning('No editable price found', ['itemId' => $itemId]);
         }
-        $this->editingItemId = null;
-        $this->editingPrice = '';
+
+        // Clean up
+        unset($this->editingItems[$itemId]);
+        unset($this->editablePrices[$itemId]);
+
+        $this->dispatch('$refresh');
     }
 
-    public function cancelEdit()
+    public function cancelEditing($itemId)
     {
-        $this->editingItemId = null;
-        $this->editingPrice = '';
+        Log::info('Cancelling edit for item', ['itemId' => $itemId]);
+        unset($this->editingItems[$itemId]);
+        unset($this->editablePrices[$itemId]);
+        $this->dispatch('$refresh');
     }
 
     public function render()

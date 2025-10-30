@@ -15,6 +15,11 @@
                         <flux:text class="text-gray-600 dark:text-gray-400">SKU: {{ $editingProduct->sku }}</flux:text>
                     </div>
                 </div>
+                @php $isSale = str($editingProduct->price_note ?? '')->startsWith('SAL'); @endphp
+                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {{ $isSale ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200' }}">
+                    <span class="w-2 h-2 rounded-full mr-1 {{ $isSale ? 'bg-red-500' : 'bg-gray-500' }}"></span>
+                    {{ $isSale ? 'Red Tag (Sale)' : 'White Tag (Regular)' }}
+                </span>
             </div>
 
             <!-- Main Content: Image with Prev/Next -->
@@ -47,10 +52,14 @@
                     <dl class="space-y-2 text-sm">
                         <div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400">Price</dt><dd class="text-gray-900 dark:text-white">₱{{ number_format($editingProduct->price, 2) }}</dd></div>
                         <div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400">Cost</dt><dd class="text-gray-900 dark:text-white">₱{{ number_format($editingProduct->cost, 2) }}</dd></div>
-                        @if($editingProduct->price_note)
-                        <div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400">Price Note</dt><dd class="text-gray-900 dark:text-white">{{ $editingProduct->price_note }}</dd></div>
-                        @endif
+                        <div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400">Product Type</dt><dd class="text-gray-900 dark:text-white">{{ $isSale ? 'Sale' : 'Regular' }}</dd></div>
+                        <div class="flex justify-between"><dt class="text-gray-500 dark:text-gray-400">Pricing Note</dt><dd class="text-gray-900 dark:text-white">{{ $editingProduct->price_note ?: '—' }}</dd></div>
                     </dl>
+                    <div class="mt-3 flex justify-end">
+                        <flux:modal.trigger name="product-price-history">
+                            <flux:button variant="ghost" size="sm">View Price History</flux:button>
+                        </flux:modal.trigger>
+                    </div>
                 </div>
             </div>
 

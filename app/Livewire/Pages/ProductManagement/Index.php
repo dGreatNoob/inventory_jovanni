@@ -57,6 +57,7 @@ class Index extends Component
         'category_id' => '',
         'supplier_id' => '',
         'supplier_code' => '',
+        'product_type' => 'regular',
         'price' => '',
         'price_note' => '',
         'cost' => '',
@@ -64,6 +65,8 @@ class Index extends Component
         'shelf_life_days' => '',
         'disabled' => false,
         'initial_quantity' => '',
+        'price_levels' => [],
+        'discount_tiers' => [],
     ];
     
     // Filtered subcategories based on root selection
@@ -124,6 +127,56 @@ class Index extends Component
         } else {
             $this->filteredSubcategories = [];
             $this->form['category_id'] = '';
+        }
+    }
+
+    public function updatedFormSupplierId($supplierId)
+    {
+        if (!$supplierId) {
+            $this->form['supplier_code'] = '';
+            return;
+        }
+
+        $supplier = Supplier::find($supplierId);
+        $this->form['supplier_code'] = $supplier?->code ?? '';
+
+        // Auto-assign Red Tag rule if supplier indicates red tag capability
+        if (data_get($supplier, 'is_red_tag', false)) {
+            $this->form['product_type'] = 'sale';
+            $this->form['price_note'] = 'SAL1';
+        }
+    }
+
+    public function addPriceLevel(): void
+    {
+        $this->form['price_levels'][] = [
+            'label' => '',
+            'amount' => '',
+        ];
+    }
+
+    public function removePriceLevel(int $index): void
+    {
+        if (isset($this->form['price_levels'][$index])) {
+            unset($this->form['price_levels'][$index]);
+            $this->form['price_levels'] = array_values($this->form['price_levels']);
+        }
+    }
+
+    public function addDiscountTier(): void
+    {
+        $this->form['discount_tiers'][] = [
+            'min_qty' => '',
+            'max_qty' => '',
+            'discount_percent' => '',
+        ];
+    }
+
+    public function removeDiscountTier(int $index): void
+    {
+        if (isset($this->form['discount_tiers'][$index])) {
+            unset($this->form['discount_tiers'][$index]);
+            $this->form['discount_tiers'] = array_values($this->form['discount_tiers']);
         }
     }
 
@@ -360,6 +413,7 @@ class Index extends Component
             'category_id' => '',
             'supplier_id' => '',
             'supplier_code' => '',
+            'product_type' => 'regular',
             'price' => '',
             'price_note' => '',
             'cost' => '',
@@ -367,6 +421,8 @@ class Index extends Component
             'shelf_life_days' => '',
             'disabled' => false,
             'initial_quantity' => '',
+            'price_levels' => [],
+            'discount_tiers' => [],
         ];
         $this->filteredSubcategories = [];
     }
@@ -406,6 +462,7 @@ class Index extends Component
                 'remarks' => $this->editingProduct->remarks,
                 'supplier_id' => $this->editingProduct->supplier_id,
                 'supplier_code' => $this->editingProduct->supplier_code,
+                'product_type' => $this->editingProduct->price_note && str_starts_with($this->editingProduct->price_note, 'SAL') ? 'sale' : 'regular',
                 'price' => $this->editingProduct->price,
                 'price_note' => $this->editingProduct->price_note,
                 'cost' => $this->editingProduct->cost,
@@ -433,7 +490,7 @@ class Index extends Component
             $this->validate([
                 'form.name' => 'required|string|max:255',
                 'form.sku' => 'required|string|max:255|unique:products,sku' . ($this->editingProduct ? ',' . $this->editingProduct->id : ''),
-                'form.barcode' => 'nullable|string|max:255|unique:products,barcode' . ($this->editingProduct ? ',' . $this->editingProduct->id : ''),
+                'form.barcode' => ['required','regex:/^\d{13}$/','unique:products,barcode' . ($this->editingProduct ? ',' . $this->editingProduct->id : '')],
                 'form.root_category_id' => 'required|exists:categories,id',
                 'form.category_id' => 'nullable|exists:categories,id',
                 'form.supplier_id' => 'required|exists:suppliers,id',
@@ -442,7 +499,29 @@ class Index extends Component
                 'form.uom' => 'required|string|max:255',
                 'form.shelf_life_days' => 'nullable|integer|min:0',
                 'form.initial_quantity' => 'nullable|numeric|min:0',
+                'form.price_levels.*.label' => 'nullable|string|max:20',
+                'form.price_levels.*.amount' => 'nullable|numeric|min:0',
+                'form.discount_tiers.*.min_qty' => 'nullable|integer|min:1',
+                'form.discount_tiers.*.max_qty' => 'nullable|integer|min:1',
+                'form.discount_tiers.*.discount_percent' => 'nullable|numeric|min:0|max:100',
             ]);
+
+            // Ensure remarks include WT when product is Regular
+            if (($this->form['product_type'] ?? 'regular') === 'regular') {
+                $remarks = (string) ($this->form['remarks'] ?? '');
+                if (stripos($remarks, 'WT') === false) {
+                    $this->form['remarks'] = trim($remarks . ' WT');
+                }
+                // Default REG1 if none chosen
+                if (empty($this->form['price_note'])) {
+                    $this->form['price_note'] = 'REG1';
+                }
+            } else {
+                // Sale product: default SAL1 if none chosen
+                if (empty($this->form['price_note'])) {
+                    $this->form['price_note'] = 'SAL1';
+                }
+            }
             
             // Update form with final category_id for saving
             $this->form['category_id'] = $finalCategoryId;

@@ -265,4 +265,5 @@
     @include('livewire.pages.product-management.modals.delete-product')
     @include('livewire.pages.product-management.modals.bulk-actions')
     @include('livewire.pages.product-management.modals.product-details')
+    @include('livewire.pages.product-management.modals.price-history')
 </div>

@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\ItemType;
-use App\Models\Allocation;
 use App\Models\SupplyProfile;
 use Illuminate\Database\Seeder;
 
@@ -35,26 +34,6 @@ class PetGoodsSeeder extends Seeder
             );
         }
 
-        // Create Pet-specific Allocations
-        $petAllocations = [
-            ['name' => 'Pet Food Section', 'description' => 'Storage for pet food and treats'],
-            ['name' => 'Pet Toys Section', 'description' => 'Storage for pet toys and entertainment'],
-            ['name' => 'Pet Health Section', 'description' => 'Storage for health and wellness products'],
-            ['name' => 'Pet Grooming Section', 'description' => 'Storage for grooming supplies'],
-            ['name' => 'Pet Accessories Section', 'description' => 'Storage for collars, leashes, beds'],
-            ['name' => 'Aquarium Section', 'description' => 'Storage for fish and aquarium supplies'],
-            ['name' => 'Small Animal Section', 'description' => 'Storage for small animal supplies'],
-            ['name' => 'Reptile Section', 'description' => 'Storage for reptile supplies'],
-            ['name' => 'Dog Section', 'description' => 'Storage for dog-specific products'],
-            ['name' => 'Cat Section', 'description' => 'Storage for cat-specific products'],
-        ];
-
-        foreach ($petAllocations as $allocation) {
-            Allocation::updateOrCreate(
-                ['name' => $allocation['name']],
-                $allocation
-            );
-        }
 
         // Create Pet Supply Profiles
         $petSupplies = [
@@ -759,9 +738,8 @@ class PetGoodsSeeder extends Seeder
             ],
         ];
 
-        // Get the created item types and allocations
+        // Get the created item types
         $itemTypes = ItemType::whereIn('name', array_column($petItemTypes, 'name'))->get();
-        $allocations = Allocation::whereIn('name', array_column($petAllocations, 'name'))->get();
 
         // Create supply profiles with proper relationships
         foreach ($petSupplies as $supply) {
@@ -782,37 +760,11 @@ class PetGoodsSeeder extends Seeder
                 $itemType = $itemTypes->where('name', 'Pet Accessories')->first();
             }
 
-            // Determine appropriate allocation based on item type
-            $allocation = null;
-            if ($itemType) {
-                switch ($itemType->name) {
-                    case 'Dog Supplies':
-                        $allocation = $allocations->where('name', 'Dog Section')->first();
-                        break;
-                    case 'Cat Supplies':
-                        $allocation = $allocations->where('name', 'Cat Section')->first();
-                        break;
-                    case 'Fish Supplies':
-                        $allocation = $allocations->where('name', 'Aquarium Section')->first();
-                        break;
-                    case 'Small Animal Supplies':
-                        $allocation = $allocations->where('name', 'Small Animal Section')->first();
-                        break;
-                    case 'Reptile Supplies':
-                        $allocation = $allocations->where('name', 'Reptile Section')->first();
-                        break;
-                    default:
-                        $allocation = $allocations->where('name', 'Pet Accessories Section')->first();
-                        break;
-                }
-            }
-
             // Create the supply profile
             SupplyProfile::updateOrCreate(
                 ['supply_sku' => $supply['supply_sku']],
                 array_merge($supply, [
                     'item_type_id' => $itemType ? $itemType->id : $itemTypes->first()->id,
-                    'allocation_id' => $allocation ? $allocation->id : $allocations->first()->id,
                 ])
             );
         }

@@ -11,13 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('sales_profile_items', function (Blueprint $table) {
+        Schema::create('sales_order_branch_items', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('sales_profile_id')->constrained('sales_profiles')->onDelete('cascade');
+            $table->foreignId('sales_order_id')->constrained('sales_orders')->onDelete('cascade');
+            $table->foreignId('branch_id')->constrained('branches')->onDelete('cascade');
             $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
-            $table->integer('quantity');
+            $table->decimal('original_unit_price', 10, 2);
             $table->decimal('unit_price', 10, 2);
-            $table->decimal('total_price', 10, 2);
+            $table->integer('quantity');
+            $table->decimal('subtotal', 10, 2);
             $table->timestamps();
         });
     }
@@ -27,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('sales_profile_items');
+        Schema::dropIfExists('sales_order_branch_items');
     }
 };

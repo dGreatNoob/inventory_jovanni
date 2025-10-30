@@ -298,8 +298,8 @@
                                             </span>
                                         </td>                                       
                                         <td class="px-6 py-4">
-                                            {{$data->salesOrder->customer->name}}
-                                        </td> 
+                                            {{$data->salesOrder->customers->first()->name ?? 'N/A'}}
+                                        </td>
                                         <td class="px-6 py-4">
                                            {{ $data->return_date }}
                                         </td>   

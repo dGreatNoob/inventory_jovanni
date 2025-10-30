@@ -26,12 +26,6 @@ use App\Livewire\Pages\Customer\Index as CustomerProfile;
 use App\Livewire\Pages\Agent\Index as AgentProfile;
 use App\Livewire\Pages\Branch\Index as BranchProfile;
 
-use App\Livewire\Pages\Setup\Department\Index as DepartmentSetup;
-use App\Livewire\Pages\Setup\ItemType\Index as ItemTypeSetup;
-use App\Livewire\Pages\Setup\Allocation\Index as AllocationSetup;
-use App\Livewire\Pages\Setup\Allocation\Sales as SalesAllocationSetup;
-use App\Livewire\Pages\Setup\Allocation\Warehouse as WarehouseAllocationSetup;
-use App\Livewire\SalesProfile\Index as SalesProfileIndex;
 use App\Livewire\Pages\Notifications\Index as Notifications;
 
 // Product Management
@@ -112,23 +106,7 @@ Route::middleware(['auth'])->group(function () {
     // Route::get('/Bodegero/StockIn/Receive/{purchaseOrder}', StockInReceive::class)
     // ->name('bodegero.stockin.receive');
 
-    Route::get('/Setup/Department', DepartmentSetup::class)
-        ->name('setup.department');
 
-    Route::get('/Setup/ItemType', ItemTypeSetup::class)
-        ->name('setup.itemType');
-
-    Route::get('/Setup/Allocation', AllocationSetup::class)
-        ->name('setup.allocation');
-
-    Route::get('/Setup/Allocation/Sales', SalesAllocationSetup::class)
-        ->name('setup.allocation.sales');
-
-    Route::get('/Setup/Allocation/Warehouse', WarehouseAllocationSetup::class)
-        ->name('setup.allocation.warehouse');
-
-    Route::get('/sales-profile', SalesProfileIndex::class)
-        ->name('sales-profile.index');
 
     Route::get('/user-management', UserIndex::class)
         ->name('user.index');
@@ -146,6 +124,11 @@ Route::middleware(['auth'])->group(function () {
         $purchaseOrder = \App\Models\PurchaseOrder::with(['supplier', 'department', 'supplyOrders.supplyProfile'])->where('po_num', $po_num)->firstOrFail();
         return view('livewire.pages.qrcode.purchaseorderprint', compact('purchaseOrder'));
     })->name('purchase-orders.print');
+
+    Route::get('/sales-order/print/{sales_order_number}', function ($sales_order_number) {
+        $salesOrder = \App\Models\SalesOrder::with(['customers', 'agents', 'items.product'])->where('sales_order_number', $sales_order_number)->firstOrFail();
+        return view('livewire.pages.qrcode.salesorderprint', compact('salesOrder'));
+    })->name('sales-orders.print');
 
     Route::get('/sales-order', SalesManagementIndex::class)->name('salesorder.index');
     Route::get('/sales-order/{salesOrderId}', Viewsalesorder::class)->name('salesorder.view');

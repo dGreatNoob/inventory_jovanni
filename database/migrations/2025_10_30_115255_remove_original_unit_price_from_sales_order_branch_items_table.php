@@ -11,11 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('allocations', function (Blueprint $table) {
-            $table->id();
-            $table->string('name', 100);
-            $table->text('description')->nullable();
-            $table->timestamps();
+        Schema::table('sales_order_branch_items', function (Blueprint $table) {
+            $table->dropColumn('original_unit_price');
         });
     }
 
@@ -24,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('allocations');
+        Schema::table('sales_order_branch_items', function (Blueprint $table) {
+            $table->decimal('original_unit_price', 10, 2)->after('unit_price');
+        });
     }
 };

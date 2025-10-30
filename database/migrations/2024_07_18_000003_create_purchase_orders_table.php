@@ -27,21 +27,12 @@ return new class extends Migration
                 'pending',
                 'approved',
                 'rejected',
-                'for_delivery',
-                'delivered',
-                'received',
             ])->default('pending');
-            $table->bigInteger('po_num')->unique();
+            $table->string('po_num')->unique(); // Changed from bigInteger to string for formatted PO number
             $table->decimal('total_price');
             $table->date('order_date');
-            $table->date('del_on')->nullable();
+            $table->dateTime('del_on')->nullable();
             $table->string('payment_terms');
-            $table->string('quotation');
-            $table->decimal('total_est_weight')->nullable();
-            $table->enum('po_type',[
-                'raw_mats', 
-                'supply',
-            ]);
             $table->decimal('total_qty');
             $table->foreignIdFor(User::class, 'ordered_by')
                 ->nullable()

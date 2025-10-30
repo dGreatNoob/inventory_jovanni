@@ -9,6 +9,7 @@ use Livewire\Attributes\Title;
 use Livewire\Component;
 use App\Models\SalesOrder;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class View extends Component
 {
@@ -83,13 +84,40 @@ class View extends Component
     }
 
 
+
     public function editPrice($itemId)
     {
-        $this->editingItemId = $itemId;
+        // Debug logging
+        Log::info('Edit Price called', [
+            'itemId' => $itemId,
+            'currentEditingItemId' => $this->editingItemId,
+            'itemIdType' => gettype($itemId)
+        ]);
+
+        // Force refresh the component
+        $this->editingItemId = null;
+        $this->editingPrice = '';
+
+        // Small delay to ensure state reset
+        usleep(1000);
+
+        $this->editingItemId = (int) $itemId;
         $item = \App\Models\SalesOrderBranchItem::find($itemId);
         if ($item) {
-            $this->editingPrice = $item->unit_price;
+            $this->editingPrice = (float) $item->unit_price;
+            Log::info('Item found and editing price set', [
+                'itemId' => $itemId,
+                'unitPrice' => $item->unit_price,
+                'editingPrice' => $this->editingPrice,
+                'editingItemId' => $this->editingItemId
+            ]);
+        } else {
+            Log::warning('Item not found', ['itemId' => $itemId]);
         }
+
+        // Force re-render
+        $this->dispatch('$refresh');
+        $this->js('$wire.$refresh()');
     }
 
     public function savePrice()

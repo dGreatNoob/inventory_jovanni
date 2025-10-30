@@ -57,13 +57,16 @@
 
                     @php
                         $overallTotal = 0;
+                        $overallQuantity = 0;
                     @endphp
 
                     @foreach($sales_order_view->customers as $branch)
                         @php
                             $branchItems = $sales_order_view->branchItems()->where('branch_id', $branch->id)->with('product')->get();
                             $branchTotal = $branchItems->sum('subtotal');
+                            $branchQuantity = $branchItems->sum('quantity');
                             $overallTotal += $branchTotal;
+                            $overallQuantity += $branchQuantity;
                         @endphp
 
                         @if($branchItems->count() > 0)
@@ -75,12 +78,11 @@
                                     <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
                                         <thead class="text-sm text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                                             <tr>
+                                                <th scope="col" class="px-6 py-3">Product Name</th>
                                                 <th scope="col" class="px-6 py-3">Product SKU</th>
                                                 <th scope="col" class="px-6 py-3">Quantity</th>
-                                                <th scope="col" class="px-6 py-3">Original Price</th>
                                                 <th scope="col" class="px-6 py-3">Unit Price</th>
                                                 <th scope="col" class="px-6 py-3">Subtotal</th>
-                                                <th scope="col" class="px-6 py-3">Action</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -88,40 +90,21 @@
                                                 <tr wire:key="{{ $item->id }}"
                                                     class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700 border-gray-200">
                                                     <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                                        {{ $item->product ? $item->product->name : 'N/A' }}
+                                                    </th>
+                                                    <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                                                         {{ $item->product ? $item->product->sku : 'N/A' }}
                                                     </th>
                                                     <td class="px-6 py-4">{{ $item->quantity }}</td>
-                                                    <td class="px-6 py-4">₱{{ number_format($item->original_unit_price, 2) }}</td>
-                                                    <td class="px-6 py-4">
-                                                        @if($editingItemId == $item->id)
-                                                            <input
-                                                                type="number"
-                                                                step="0.01"
-                                                                wire:model="editingPrice"
-                                                                class="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                                                                wire:keydown.enter="savePrice">
-                                                        @else
-                                                            ₱{{ number_format($item->unit_price, 2) }}
-                                                            @if($item->unit_price != $item->original_unit_price)
-                                                                <span class="text-red-500 text-xs">(Modified)</span>
-                                                            @endif
-                                                        @endif
-                                                    </td>
+                                                    <td class="px-6 py-4">₱{{ number_format($item->unit_price, 2) }}</td>
                                                     <td class="px-6 py-4 font-semibold">₱{{ number_format($item->subtotal, 2) }}</td>
-                                                    <td class="px-6 py-4">
-                                                        @if($editingItemId == $item->id)
-                                                            <button wire:click="savePrice" class="text-green-600 hover:text-green-800 mr-2">Save</button>
-                                                            <button wire:click="cancelEdit" class="text-gray-600 hover:text-gray-800">Cancel</button>
-                                                        @else
-                                                            <button wire:click="editPrice({{ $item->id }})" class="text-blue-600 hover:text-blue-800">Edit Price</button>
-                                                        @endif
-                                                    </td>
                                                 </tr>
                                             @endforeach
                                             <tr class="bg-blue-50 dark:bg-blue-900/20 font-semibold">
-                                                <td colspan="4" class="px-6 py-3 text-right">Branch Total:</td>
+                                                <td colspan="2" class="px-6 py-3 text-right">Branch Total:</td>
+                                                <td class="px-6 py-3">{{ number_format($branchQuantity) }}</td>
+                                                <td class="px-6 py-3"></td>
                                                 <td class="px-6 py-3">₱{{ number_format($branchTotal, 2) }}</td>
-                                                <td></td>
                                             </tr>
                                         </tbody>
                                     </table>
@@ -131,11 +114,18 @@
                     @endforeach
 
                     @if($overallTotal > 0)
-                        <div class="mt-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                            <div class="flex justify-between items-center">
-                                <span class="text-lg font-semibold text-green-900 dark:text-green-100">Overall Total Cost:</span>
-                                <span class="text-xl font-bold text-green-600 dark:text-green-400">₱{{ number_format($overallTotal, 2) }}</span>
-                            </div>
+                        <div class="mt-6">
+                            <table class="w-full text-lg text-left rtl:text-right text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden">
+                                <tbody>
+                                    <tr class="bg-green-50 dark:bg-green-900/20 font-semibold">
+                                        <td class="px-6 py-6">
+                                        <td colspan="2" class="px-6 py-3 text-right">Total Quantity :</td>
+                                        <td class="px-6 py-3 text-center">{{ number_format($overallQuantity) }}</td>
+                                        <td class="px-2 py-3 text-right">Total Sales :</td>
+                                        <td class="px-6 py-3 text-center">₱{{ number_format($overallTotal, 2) }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     @endif
                 </div>

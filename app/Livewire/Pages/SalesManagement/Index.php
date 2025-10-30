@@ -376,21 +376,6 @@ class Index extends Component
                 $SalesOrder->customers()->sync($this->customerSelected);
                 $SalesOrder->agents()->sync($this->agentSelected);
 
-                // Update subclass assignments if needed
-                if (!empty($this->subclassSelected)) {
-                    foreach ($this->customerSelected as $branchId) {
-                        $branch = \App\Models\Branch::find($branchId);
-                        if ($branch) {
-                            $branch->activeAgents()->update(['subclass' => null]); // Reset
-                            foreach ($this->subclassSelected as $subclass) {
-                                $branch->activeAgents()->whereHas('agent', function($q) {
-                                    $q->whereIn('id', $this->agentSelected);
-                                })->update(['subclass' => $subclass]);
-                            }
-                        }
-                    }
-                }
-
                 // Update branch items for editing
                 $this->updateBranchItems($SalesOrder);
             }else{
@@ -399,24 +384,6 @@ class Index extends Component
                 // Attach branches and agents for new order
                 $SalesOrder->customers()->attach($this->customerSelected);
                 $SalesOrder->agents()->attach($this->agentSelected);
-
-                // Handle subclass assignments for new orders
-                if (!empty($this->subclassSelected)) {
-                    foreach ($this->customerSelected as $branchId) {
-                        $branch = \App\Models\Branch::find($branchId);
-                        if ($branch) {
-                            foreach ($this->agentSelected as $agentId) {
-                                $assignment = \App\Models\AgentBranchAssignment::where('agent_id', $agentId)
-                                    ->where('branch_id', $branchId)
-                                    ->whereNull('released_at')
-                                    ->first();
-                                if ($assignment) {
-                                    $assignment->update(['subclass' => implode(',', $this->subclassSelected)]);
-                                }
-                            }
-                        }
-                    }
-                }
 
                 // Create branch items for new order
                 $this->createBranchItems($SalesOrder);

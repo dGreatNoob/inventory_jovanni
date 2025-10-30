@@ -330,7 +330,17 @@
                     </flux:navlist.item>
                 </flux:navlist.group>--}}
 
-                @role(['Super Admin', 'Admin'])
+                @if(Auth::user()->hasAnyPermission([
+                    'user view',
+                    'user create',
+                    'user edit',
+                    'user delete',
+                    'role view',
+                    'role create',
+                    'role edit',
+                    'role delete',
+                    'permission manage'
+                ]))
                     <flux:navlist.group expandable
                         :expanded="request()->routeIs('user.index') || request()->routeIs('roles.index')"
                         :heading="__('User Management')" class="lg:grid">
@@ -343,7 +353,7 @@
                             {{ __('Roles & Permissions') }}
                         </flux:navlist.item>
                     </flux:navlist.group>
-                @endrole
+                @endif
 
                 {{-- Activity Logs moved to top level for easier access --}}
                 {{--<flux:navlist.item icon="clipboard-document-list" href="{{ route('activity.logs') }}"

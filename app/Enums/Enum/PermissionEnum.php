@@ -21,10 +21,21 @@ enum PermissionEnum: string
 
     // 📦 Product Management
     case PRODUCT_VIEW = 'product view';
+    case PRODUCT_ANALYTIC = 'product analytic view';
     case PRODUCT_CREATE = 'product create';
     case PRODUCT_EDIT = 'product edit';
     case PRODUCT_DELETE = 'product delete';
     case PRODUCT_EXPORT = 'product export';
+
+    case CATEGORY_VIEW = 'category view';
+    case CATEGORY_CREATE = 'category create';
+    case CATEGORY_EDIT = 'category edit';
+    case CATEGORY_DELETE = 'category delete';
+
+    case IMAGE_VIEW = 'image view';
+    case IMAGE_CREATE = 'image create';
+    case IMAGE_EDIT = 'image edit';
+    case IMAGE_DELETE = 'image delete';
 
     // 🧍 Agent & Branch Management
     case AGENT_VIEW = 'agent view';
@@ -86,10 +97,22 @@ enum PermissionEnum: string
 
             // Product
             static::PRODUCT_VIEW => 'View Products',
+            static::PRODUCT_ANALYTIC => 'View Product Analytics',
             static::PRODUCT_CREATE => 'Add Product',
             static::PRODUCT_EDIT => 'Edit Product',
             static::PRODUCT_DELETE => 'Delete Product',
             static::PRODUCT_EXPORT => 'Export Product Data',
+
+            static::CATEGORY_VIEW => 'View Categories',
+            static::CATEGORY_CREATE => 'Add Category',
+            static::CATEGORY_EDIT => 'Edit Category',
+            static::CATEGORY_DELETE => 'Delete Category',
+
+            static::IMAGE_VIEW => 'View Images',
+            static::IMAGE_CREATE => 'Add Image',
+            static::IMAGE_EDIT => 'Edit Image',
+            static::IMAGE_DELETE => 'Delete Image',
+
 
             // Agent & Branch
             static::AGENT_VIEW => 'View Agents',
@@ -152,10 +175,19 @@ enum PermissionEnum: string
 
             // Product Management
             static::PRODUCT_VIEW,
+            static::PRODUCT_ANALYTIC,
             static::PRODUCT_CREATE,
             static::PRODUCT_EDIT,
             static::PRODUCT_DELETE,
-            static::PRODUCT_EXPORT => 'Product Management',
+            static::PRODUCT_EXPORT,
+            static::CATEGORY_VIEW,
+            static::CATEGORY_CREATE,
+            static::CATEGORY_EDIT,
+            static::CATEGORY_DELETE,
+            static::IMAGE_VIEW,
+            static::IMAGE_CREATE,
+            static::IMAGE_EDIT,
+            static::IMAGE_DELETE => 'Product Management',
 
             // Agent & Branch Management
             static::AGENT_VIEW,

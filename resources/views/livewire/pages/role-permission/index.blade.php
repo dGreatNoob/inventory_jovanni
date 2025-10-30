@@ -4,6 +4,8 @@
 <div class="space-y-6">
 
     {{-- Add / Edit Role Form --}}
+
+    @can('role create')
     <x-collapsible-card title="Add Role" open="false" size="full">
         <form wire:submit.prevent="store" x-show="open" x-transition>
             <div class="grid gap-6 mb-6 md:grid-cols-2">
@@ -15,9 +17,6 @@
                         name="name" 
                         label="Role Name"
                         placeholder="Enter role name" />
-                    @error('name')
-                        <span class="text-red-500 text-sm">{{ $message }}</span>
-                    @enderror
                 </div>
 
                 {{-- Permissions --}}
@@ -108,6 +107,7 @@
             </div>
         </form>
     </x-collapsible-card>
+    @endcan
 
     {{-- Flash Message --}}
     @if (session('message'))
@@ -115,6 +115,7 @@
     @endif
 
     {{-- Roles Table --}}
+    @can('permission manage')
     <section>
         <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
 
@@ -164,8 +165,15 @@
                                 </td>
                                 <td class="px-6 py-4 text-center">
                                     <div class="flex justify-center gap-2">
-                                        <flux:button wire:click="edit({{ $role->id }})" size="sm" variant="outline">Edit</flux:button>
-                                        <flux:button wire:click="confirmDelete({{ $role->id }})" size="sm" variant="outline" class="text-red-600 hover:text-red-700">Delete</flux:button>
+                                        @can('role edit')
+                                            <flux:button wire:click="edit({{ $role->id }})" size="sm" variant="outline"> 
+                                                Edit </flux:button>
+                                        @endcan
+
+                                        @can('role delete')
+                                            <flux:button wire:click="confirmDelete({{ $role->id }})" size="sm" variant="outline" class="text-red-600 hover:text-red-700"> 
+                                                Delete </flux:button>
+                                        @endcan
                                     </div>
                                 </td>
                             </tr>
@@ -203,6 +211,7 @@
             </div>
         </div>
     </section>
+    @endcan
 
     {{-- Delete Confirmation Modal --}}
     @if($showDeleteModal)

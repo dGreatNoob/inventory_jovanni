@@ -84,6 +84,7 @@
         </section>
 
         <!-- Profiling -->
+         @can('supplier create')
         <section class="mb-6">
             <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
                 <div class="px-4 py-5 sm:p-6">
@@ -235,6 +236,7 @@
                 </div>
             </div>
         </section>
+        @endcan
 
         @if (session()->has('message'))
             <div class="mb-4 p-4 text-sm text-green-700 bg-green-100 rounded-lg dark:bg-green-200 dark:text-green-800">
@@ -376,8 +378,15 @@
 
                     <!-- Action -->
                     <td class="px-6 py-4 space-x-2">
-                        <flux:button wire:click.prevent="edit({{ $item->id }})" variant="outline" size="sm">Edit</flux:button>
-                        <flux:button wire:click.prevent="confirmDelete({{ $item->id }})" variant="outline" size="sm" class="text-red-600 hover:text-red-700">Delete</flux:button>
+                        @can('supplier edit')
+                        <flux:button wire:click.prevent="edit({{ $item->id }})" variant="outline" size="sm">
+                            Edit</flux:button>
+                        @endcan
+
+                        @can('supplier delete')
+                        <flux:button wire:click.prevent="confirmDelete({{ $item->id }})" variant="outline" size="sm" class="text-red-600 hover:text-red-700">
+                            Delete</flux:button>
+                        @endcan
                     </td>
                 </tr>
                             @endforeach

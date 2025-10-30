@@ -209,6 +209,10 @@ class Index extends Component
 
     public function render()
     {
+        if (!auth()->user()->hasAnyPermission(['supplier view'])) {
+            return view('livewire.pages.errors.403');
+        }
+
         $search = trim($this->search);
 
         $items = Supplier::when($search, function ($query) use ($search) {

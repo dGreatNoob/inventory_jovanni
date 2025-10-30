@@ -3,6 +3,7 @@
 
 <div class="">
     <div class="">
+        @can('user create')
         <x-collapsible-card title="Add User" open="false" size="full">
             <form wire:submit.prevent="create" x-show="open" x-transition>
                 <div class="grid gap-6 mb-6 md:grid-cols-2">
@@ -47,6 +48,7 @@
             </div>
             </form>
         </x-collapsible-card>
+        @endcan
 
         @if (session('message'))
             <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 4000)"
@@ -109,8 +111,15 @@
 
                                 <td class="px-6 py-4">
                                     <div class="flex gap-2">
-                                        <flux:button wire:click="edit({{ $user->id }})" size="sm" variant="outline"> Edit </flux:button>
-                                        <flux:button wire:click="confirmDelete({{ $user->id }})" size="sm" variant="outline" class="text-red-600 hover:text-red-700"> Delete </flux:button>
+                                        @can('user edit')
+                                        <flux:button wire:click="edit({{ $user->id }})" size="sm" variant="outline"> 
+                                            Edit </flux:button>
+                                        @endcan
+
+                                        @can('user delete')
+                                        <flux:button wire:click="confirmDelete({{ $user->id }})" size="sm" variant="outline" class="text-red-600 hover:text-red-700"> 
+                                            Delete </flux:button>
+                                        @endcan
                                     </div>
                                 </td>
                             </tr>

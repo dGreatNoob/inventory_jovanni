@@ -127,7 +127,7 @@ class Index extends Component
 
     public function render()
     {
-        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) {
+        if (!auth()->user()->hasAnyPermission(['role view'])) {
             return view('livewire.pages.errors.403');
         }
 

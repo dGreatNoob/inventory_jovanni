@@ -56,6 +56,14 @@ class RoleAndPermissionSeeder extends Seeder
                 PermissionEnum::PRODUCT_EDIT,          // Edit existing product profiles
                 PermissionEnum::PRODUCT_DELETE,        // Remove product profiles
                 PermissionEnum::PRODUCT_EXPORT,        // Export product catalog/report
+                PermissionEnum::CATEGORY_VIEW,         // View category list and details
+                PermissionEnum::CATEGORY_CREATE,       // Add new categories
+                PermissionEnum::CATEGORY_EDIT,         // Edit existing categories  
+                PermissionEnum::CATEGORY_DELETE,       // Remove categories
+                PermissionEnum::IMAGE_VIEW,            // View product images
+                PermissionEnum::IMAGE_CREATE,          // Upload new product images
+                PermissionEnum::IMAGE_EDIT,            // Edit existing product images
+                PermissionEnum::IMAGE_DELETE,          // Delete product images
             ],
 
             RolesEnum::ABMANAGEMENT->value => [

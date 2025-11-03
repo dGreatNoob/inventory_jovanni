@@ -598,7 +598,6 @@ class Index extends Component
                             'sales_order_id' => $salesOrder->id,
                             'branch_id' => $branchId,
                             'product_id' => $item['product_id'],
-                            'original_unit_price' => $item['unit_price'],
                             'unit_price' => $item['unit_price'],
                             'quantity' => $item['quantity'],
                             'subtotal' => $item['quantity'] * $item['unit_price'],

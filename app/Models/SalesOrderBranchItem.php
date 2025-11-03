@@ -10,14 +10,12 @@ class SalesOrderBranchItem extends Model
         'sales_order_id',
         'branch_id',
         'product_id',
-        'original_unit_price',
         'unit_price',
         'quantity',
         'subtotal',
     ];
 
     protected $casts = [
-        'original_unit_price' => 'decimal:2',
         'unit_price' => 'decimal:2',
         'subtotal' => 'decimal:2',
     ];

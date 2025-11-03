@@ -228,7 +228,7 @@
                 use App\Enums\Enum\PermissionEnum;
             @endphp
 
-            @can(PermissionEnum::APPROVE_SUPPLY_PURCHASE_ORDER->value)
+            @can('po approve')
                 @if($purchaseOrder->status === 'pending')
                     <button type="button" 
                         wire:click="ApprovePurchaseOrder"

@@ -48,56 +48,23 @@
                     </flux:navlist.item>
                 </flux:navlist.group> --}}
 
+                {{-- Purchase Order Management --}}
+
+                @if(Auth::user()->hasAnyPermission([
+                    'po view',          
+                    'po create',        
+                    'po edit',          
+                    'po delete',        
+                    'po approve',      
+                    'po receive',       
+                    'po report view'    
+                ]))
+
                 <flux:navlist.group expandable :expanded="request()->routeIs('warehouse.*')" :heading="__('PO Management')" class="lg:grid">
                     <flux:navlist.item icon="inbox-stack" href="{{ route('pomanagement.purchaseorder') }}"
                         :current="request()->routeIs('warehouse.purchaseorder')" wire:navigate>
                         {{ __('Purchase Order') }}
                     </flux:navlist.item>
-                </flux:navlist.group>
-
-                <flux:navlist.group 
-                    expandable 
-                    :expanded="request()->routeIs('product-management.*')" 
-                    :heading="__('Product Management')" 
-                    class="lg:grid text-left"
-                >
-                    <flux:navlist.item 
-                        icon="cube" 
-                        href="{{ route('product-management.index') }}" 
-                        :current="request()->routeIs('product-management.index')" 
-                        wire:navigate
-                    >
-                        {{ __('Products') }}
-                    </flux:navlist.item>
-
-                    <flux:navlist.item 
-                        icon="tag" 
-                        href="{{ route('product-management.categories') }}" 
-                        :current="request()->routeIs('product-management.categories')" 
-                        wire:navigate
-                    >
-                        {{ __('Categories') }}
-                    </flux:navlist.item>
-
-                    <flux:navlist.item 
-                        icon="photo" 
-                        href="{{ route('product-management.images') }}" 
-                        :current="request()->routeIs('product-management.images')" 
-                        wire:navigate
-                    >
-                        {{ __('Images') }}
-                    </flux:navlist.item>
-
-                    <flux:navlist.item 
-                        icon="chart-bar" 
-                        href="{{ route('product-management.dashboard') }}" 
-                        :current="request()->routeIs('product-management.dashboard')" 
-                        wire:navigate
-                    >
-                        {{ __('Analytics') }}
-                    </flux:navlist.item>
-
-                    
                 </flux:navlist.group>
                 @endif
 
@@ -154,8 +121,6 @@
                     </flux:navlist.group>
                 @endif
                                 
-
-
                 {{-- <flux:navlist.group expandable
                     :expanded="request()->routeIs('salesorder.*') || request()->routeIs('salesreturn.*')"
                     :heading="__('Sales Management')" class="lg:grid text-left">
@@ -274,19 +239,8 @@
                     </flux:navlist.group>
                 @endrole--}}
 
-                {{--  <flux:navlist.group expandable :expanded="request()->routeIs('bodegero.*')"
-                    :heading="__('Warehouse Staff')" class="lg:grid">
-                    <flux:navlist.item icon="qr-code" href="{{ route('bodegero.stockin') }}"
-                        :current="request()->routeIs('bodegero.stockin')" wire:navigate>{{ __('Stock In') }}
-                    </flux:navlist.item>
-                    <flux:navlist.item icon="qr-code" href="{{ route('bodegero.stockout') }}"
-                        :current="request()->routeIs('bodegero.stockout')" wire:navigate>{{ __('Stock Out') }}
-                    </flux:navlist.item>
-                    <!-- <flux:navlist.item icon="banknotes" href=""  wire:navigate>{{ __('Returns') }}
-                    </flux:navlist.item> -->
-                </flux:navlist.group>--}}
-
-
+                {{-- Warehouse Staff --}}
+                
                 <flux:navlist.group expandable :expanded="request()->routeIs('warehousestaff.*')"
                     :heading="__('Warehouse Staff')" class="lg:grid">
                     <flux:navlist.item icon="qr-code" href="{{ route('warehousestaff.stockin') }}"

@@ -32,6 +32,10 @@ use App\Livewire\Pages\Branch\Index as BranchProfile;
 
 use App\Livewire\Pages\Notifications\Index as Notifications;
 
+// Allocation Management
+use App\Livewire\Pages\Allocation\Warehouse;
+use App\Livewire\Pages\Allocation\Sales;
+
 // Product Management
 use App\Livewire\Pages\ProductManagement\Index as ProductManagement;
 use App\Livewire\Pages\ProductManagement\CategoryManagement;
@@ -176,6 +180,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/sales-return', SalesManagementSalesReturn::class)->name('salesorder.return');
     Route::get('/sales-return/{salesreturnId}', ViewSalesReturn::class)->name('salesreturn.view');
     Route::get('/sales-price', SalesPriceIndex::class)->name('sales-price.index');
+
+    // Allocation Management
+    Route::prefix('allocation')->name('allocation.')->group(function () {
+        Route::get('/warehouse', Warehouse::class)->name('warehouse');
+        Route::get('/sales', Sales::class)->name('sales');
+    });
 
     // Product Management
     Route::prefix('product-management')->name('product-management.')->group(function () {

@@ -4,12 +4,17 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class StockBatch extends Model
+class BatchAllocation extends Model
 {
     protected $fillable = [
+        'ref_no',
         'transaction_date',
         'remarks',
-        'auto_ref_no',
         'status',
     ];
+
+    public function branchAllocations()
+    {
+        return $this->hasMany(BranchAllocation::class);
+    }
 }

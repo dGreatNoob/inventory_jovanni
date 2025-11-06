@@ -1,0 +1,354 @@
+<x-slot:header>Allocation - Warehouse</x-slot:header>
+<x-slot:subheader>Master control panel for preparing and sending goods from warehouse to branches through delivery batches.</x-slot:subheader>
+
+<div>
+    <!-- Success/Error Messages -->
+    @if (session()->has('message'))
+        <div class="mb-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+            <div class="flex items-center">
+                <svg class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                </svg>
+                <span class="ml-2 text-green-700 dark:text-green-300">{{ session('message') }}</span>
+            </div>
+        </div>
+    @endif
+
+    @if (session()->has('error'))
+        <div class="mb-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+            <div class="flex items-center">
+                <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                </svg>
+                <span class="ml-2 text-red-700 dark:text-red-300">{{ session('error') }}</span>
+            </div>
+        </div>
+    @endif
+
+    <!-- STEP 1: CREATE BATCH ALLOCATION -->
+    <div class="mb-6">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Warehouse Batch Allocations</h2>
+            <button wire:click="openCreateBatchModal" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                Create New Batch
+            </button>
+        </div>
+
+        <!-- Batch Allocations List -->
+        @forelse($batchAllocations as $batch)
+            <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 mb-4 overflow-hidden">
+                <!-- Batch Header -->
+                <div class="px-6 py-4 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ $batch->ref_no }}</h3>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">
+                                Transaction Date: {{ \Carbon\Carbon::parse($batch->transaction_date)->format('M d, Y') }}
+                            </p>
+                            @if($batch->remarks)
+                                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Remarks: {{ $batch->remarks }}</p>
+                            @endif
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="px-3 py-1 text-xs font-medium rounded-full
+                                @if($batch->status === 'draft') bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300
+                                @elseif($batch->status === 'dispatched') bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300
+                                @else bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300 @endif">
+                                {{ ucfirst($batch->status) }}
+                            </span>
+                            @if($batch->status === 'draft')
+                                <button wire:click="openAddBranchesModal({{ $batch->id }})" class="bg-green-600 hover:bg-green-700 text-white text-sm py-1 px-3 rounded">
+                                    Add Branches
+                                </button>
+                                <button wire:click="dispatchBatch({{ $batch->id }})"
+                                        onclick="return confirm('Are you sure you want to dispatch this batch? This action cannot be undone.')"
+                                        class="bg-blue-600 hover:bg-blue-700 text-white text-sm py-1 px-3 rounded">
+                                    Dispatch Batch
+                                </button>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 2 & 3: BRANCHES AND ITEMS -->
+                @forelse($batch->branchAllocations as $branchAllocation)
+                    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-600 last:border-b-0">
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <h4 class="text-md font-medium text-gray-900 dark:text-white">{{ $branchAllocation->branch->name }}</h4>
+                                @if($branchAllocation->remarks)
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">Remarks: {{ $branchAllocation->remarks }}</p>
+                                @endif
+                                <span class="inline-block mt-1 px-2 py-1 text-xs font-medium rounded-full
+                                    @if($branchAllocation->status === 'pending') bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300
+                                    @elseif($branchAllocation->status === 'allocated') bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300
+                                    @elseif($branchAllocation->status === 'received') bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300
+                                    @else bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300 @endif">
+                                    {{ ucfirst($branchAllocation->status) }}
+                                </span>
+                            </div>
+                            <div class="flex space-x-2">
+                                @if($batch->status === 'draft')
+                                    <button wire:click="openAddItemsModal({{ $branchAllocation->id }})" class="bg-green-600 hover:bg-green-700 text-white text-sm py-1 px-3 rounded">
+                                        Add Items
+                                    </button>
+                                    <button wire:click="removeBranch({{ $branchAllocation->id }})"
+                                            onclick="return confirm('Are you sure you want to remove this branch from the batch?')"
+                                            class="bg-red-600 hover:bg-red-700 text-white text-sm py-1 px-3 rounded">
+                                        Remove
+                                    </button>
+                                @endif
+                            </div>
+                        </div>
+
+                        <!-- Items Table -->
+                        @forelse($branchAllocation->items as $item)
+                            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 mb-2">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <span class="font-medium text-gray-900 dark:text-white">{{ $item->product->name }}</span>
+                                        <span class="text-sm text-gray-600 dark:text-gray-400 ml-2">Qty: {{ $item->quantity }}</span>
+                                        @if($item->unit_price)
+                                            <span class="text-sm text-gray-600 dark:text-gray-400 ml-2">₱{{ number_format($item->unit_price, 2) }}</span>
+                                        @endif
+                                    </div>
+                                    @if($batch->status === 'draft')
+                                        <button wire:click="removeItem({{ $item->id }})"
+                                                onclick="return confirm('Are you sure you want to remove this item?')"
+                                                class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                            </svg>
+                                        </button>
+                                    @endif
+                                </div>
+                            </div>
+                        @empty
+                            <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
+                                <p class="text-sm text-yellow-700 dark:text-yellow-300">No items assigned to this branch.</p>
+                            </div>
+                        @endforelse
+                    </div>
+                @empty
+                    <div class="px-6 py-4 text-center">
+                        <p class="text-gray-500 dark:text-gray-400">No branches added to this batch yet.</p>
+                        @if($batch->status === 'draft')
+                            <button wire:click="openAddBranchesModal({{ $batch->id }})" class="mt-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
+                                Add branches to this batch
+                            </button>
+                        @endif
+                    </div>
+                @endforelse
+            </div>
+        @empty
+            <div class="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No batch allocations</h3>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by creating your first batch allocation.</p>
+            </div>
+        @endforelse
+    </div>
+
+    <!-- STEP 1: CREATE BATCH MODAL -->
+    <x-modal wire:model="showCreateBatchModal" class="max-w-lg">
+        <h2 class="text-xl font-bold mb-4">Create New Batch Allocation</h2>
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            Start a new delivery wave. Example: "Batch 1 – Delivery for Big Branches on Nov 6, 2025"
+        </p>
+        
+        <form wire:submit="createBatch" class="space-y-4">
+            <div>
+                <label for="ref_no" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                    Reference Number
+                </label>
+                <input type="text"
+                       id="ref_no"
+                       wire:model="ref_no"
+                       readonly
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 dark:bg-gray-500 dark:border-gray-500 dark:text-white">
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Auto-generated reference number</p>
+            </div>
+
+            <div>
+                <label for="transaction_date" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                    Transaction Date *
+                </label>
+                <input type="date"
+                       id="transaction_date"
+                       wire:model="transaction_date"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white"
+                       required>
+                @error('transaction_date')
+                    <span class="text-red-500 text-sm">{{ $message }}</span>
+                @enderror
+            </div>
+
+            <div>
+                <label for="remarks" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                    Remarks (Optional)
+                </label>
+                <textarea id="remarks"
+                          wire:model="remarks"
+                          rows="3"
+                          class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white"
+                          placeholder="e.g., 'Dispatched by Mark', 'For VisMin route'"></textarea>
+                @error('remarks')
+                    <span class="text-red-500 text-sm">{{ $message }}</span>
+                @enderror
+            </div>
+
+            <div>
+                <label for="status" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                    Status
+                </label>
+                <select id="status"
+                        wire:model="status"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                    <option value="draft">Draft</option>
+                </select>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Status is automatically set to draft</p>
+            </div>
+
+            <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
+                <button type="button"
+                        wire:click="closeCreateBatchModal"
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
+                    Cancel
+                </button>
+                <button type="submit"
+                        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Create Batch
+                </button>
+            </div>
+        </form>
+    </x-modal>
+
+    <!-- STEP 2: ADD BRANCHES MODAL -->
+    <x-modal wire:model="showAddBranchesModal" class="max-w-2xl">
+        <h2 class="text-xl font-bold mb-4">Add Branches to Batch: {{ $selectedBatch?->ref_no ?? '' }}</h2>
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            Select one or multiple branches to receive products in this batch.
+        </p>
+        
+        <form wire:submit="addBranchesToBatch" class="space-y-4">
+            @forelse($availableBranches as $branch)
+                <div class="flex items-center p-3 border border-gray-200 dark:border-gray-600 rounded-lg">
+                    <input type="checkbox"
+                           id="branch_{{ $branch->id }}"
+                           wire:model="selectedBranchIds"
+                           value="{{ $branch->id }}"
+                           class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                    <label for="branch_{{ $branch->id }}" class="ml-3 flex-1">
+                        <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $branch->name }}</div>
+                        @if($branch->address)
+                            <div class="text-sm text-gray-500 dark:text-gray-400">{{ $branch->address }}</div>
+                        @endif
+                    </label>
+                </div>
+                @if(in_array($branch->id, $selectedBranchIds))
+                    <div class="ml-6">
+                        <label for="branch_remarks_{{ $branch->id }}" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Remarks for {{ $branch->name }} (Optional)
+                        </label>
+                        <input type="text"
+                               id="branch_remarks_{{ $branch->id }}"
+                               wire:model="branchRemarks.{{ $branch->id }}"
+                               placeholder="e.g., 'Handled by Agent A'"
+                               class="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                    </div>
+                @endif
+            @empty
+                <div class="text-center py-4">
+                    <p class="text-gray-500 dark:text-gray-400">No additional branches available to add.</p>
+                </div>
+            @endforelse
+
+            <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
+                <button type="button"
+                        wire:click="closeAddBranchesModal"
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
+                    Cancel
+                </button>
+                <button type="submit"
+                        @if(count($availableBranches) === 0) disabled @endif
+                        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400">
+                    Add Selected Branches
+                </button>
+            </div>
+        </form>
+    </x-modal>
+
+    <!-- STEP 3: ADD ITEMS MODAL -->
+    <x-modal wire:model="showAddItemsModal" class="max-w-lg">
+        <h2 class="text-xl font-bold mb-4">Add Items to Branch</h2>
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            {{ $selectedBranchAllocation?->branch->name ?? 'Selected Branch' }}
+        </p>
+        
+        <form wire:submit="addItemToBranch" class="space-y-4">
+            <div>
+                <label for="selectedProductId" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                    Product *
+                </label>
+                <select id="selectedProductId"
+                        wire:model="selectedProductId"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                    <option value="">Select a product</option>
+                    @foreach($availableProducts as $product)
+                        <option value="{{ $product->id }}">{{ $product->name }}</option>
+                    @endforeach
+                </select>
+                @error('selectedProductId')
+                    <span class="text-red-500 text-sm">{{ $message }}</span>
+                @enderror
+            </div>
+
+            <div>
+                <label for="productQuantity" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                    Quantity *
+                </label>
+                <input type="number"
+                       id="productQuantity"
+                       wire:model="productQuantity"
+                       min="1"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                @error('productQuantity')
+                    <span class="text-red-500 text-sm">{{ $message }}</span>
+                @enderror
+            </div>
+
+            <div>
+                <label for="productUnitPrice" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                    Unit Price (Optional)
+                </label>
+                <input type="number"
+                       id="productUnitPrice"
+                       wire:model="productUnitPrice"
+                       min="0"
+                       step="0.01"
+                       placeholder="0.00"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                @error('productUnitPrice')
+                    <span class="text-red-500 text-sm">{{ $message }}</span>
+                @enderror
+            </div>
+
+            <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
+                <button type="button"
+                        wire:click="closeAddItemsModal"
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
+                    Cancel
+                </button>
+                <button type="submit"
+                        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Add Item
+                </button>
+            </div>
+        </form>
+    </x-modal>
+</div>

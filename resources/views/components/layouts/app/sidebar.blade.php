@@ -125,6 +125,31 @@
                     </flux:navlist.item>
                 </flux:navlist.group>
 
+                <flux:navlist.group
+                    expandable
+                    :expanded="request()->routeIs('allocation.*')"
+                    :heading="__('Allocation')"
+                    class="lg:grid text-left"
+                >
+                    <flux:navlist.item
+                            icon="building-storefront"
+                            href="{{ route('allocation.warehouse') }}"
+                            :current="request()->routeIs('allocation.warehouse')"
+                            wire:navigate
+                        >
+                            {{ __('Warehouse') }}
+                        </flux:navlist.item>
+    
+                        <flux:navlist.item
+                            icon="chart-bar"
+                            href="{{ route('allocation.sales') }}"
+                            :current="request()->routeIs('allocation.sales')"
+                            wire:navigate
+                        >
+                            {{ __('Sales') }}
+                        </flux:navlist.item>
+                </flux:navlist.group>
+
                 {{-- <flux:navlist.group expandable :expanded="request()->routeIs('finance.*')" :heading="__('Finance')"
                     class="lg:grid">
                     <flux:navlist.item icon="banknotes" href="{{ route('finance.receivables') }}"

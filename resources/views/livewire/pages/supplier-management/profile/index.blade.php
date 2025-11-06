@@ -10,9 +10,10 @@
                     <div class="p-5">
                         <div class="flex items-center">
                             <div class="flex-shrink-0">
-                                <svg class="h-6 w-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87M12 12a4 4 0 100-8 4 4 0 000 8z" />
+                                <svg class="w-6 h-6 text-indigo-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                                    <path fill-rule="evenodd" d="M12 6a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Zm-1.5 8a4 4 0 0 0-4 4 2 2 0 0 0 2 2h7a2 2 0 0 0 2-2 4 4 0 0 0-4-4h-3Zm6.82-3.096a5.51 5.51 0 0 0-2.797-6.293 3.5 3.5 0 1 1 2.796 6.292ZM19.5 18h.5a2 2 0 0 0 2-2 4 4 0 0 0-4-4h-1.1a5.503 5.503 0 0 1-.471.762A5.998 5.998 0 0 1 19.5 18ZM4 7.5a3.5 3.5 0 0 1 5.477-2.889 5.5 5.5 0 0 0-2.796 6.293A3.501 3.501 0 0 1 4 7.5ZM7.1 12H6a4 4 0 0 0-4 4 2 2 0 0 0 2 2h.5a5.998 5.998 0 0 1 3.071-5.238A5.505 5.505 0 0 1 7.1 12Z" clip-rule="evenodd"/>
                                 </svg>
+
                             </div>
                             <div class="ml-5 w-0 flex-1">
                                 <dl>
@@ -43,13 +44,13 @@
                     </div>
                 </div>
 
-                <!-- Pending Suppliers -->
+                <!-- Total Orders -->
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
                     <div class="p-5">
                         <div class="flex items-center">
                             <div class="flex-shrink-0">
-                                <svg class="h-6 w-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                <svg class="w-6 h-6 text-violet-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 3v4a1 1 0 0 1-1 1H5m4 8h6m-6-4h6m4-8v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V7.914a1 1 0 0 1 .293-.707l3.914-3.914A1 1 0 0 1 9.914 3H18a1 1 0 0 1 1 1Z"/>
                                 </svg>
                             </div>
                             <div class="ml-5 w-0 flex-1">
@@ -67,9 +68,10 @@
                     <div class="p-5">
                         <div class="flex items-center">
                             <div class="flex-shrink-0">
-                                <svg class="h-6 w-6 text-violet-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                                <svg class="w-6 h-6 text-lime-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 17.345a4.76 4.76 0 0 0 2.558 1.618c2.274.589 4.512-.446 4.999-2.31.487-1.866-1.273-3.9-3.546-4.49-2.273-.59-4.034-2.623-3.547-4.488.486-1.865 2.724-2.899 4.998-2.31.982.236 1.87.793 2.538 1.592m-3.879 12.171V21m0-18v2.2"/>
                                 </svg>
+
                             </div>
                             <div class="ml-5 w-0 flex-1">
                                 <dl>
@@ -84,8 +86,8 @@
         </section>
 
         <!-- Profiling -->
+        <x-collapsible-card title="Create supplier" open="false" size="full">
         <section class="mb-6">
-            <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
                 <div class="px-4 py-5 sm:p-6">
             <form wire:submit.prevent="submit">
                 <div class="grid gap-6 mb-6 md:grid-cols-2">
@@ -182,43 +184,6 @@
                     <!-- Spacing -->
                     <div class="md:col-span-2 h-6"></div>
 
-                    <div x-data="{ open: false }" class="relative">
-                        <label for="categories" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Categories</label>
-
-                        <!-- Button -->
-                        <button type="button" @click="open = !open"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 
-                                focus:border-blue-500 block w-full p-2.5 text-left flex items-center justify-between 
-                                dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                            <span class="truncate">
-                                <template x-if="!$wire.categories.length">Select categories</template>
-                                <template x-for="catId in $wire.categories" :key="catId">
-                                    <span class="inline-block px-2 py-1 mr-1 mb-1 text-xs font-semibold text-gray-800 dark:text-gray-200 bg-gray-200 dark:bg-gray-700 rounded-full"
-                                        x-text="getCategoryNameById(catId)"></span>
-                                </template>
-                            </span>
-                            <svg class="w-5 h-5 text-gray-400 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </button>
-
-                        <!-- Dropdown -->
-                        <div x-show="open" @click.away="open = false"
-                            class="absolute mt-1 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 
-                                rounded-lg shadow-lg z-50 max-h-72 overflow-auto">
-                            @foreach($availableCategories as $id => $name)
-                                <label class="flex items-center px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer">
-                                    <input type="checkbox" value="{{ $id }}" wire:model.defer="categories" class="mr-2 w-5 h-5">
-                                    <span class="text-gray-900 dark:text-white text-sm">{{ $name }}</span>
-                                </label>
-                            @endforeach
-                        </div>
-                        @error('categories')
-                            <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
-                        @enderror
-                    </div>
-
 
                     <!-- For tags -->
                     
@@ -233,8 +198,8 @@
 
             </form>
                 </div>
-            </div>
         </section>
+        </x-collapsible-card>
 
         @if (session()->has('message'))
             <div class="mb-4 p-4 text-sm text-green-700 bg-green-100 rounded-lg dark:bg-green-200 dark:text-green-800">
@@ -282,8 +247,12 @@
                             <tr>
                                 <th scope="col" class="px-6 py-3">Supplier</th>
                                 <th scope="col" class="px-6 py-3">Contact</th>
-                                <th scope="col" class="px-6 py-3">Status</th>
                                 <th scope="col" class="px-6 py-3">Categories</th>
+                                <th scope="col" class="px-6 py-3">Products</th>
+                                <th scope="col" class="px-6 py-3">Orders</th>
+                                <th scope="col" class="px-6 py-3">Total Value</th>
+                                <th scope="col" class="px-6 py-3">Last order</th>
+                                <th scope="col" class="px-6 py-3">Status</th>
                                 <th scope="col" class="px-6 py-3">Action</th>
                             </tr>
                         </thead>
@@ -337,6 +306,49 @@
                         </div>
                     </td>
 
+                    <!-- Categories -->
+                    <td class="px-6 py-4">
+                        <div class="flex flex-wrap gap-1">
+                            @php
+                                $allCategories = $this->getAllCategoriesForSupplier($item);
+                            @endphp
+                            @if($allCategories->isNotEmpty())
+                                @foreach($allCategories as $category)
+                                    <span class="inline-block px-2 py-1 mr-1 mb-1 text-xs font-semibold text-gray-800 dark:text-gray-200 bg-gray-200 dark:bg-gray-700 rounded-full">
+                                        {{ $category->name }}
+                                    </span>
+                                @endforeach
+                            @else
+                                <span class="text-gray-500 dark:text-gray-400">No categories</span>
+                            @endif
+                        </div>
+                    </td>
+
+                    <!-- Products Count -->
+                    <td class="px-6 py-4">
+                        <div class="flex items-center space-x-1">
+                            <svg class="w-4 h-4 text-gray-500 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                    <path fill="currentColor" d="M9.98189 4.50602c1.24881-.67469 2.78741-.67469 4.03621 0l3.9638 2.14148c.3634.19632.6862.44109.9612.72273l-6.9288 3.60207L5.20654 7.225c.2403-.22108.51215-.41573.81157-.5775l3.96378-2.14148ZM4.16678 8.84364C4.05757 9.18783 4 9.5493 4 9.91844v4.28296c0 1.3494.7693 2.5963 2.01811 3.2709l3.96378 2.1415c.32051.1732.66011.3019 1.00901.3862v-7.4L4.16678 8.84364ZM13.009 20c.3489-.0843.6886-.213 1.0091-.3862l3.9638-2.1415C19.2307 16.7977 20 15.5508 20 14.2014V9.91844c0-.30001-.038-.59496-.1109-.87967L13.009 12.6155V20Z"/>
+                                </svg>
+                            <span class="text-gray-900 dark:text-white font-medium">{{ $item->products_count }}</span>
+                        </div>
+                    </td>
+
+                    <!-- Orders -->
+                    <td class="px-6 py-4">
+                        <span class="text-gray-500 dark:text-gray-400">-</span>
+                    </td>
+
+                    <!-- Total Value -->
+                    <td class="px-6 py-4">
+                        <span class="text-gray-500 dark:text-gray-400">-</span>
+                    </td>
+
+                    <!-- Last Order -->
+                    <td class="px-6 py-4">
+                        <span class="text-gray-500 dark:text-gray-400">-</span>
+                    </td>
+
                     <!-- Status -->
                     <td class="px-6 py-4">
                         @if($item->status === 'active')
@@ -358,24 +370,11 @@
                         @endif
                     </td>
 
-                    <!-- Categories -->
-                    <td class="px-6 py-4">
-                        @if(!empty($item->categories))
-                            @foreach($item->categories as $categoryId)
-                                @php
-                                    $categoryName = \App\Models\Category::find($categoryId)->name ?? 'Unknown';
-                                @endphp
-                                <span class="inline-block px-2 py-1 mr-1 mb-1 text-xs font-semibold text-gray-800 dark:text-gray-200 bg-gray-200 dark:bg-gray-700 rounded-full">
-                                    {{ $categoryName }}
-                                </span>
-                            @endforeach
-                        @else
-                            <span class="text-gray-500 dark:text-gray-400">-</span>
-                        @endif
-                    </td>
-
                     <!-- Action -->
                     <td class="px-6 py-4 space-x-2">
+                        <a href="{{ route('supplier.view', ['id' => $item->id]) }}">
+                            <flux:button type="button" variant="outline" size="sm">View</flux:button>
+                        </a>
                         <flux:button wire:click.prevent="edit({{ $item->id }})" variant="outline" size="sm">Edit</flux:button>
                         <flux:button wire:click.prevent="confirmDelete({{ $item->id }})" variant="outline" size="sm" class="text-red-600 hover:text-red-700">Delete</flux:button>
                     </td>
@@ -521,41 +520,6 @@
                                 @error('edit_status') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                             </div>
 
-                            <div x-data="{ open: false }" class="relative md:col-span-2">
-                            <label for="edit_categories" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Categories</label>
-
-                            <!-- Trigger button -->
-                            <button type="button" @click="open = !open"
-                                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
-                                    focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 text-left
-                                    flex items-center justify-between dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                                <span class="truncate">
-                                    <template x-if="!$wire.edit_categories.length">Select categories</template>
-                                    <template x-for="catId in $wire.edit_categories" :key="catId">
-                                        <span class="inline-block px-2 py-1 mr-1 mb-1 text-xs font-semibold text-gray-800 dark:text-gray-200 bg-gray-200 dark:bg-gray-700 rounded-full" x-text="getCategoryNameById(catId)"></span>
-                                    </template>
-                                </span>
-                                <svg class="w-5 h-5 text-gray-400 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                                </svg>
-                            </button>
-
-                            <!-- Dropdown -->
-                            <div x-show="open" @click.away="open = false"
-                                class="absolute mt-1 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg z-50 max-h-72 overflow-auto">
-                                @foreach ($availableCategories as $id => $name)
-                                    <label class="flex items-center px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer">
-                                        <input type="checkbox" value="{{ $id }}" wire:model="edit_categories" class="mr-2 w-5 h-5">
-                                        <span class="text-gray-900 dark:text-white text-sm">{{ $name }}</span>
-                                    </label>
-                                @endforeach
-                            </div>
-
-                            @error('edit_categories')
-                                <span class="text-red-500 text-sm">{{ $message }}</span>
-                            @enderror
-                            </div>
-
                         </div>
                         </div>
 
@@ -603,11 +567,6 @@
     </div>
 </div>
 
-<script>
-    function getCategoryNameById(categoryId) {
-        const categories = @json($availableCategories);
-        return categories[categoryId] || 'Unknown';
-    }
-</script>
+
 
 </div>

@@ -11,15 +11,16 @@ class Index extends Component
 {
     use WithPagination;
 
-    public $availableCategories = [];
-    public $categories = [];
-    public $edit_categories = [];
+    // Removed category properties
     public $supplier_name, $supplier_code, $supplier_address, $contact_person, $contact_num, $email, $tin_num, $status;
     public $edit_name, $edit_code, $edit_address, $edit_contact_person, $edit_contact_num, $edit_email, $edit_tin_num, $edit_status;
+    public $view_name, $view_code, $view_address, $view_contact_person,
+       $view_contact_num, $view_email, $view_tin_num, $view_status, $view_categories = [];
     public $perPage = 10;
     public $search = '';
     public $showDeleteModal = false;
     public $showEditModal = false;
+    public $showViewModal = false;
     public $deleteId = null;
     public $selectedItemId;
 
@@ -54,10 +55,43 @@ class Index extends Component
 
     public function mount()
     {
-        $this->availableCategories = Category::active()
-            ->orderBy('name')
-            ->pluck('name', 'id')
-            ->toArray();
+        // Removed category loading
+    }
+
+    public function view($id)
+    {
+        $supplier = Supplier::findOrFail($id);
+
+        $this->view_name = $supplier->name;
+        $this->view_code = $supplier->code;
+        $this->view_address = $supplier->address;
+        $this->view_contact_person = $supplier->contact_person;
+        $this->view_contact_num = $supplier->contact_num;
+        $this->view_email = $supplier->email;
+        $this->view_tin_num = $supplier->tin_num;
+        $this->view_status = $supplier->status;
+        $this->view_categories = $supplier->categories ?? [];
+
+        $this->showViewModal = true;
+    }
+
+    /**
+     * ✅ Close the view modal
+     */
+    public function closeViewModal()
+    {
+        $this->reset([
+            'view_name',
+            'view_code',
+            'view_address',
+            'view_contact_person',
+            'view_contact_num',
+            'view_email',
+            'view_tin_num',
+            'view_status',
+            'view_categories',
+            'showViewModal',
+        ]);
     }
 
     /**
@@ -76,8 +110,6 @@ class Index extends Component
                 'edit_email' => 'required|email|unique:suppliers,email,' . $this->selectedItemId,
                 'edit_tin_num' => 'nullable|string|max:255',
                 'edit_status' => 'required|string',
-                'edit_categories' => 'required|array|min:1',
-                'edit_categories.*' => 'integer|exists:categories,id',
             ];
         }
 
@@ -90,8 +122,6 @@ class Index extends Component
             'contact_num' => ['required', 'regex:/^[0-9+\-\(\)\s]+$/'],
             'email' => 'required|email|unique:suppliers,email',
             'tin_num' => 'nullable|string|max:255',
-            'categories' => 'required|array|min:1',
-            'categories.*' => 'integer|exists:categories,id',
         ];
     }
 
@@ -113,7 +143,6 @@ class Index extends Component
             'tin_num' => $this->tin_num ?? '',
             'status' => 'pending',
             'is_active' => true,
-            'categories' => $this->categories,
         ]);
 
         session()->flash('message', 'Supplier Profile Added Successfully.');
@@ -125,7 +154,6 @@ class Index extends Component
             'contact_num',
             'email',
             'tin_num',
-            'categories',
         ]);
     }
 
@@ -168,7 +196,6 @@ class Index extends Component
             'email' => $this->edit_email,
             'tin_num' => $this->edit_tin_num,
             'status' => $this->edit_status,
-            'categories' => $this->edit_categories,
         ]);
 
         $this->showEditModal = false;
@@ -207,6 +234,27 @@ class Index extends Component
         ]);
     }
 
+    public function getAllCategoriesForSupplier($supplier)
+    {
+        // Get supplier's direct categories
+        $supplierCategories = $supplier->categories ?? [];
+        
+        // Get categories from supplier's products
+        $productCategories = $supplier->products()
+            ->whereNotNull('category_id')
+            ->distinct()
+            ->pluck('category_id')
+            ->toArray();
+        
+        // Merge both arrays and remove duplicates
+        $allCategoryIds = array_unique(array_merge($supplierCategories, $productCategories));
+        
+        // Get category names
+        $categories = \App\Models\Category::whereIn('id', $allCategoryIds)->get();
+        
+        return $categories;
+    }
+
     public function render()
     {
         $search = trim($this->search);
@@ -224,6 +272,13 @@ class Index extends Component
                     ->orWhereRaw('LOWER(JSON_EXTRACT(categories, "$")) LIKE ?', ['%' . strtolower($search) . '%']);
             });
         })
+        ->with(['products' => function($query) {
+            $query->select('id', 'supplier_id', 'category_id')
+                  ->whereNotNull('category_id');
+        }])
+        ->withCount(['products' => function ($query) {
+            $query->active();
+        }])
         ->latest()
         ->paginate($this->perPage);
 

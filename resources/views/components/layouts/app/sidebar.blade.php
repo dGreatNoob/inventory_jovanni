@@ -282,7 +282,7 @@
                     </flux:navlist.item>
                 </flux:navlist.group>--}}
 
-                {{-- @role(['Super Admin', 'Admin'])
+                @role(['Super Admin', 'Admin'])
                     <flux:navlist.group expandable
                         :expanded="request()->routeIs('user.index') || request()->routeIs('roles.index')"
                         :heading="__('User Management')" class="lg:grid">
@@ -295,7 +295,7 @@
                             {{ __('Roles & Permissions') }}
                         </flux:navlist.item>
                     </flux:navlist.group>
-                @endrole--}}
+                @endrole
 
                 {{-- Activity Logs moved to top level for easier access --}}
                 {{--<flux:navlist.item icon="clipboard-document-list" href="{{ route('activity.logs') }}"

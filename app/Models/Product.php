@@ -144,4 +144,9 @@ class Product extends Model
         if ($this->cost == 0) return 0;
         return (($this->price - $this->cost) / $this->cost) * 100;
     }
+
+    public function getStatusAttribute(): string
+    {
+        return $this->disabled ? 'inactive' : 'active';
+    }
 }

@@ -22,6 +22,7 @@ use App\Livewire\Pages\PaperRollWarehouse\Profile\Index as PRWProfile;
 use App\Livewire\Pages\PaperRollWarehouse\PurchaseOrder\ViewItem as PRWPurchaseOrderViewItem;
 
 use App\Livewire\Pages\SupplierManagement\Profile\Index as SupplierProfile;
+use App\Livewire\Pages\SupplierManagement\Profile\View as SupplierProfileView;
 use App\Livewire\Pages\Customer\Index as CustomerProfile;
 use App\Livewire\Pages\Agent\Index as AgentProfile;
 use App\Livewire\Pages\Branch\Index as BranchProfile;
@@ -85,6 +86,9 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/suppliermanagement/profile', SupplierProfile::class)
         ->name('supplier.profile');
+        
+    Route::get('/suppliermanagement/profile/{id}', SupplierProfileView::class)
+        ->name('supplier.view');
 
     Route::get('/customermanagement/profile', CustomerProfile::class)
         ->name('customer.profile');

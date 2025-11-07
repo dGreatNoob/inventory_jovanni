@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\DB;
 class Warehouse extends Component
 {
     public $batchAllocations = [];
+    public $openBatches = []; // Track which batches are open/closed
     public $selectedBatch = null;
     public $showCreateBatchModal = false;
     public $showAddBranchesModal = false;
@@ -51,6 +52,13 @@ class Warehouse extends Component
             'branchAllocations.branch',
             'branchAllocations.items.product'
         ])->orderBy('created_at', 'desc')->get();
+        
+        // Initialize open states for all batches (default to closed)
+        foreach ($this->batchAllocations as $batch) {
+            if (!isset($this->openBatches[$batch->id])) {
+                $this->openBatches[$batch->id] = false; // Default to closed
+            }
+        }
     }
 
     public function generateRefNo()
@@ -227,15 +235,51 @@ class Warehouse extends Component
             }
         }
 
-        // Update batch status
-        $batch->update(['status' => 'dispatched']);
+        DB::beginTransaction();
+        try {
+            // Update batch status
+            $batch->update(['status' => 'dispatched']);
 
-        session()->flash('message', 'Batch dispatched successfully and sales allocations have been generated.');
-        $this->loadBatchAllocations();
+            // Create sales receipts for each branch
+            foreach ($batch->branchAllocations as $branchAllocation) {
+                // Create sales receipt
+                $salesReceipt = \App\Models\SalesReceipt::create([
+                    'batch_allocation_id' => $batch->id,
+                    'branch_id' => $branchAllocation->branch_id,
+                    'status' => 'pending',
+                ]);
+
+                // Create sales receipt items
+                foreach ($branchAllocation->items as $item) {
+                    \App\Models\SalesReceiptItem::create([
+                        'sales_receipt_id' => $salesReceipt->id,
+                        'product_id' => $item->product_id,
+                        'allocated_qty' => $item->quantity,
+                        'received_qty' => 0,
+                        'damaged_qty' => 0,
+                        'missing_qty' => 0,
+                        'sold_qty' => 0,
+                        'status' => 'pending',
+                    ]);
+                }
+            }
+
+            DB::commit();
+            session()->flash('message', 'Batch dispatched successfully and sales allocations have been generated.');
+            $this->loadBatchAllocations();
+        } catch (\Exception $e) {
+            DB::rollback();
+            session()->flash('error', 'Failed to dispatch batch: ' . $e->getMessage());
+        }
     }
 
     public function render()
     {
         return view('livewire.pages.allocation.warehouse');
+    }
+
+    public function toggleBatch($batchId)
+    {
+        $this->openBatches[$batchId] = !$this->openBatches[$batchId];
     }
 }

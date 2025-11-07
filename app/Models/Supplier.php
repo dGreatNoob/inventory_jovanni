@@ -55,9 +55,14 @@ class Supplier extends Model
     ];
 
     // Relationships
-    public function products(): HasMany
+    public function products()
     {
         return $this->hasMany(Product::class);
+    }
+
+    public function purchaseOrders()
+    {
+        return $this->hasMany(PurchaseOrder::class, 'supplier_id');
     }
 
     // Scopes
@@ -133,4 +138,5 @@ class Supplier extends Model
                 return "Name: {$name}<br>Address: {$address}<br>Contact: {$contact}<br>TIN: {$tin}";
             });
     }
+    
 }

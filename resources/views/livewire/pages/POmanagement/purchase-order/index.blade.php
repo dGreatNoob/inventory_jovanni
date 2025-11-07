@@ -15,16 +15,6 @@
                         Purchase Orders
                     </button>
                 </li>
-                <li class="mr-2" role="presentation">
-                    <button wire:click="$set('activeTab', 'analytics')" 
-                        class="inline-block p-4 border-b-2 rounded-t-lg {{ $activeTab === 'analytics' ? 'text-blue-600 border-blue-600 dark:text-blue-500 dark:border-blue-500' : 'border-transparent hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300' }}" 
-                        type="button" role="tab">
-                        <svg class="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                        </svg>
-                        Reports & Analytics
-                    </button>
-                </li>
             </ul>
         </div>
 

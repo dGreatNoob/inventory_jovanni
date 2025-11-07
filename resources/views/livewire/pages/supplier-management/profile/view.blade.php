@@ -31,7 +31,7 @@
                             <div class="ml-5 w-0 flex-1">
                                 <dl>
                                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Total Orders</dt>
-                                    <dd class="text-lg font-medium text-gray-900 dark:text-white">25</dd>
+                                    <dd class="text-lg font-medium text-gray-900 dark:text-white">{{ $totalOrders }}</dd>
                                 </dl>
                             </div>
                         </div>
@@ -51,7 +51,7 @@
                             <div class="ml-5 w-0 flex-1">
                                 <dl>
                                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Total Spent</dt>
-                                    <dd class="text-lg font-medium text-gray-900 dark:text-white">₱ 45,250.00</dd>
+                                    <dd class="text-lg font-medium text-gray-900 dark:text-white">₱{{ number_format($totalSpent, 2) }}</dd>
                                 </dl>
                             </div>
                         </div>
@@ -82,14 +82,14 @@
                     <div class="p-5">
                         <div class="flex items-center">
                             <div class="flex-shrink-0">
-                                <svg class="w-[28px] h-[28px] text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                                <svg class="w-[28px] h-[28px] text-{{ $deliveryPerformanceColor }}-600 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
                                     <path fill-rule="evenodd" d="M2.586 4.586A2 2 0 0 1 4 4h8a2 2 0 0 1 2 2h5a1 1 0 0 1 .894.553l2 4c.07.139.106.292.106.447v4a1 1 0 0 1-1 1h-.535a3.5 3.5 0 1 1-6.93 0h-3.07a3.5 3.5 0 1 1-6.93 0H3a1 1 0 0 1-1-1V6a2 2 0 0 1 .586-1.414ZM18.208 15.61a1.497 1.497 0 0 0-2.416 0 1.5 1.5 0 1 0 2.416 0Zm-10 0a1.498 1.498 0 0 0-2.416 0 1.5 1.5 0 1 0 2.416 0Zm5.79-7.612v2.02h5.396l-1-2.02h-4.396ZM9 8.667a1 1 0 1 0-2 0V10a1 1 0 0 0 .293.707l1.5 1.5a1 1 0 0 0 1.414-1.414L9 9.586v-.92Z" clip-rule="evenodd"/>
                                 </svg>
                             </div>
                             <div class="ml-5 w-0 flex-1">
                                 <dl>
                                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Delivery Performance</dt>
-                                    <dd class="text-lg font-medium text-gray-900 dark:text-white">95%</dd>
+                                    <dd class="text-lg font-medium text-gray-900 dark:text-white">{{ number_format($deliveryPerformance, 1) }}%</dd>
                                 </dl>
                             </div>
                         </div>
@@ -200,21 +200,168 @@
                 </section>
         </x-collapsible-card>
 
-        <x-collapsible-card title="Recent Purchase Order" open="false" size="full">
+        <x-collapsible-card title="Recent Purchase Orders" open="false" size="full">
             <div class="overflow-x-auto">
-                <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                    <thead class="text-sm text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-                        <tr>
-                            <th scope="col" class="px-6 py-3">PO Number</th>
-                            <th scope="col" class="px-6 py-3">Status</th>
-                            <th scope="col" class="px-6 py-3">Total Price</th>
-                            <th scope="col" class="px-6 py-3">Order Date</th>
-                            <th scope="col" class="px-6 py-3">Delivery Date</th>
-                            <th scope="col" class="px-6 py-3">Variance</th>
-                            <th scope="col" class="px-6 py-3">Action</th>
-                        </tr>
-                    </thead>
-                </table>
+                @if($purchaseOrders && $purchaseOrders->count() > 0)
+                    <table class="w-full text-sm text-left rtl:text-right text-zinc-500 dark:text-zinc-400">
+                        <thead class="text-xs text-zinc-700 uppercase bg-zinc-50 dark:bg-zinc-700 dark:text-zinc-400">
+                            <tr>
+                                <th scope="col" class="px-6 py-3">PO Number</th>
+                                <th scope="col" class="px-6 py-3">Status</th>
+                                <th scope="col" class="px-6 py-3">Total Price</th>
+                                <th scope="col" class="px-6 py-3">Order Date</th>
+                                <th scope="col" class="px-6 py-3">
+                                    <div class="flex flex-col">
+                                        <span>Delivery Date</span>
+                                        <span class="text-[10px] font-normal text-zinc-500 dark:text-zinc-400 normal-case">(Actual/Expected)</span>
+                                    </div>
+                                </th>
+                                <th scope="col" class="px-6 py-3">Variance</th>
+                                <th scope="col" class="px-6 py-3">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($purchaseOrders as $purchaseOrder)
+                                @php
+                                    // ✅ Calculate variance (Total Delivered vs Expected)
+                                    $totalExpected = (float) $purchaseOrder->productOrders->sum(function($order) {
+                                        return $order->expected_qty ?? $order->quantity;
+                                    });
+                                    $totalReceived = (float) $purchaseOrder->productOrders->sum('received_quantity');
+                                    $totalDestroyed = (float) ($purchaseOrder->productOrders->sum('destroyed_qty') ?? 0);
+                                    
+                                    // ✅ Total Delivered = Good + Damaged
+                                    $totalDelivered = $totalReceived + $totalDestroyed;
+                                    
+                                    // ✅ Variance = Total Delivered - Expected
+                                    $variance = $totalDelivered - $totalExpected;
+                                    $variancePercentage = $totalExpected > 0 ? (($variance / $totalExpected) * 100) : 0;
+                                    
+                                    // Get latest delivery date
+                                    $latestDelivery = $purchaseOrder->deliveries()->latest('delivery_date')->first();
+                                    $actualDeliveryDate = $latestDelivery ? $latestDelivery->delivery_date : null;
+                                @endphp
+                                
+                                <tr class="bg-white border-b dark:bg-zinc-800 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-700/50 transition-colors">
+                                    <!-- PO Number -->
+                                    <td class="px-6 py-4 font-medium text-zinc-900 whitespace-nowrap dark:text-white">
+                                        <span class="font-mono text-sm font-semibold text-blue-600 dark:text-blue-400">
+                                            {{ $purchaseOrder->po_num }}
+                                        </span>
+                                    </td>
+                                    
+                                    <!-- Status -->
+                                    <td class="px-6 py-4">
+                                        <span class="px-2 py-1 text-xs font-medium rounded-full 
+                                            @if($purchaseOrder->status->value === 'approved') bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300
+                                            @elseif($purchaseOrder->status->value === 'pending') bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300
+                                            @elseif($purchaseOrder->status->value === 'to_receive') bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300
+                                            @elseif($purchaseOrder->status->value === 'received') bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300
+                                            @elseif($purchaseOrder->status->value === 'cancelled') bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300
+                                            @else bg-zinc-100 text-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 @endif">
+                                            {{ ucfirst(str_replace('_', ' ', $purchaseOrder->status->value)) }}
+                                        </span>
+                                    </td>
+                                    
+                                    <!-- Total Price -->
+                                    <td class="px-6 py-4">
+                                        <span class="font-medium text-zinc-900 dark:text-white">
+                                            ₱{{ number_format($purchaseOrder->total_price ?? 0, 2) }}
+                                        </span>
+                                    </td>
+                                    
+                                    <!-- Order Date -->
+                                    <td class="px-6 py-4">
+                                        <span class="text-zinc-600 dark:text-zinc-400">
+                                            {{ $purchaseOrder->order_date ? $purchaseOrder->order_date->format('M d, Y') : 'N/A' }}
+                                        </span>
+                                    </td>
+                                    
+                                    <!-- Delivery Date (Actual/Expected) -->
+                                    <td class="px-6 py-4">
+                                        @if($actualDeliveryDate)
+                                            <div class="flex flex-col">
+                                                <span class="text-sm font-medium text-zinc-900 dark:text-white">
+                                                    {{ \Carbon\Carbon::parse($actualDeliveryDate)->format('M d, Y') }}
+                                                </span>
+                                                @if($purchaseOrder->status->value === 'received')
+                                                    <span class="text-xs text-green-600 dark:text-green-400">
+                                                        ✓ Delivered
+                                                    </span>
+                                                @else
+                                                    <span class="text-xs text-blue-600 dark:text-blue-400">
+                                                        Partial Delivery
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        @elseif($purchaseOrder->expected_delivery_date)
+                                            <div class="flex flex-col">
+                                                <span class="text-sm text-zinc-500 dark:text-zinc-400">
+                                                    {{ $purchaseOrder->expected_delivery_date->format('M d, Y') }}
+                                                </span>
+                                                <span class="text-xs text-zinc-400 dark:text-zinc-500">
+                                                    Expected
+                                                </span>
+                                            </div>
+                                        @else
+                                            <span class="text-sm text-zinc-400 dark:text-zinc-500">N/A</span>
+                                        @endif
+                                    </td>
+                                    
+                                    <!-- Variance (Total Delivered vs Expected) -->
+                                    <td class="px-6 py-4">
+                                        @if($totalExpected > 0)
+                                            <div class="flex flex-col items-start">
+                                                <span class="text-sm font-semibold {{ $variance < 0 ? 'text-red-600 dark:text-red-400' : ($variance > 0 ? 'text-green-600 dark:text-green-400' : 'text-zinc-500 dark:text-zinc-400') }}">
+                                                    {{ $variance > 0 ? '+' : '' }}{{ number_format($variance, 0) }} units
+                                                </span>
+                                                <span class="text-xs font-medium {{ $variance < 0 ? 'text-red-500 dark:text-red-400' : ($variance > 0 ? 'text-green-500 dark:text-green-400' : 'text-zinc-400') }}">
+                                                    ({{ $variance > 0 ? '+' : '' }}{{ number_format($variancePercentage, 1) }}%)
+                                                </span>
+                                            </div>
+                                        @else
+                                            <span class="text-xs text-zinc-400 dark:text-zinc-500">No items</span>
+                                        @endif
+                                    </td>
+                                    
+                                    <!-- Action -->
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center gap-1">
+                                            <!-- View Button -->
+                                            <a href="{{ route('pomanagement.purchaseorder.show', ['Id' => $purchaseOrder->id]) }}"
+                                            class="inline-flex items-center justify-center w-8 h-8 text-zinc-600 hover:text-blue-600 hover:bg-blue-50 dark:text-zinc-400 dark:hover:text-blue-400 dark:hover:bg-blue-900/20 rounded-lg transition-all duration-200"
+                                            title="View Purchase Order">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                                </svg>
+                                            </a>
+                                            
+                                            <!-- Start Receiving Button (if TO_RECEIVE status) -->
+                                            @if($purchaseOrder->status->value === 'to_receive')
+                                                <a href="{{ route('warehousestaff.stockin') }}?po={{ $purchaseOrder->po_num }}"
+                                                target="_blank"
+                                                class="inline-flex items-center justify-center w-8 h-8 text-zinc-600 hover:text-emerald-600 hover:bg-emerald-50 dark:text-zinc-400 dark:hover:text-emerald-400 dark:hover:bg-emerald-900/20 rounded-lg transition-all duration-200"
+                                                title="Start Receiving Items">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M9 9l6-3"></path>
+                                                    </svg>
+                                                </a>
+                                            @endif
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                @else
+                    <div class="p-6 text-center text-zinc-500 dark:text-zinc-400">
+                        <svg class="mx-auto h-12 w-12 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <p class="mt-2">No purchase orders found.</p>
+                    </div>
+                @endif
             </div>
         </x-collapsible-card>
 

@@ -153,6 +153,15 @@ class Sales extends Component
                 ]);
             }
 
+            // Update corresponding BranchAllocation status to 'received'
+            $branchAllocation = BranchAllocation::where('batch_allocation_id', $this->selectedReceipt->batch_allocation_id)
+                ->where('branch_id', $this->selectedReceipt->branch_id)
+                ->first();
+
+            if ($branchAllocation) {
+                $branchAllocation->update(['status' => 'received']);
+            }
+
             DB::commit();
             session()->flash('message', 'Receipt confirmed successfully.');
             $this->closeConfirmModal();

@@ -5,10 +5,13 @@ namespace App\Livewire\Pages\Warehousestaff\StockIn;
 use App\Models\PurchaseOrder;
 use App\Models\ProductOrder;
 use App\Models\Product;
+use App\Models\ProductInventory;
 use Livewire\Component;
 use Livewire\Attributes\On;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+use App\Enums\PurchaseOrderStatus;
 
 class Index extends Component
 {
@@ -24,7 +27,12 @@ class Index extends Component
     public $itemRemarks = [];
     public $generalRemarks = '';
     public $receivedQuantities = [];
+    public $destroyedQuantities = []; // Added for destroyed items
+    public $batch_numbers = []; // Added for batch numbers
     public $scannedPONumber = '';
+
+    // Delivery Information
+    public $drNumber = ''; // Added DR Number
 
     // Manual PO input properties
     public $showManualInput = false;
@@ -61,13 +69,17 @@ class Index extends Component
         if ($purchaseOrder) {
             Log::info("Found PO: {$purchaseOrder->po_num} for scanned code: {$code}");
 
-            // Accept only approved/to_receive/for_delivery status
-            $validStatuses = ['approved', 'to_receive', 'for_delivery'];
+            // ✅ CORRECT - Accept only approved/to_receive status using enum objects
+            $validStatuses = [
+                \App\Enums\PurchaseOrderStatus::APPROVED,
+                \App\Enums\PurchaseOrderStatus::TO_RECEIVE,
+            ];
+            
             if (!in_array($purchaseOrder->status, $validStatuses)) {
-                Log::info("PO {$purchaseOrder->po_num} has invalid status: {$purchaseOrder->status}");
+                Log::info("PO {$purchaseOrder->po_num} has invalid status: {$purchaseOrder->status->value}");
                 $this->foundPurchaseOrder = null;
                 $this->showResult = true;
-                $this->message = "Purchase Order found, but status is '{$purchaseOrder->status}'. Only APPROVED POs (or those marked 'To Receive' or 'For Delivery') can be processed for Stock In. Please request approval first.";
+                $this->message = "Purchase Order found, but status is '{$purchaseOrder->status->label()}'. Only APPROVED POs (or those marked 'To Receive') can be processed for Stock In. Please request approval first.";
                 $this->messageType = 'error';
                 return;
             }
@@ -94,10 +106,22 @@ class Index extends Component
     {
         if (!$this->foundPurchaseOrder) return;
 
+        // ✅ Generate unique DR number
+        if (empty($this->foundPurchaseOrder->dr_number)) {
+            // Get the next DR number
+            $lastDelivery = \App\Models\PurchaseOrderDelivery::orderBy('id', 'desc')->first();
+            $nextNumber = $lastDelivery ? ($lastDelivery->id + 1) : 1;
+            $this->drNumber = 'DR-' . str_pad($nextNumber, 5, '0', STR_PAD_LEFT); // e.g., DR-00001
+        } else {
+            $this->drNumber = $this->foundPurchaseOrder->dr_number;
+        }
+
         foreach ($this->foundPurchaseOrder->productOrders as $productOrder) {
             $this->itemStatuses[$productOrder->id] = 'good';
             $this->itemRemarks[$productOrder->id] = '';
             $this->receivedQuantities[$productOrder->id] = $productOrder->getRemainingQuantityAttribute();
+            $this->destroyedQuantities[$productOrder->id] = 0;
+            $this->batch_numbers[$productOrder->id] = $productOrder->batch_number ?? '';
         }
     }
 
@@ -113,7 +137,30 @@ class Index extends Component
 
     public function goToStep3()
     {
+        // Validate DR Number before proceeding
+        if (empty(trim($this->drNumber))) {
+            $this->message = 'Delivery Receipt (DR) Number is required';
+            $this->messageType = 'error';
+            return;
+        }
+
+        // Validate that all items have statuses
+        $missingStatuses = [];
+        foreach ($this->foundPurchaseOrder->productOrders as $productOrder) {
+            if (!isset($this->itemStatuses[$productOrder->id]) || empty($this->itemStatuses[$productOrder->id])) {
+                $missingStatuses[] = $productOrder->product->name;
+            }
+        }
+        
+        if (!empty($missingStatuses)) {
+            $this->message = "Please set status for all items: " . implode(', ', $missingStatuses);
+            $this->messageType = 'error';
+            return;
+        }
+
         $this->currentStep = 2;
+        $this->message = '';
+        $this->messageType = '';
     }
 
     public function goBackToStep2()
@@ -124,97 +171,255 @@ class Index extends Component
     public function submitStockInReport()
     {
         try {
-            // Validate that all items have statuses
-            $missingStatuses = [];
-            foreach ($this->foundPurchaseOrder->productOrders as $productOrder) {
-                if (!isset($this->itemStatuses[$productOrder->id]) || empty($this->itemStatuses[$productOrder->id])) {
-                    $missingStatuses[] = $productOrder->product->name;
-                }
-            }
-            if (!empty($missingStatuses)) {
-                $this->message = "Please set status for all items: " . implode(', ', $missingStatuses);
+            DB::beginTransaction();
+
+            $allItemsFullyReceived = true;
+            $anyItemsReceived = false;
+
+            // Validate DR number before processing
+            if (empty(trim($this->drNumber))) {
+                DB::rollBack();
+                $this->message = "Delivery Receipt (DR #) number is required.";
                 $this->messageType = 'error';
                 return;
             }
 
+            // Check if DR number is already used (prevent duplicate DR numbers)
+            $drExists = \App\Models\PurchaseOrderDelivery::where('dr_number', strtoupper(trim($this->drNumber)))->exists();
+            
+            if ($drExists) {
+                DB::rollBack();
+                $this->message = "Delivery Receipt number '{$this->drNumber}' is already used. Please enter a unique DR number.";
+                $this->messageType = 'error';
+                return;
+            }
+
+            // Process each product order
             foreach ($this->foundPurchaseOrder->productOrders as $productOrder) {
-                $itemCondition = $this->itemStatuses[$productOrder->id];
+                $itemCondition = $this->itemStatuses[$productOrder->id] ?? 'good';
                 $remarks = $this->itemRemarks[$productOrder->id] ?? '';
+                $batchNumber = $this->batch_numbers[$productOrder->id] ?? '';
                 $receiveQty = (float) ($this->receivedQuantities[$productOrder->id] ?? 0);
+                $destroyedQty = (float) ($this->destroyedQuantities[$productOrder->id] ?? 0);
 
-                // Only process if receiveQty > 0
-                if ($receiveQty > 0 && $productOrder->getRemainingQuantityAttribute() > 0) {
-                    $actualReceive = min($receiveQty, $productOrder->getRemainingQuantityAttribute());
+                // ✅ receiveQty = GOOD items only (go to inventory)
+                // ✅ destroyedQty = DAMAGED items (tracked but NOT in inventory)
+                // ✅ totalDelivered = GOOD + DAMAGED (for PO completion tracking)
+                $actualReceiveQty = $receiveQty; // Good items only
+                $totalDelivered = $receiveQty + $destroyedQty;
+                
+                // Track if this product order needs saving
+                $needsSaving = false;
+                
+                // ✅ SAVE DESTROYED QUANTITY (if any)
+                if ($destroyedQty > 0) {
+                    $productOrder->destroyed_qty = ($productOrder->destroyed_qty ?? 0) + $destroyedQty;
+                    $needsSaving = true;
+                    Log::info("💥 Destroyed items for product {$productOrder->product->sku}: {$destroyedQty} (Total destroyed: {$productOrder->destroyed_qty})");
+                }
+                
+                // ✅ PROCESS GOOD ITEMS (add to inventory)
+                if ($actualReceiveQty > 0 && $productOrder->getRemainingQuantityAttribute() > 0) {
+                    $anyItemsReceived = true;
+                    $actualReceive = min($actualReceiveQty, $productOrder->getRemainingQuantityAttribute());
+                    
+                    // Update received quantity with GOOD items only
                     $productOrder->received_quantity += $actualReceive;
-                    $productOrder->status = ($productOrder->isFullyReceived()) ? 'received' : 'partial';
+                    $needsSaving = true;
+                    
+                    // ✅ Check status based on TOTAL delivered (good + destroyed)
+                    $totalReceivedSoFar = $productOrder->received_quantity + ($productOrder->destroyed_qty ?? 0);
+                    
+                    if ($totalReceivedSoFar >= $productOrder->quantity) {
+                        $productOrder->status = 'received';
+                    } else {
+                        $productOrder->status = 'partially_received';
+                    }
+                    
                     $productOrder->notes = $remarks;
-                    $productOrder->save();
+                    
+                    if (!empty($batchNumber)) {
+                        $productOrder->batch_number = $batchNumber;
+                    }
 
-                    // Update product inventory (do NOT update products.quantity, use ProductInventory)
+                    // ✅ UPDATE INVENTORY with GOOD items only
                     $product = $productOrder->product;
-
-                    // Find or create a ProductInventory record for this product
-                    $inventory = \App\Models\ProductInventory::firstOrNew(['product_id' => $product->id]);
+                    $inventory = ProductInventory::firstOrNew(['product_id' => $product->id]);
                     $oldQty = $inventory->quantity ?? 0;
-                    $inventory->quantity = $oldQty + $actualReceive;
+                    $inventory->quantity = $oldQty + $actualReceive; // Only good items!
                     $inventory->save();
 
-                    // Optional: Log activity for stock-in event
+                    Log::info("📦 Inventory updated for {$product->sku}: {$oldQty} → " . ($oldQty + $actualReceive) . " (+{$actualReceive} good items)");
+
+                    // ✅ CREATE BATCH with GOOD items only
+                    if (!empty($batchNumber)) {
+                        try {
+                            $batchNotes = "Total Delivered: {$totalDelivered} units";
+                            $batchNotes .= "\n✅ Good Items: {$actualReceive} units (Available)";
+                            if ($destroyedQty > 0) {
+                                $batchNotes .= "\n💥 Destroyed: {$destroyedQty} units (Damaged on arrival)";
+                            }
+                            $batchNotes .= "\nDR: {$this->drNumber}";
+                            $batchNotes .= "\nReceived by: " . auth()->user()->name;
+                            $batchNotes .= "\nPO: {$this->foundPurchaseOrder->po_num}";
+                            $batchNotes .= "\nDate: " . now()->format('Y-m-d H:i:s');
+                            
+                            $newBatch = \App\Models\ProductBatch::create([
+                                'product_id' => $product->id,
+                                'batch_number' => $batchNumber,
+                                'initial_qty' => $totalDelivered, // ✅ Total delivered (good + destroyed)
+                                'current_qty' => $actualReceive,   // ✅ Only good items (available stock)
+                                'received_date' => now()->toDateString(),
+                                'received_by' => auth()->id(),
+                                'location' => 'Warehouse',
+                                'notes' => $batchNotes,
+                            ]);
+                            
+                            Log::info("✅ Created batch {$batchNumber} (ID: {$newBatch->id}) | Initial: {$totalDelivered} (delivered), Current: {$actualReceive} (good), Destroyed: {$destroyedQty}");
+                        } catch (\Exception $e) {
+                            Log::error("❌ Failed to create batch for {$product->sku}: " . $e->getMessage());
+                        }
+                    }
+
+                    // ✅ LOG STOCK-IN ACTIVITY
                     if ($actualReceive > 0) {
+                        $logMessage = "Stock-in {$product->name}: {$oldQty} → " . ($oldQty + $actualReceive);
+                        if ($destroyedQty > 0) {
+                            $logMessage .= " (Good: {$actualReceive}, Destroyed: {$destroyedQty})";
+                        }
+                        
                         activity('Stock-in')
                             ->causedBy(auth()->user())
                             ->performedOn($product)
                             ->withProperties([
                                 'sku' => $product->sku,
-                                'qty_change' => $actualReceive,
-                                'from' => $oldQty,
-                                'to' => $oldQty + $actualReceive,
+                                'good_qty' => $actualReceive,
+                                'destroyed_qty' => $destroyedQty,
+                                'total_delivered' => $totalDelivered,
+                                'inventory_from' => $oldQty,
+                                'inventory_to' => $oldQty + $actualReceive,
+                                'dr_number' => $this->drNumber,
+                                'batch_number' => $batchNumber,
                             ])
-                            ->log('Stock-in ' . $product->name . ': ' . $oldQty . ' → ' . ($oldQty + $actualReceive));
+                            ->log($logMessage);
                     }
                 }
-            }
 
-            // Update PO status based on overall status
-            $hasDestroyed = false;
-            $hasIncomplete = false;
-            foreach ($this->itemStatuses as $status) {
-                if ($status === 'destroyed') $hasDestroyed = true;
-                if ($status === 'incomplete') $hasIncomplete = true;
-            }
+                // ✅ SAVE PRODUCT ORDER
+                if ($needsSaving) {
+                    $productOrder->save();
+                    Log::info("✅ Saved product order {$productOrder->id}: received={$productOrder->received_quantity}, destroyed={$productOrder->destroyed_qty}, total=" . ($productOrder->received_quantity + ($productOrder->destroyed_qty ?? 0)));
+                }
 
-            $allReceived = $this->foundPurchaseOrder->productOrders->every(function ($order) {
-                return $order->isFullyReceived();
-            });
+                // ✅ CHECK IF FULLY RECEIVED (good + destroyed)
+                $totalReceivedSoFar = $productOrder->received_quantity + ($productOrder->destroyed_qty ?? 0);
+                if ($totalReceivedSoFar < $productOrder->quantity) {
+                    $allItemsFullyReceived = false;
+                }
 
-            $poStatus = $allReceived ? 'received' : 'partial';
-            if ($hasDestroyed) $poStatus = 'damaged';
-            elseif ($hasIncomplete) $poStatus = 'incomplete';
-
-            $this->foundPurchaseOrder->status = $poStatus;
-            // Set date received if fully received
-            if ($poStatus === 'received') {
-                $this->foundPurchaseOrder->del_on = now();
-
-                // Log the receiving event in approval logs
-                if (method_exists($this->foundPurchaseOrder, 'approvalLogs')) {
-                    $this->foundPurchaseOrder->approvalLogs()->create([
-                        'user_id' => auth()->id(),
-                        'action' => 'received',
-                        'remarks' => 'Stock-in completed via QR scan or manual PO input',
-                    ]);
+                // ✅ LOG DESTROYED ITEMS
+                if ($destroyedQty > 0) {
+                    activity('Stock-in Destroyed')
+                        ->causedBy(auth()->user())
+                        ->performedOn($productOrder->product)
+                        ->withProperties([
+                            'sku' => $productOrder->product->sku,
+                            'destroyed_qty' => $destroyedQty,
+                            'dr_number' => $this->drNumber,
+                            'remarks' => $remarks,
+                            'product_order_id' => $productOrder->id,
+                        ])
+                        ->log("Destroyed items for {$productOrder->product->name}: {$destroyedQty} units (NOT added to inventory)");
                 }
             }
+
+            // ✅ UPDATE PO STATUS
+            if ($allItemsFullyReceived) {
+                $this->foundPurchaseOrder->status = \App\Enums\PurchaseOrderStatus::RECEIVED;
+                $this->foundPurchaseOrder->del_on = now();
+            } else {
+                $this->foundPurchaseOrder->status = \App\Enums\PurchaseOrderStatus::TO_RECEIVE;
+            }
+            
+            // Save DR number to PO
+            $this->foundPurchaseOrder->dr_number = $this->drNumber;
             $this->foundPurchaseOrder->save();
+
+            // ✅ CREATE DELIVERY RECORD
+            if ($anyItemsReceived) {
+                try {
+                    $receivedItems = [];
+                    $receivedTotal = 0;
+                    $destroyedTotal = 0;
+                    
+                    foreach ($this->foundPurchaseOrder->productOrders as $productOrder) {
+                        $receiveQty = (float) ($this->receivedQuantities[$productOrder->id] ?? 0);
+                        $destroyedQty = (float) ($this->destroyedQuantities[$productOrder->id] ?? 0);
+                        
+                        if ($receiveQty > 0) {
+                            $batchInfo = !empty($this->batch_numbers[$productOrder->id]) ? " (Batch: {$this->batch_numbers[$productOrder->id]})" : "";
+                            $receivedItems[] = "✅ " . $productOrder->product->name . ': ' . $receiveQty . ' units (Good)' . $batchInfo;
+                            $receivedTotal += $receiveQty;
+                        }
+                        
+                        if ($destroyedQty > 0) {
+                            $receivedItems[] = "💥 " . $productOrder->product->name . ': ' . $destroyedQty . ' units (DESTROYED)';
+                            $destroyedTotal += $destroyedQty;
+                        }
+                    }
+                    
+                    $deliveryNotes = $this->generalRemarks ?: 'Received via stock-in process';
+                    if (!empty($receivedItems)) {
+                        $deliveryNotes .= "\n\n📦 Delivery Details:\n" . implode("\n", $receivedItems);
+                    }
+                    $deliveryNotes .= "\n\n✅ Total Good (Added to Inventory): {$receivedTotal} units";
+                    if ($destroyedTotal > 0) {
+                        $deliveryNotes .= "\n💥 Total Destroyed (NOT in Inventory): {$destroyedTotal} units";
+                    }
+                    $deliveryNotes .= "\n📊 Total Delivered: " . ($receivedTotal + $destroyedTotal) . " units";
+                    $deliveryNotes .= "\n👤 Received by: " . auth()->user()->name;
+                    
+                    // Create delivery record
+                    DB::table('purchase_order_deliveries')->insert([
+                        'purchase_order_id' => $this->foundPurchaseOrder->id,
+                        'dr_number' => strtoupper(trim($this->drNumber)),
+                        'delivery_date' => now()->toDateString(),
+                        'notes' => $deliveryNotes,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                    
+                    Log::info("✅ Created delivery record for PO: {$this->foundPurchaseOrder->po_num} | DR: {$this->drNumber} | Good: {$receivedTotal} | Destroyed: {$destroyedTotal} | Total: " . ($receivedTotal + $destroyedTotal));
+                } catch (\Exception $e) {
+                    DB::rollBack();
+                    Log::error("❌ Failed to create delivery record: " . $e->getMessage());
+                    $this->message = "Failed to create delivery record: " . $e->getMessage();
+                    $this->messageType = 'error';
+                    return;
+                }
+            }
+
+            // Log approval if fully received
+            if ($allItemsFullyReceived && method_exists($this->foundPurchaseOrder, 'approvalLogs')) {
+                $this->foundPurchaseOrder->approvalLogs()->create([
+                    'user_id' => auth()->id(),
+                    'action' => 'received',
+                    'remarks' => 'Stock-in completed. DR: ' . $this->drNumber,
+                ]);
+            }
+
+            DB::commit();
 
             $this->message = "Stock-in report submitted successfully for PO: {$this->foundPurchaseOrder->po_num}";
             $this->messageType = 'success';
-
             $this->currentStep = 3;
 
         } catch (\Exception $e) {
+            DB::rollBack();
             $this->message = "Error submitting report: " . $e->getMessage();
             $this->messageType = 'error';
+            Log::error("Stock-in submission error: " . $e->getMessage());
+            Log::error("Stack trace: " . $e->getTraceAsString());
         }
     }
 
@@ -225,8 +430,8 @@ class Index extends Component
         $this->reset([
             'scannedCode', 'foundPurchaseOrder', 'showResult',
             'message', 'messageType', 'itemStatuses', 'itemRemarks', 'generalRemarks',
-            'scannedPONumber', 'receivedQuantities',
-            'showManualInput', 'manualPONumber'
+            'scannedPONumber', 'receivedQuantities', 'destroyedQuantities', 'batch_numbers',
+            'showManualInput', 'manualPONumber', 'drNumber'
         ]);
         Log::info("State reset complete");
     }
@@ -291,7 +496,8 @@ class Index extends Component
             'foundPurchaseOrder' => $this->foundPurchaseOrder ? $this->foundPurchaseOrder->po_num : 'null',
             'scannedCode' => $this->scannedCode,
             'manualPONumber' => $this->manualPONumber,
-            'showManualInput' => $this->showManualInput
+            'showManualInput' => $this->showManualInput,
+            'drNumber' => $this->drNumber
         ];
 
         $this->message = "Debug Info: " . json_encode($debugInfo, JSON_PRETTY_PRINT);

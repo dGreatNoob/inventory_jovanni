@@ -22,7 +22,7 @@ class Index extends Component
     public $deliveringPurchaseOrderId = null;
     public $showDeliverModal = false;
     public $activeTab = 'list';
-    public $viewingLogsForPO = null;  // ✅ Added for approval logs modal
+    public $viewingLogsForPO = null;
     public $viewingQRForPO = null;
 
     protected $queryString = [
@@ -179,12 +179,10 @@ class Index extends Component
     public function render()
     {
         $purchaseOrders = PurchaseOrder::query()
-            // Removed po_type and quotation references
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
                     $q->where('po_num', 'like', '%' . $this->search . '%')
                         ->orWhere('payment_terms', 'like', '%' . $this->search . '%')
-                        // ->orWhere('quotation', 'like', '%' . $this->search . '%') // REMOVED
                         ->orWhereHas('supplier', function ($query) {
                             $query->where('name', 'like', '%' . $this->search . '%');
                         })
@@ -194,9 +192,10 @@ class Index extends Component
                 });
             })
             ->when($this->statusFilter, function ($query) {
+                // ✅ UPDATED: Added 'partially_received' to status filter
                 $query->where('status', $this->statusFilter);
             })
-            ->with(['supplier', 'department', 'orderedByUser', 'approvalLogs'])  // ✅ Added approvalLogs
+            ->with(['supplier', 'department', 'orderedByUser', 'approvalLogs'])
             ->latest()
             ->paginate($this->perPage);
 

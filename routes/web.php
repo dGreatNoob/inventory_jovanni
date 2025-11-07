@@ -67,6 +67,7 @@ use App\Livewire\Pages\POManagement\PurchaseOrder\Create as POManagementPurchase
 use App\Livewire\Pages\POManagement\PurchaseOrder\Edit as POManagementPurchaseOrderEdit;
 use App\Livewire\Pages\POManagement\PurchaseOrder\Show as POManagementPurchaseOrderShow;
 use App\Livewire\Pages\POManagement\PurchaseOrder\ViewItem as POManagementPurchaseOrderViewItem;
+use App\Livewire\Pages\POManagement\PurchaseOrder\PODeliveries;
 
 
 Route::redirect('', '/login')->name('home');
@@ -107,6 +108,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/purchase-order/edit/{Id}', POManagementPurchaseOrderEdit::class)->name('purchaseorder.edit');
         Route::get('/purchase-order/show/{Id}', POManagementPurchaseOrderShow::class)->name('purchaseorder.show');
         Route::get('/purchase-order/view-item/{poId?}', POManagementPurchaseOrderViewItem::class)->name('purchaseorder.viewItem');
+        Route::get('/deliveries', PODeliveries::class)->name('deliveries');
     });
     Route::get('/po-management/purchaseorder/{Id}/qr', [PurchaseOrderQRController::class, 'show'])
         ->name('pomanagement.purchaseorder.qr');
@@ -115,6 +117,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/suppliermanagement/profile', SupplierProfile::class)
         ->name('supplier.profile');
 
+        
     Route::get('/customermanagement/profile', CustomerProfile::class)
         ->name('customer.profile');
 

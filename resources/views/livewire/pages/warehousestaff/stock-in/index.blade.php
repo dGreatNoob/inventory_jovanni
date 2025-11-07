@@ -1,6 +1,4 @@
-
-
-<div class="min-h-[70vh] flex flex-col justify-center items-center py-4">
+<div class="min-h-[70vh] flex flex-col justify-center items-center py-2 sm:py-4 px-2 sm:px-4">
     @php
         $steps = [
             ['label' => 'Scan QR'],
@@ -10,21 +8,21 @@
         ];
     @endphp
     <!-- Stepper Bar -->
-    <div class="w-full max-w-xs mx-auto mb-4 sticky top-0">
-        <div class="flex items-center justify-between bg-zinc-50 dark:bg-zinc-900 rounded-2xl shadow-2xl p-4 border-b border-gray-200 dark:border-zinc-700 z-20">
+    <div class="w-full max-w-sm sm:max-w-md mx-auto mb-3 sticky top-0">
+        <div class="flex items-center justify-between bg-zinc-50 dark:bg-zinc-900 rounded-2xl shadow-2xl p-2 sm:p-4 border-b border-gray-200 dark:border-zinc-700 z-20">
             @foreach($steps as $i => $step)
                 <div class="flex-1 flex flex-col items-center relative">
                     <!-- Step Circle (uniform size, color as indicator) -->
                     @if($currentStep > $i)
-                        <div class="w-9 h-9 flex items-center justify-center rounded-full bg-emerald-500 text-white text-base shadow-md">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                        <div class="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-emerald-500 text-white text-sm sm:text-base shadow-md">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
                         </div>
                     @elseif($currentStep === $i)
-                        <div class="w-9 h-9 flex items-center justify-center rounded-full bg-blue-600 text-white text-base shadow-md">
+                        <div class="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-blue-600 text-white text-sm sm:text-base shadow-md">
                             <span class="font-bold">{{ $i + 1 }}</span>
                         </div>
                     @else
-                        <div class="w-9 h-9 flex items-center justify-center rounded-full bg-gray-300 dark:bg-zinc-700 text-gray-500 dark:text-gray-300 text-base shadow-md">
+                        <div class="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-gray-300 dark:bg-zinc-700 text-gray-500 dark:text-gray-300 text-sm sm:text-base shadow-md">
                             <span class="font-bold">{{ $i + 1 }}</span>
                         </div>
                     @endif
@@ -38,8 +36,8 @@
                         </div>
                     @endif
                     <!-- Step Label -->
-                    <div class="mt-2 text-center">
-                        <div class="text-sm font-bold {{ $currentStep === $i ? 'text-blue-900 dark:text-blue-100' : 'text-gray-700 dark:text-gray-200' }}">
+                    <div class="mt-1 sm:mt-2 text-center">
+                        <div class="text-xs sm:text-sm font-bold {{ $currentStep === $i ? 'text-blue-900 dark:text-blue-100' : 'text-gray-700 dark:text-gray-200' }}">
                             {{ $step['label'] }}
                         </div>
                     </div>
@@ -50,15 +48,16 @@
 
     <!-- Error Status Bar -->
     @if($messageType === 'error' && $message)
-    <div class="w-full max-w-md mx-auto mb-2">
-        <div class="rounded-lg p-3 mb-2 text-sm font-mono shadow border bg-red-100 text-red-800 border-red-300 dark:bg-red-900 dark:text-red-100 dark:border-red-700">
+    <div class="w-full max-w-sm sm:max-w-md mx-auto mb-2 px-2 sm:px-4">
+        <div class="rounded-lg p-2 sm:p-3 mb-2 text-sm font-mono shadow border bg-red-100 text-red-800 border-red-300 dark:bg-red-900 dark:text-red-100 dark:border-red-700">
             <div><strong>Error:</strong> {{ $message }}</div>
         </div>
     </div>
     @endif
 
     <!-- Step 1: Scan QR -->
-@if($currentStep === 0)
+    @if($currentStep === 0)
+        
     <!-- Camera Status Toast -->
     <div id="camera-status-toast" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-sm sm:max-w-md px-4 hidden">
         <div id="camera-status-toast-content" class="flex items-start gap-3 p-4 rounded-xl shadow-xl border bg-blue-50 border-blue-300 text-blue-900 dark:bg-blue-900 dark:border-blue-700 dark:text-blue-100">
@@ -154,13 +153,13 @@
             @endif
         </div>
     </div>
-@endif
+    @endif
 
-    
-
-        <!-- Step 2: Items Review -->
+    <!-- Step 2: Items Review -->
+    <!-- Step 2: Items Review -->
     @if($currentStep === 1 && $foundPurchaseOrder)
     <div class="w-full max-w-md mx-auto space-y-4" wire:init="ensureCorrectPO">
+        
         <!-- Purchase Order Header -->
         <div class="bg-white dark:bg-zinc-800 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-zinc-700">
             <div class="flex items-center justify-between mb-4">
@@ -171,6 +170,7 @@
                     </svg>
                 </button>
             </div>
+            
             <div class="space-y-3">
                 <div class="flex justify-between">
                     <span class="text-sm font-medium text-gray-600 dark:text-gray-400">PO Number:</span>
@@ -195,105 +195,255 @@
             </div>
         </div>
 
+        <!-- Delivery Number Input -->
+        <div class="bg-white dark:bg-zinc-800 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-zinc-700">
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Delivery Information</h3>
+            <div>
+                <label for="delivery-number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    DR # (Delivery Receipt Number): <span class="text-red-500">*</span>
+                </label>
+                <input 
+                    type="text" 
+                    id="delivery-number"
+                    wire:model="drNumber"
+                    class="w-full px-3 py-2 text-sm border {{ empty(trim($drNumber)) && $messageType === 'error' ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500' }} rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-400 dark:focus:border-blue-400"
+                    placeholder="Enter DR # (e.g., DR-2024-001)"
+                    autocomplete="off"
+                    style="text-transform: uppercase;">
+                
+                @if(empty(trim($drNumber)) && $messageType === 'error' && str_contains($message, 'Delivery Receipt'))
+                    <p class="mt-2 text-sm text-red-600 dark:text-red-400">
+                        <svg class="inline w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                        </svg>
+                        {{ $message }}
+                    </p>
+                @endif
+            </div>
+        </div>
+
         <!-- Items Review Section -->
         <div class="bg-white dark:bg-zinc-800 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-zinc-700">
             <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Review Items</h3>
+            
             <div class="space-y-4">
                 @foreach($foundPurchaseOrder->productOrders as $productOrder)
+                @php
+                    $receivedQty = $productOrder->received_quantity ?? 0;
+                    $orderedQty = $productOrder->quantity;
+                    $remainingQty = $productOrder->remaining_quantity;
+                    $isFullyReceived = $receivedQty >= $orderedQty;
+                @endphp
+                
                 <div class="border border-gray-200 dark:border-zinc-600 rounded-xl p-4 space-y-3">
-                    <div class="flex justify-between items-start">
-                        <div class="flex-1">
-                            <h4 class="font-semibold text-gray-900 dark:text-white text-sm">{{ $productOrder->product->name }}</h4>
-                            <p class="text-xs text-gray-600 dark:text-gray-400">SKU: {{ $productOrder->product->sku }}</p>
+                    <!-- Product Name -->
+                    <div>
+                        <div class="font-semibold text-gray-900 dark:text-white text-sm">
+                            {{ $productOrder->product->name }}
                         </div>
-                        <div class="text-right">
-                            <p class="text-sm font-medium text-gray-900 dark:text-white">{{ $productOrder->quantity }} {{ $productOrder->product->uom }}</p>
-                            <p class="text-xs text-gray-600 dark:text-gray-400">Ordered</p>
-                            <p class="text-sm font-medium text-green-600">Received: {{ $productOrder->received_quantity }}</p>
+                        <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                            SKU: {{ $productOrder->product->sku }}
                         </div>
                     </div>
-                    <div class="space-y-2">
-                        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Item Status:</label>
-                        <div class="flex space-x-2">
-                            <label class="flex items-center">
-                                <input type="radio"
-                                    wire:model="itemStatuses.{{ $productOrder->id }}"
-                                    value="good"
-                                    class="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 focus:ring-green-500 dark:focus:ring-green-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
-                                <span class="ml-2 text-xs text-gray-700 dark:text-gray-300">Good</span>
-                            </label>
-                            <label class="flex items-center">
-                                <input type="radio"
-                                    wire:model="itemStatuses.{{ $productOrder->id }}"
-                                    value="incomplete"
-                                    class="w-4 h-4 text-yellow-600 bg-gray-100 border-gray-300 focus:ring-yellow-500 dark:focus:ring-yellow-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
-                                <span class="ml-2 text-xs text-gray-700 dark:text-gray-300">Incomplete</span>
-                            </label>
-                            <label class="flex items-center">
-                                <input type="radio"
-                                    wire:model="itemStatuses.{{ $productOrder->id }}"
-                                    value="destroyed"
-                                    class="w-4 h-4 text-red-600 bg-gray-100 border-gray-300 focus:ring-red-500 dark:focus:ring-red-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
-                                <span class="ml-2 text-xs text-gray-700 dark:text-gray-300">Destroyed</span>
-                            </label>
+
+                    <!-- ✅ Show Existing Batch Number (from PO approval) -->
+                    @if($productOrder->batch_number)
+                    <div class="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3 border border-amber-200 dark:border-amber-700">
+                        <div class="flex items-center gap-2 mb-1">
+                            <svg class="w-4 h-4 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                            </svg>
+                            <span class="text-xs font-medium text-amber-700 dark:text-amber-300">Assigned Batch Number</span>
+                        </div>
+                        <div class="font-mono font-bold text-sm text-amber-900 dark:text-amber-100">
+                            {{ $productOrder->batch_number }}
+                        </div>
+                        <p class="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                            This batch number was assigned during PO approval
+                        </p>
+                    </div>
+                    @else
+                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
+                        <div class="flex items-center gap-2">
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span class="text-xs text-gray-500 dark:text-gray-400 italic">No batch number assigned for this item</span>
                         </div>
                     </div>
+                    @endif
+
+                    <!-- Received Qty input field -->
                     <div class="space-y-2">
-                        <label for="remarks-{{ $productOrder->id }}" class="text-xs font-medium text-gray-700 dark:text-gray-300">Remarks:</label>
-                        <textarea
-                            id="remarks-{{ $productOrder->id }}"
-                            wire:model="itemRemarks.{{ $productOrder->id }}"
-                            rows="2"
-                            class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-400 dark:focus:border-blue-400"
-                            placeholder="Add any comments about this item..."></textarea>
+                        @php
+                            $uomName = $productOrder->product->uom ?? 'Unit';
+                            $remainingUomDisplay = $remainingQty == 1 ? $uomName : \Illuminate\Support\Str::plural($uomName);
+                            $orderedUomDisplay = $orderedQty == 1 ? $uomName : \Illuminate\Support\Str::plural($uomName);
+                            $receivedUomDisplay = $receivedQty == 1 ? $uomName : \Illuminate\Support\Str::plural($uomName);
+                        @endphp
+                        <label for="received-qty-{{ $productOrder->id }}" class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            @if($isFullyReceived)
+                                Received Quantity:
+                            @elseif($receivedQty > 0)
+                                Additional Received Quantity / [{{ number_format($remainingQty, 0) }} {{ $remainingUomDisplay }} remaining]:
+                            @else
+                                Received Quantity / [{{ number_format($orderedQty, 0) }} {{ $orderedUomDisplay }} expected]:
+                            @endif
+                        </label>
+                        @if($isFullyReceived)
+                            <div class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded-lg text-gray-700 dark:text-gray-300">
+                                {{ number_format($receivedQty, 0) }} / {{ number_format($orderedQty, 0) }} {{ $orderedUomDisplay }}
+                            </div>
+                        @else
+                            <input 
+                                type="number"
+                                min="0"
+                                step="1"
+                                max="{{ $remainingQty }}"
+                                id="received-qty-{{ $productOrder->id }}"
+                                wire:model.live="receivedQuantities.{{ $productOrder->id }}"
+                                class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                                placeholder="Enter quantity in {{ \Illuminate\Support\Str::plural($uomName) }}">
+                            
+                            @if($receivedQty > 0)
+                                <p class="text-xs text-gray-500 dark:text-gray-400">Previously received: {{ number_format($receivedQty, 0) }} {{ $receivedUomDisplay }}</p>
+                            @endif
+                        @endif
                     </div>
+
+                    <!-- Item Condition (good condition checkbox) -->
                     <div class="space-y-2">
-                        <label for="received_qty-{{ $productOrder->id }}" class="text-xs font-medium text-gray-700 dark:text-gray-300">Receive Quantity:</label>
-                        <input type="number"
-                            min="0"
-                            max="{{ $productOrder->remaining_quantity }}"
-                            wire:model="receivedQuantities.{{ $productOrder->id }}"
-                            id="received_qty-{{ $productOrder->id }}"
-                            class="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-400 dark:focus:border-blue-400" />
-                        <small class="text-xs text-gray-500 dark:text-gray-400">Max: {{ $productOrder->remaining_quantity }}</small>
+                        @if($isFullyReceived)
+                            <div class="flex items-center space-x-2">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-200 dark:text-green-800">
+                                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Fully Received
+                                </span>
+                                <span class="text-sm text-gray-500 dark:text-gray-400">({{ number_format($receivedQty, 0) }} / {{ number_format($orderedQty, 0) }} {{ $uomName }})</span>
+                            </div>
+                        @else
+                            @php
+                                $isGoodCondition = !isset($itemStatuses[$productOrder->id]) || $itemStatuses[$productOrder->id] === 'good';
+                            @endphp
+                            
+                            <!-- Good Condition Checkbox -->
+                            <label class="flex items-center p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors">
+                                <input type="checkbox" 
+                                    x-data="{ checked: {{ $isGoodCondition ? 'true' : 'false' }} }"
+                                    x-model="checked"
+                                    @change="$wire.set('itemStatuses.{{ $productOrder->id }}', checked ? 'good' : 'destroyed')"
+                                    class="w-5 h-5 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 dark:focus:ring-green-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                                <div class="ml-3 flex-1">
+                                    <span class="text-sm font-medium text-green-700 dark:text-green-300">✓ All items received in good condition</span>
+                                    <p class="text-xs text-green-600 dark:text-green-400 mt-0.5">Uncheck if there are damaged/destroyed items</p>
+                                </div>
+                            </label>
+                            
+                            <!-- Destroyed Quantity Input (shown when checkbox is unchecked) -->
+                            @if(!$isGoodCondition)
+                            <div class="mt-3 p-4 bg-red-50 dark:bg-red-900/20 border-2 border-red-300 dark:border-red-700 rounded-lg">
+                                <div class="flex items-center gap-2 mb-3">
+                                    <svg class="w-5 h-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                    </svg>
+                                    <span class="text-sm font-semibold text-red-700 dark:text-red-300">Damaged/Destroyed Items</span>
+                                </div>
+                                
+                                <label for="destroyed-qty-{{ $productOrder->id }}" class="text-sm font-medium text-red-700 dark:text-red-300 mb-2 block">
+                                    How many items were damaged or destroyed?
+                                </label>
+                                <input 
+                                    type="number"
+                                    min="0"
+                                    step="1"
+                                    max="{{ $remainingQty }}"
+                                    id="destroyed-qty-{{ $productOrder->id }}"
+                                    wire:model.live="destroyedQuantities.{{ $productOrder->id }}"
+                                    class="w-full px-3 py-2 text-sm border-2 border-red-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:border-red-600 dark:text-white dark:focus:ring-red-400 dark:focus:border-red-400 font-semibold"
+                                    placeholder="Enter destroyed quantity">
+                                
+                                <p class="text-xs text-red-600 dark:text-red-400 mt-2 flex items-center gap-1">
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    <span>These items will NOT be added to inventory and will be marked as destroyed in the report.</span>
+                                </p>
+                            </div>
+                            @endif
+                        @endif
+                    </div>
+
+                    <!-- Remarks -->
+                    <div class="space-y-2 pt-3 border-t border-gray-200 dark:border-zinc-600">
+                        <label for="remarks-{{ $productOrder->id }}" class="text-sm font-medium text-gray-700 dark:text-gray-300">Remarks:</label>
+                        @if($isFullyReceived)
+                            <div class="w-full px-3 py-2 text-sm bg-gray-50 dark:bg-gray-600 border border-gray-200 dark:border-gray-500 rounded-lg text-gray-500 dark:text-gray-400">
+                                @if($productOrder->receiving_remarks)
+                                    {{ $productOrder->receiving_remarks }}
+                                @else
+                                    No remarks provided
+                                @endif
+                            </div>
+                        @else
+                            <textarea 
+                                id="remarks-{{ $productOrder->id }}"
+                                wire:model="itemRemarks.{{ $productOrder->id }}"
+                                rows="2"
+                                class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-400 dark:focus:border-blue-400"
+                                placeholder="Add any comments about this item..."></textarea>
+                        @endif
                     </div>
                 </div>
                 @endforeach
             </div>
+
+            <!-- General Remarks -->
             <div class="mt-8 space-y-3">
                 <label for="general-remarks" class="text-base font-medium text-gray-700 dark:text-gray-300">General Remarks:</label>
-                <textarea
+                <textarea 
                     id="general-remarks"
                     wire:model="generalRemarks"
                     rows="4"
                     class="w-full px-4 py-3 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-400 dark:focus:border-blue-400 resize-none"
                     placeholder="Add any general comments about the delivery..."></textarea>
             </div>
-            <div class="flex flex-col sm:flex-row gap-3 mt-8">
-                <button
+
+            <!-- Navigation Buttons -->
+            <div class="flex flex-col sm:flex-row gap-3 mt-6">
+                <button 
                     wire:click="goBackToStep1"
-                    class="flex-1 sm:flex-none mt-4 px-6 py-4 text-base font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-xl hover:bg-gray-200 focus:ring-2 focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600 dark:focus:ring-gray-400 dark:focus:border-gray-400 transition-colors duration-200 flex items-center justify-center gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    class="flex-1 px-4 py-3 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-xl hover:bg-gray-200 focus:ring-2 focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600 dark:focus:ring-gray-400 dark:focus:border-gray-400 transition-colors duration-200 flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                     </svg>
                     <span>Back to Scan</span>
                 </button>
-                <button
+                <button 
                     wire:click="goToStep3"
-                    class="flex-1 sm:flex-none px-6 py-4 text-base font-medium text-white bg-blue-600 border border-transparent rounded-xl hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-400 dark:focus:border-blue-400 transition-colors duration-200 flex items-center justify-center gap-2">
-                    <span>Continue to Report</span>
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
-                    </svg>
+                    class="flex-1 px-4 py-3 text-sm font-medium text-white {{ empty(trim($drNumber)) ? 'bg-orange-600 hover:bg-orange-700 focus:ring-orange-500 dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:ring-orange-400' : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-400' }} border border-transparent rounded-xl focus:ring-2 focus:border-transparent transition-colors duration-200 flex items-center justify-center gap-2">
+                    @if(empty(trim($drNumber)))
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                        </svg>
+                        <span class="truncate">Enter DR # to Continue</span>
+                    @else
+                        <span>Continue to Report</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                        </svg>
+                    @endif
                 </button>
             </div>
         </div>
     </div>
     @endif
 
-    <!-- Step 3: Submit/Review & Finish -->
+    <!-- Step 3: Report Review -->
     @if($currentStep === 2 && $foundPurchaseOrder)
     <div class="w-full max-w-md mx-auto space-y-4">
+        <!-- Report Header -->
         <div class="bg-white dark:bg-zinc-800 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-zinc-700">
             <div class="flex items-center justify-between mb-4">
                 <h2 class="text-xl font-bold text-gray-900 dark:text-white">Stock-In Report</h2>
@@ -303,6 +453,8 @@
                     </svg>
                 </button>
             </div>
+            
+            <!-- PO Summary -->
             <div class="bg-blue-100 dark:bg-zinc-800 rounded-xl p-4 mb-6 border border-blue-200 dark:border-zinc-700">
                 <h3 class="text-lg font-bold text-blue-900 dark:text-white mb-3">Purchase Order Summary</h3>
                 <div class="space-y-2 text-sm">
@@ -318,65 +470,155 @@
                         <span class="font-bold text-blue-900 dark:text-white">Total Items:</span>
                         <span class="font-bold text-blue-900 dark:text-white">{{ $foundPurchaseOrder->productOrders->count() }}</span>
                     </div>
+                    <div class="flex justify-between">
+                        <span class="font-bold text-blue-900 dark:text-white">DR #:</span>
+                        <span class="font-bold text-blue-900 dark:text-white">{{ $drNumber ?: 'N/A' }}</span>
+                    </div>
                 </div>
             </div>
+
+            <!-- Items Review Summary -->
             <div class="space-y-4">
                 <h3 class="text-lg font-bold text-gray-900 dark:text-white">Items Review Summary</h3>
+                
                 @foreach($foundPurchaseOrder->productOrders as $productOrder)
                 <div class="border border-gray-200 dark:border-zinc-700 rounded-xl p-4 space-y-3 bg-white dark:bg-zinc-800">
-                    <div class="flex justify-between items-start">
-                        <div class="flex-1">
-                            <h4 class="font-bold text-gray-900 dark:text-white text-sm">{{ $productOrder->product->name }}</h4>
-                            <p class="text-xs text-gray-700 dark:text-gray-200">SKU: {{ $productOrder->product->sku }}</p>
+                    <!-- Product Name -->
+                    <div>
+                        <div class="font-bold text-gray-900 dark:text-white text-sm">
+                            {{ $productOrder->product->name }}
                         </div>
-                        <div class="text-right">
-                            <p class="text-sm font-bold text-gray-900 dark:text-white">{{ $productOrder->quantity }} {{ $productOrder->product->uom }}</p>
-                            <p class="text-xs text-gray-700 dark:text-gray-200">Ordered</p>
-                            <p class="text-sm font-medium text-green-600">Received: {{ $productOrder->received_quantity + ($receivedQuantities[$productOrder->id] ?? 0) }}</p>
+                        <div class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                            SKU: {{ $productOrder->product->sku }}
                         </div>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs font-bold text-gray-900 dark:text-white">Status:</span>
-                        @php $status = $itemStatuses[$productOrder->id] ?? 'not_set'; @endphp
-                        @if($status === 'good')
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-600 text-white">Good</span>
-                        @elseif($status === 'incomplete')
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-yellow-500 text-yellow-900">Incomplete</span>
-                        @elseif($status === 'destroyed')
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-600 text-white">Destroyed</span>
-                        @else
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-600 text-white">Not Set</span>
-                        @endif
+
+                    <!-- Status with Quantity Details -->
+                    <div class="space-y-2">
+                        @php
+                            $additionalReceivedQty = $receivedQuantities[$productOrder->id] ?? 0;
+                            $additionalDestroyedQty = $destroyedQuantities[$productOrder->id] ?? 0;
+                            $currentReceivedQty = $productOrder->received_quantity ?? 0;
+                            $totalReceivedQty = $currentReceivedQty + $additionalReceivedQty;
+                            $itemStatus = $itemStatuses[$productOrder->id] ?? 'good';
+                            $orderedQty = $productOrder->quantity;
+                            $isFullyReceived = $currentReceivedQty >= $orderedQty;
+                            $uomName = $productOrder->product->uom ?? 'Units';
+                        @endphp
+                        
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm font-bold text-gray-900 dark:text-white">Status:</span>
+                            @if($itemStatus === 'good')
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800 dark:bg-green-200 dark:text-green-800">
+                                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Good Condition
+                                </span>
+                            @else
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800 dark:bg-red-200 dark:text-red-800">
+                                    <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Has Damaged Items
+                                </span>
+                            @endif
+                        </div>
+
+                        <!-- Quantity Details -->
+                        <div class="bg-gray-50 dark:bg-zinc-700 rounded-lg p-3 space-y-2">
+                            @if($additionalReceivedQty > 0)
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="flex items-center gap-1 text-green-700 dark:text-green-400">
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    <span class="font-medium">Received:</span>
+                                </span>
+                                <div class="text-right">
+                                    @php
+                                        $receivedUom = $additionalReceivedQty == 1 ? $uomName : \Illuminate\Support\Str::plural($uomName);
+                                    @endphp
+                                    <div class="font-bold text-green-700 dark:text-green-400">
+                                        {{ number_format($additionalReceivedQty, 0) }} {{ $receivedUom }}
+                                    </div>
+                                </div>
+                            </div>
+                            @endif
+                            
+                            @if($additionalDestroyedQty > 0)
+                            <div class="flex items-center justify-between text-sm">
+                                <span class="flex items-center gap-1 text-red-700 dark:text-red-400">
+                                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    <span class="font-medium">Destroyed:</span>
+                                </span>
+                                <div class="text-right">
+                                    @php
+                                        $destroyedUom = $additionalDestroyedQty == 1 ? $uomName : \Illuminate\Support\Str::plural($uomName);
+                                    @endphp
+                                    <div class="font-bold text-red-700 dark:text-red-400">
+                                        {{ number_format($additionalDestroyedQty, 0) }} {{ $destroyedUom }}
+                                    </div>
+                                </div>
+                            </div>
+                            @endif
+                            
+                            @if($additionalReceivedQty == 0 && $additionalDestroyedQty == 0)
+                            <div class="text-sm text-gray-500 dark:text-gray-400 text-center italic">
+                                No items processed in this session
+                            </div>
+                            @endif
+                        </div>
                     </div>
+
+                    <!-- Batch Information -->
+                    @if(isset($batchNumbers[$productOrder->id]) && !empty($batchNumbers[$productOrder->id]))
+                    <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 space-y-2 text-xs">
+                        <div class="flex items-center justify-between">
+                            <span class="font-medium text-gray-700 dark:text-gray-300">Batch #:</span>
+                            <span class="font-mono font-bold text-gray-900 dark:text-white">{{ $batchNumbers[$productOrder->id] }}</span>
+                        </div>
+                    </div>
+                    @endif
+
+                    <!-- Remarks -->
                     @if(isset($itemRemarks[$productOrder->id]) && !empty($itemRemarks[$productOrder->id]))
-                    <div class="bg-gray-100 dark:bg-zinc-900 rounded-lg p-3 border border-gray-200 dark:border-zinc-700">
-                        <p class="text-xs text-gray-900 dark:text-white mb-1">Remarks:</p>
-                        <p class="text-sm text-gray-900 dark:text-white">{{ $itemRemarks[$productOrder->id] }}</p>
+                    <div class="pt-3 border-t border-gray-200 dark:border-zinc-700">
+                        <p class="text-sm font-bold text-gray-900 dark:text-white mb-1">Remarks:</p>
+                        <p class="text-sm text-gray-700 dark:text-gray-300 italic">{{ $itemRemarks[$productOrder->id] }}</p>
                     </div>
                     @endif
                 </div>
                 @endforeach
             </div>
+
+            <!-- General Remarks -->
             @if(!empty($generalRemarks))
             <div class="mt-6 bg-gray-100 dark:bg-zinc-900 rounded-xl p-4 border border-gray-200 dark:border-zinc-700">
                 <h4 class="text-sm font-bold text-gray-900 dark:text-white mb-2">General Remarks:</h4>
                 <p class="text-sm text-gray-900 dark:text-white">{{ $generalRemarks }}</p>
             </div>
             @endif
-            <div class="flex flex-col sm:flex-row gap-3 mt-8">
-                <button wire:click="goBackToStep2"
-                    class="flex-1 sm:flex-none mt-6 px-6 py-4 text-base font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-xl hover:bg-gray-200 focus:ring-2 focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600 dark:focus:ring-gray-400 dark:focus:border-gray-400 transition-colors duration-200 flex items-center justify-center gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+            <!-- Navigation Buttons -->
+            <div class="flex flex-col sm:flex-row gap-3 mt-6">
+                <button 
+                    wire:click="goBackToStep2"
+                    class="flex-1 px-4 py-3 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-xl hover:bg-gray-200 focus:ring-2 focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600 dark:focus:ring-gray-400 dark:focus:border-gray-400 transition-colors duration-200 flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                     </svg>
                     <span>Back to Review</span>
                 </button>
-                <button wire:click="submitStockInReport"
-                    class="flex-1 sm:flex-none px-6 py-4 text-base font-medium text-white bg-blue-600 border border-transparent rounded-xl hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-400 dark:focus:border-blue-400 transition-colors duration-200 flex items-center justify-center gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button 
+                    wire:click="submitStockInReport"
+                    class="flex-1 px-4 py-3 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-xl hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-400 dark:focus:border-blue-400 transition-colors duration-200 flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                     </svg>
-                    <span>Submit Stock-In Report</span>
+                    <span>Submit Report</span>
                 </button>
             </div>
         </div>
@@ -387,27 +629,38 @@
     @if($currentStep === 3)
     <div class="w-full max-w-md mx-auto space-y-4">
         <div class="bg-white dark:bg-zinc-800 rounded-2xl shadow-lg p-8 border border-gray-200 dark:border-zinc-700 text-center">
+            <!-- Success Icon -->
             <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 dark:bg-green-900/50 mb-6">
                 <svg class="h-8 w-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                 </svg>
             </div>
+
+            <!-- Success Message -->
             <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Report Submitted!</h2>
             <p class="text-gray-600 dark:text-gray-400 mb-6">
                 Your stock-in report has been successfully submitted and processed.
             </p>
+
+            <!-- Scanner and Date Info -->
             <div class="mb-6 flex flex-col items-center gap-1">
                 <div class="text-base font-bold text-gray-900 dark:text-white">Scanned by:
                     <span class="font-semibold">{{ auth()->user()->name }}</span>
+                </div>
+                <div class="text-base font-bold text-gray-900 dark:text-white">DR #:
+                    <span class="font-semibold">{{ $drNumber ?: 'N/A' }}</span>
                 </div>
                 <div class="text-base font-bold text-gray-900 dark:text-white">Received Date:
                     <span class="font-semibold">{{ $foundPurchaseOrder->updated_at->format('M d, Y h:i A') }}</span>
                 </div>
             </div>
+
+            <!-- Action Buttons -->
             <div class="flex flex-col sm:flex-row gap-3">
-                <button wire:click="goBackToStep1"
-                    class="flex-1 sm:flex-none px-6 py-4 text-base font-medium text-white bg-blue-600 border border-transparent rounded-xl hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-400 dark:focus:border-blue-400 transition-colors duration-200 flex items-center justify-center gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button 
+                    wire:click="goBackToStep1"
+                    class="flex-1 px-4 py-3 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-xl hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-400 dark:focus:border-blue-400 transition-colors duration-200 flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                     </svg>
                     <span>New Stock-In</span>
@@ -416,6 +669,8 @@
         </div>
     </div>
     @endif
+
+</div>
 
 <!-- Include html5-qrcode library -->
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
@@ -487,7 +742,7 @@
                     selectedCameraId,
                     {
                         fps: 10,
-                        qrbox: { width: 250, height: 250 }
+                        qrbox: { width: 200, height: 200 }
                     },
                     (decodedText, decodedResult) => {
                         // QR Code detected
@@ -730,7 +985,7 @@
                 
                 html5QrCode.start(selectedCameraId, { 
                     fps: 10,
-                    qrbox: { width: 250, height: 250 }
+                    qrbox: { width: 200, height: 200 }
                 }, qrCodeSuccessCallback, qrCodeErrorCallback).then(() => {
                     showStatus('QR Scanner ready! Point camera at QR code', 'success');
                 }).catch(err => {

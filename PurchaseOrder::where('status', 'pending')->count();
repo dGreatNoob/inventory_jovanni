@@ -1,0 +1,50 @@
+[90m= [39m[34;4mIlluminate\Database\Eloquent\Collection[39;24m {#693
+    [34mall[39m: [
+      [34;4mApp\Models\PurchaseOrder[39;24m {#7013
+        [34mid[39m: [35m2[39m,
+        [34mpo_num[39m: "[32mPO-2025-60000[39m",
+        [34mstatus[39m: "[32mpartially_received[39m",
+      },
+      [34;4mApp\Models\PurchaseOrder[39;24m {#7014
+        [34mid[39m: [35m3[39m,
+        [34mpo_num[39m: "[32mPO-2025-60001[39m",
+        [34mstatus[39m: "[32mreceived[39m",
+      },
+      [34;4mApp\Models\PurchaseOrder[39;24m {#7015
+        [34mid[39m: [35m4[39m,
+        [34mpo_num[39m: "[32mPO-2025-60002[39m",
+        [34mstatus[39m: "[32mpartially_received[39m",
+      },
+      [34;4mApp\Models\PurchaseOrder[39;24m {#7016
+        [34mid[39m: [35m5[39m,
+        [34mpo_num[39m: "[32mPO-2025-60003[39m",
+        [34mstatus[39m: "[32mreceived[39m",
+      },
+      [34;4mApp\Models\PurchaseOrder[39;24m {#7017
+        [34mid[39m: [35m6[39m,
+        [34mpo_num[39m: "[32mPO-2025-60004[39m",
+        [34mstatus[39m: "[32mpartially_received[39m",
+      },
+      [34;4mApp\Models\PurchaseOrder[39;24m {#7018
+        [34mid[39m: [35m7[39m,
+        [34mpo_num[39m: "[32mPO-2025-60005[39m",
+        [34mstatus[39m: "[32mpartially_received[39m",
+      },
+      [34;4mApp\Models\PurchaseOrder[39;24m {#7019
+        [34mid[39m: [35m8[39m,
+        [34mpo_num[39m: "[32mPO-2025-60006[39m",
+        [34mstatus[39m: "[32mpartially_received[39m",
+      },
+      [34;4mApp\Models\PurchaseOrder[39;24m {#7020
+        [34mid[39m: [35m9[39m,
+        [34mpo_num[39m: "[32mPO-2025-60007[39m",
+        [34mstatus[39m: "[32mreceived[39m",
+      },
+      [34;4mApp\Models\PurchaseOrder[39;24m {#7021
+        [34mid[39m: [35m10[39m,
+        [34mpo_num[39m: "[32mPO-2025-60008[39m",
+        [34mstatus[39m: "[32mpending[39m",
+      },
+    ],
+  }
+

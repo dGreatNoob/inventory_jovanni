@@ -56,7 +56,10 @@
                         <option value="">All Status</option>
                         <option value="pending">Pending</option>
                         <option value="approved">Approved</option>
+                        <option value="to_receive">To Receive</option>
+                        <option value="to_receive">Partially Received</option>
                         <option value="received">Received</option>
+                        <option value="cancelled">Cancelled</option>
                         </select>
                     </div>
                     </div>
@@ -102,17 +105,29 @@
                             </td>
                             <td class="px-6 py-4">{{ $po->supplier->name ?? 'N/A' }}</td>
                             <td class="px-6 py-4">
-                            <span class="px-2 py-1 text-xs font-semibold rounded-full
-                                @if ($po->status === 'pending') bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300
-                                @elseif($po->status === 'approved') bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-300
-                                @elseif($po->status === 'received') bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300
-                                @else bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300 @endif">
-                                {{ str_replace('_', ' ', ucfirst($po->status)) }}
-                            </span>
+                                @php
+                                    $displayStatus = $po->status->label();
+                                    $badgeClass = $po->status->badgeClasses();
+                                    
+                                    // Check if partially received
+                                    if ($po->status->value === 'to_receive') {
+                                        $totalOrdered = $po->productOrders->sum('quantity');
+                                        $totalReceived = $po->productOrders->sum('received_quantity');
+                                        
+                                        if ($totalReceived > 0 && $totalReceived < $totalOrdered) {
+                                            $displayStatus = 'Partially Received';
+                                            $badgeClass = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300';
+                                        }
+                                    }
+                                @endphp
+                                
+                                <span class="{{ $badgeClass }}">
+                                    {{ $displayStatus }}
+                                </span>
                             </td>
                             <td class="px-6 py-4">{{ $po->order_date ? $po->order_date->format('M d, Y') : 'N/A' }}</td>
                             <td class="px-6 py-4">{{ $po->del_on ? $po->del_on->format('M d, Y') : 'N/A' }}</td>
-                            <td class="px-6 py-4">{{ number_format($po->total_qty, 2) }}</td>
+                            <td class="px-6 py-4">{{ number_format($po->total_qty, 0) }}</td>
                             <td class="px-6 py-4">₱{{ number_format($po->total_price, 2) }}</td>
                             <td class="px-6 py-4">
                             <div class="flex space-x-2">
@@ -123,9 +138,9 @@
                                 <a href="{{ route('pomanagement.purchaseorder.edit', ['Id' => $po->id]) }}"
                                     class="font-medium text-yellow-600 dark:text-yellow-500 hover:underline">Edit</a>
                                 @endif
-                                
-                                
-                                @if ($po->status !== 'received')
+
+
+                                @if ($po->status !== 'received' && $po->status !== 'to_receive')
                                 <button type="button" wire:click="confirmDelete({{ $po->id }})"
                                     class="font-medium text-red-600 dark:text-red-500 hover:underline">Delete</button>
                                 @endif
@@ -264,6 +279,7 @@
                                                             @elseif($log->action === 'rejected') bg-red-100 text-red-800
                                                             @elseif($log->action === 'delivered') bg-blue-100 text-blue-800
                                                             @elseif($log->action === 'received') bg-purple-100 text-purple-800
+                                                            @elseif($log->action === 'to_receive') bg-orange-100 text-orange-800
                                                             @else bg-gray-100 text-gray-800
                                                             @endif">
                                                             {{ ucfirst($log->action) }}

@@ -27,13 +27,20 @@ return new class extends Migration
                 'pending',
                 'approved',
                 'rejected',
+                'to_receive',     // Added for stock-in workflow
+                'for_delivery',   // Added for stock-in workflow  
+                'received',       // Added for stock-in
+                'partial',        // Added for stock-in  
+                'damaged',        // Added for stock-in
+                'incomplete'      // Added for stock-in
             ])->default('pending');
-            $table->string('po_num')->unique(); // Changed from bigInteger to string for formatted PO number
+            $table->string('po_num')->unique();
             $table->decimal('total_price');
             $table->date('order_date');
             $table->dateTime('del_on')->nullable();
             $table->string('payment_terms');
             $table->decimal('total_qty');
+            $table->string('dr_number')->nullable(); // Added DR number for stock-in
             $table->foreignIdFor(User::class, 'ordered_by')
                 ->nullable()
                 ->constrained()
@@ -42,9 +49,20 @@ return new class extends Migration
                 ->nullable()
                 ->constrained()
                 ->onDelete('set null');
+            
+            // ✅ Approval tracking
+            $table->timestamp('approved_at')->nullable();
+            $table->foreignId('approved_by')->nullable()->constrained('users')->onDelete('set null');
+            
+            // ✅ Cancellation tracking
+            $table->text('cancellation_reason')->nullable();
+            $table->timestamp('cancelled_at')->nullable();
+            $table->foreignId('cancelled_by')->nullable()->constrained('users')->onDelete('set null');
+            $table->text('return_reason')->nullable();
+            
             $table->timestamps();
         });
-    }   
+    }
 
     /**
      * Reverse the migrations.

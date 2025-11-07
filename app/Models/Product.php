@@ -157,4 +157,14 @@ class Product extends Model
         if ($this->cost == 0) return 0;
         return (($this->price - $this->cost) / $this->cost) * 100;
     }
+
+    public function batches()
+    {
+        return $this->hasMany(ProductBatch::class)->orderBy('received_date', 'desc');
+    }
+
+    public function activeBatches()
+    {
+        return $this->hasMany(ProductBatch::class)->where('current_qty', '>', 0);
+    }
 }

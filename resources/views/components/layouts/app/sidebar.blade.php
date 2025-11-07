@@ -48,12 +48,17 @@
                     </flux:navlist.item>
                 </flux:navlist.group> --}}
 
-                <flux:navlist.group expandable :expanded="request()->routeIs('warehouse.*')" :heading="__('PO Management')" class="lg:grid">
+                <flux:navlist.group expandable :expanded="request()->routeIs('pomanagement.*')" :heading="__('PO Management')" class="lg:grid">
 
 
                     <flux:navlist.item icon="inbox-stack" href="{{ route('pomanagement.purchaseorder') }}"
-                        :current="request()->routeIs('warehouse.purchaseorder')" wire:navigate>
+                        :current="request()->routeIs('pomanagement.purchaseorder')" wire:navigate>
                         {{ __('Purchase Order') }}
+                    </flux:navlist.item>
+
+                    <flux:navlist.item icon="truck" href="{{ route('pomanagement.deliveries') }}"
+                        :current="request()->routeIs('pomanagement.deliveries')" wire:navigate>
+                        {{ __('Deliveries') }}
                     </flux:navlist.item>
 
 

@@ -18,11 +18,19 @@ return new class extends Migration
             $table->string('status')->default('pending'); // pending, received, partial, cancelled
             $table->decimal('received_quantity', 10, 2)->default(0);
             $table->text('notes')->nullable();
+            $table->string('batch_number')->nullable();
+            
+            // ✅ Additional tracking fields for stock-in
+            $table->integer('destroyed_qty')->default(0);
+            $table->string('receiving_status')->nullable(); // 'good', 'incomplete', 'destroyed'
+            $table->text('receiving_remarks')->nullable();
+            
             $table->timestamps();
             
             // Indexes for better performance
             $table->index(['purchase_order_id', 'product_id']);
             $table->index('status');
+            $table->index('batch_number');
         });
     }
 

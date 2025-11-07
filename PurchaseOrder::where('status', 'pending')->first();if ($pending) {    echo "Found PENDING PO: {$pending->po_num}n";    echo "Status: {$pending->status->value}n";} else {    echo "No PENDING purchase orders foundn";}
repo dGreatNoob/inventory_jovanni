@@ -1,0 +1,10 @@
+[90m= [39m[34;4mIlluminate\Database\Eloquent\Collection[39;24m {#6022
+    [34mall[39m: [
+      [34;4mApp\Models\PurchaseOrder[39;24m {#6027
+        [34mid[39m: [35m10[39m,
+        [34mpo_num[39m: "[32mPO-2025-60008[39m",
+        [34mstatus[39m: "[32mpending[39m",
+      },
+    ],
+  }
+

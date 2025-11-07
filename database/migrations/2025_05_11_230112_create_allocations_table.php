@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('allocations', function (Blueprint $table) {
             $table->id();
-            $table->string('name', 100)->unique();
+            $table->string('name', 100);
             $table->text('description')->nullable();
             $table->timestamps();
         });

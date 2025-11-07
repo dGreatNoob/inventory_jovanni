@@ -1,0 +1,108 @@
+[0;32m🚀 Starting Inventory Jovanni Development Environment[0m
+
+[1;33m📦 Starting Docker containers (MySQL, Redis, phpMyAdmin)...[0m
+time="2025-10-28T11:39:02+08:00" level=warning msg="/home/biiieem/repos/inventory_jovanni/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+ Container inventory-jovanni-redis  Running
+ Container inventory-jovanni-db  Running
+ Container inventory-jovanni-phpmyadmin  Running
+[1;33m⏳ Waiting for MySQL to be ready...[0m
+
+[0;32m✅ MySQL is ready[0m
+[1;33m⏳ Waiting for Redis to be ready...[0m
+
+[0;32m✅ Redis is ready[0m
+[1;33m🔐 Fixing permissions...[0m
+[0;32m✅ Permissions fixed[0m
+[1;33m📥 Checking dependencies...[0m
+[1;33m🗄️  Running database migrations...[0m
+PHP Warning:  PHP Startup: Unable to load dynamic library 'redis' (tried: /usr/lib/php/modules/redis (/usr/lib/php/modules/redis: cannot open shared object file: No such file or directory), /usr/lib/php/modules/redis.so (/usr/lib/php/modules/redis.so: undefined symbol: igbinary_serialize)) in Unknown on line 0
+
+In StreamHandler.php line 241:
+                                                                               
+  There is no existing directory at "/var/www/storage/logs" and it could not   
+  be created: Permission denied                                                
+                                                                               
+
+[1;33m🔧 Optimizing Laravel...[0m
+PHP Warning:  PHP Startup: Unable to load dynamic library 'redis' (tried: /usr/lib/php/modules/redis (/usr/lib/php/modules/redis: cannot open shared object file: No such file or directory), /usr/lib/php/modules/redis.so (/usr/lib/php/modules/redis.so: undefined symbol: igbinary_serialize)) in Unknown on line 0
+
+   INFO  Configuration cache cleared successfully.  
+
+PHP Warning:  PHP Startup: Unable to load dynamic library 'redis' (tried: /usr/lib/php/modules/redis (/usr/lib/php/modules/redis: cannot open shared object file: No such file or directory), /usr/lib/php/modules/redis.so (/usr/lib/php/modules/redis.so: undefined symbol: igbinary_serialize)) in Unknown on line 0
+
+In StreamHandler.php line 241:
+                                                                               
+  There is no existing directory at "/var/www/storage/logs" and it could not   
+  be created: Permission denied                                                
+                                                                               
+
+
+[0;32m═══════════════════════════════════════════════════════════[0m
+[0;32m✅ Development Environment Started Successfully![0m
+[0;32m═══════════════════════════════════════════════════════════[0m
+
+[0;32m📍 Service URLs (Local):[0m
+   • Laravel App:    [0;32mhttp://localhost:8000[0m
+   • phpMyAdmin:     [0;32mhttp://localhost:8081[0m
+
+[0;32m🗄️  Database Info:[0m
+   • MySQL:          [0;32mlocalhost:3307[0m
+   • Redis:          [0;32mlocalhost:6380[0m
+
+
+[1;33m💡 Starting Laravel development server...[0m
+[1;33mPress Ctrl+C to stop[0m
+
+PHP Warning:  PHP Startup: Unable to load dynamic library 'redis' (tried: /usr/lib/php/modules/redis (/usr/lib/php/modules/redis: cannot open shared object file: No such file or directory), /usr/lib/php/modules/redis.so (/usr/lib/php/modules/redis.so: undefined symbol: igbinary_serialize)) in Unknown on line 0
+  PHP Warning:  PHP Startup: Unable to load dynamic library 'redis' (tried: /usr/lib/php/modules/redis (/usr/lib/php/modules/redis: cannot open shared object file: No such file or directory), /usr/lib/php/modules/redis.so (/usr/lib/php/modules/redis.so: undefined symbol: igbinary_serialize)) in Unknown on line 0
+
+   INFO  Server running on [http://0.0.0.0:8000].  
+
+  Press Ctrl+C to stop the server
+
+  2025-10-28 11:42:19 / ............................................ ~ 0.05ms
+  2025-10-28 11:42:21 / ............................................ ~ 0.07ms
+  2025-10-28 11:42:22 / .......................................... ~ 500.25ms
+  2025-10-28 11:42:23 / ............................................ ~ 0.01ms
+  2025-10-28 11:42:23 / ............................................ ~ 0.07ms
+  2025-10-28 11:42:23 / .......................................... ~ 500.25ms
+  2025-10-28 11:42:23 / ............................................ ~ 0.01ms
+  2025-10-28 11:42:23 / ............................................ ~ 0.01ms
+  2025-10-28 11:42:31 / ............................................ ~ 0.22ms
+  2025-10-28 11:42:33 / .......................................... ~ 500.47ms
+  2025-10-28 11:42:33 / ............................................... ~ 10s
+  2025-10-28 11:42:44 / ................................................ ~ 1s
+  2025-10-28 11:42:44 / ............................................ ~ 0.09ms
+  2025-10-28 11:42:44 / .......................................... ~ 500.28ms
+  2025-10-28 11:42:45 / ................................................ ~ 1s
+  2025-10-28 11:42:46 / ............................................ ~ 0.57ms
+  2025-10-28 11:42:46 / ............................................ ~ 0.01ms
+  2025-10-28 11:43:12 / ............................................ ~ 0.10ms
+  2025-10-28 11:43:13 / ............................................ ~ 0.08ms
+  2025-10-28 11:43:13 / ............................................ ~ 0.03ms
+  2025-10-28 11:43:13 / .......................................... ~ 500.40ms
+  2025-10-28 11:43:14 / ............................................ ~ 0.02ms
+  2025-10-28 11:43:14 / ............................................ ~ 0.05ms
+  2025-10-28 11:43:14 / ............................................ ~ 0.01ms
+  2025-10-28 11:43:14 / ............................................ ~ 0.07ms
+  2025-10-28 11:43:15 / .......................................... ~ 500.28ms
+  2025-10-28 11:44:01 / ............................................ ~ 0.06ms
+  2025-10-28 11:44:01 / ............................................ ~ 0.20ms
+
+   INFO  Environment modified. Restarting server...  
+
+  PHP Warning:  PHP Startup: Unable to load dynamic library 'redis' (tried: /usr/lib/php/modules/redis (/usr/lib/php/modules/redis: cannot open shared object file: No such file or directory), /usr/lib/php/modules/redis.so (/usr/lib/php/modules/redis.so: undefined symbol: igbinary_serialize)) in Unknown on line 0
+
+   INFO  Server running on [http://0.0.0.0:8000].  
+
+  Press Ctrl+C to stop the server
+
+
+   INFO  Environment modified. Restarting server...  
+
+  PHP Warning:  PHP Startup: Unable to load dynamic library 'redis' (tried: /usr/lib/php/modules/redis (/usr/lib/php/modules/redis: cannot open shared object file: No such file or directory), /usr/lib/php/modules/redis.so (/usr/lib/php/modules/redis.so: undefined symbol: igbinary_serialize)) in Unknown on line 0
+
+   INFO  Server running on [http://0.0.0.0:8000].  
+
+  Press Ctrl+C to stop the server
+

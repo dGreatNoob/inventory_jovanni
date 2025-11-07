@@ -48,22 +48,21 @@
                     </flux:navlist.item>
                 </flux:navlist.group> --}}
 
-                {{-- <flux:navlist.group expandable :expanded="false" :heading="__('Paper Roll Warehouse')" class="lg:grid">
-                    <flux:navlist.item icon="inbox-stack" href="{{ route('prw.inventory') }}"
-                        :current="request()->routeIs('prw.inventory')" wire:navigate>
-                        {{ __('Inventory') }}
-                    </flux:navlist.item>
+                <flux:navlist.group expandable :expanded="request()->routeIs('pomanagement.*')" :heading="__('PO Management')" class="lg:grid">
 
-                    <flux:navlist.item icon="inbox-stack" href="{{ route('prw.purchaseorder') }}"
-                        :current="request()->routeIs('prw.purchaseorder')" wire:navigate>
+
+                    <flux:navlist.item icon="inbox-stack" href="{{ route('pomanagement.purchaseorder') }}"
+                        :current="request()->routeIs('pomanagement.purchaseorder')" wire:navigate>
                         {{ __('Purchase Order') }}
                     </flux:navlist.item>
 
-                    <flux:navlist.item icon="inbox-stack" href="{{ route('prw.profile') }}"
-                        :current="request()->routeIs('prw.profile')" wire:navigate>
-                        {{ __('Profile') }}
+                    <flux:navlist.item icon="truck" href="{{ route('pomanagement.deliveries') }}"
+                        :current="request()->routeIs('pomanagement.deliveries')" wire:navigate>
+                        {{ __('Deliveries') }}
                     </flux:navlist.item>
-                </flux:navlist.group> --}}
+
+
+                </flux:navlist.group>
 
                 <flux:navlist.group 
                     expandable 
@@ -106,6 +105,8 @@
                     >
                         {{ __('Analytics') }}
                     </flux:navlist.item>
+
+                    
                 </flux:navlist.group>
                                 
 
@@ -231,7 +232,8 @@
                         </flux:navlist.item>
                     </flux:navlist.group>
                 @endrole--}}
-                {{--<flux:navlist.group expandable :expanded="request()->routeIs('bodegero.*')"
+
+                {{--  <flux:navlist.group expandable :expanded="request()->routeIs('bodegero.*')"
                     :heading="__('Warehouse Staff')" class="lg:grid">
                     <flux:navlist.item icon="qr-code" href="{{ route('bodegero.stockin') }}"
                         :current="request()->routeIs('bodegero.stockin')" wire:navigate>{{ __('Stock In') }}
@@ -242,6 +244,20 @@
                     <!-- <flux:navlist.item icon="banknotes" href=""  wire:navigate>{{ __('Returns') }}
                     </flux:navlist.item> -->
                 </flux:navlist.group>--}}
+
+
+                <flux:navlist.group expandable :expanded="request()->routeIs('warehousestaff.*')"
+                    :heading="__('Warehouse Staff')" class="lg:grid">
+                    <flux:navlist.item icon="qr-code" href="{{ route('warehousestaff.stockin') }}"
+                        :current="request()->routeIs('warehousestaff.stockin')" wire:navigate>{{ __('Stock In') }}
+                    </flux:navlist.item>
+                    {{--  <flux:navlist.item icon="qr-code" href="{{ route('warehousestaff.stockout') }}"
+                        :current="request()->routeIs('warehousestaff.stockout')" wire:navigate>{{ __('Stock Out') }}
+                    </flux:navlist.item>--}}
+                    <!-- <flux:navlist.item icon="banknotes" href=""  wire:navigate>{{ __('Returns') }}
+                    </flux:navlist.item> -->
+                </flux:navlist.group>
+
 
                 {{--<flux:navlist.group expandable :expanded="request()->routeIs('reports.*')" :heading="__('Reports')"
                     class="lg:grid">
@@ -310,7 +326,7 @@
                     </flux:navlist.item>
                 </flux:navlist.group>--}}
 
-                {{-- @role(['Super Admin', 'Admin'])
+                 @role(['Super Admin', 'Admin'])
                     <flux:navlist.group expandable
                         :expanded="request()->routeIs('user.index') || request()->routeIs('roles.index')"
                         :heading="__('User Management')" class="lg:grid">
@@ -323,7 +339,7 @@
                             {{ __('Roles & Permissions') }}
                         </flux:navlist.item>
                     </flux:navlist.group>
-                @endrole--}}
+                @endrole
 
                 {{-- Activity Logs moved to top level for easier access --}}
                 {{--<flux:navlist.item icon="clipboard-document-list" href="{{ route('activity.logs') }}"

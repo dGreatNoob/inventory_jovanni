@@ -85,7 +85,7 @@
                                         </td>
                                         <td class="px-6 py-4">{{ $po->order_date->format('M d, Y') }}</td>
                                         <td class="px-6 py-4">{{ $po->department->name }}</td>
-                                        <td class="px-6 py-4">{{ number_format($po->total_qty, 2) }}</td>
+                                        <td class="px-6 py-4">{{ number_format($po->total_qty, 0) }}</td>
                                         <td class="px-6 py-4">{{ number_format($po->total_price, 2) }}</td>
                                         <td class="px-6 py-4">
                                             <div class="flex space-x-2">

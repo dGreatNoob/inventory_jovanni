@@ -155,7 +155,7 @@
                                 Add Branches
                             </button>
                             <button wire:click="dispatchBatch({{ $batch->id }})"
-                                    onclick="return confirm('Are you sure you want to dispatch this batch? This action cannot be undone.')"
+                                    wire:confirm="Are you sure you want to dispatch this batch? This action cannot be undone."
                                     class="bg-blue-600 hover:bg-blue-700 text-white text-sm py-1 px-3 rounded">
                                 Dispatch Batch
                             </button>
@@ -187,7 +187,7 @@
                                             Add Items
                                         </button>
                                         <button wire:click="removeBranch({{ $branchAllocation->id }})"
-                                                onclick="return confirm('Are you sure you want to remove this branch from the batch?')"
+                                                wire:confirm="Are you sure you want to remove this branch from the batch?"
                                                 class="bg-red-600 hover:bg-red-700 text-white text-sm py-1 px-3 rounded">
                                             Remove
                                         </button>
@@ -222,7 +222,7 @@
                                                         </svg>
                                                     </button>
                                                     <button wire:click="removeItem({{ $item->id }})"
-                                                            onclick="return confirm('Are you sure you want to remove this item?')"
+                                                            wire:confirm="Are you sure you want to remove this item?"
                                                             class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>

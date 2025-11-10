@@ -378,23 +378,43 @@
     </x-modal>
 
     <!-- STEP 3: ADD ITEMS MODAL -->
-    <x-modal wire:model="showAddItemsModal" class="max-w-lg">
+    <x-modal wire:model="showAddItemsModal" class="max-w-2xl">
         <h2 class="text-xl font-bold mb-4">Add Items to Branch</h2>
         <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
             {{ $selectedBranchAllocation?->branch->name ?? 'Selected Branch' }}
         </p>
         
+        <!-- Existing Items Display -->
+        @if($selectedBranchAllocation && $selectedBranchAllocation->items->count() > 0)
+            <div class="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                <h4 class="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-2">Current Items in this Branch:</h4>
+                <div class="space-y-1">
+                    @foreach($selectedBranchAllocation->items as $existingItem)
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-yellow-700 dark:text-yellow-300">{{ $existingItem->product->name }}</span>
+                            <span class="text-yellow-600 dark:text-yellow-400">Qty: {{ $existingItem->quantity }}</span>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+        
         <form wire:submit="addItemToBranch" class="space-y-4">
             <div>
                 <label for="selectedProductId" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
-                    Product *
+                    Product * @if($selectedBranchAllocation && $selectedBranchAllocation->items->count() > 0)<span class="text-xs text-orange-600 dark:text-orange-400">(Already added products are disabled)</span>@endif
                 </label>
                 <select id="selectedProductId"
                         wire:model="selectedProductId"
                         class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
                     <option value="">Select a product</option>
                     @foreach($availableProducts as $product)
-                        <option value="{{ $product->id }}">{{ $product->name }}</option>
+                        @php
+                            $isExisting = $selectedBranchAllocation && $selectedBranchAllocation->items->where('product_id', $product->id)->isNotEmpty();
+                        @endphp
+                        <option value="{{ $product->id }}" @disabled($isExisting)>
+                            {{ $product->name }} @if($isExisting) (Already Added) @endif
+                        </option>
                     @endforeach
                 </select>
                 @error('selectedProductId')

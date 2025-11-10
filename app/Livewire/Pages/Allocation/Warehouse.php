@@ -191,21 +191,23 @@ class Warehouse extends Component
 
     public function addItemToBranch()
     {
+        // Custom validation for duplicate products
+        if ($this->selectedProductId && $this->selectedBranchAllocation) {
+            $existingItem = BranchAllocationItem::where('branch_allocation_id', $this->selectedBranchAllocation->id)
+                ->where('product_id', $this->selectedProductId)
+                ->first();
+
+            if ($existingItem) {
+                $this->addError('selectedProductId', 'This product has already been added to this branch allocation.');
+                return;
+            }
+        }
+
         $this->validate([
             'selectedProductId' => 'required|exists:products,id',
             'productQuantity' => 'required|integer|min:1',
             'productUnitPrice' => 'nullable|numeric|min:0',
         ]);
-
-        // Check if product already exists in this branch allocation
-        $existingItem = BranchAllocationItem::where('branch_allocation_id', $this->selectedBranchAllocation->id)
-            ->where('product_id', $this->selectedProductId)
-            ->first();
-
-        if ($existingItem) {
-            session()->flash('error', 'Product already exists in this branch allocation.');
-            return;
-        }
 
         BranchAllocationItem::create([
             'branch_allocation_id' => $this->selectedBranchAllocation->id,

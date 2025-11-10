@@ -24,6 +24,11 @@ class Warehouse extends Component
     public $showAddItemsModal = false;
     public $selectedBranchAllocation = null;
 
+    // Filter fields
+    public $search = '';
+    public $dateFrom = '';
+    public $dateTo = '';
+
     // Create batch fields
     public $transaction_date;
     public $remarks;
@@ -48,10 +53,32 @@ class Warehouse extends Component
 
     public function loadBatchAllocations()
     {
-        $this->batchAllocations = BatchAllocation::with([
+        $query = BatchAllocation::with([
             'branchAllocations.branch',
             'branchAllocations.items.product'
-        ])->orderBy('created_at', 'desc')->get();
+        ])->orderBy('created_at', 'desc');
+
+        // Apply search filter
+        if ($this->search) {
+            $query->where(function ($q) {
+                $q->where('ref_no', 'like', '%' . $this->search . '%')
+                  ->orWhere('remarks', 'like', '%' . $this->search . '%')
+                  ->orWhereHas('branchAllocations.branch', function ($branchQuery) {
+                      $branchQuery->where('name', 'like', '%' . $this->search . '%');
+                  });
+            });
+        }
+
+        // Apply date range filters
+        if ($this->dateFrom) {
+            $query->where('transaction_date', '>=', $this->dateFrom);
+        }
+
+        if ($this->dateTo) {
+            $query->where('transaction_date', '<=', $this->dateTo);
+        }
+
+        $this->batchAllocations = $query->get();
         
         // Initialize open states for all batches (default to closed)
         foreach ($this->batchAllocations as $batch) {
@@ -281,5 +308,27 @@ class Warehouse extends Component
     public function toggleBatch($batchId)
     {
         $this->openBatches[$batchId] = !$this->openBatches[$batchId];
+    }
+
+    public function clearFilters()
+    {
+        $this->search = '';
+        $this->dateFrom = '';
+        $this->dateTo = '';
+    }
+
+    public function updatedSearch()
+    {
+        $this->loadBatchAllocations();
+    }
+
+    public function updatedDateFrom()
+    {
+        $this->loadBatchAllocations();
+    }
+
+    public function updatedDateTo()
+    {
+        $this->loadBatchAllocations();
     }
 }

@@ -37,6 +37,95 @@
             </button>
         </div>
 
+        <!-- Search and Date Filters -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 mb-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Search Filter -->
+                <div>
+                    <label for="search" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                        Search Batches
+                    </label>
+                    <div class="relative">
+                        <input type="text"
+                               id="search"
+                               wire:model.live="search"
+                               placeholder="Search by reference no, remarks, or branch name..."
+                               class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Date From Filter -->
+                <div>
+                    <label for="dateFrom" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                        Date From
+                    </label>
+                    <input type="date"
+                           id="dateFrom"
+                           wire:model.live="dateFrom"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                </div>
+
+                <!-- Date To Filter -->
+                <div>
+                    <label for="dateTo" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                        Date To
+                    </label>
+                    <div class="flex space-x-2">
+                        <input type="date"
+                               id="dateTo"
+                               wire:model.live="dateTo"
+                               class="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                        <button wire:click="clearFilters"
+                                class="px-3 py-2 bg-gray-500 hover:bg-gray-600 text-white text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                            Clear
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Filters Display -->
+            @if($search || $dateFrom || $dateTo)
+                <div class="mt-3 flex flex-wrap items-center gap-2">
+                    <span class="text-sm text-gray-600 dark:text-gray-400">Active filters:</span>
+                    @if(isset($search) && $search)
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
+                            Search: "{{ $search }}"
+                            <button wire:click="$set('search', '')" class="ml-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200">
+                                <svg class="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                </svg>
+                            </button>
+                        </span>
+                    @endif
+                    @if(isset($dateFrom) && $dateFrom)
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300">
+                            From: {{ \Carbon\Carbon::parse($dateFrom)->format('M d, Y') }}
+                            <button wire:click="$set('dateFrom', '')" class="ml-1 text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200">
+                                <svg class="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                </svg>
+                            </button>
+                        </span>
+                    @endif
+                    @if(isset($dateTo) && $dateTo)
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300">
+                            To: {{ \Carbon\Carbon::parse($dateTo)->format('M d, Y') }}
+                            <button wire:click="$set('dateTo', '')" class="ml-1 text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200">
+                                <svg class="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                </svg>
+                            </button>
+                        </span>
+                    @endif
+                </div>
+            @endif
+        </div>
+
         <!-- Batch Allocations List -->
         @forelse($batchAllocations as $batch)
             <x-batch-card
@@ -48,7 +137,7 @@
                 <div class="flex justify-between items-center mb-4">
                     <div>
                         <p class="text-sm text-gray-600 dark:text-gray-400">
-                            Transaction Date: {{ \Carbon\Carbon::parse($batch->transaction_date)->format('M d, Y') }}
+                            Delivery Date: {{ \Carbon\Carbon::parse($batch->transaction_date)->format('M d, Y') }}
                         </p>
                         @if($batch->remarks)
                             <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Remarks: {{ $batch->remarks }}</p>
@@ -181,7 +270,7 @@
 
             <div>
                 <label for="transaction_date" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
-                    Transaction Date *
+                    Delivery Date *
                 </label>
                 <input type="date"
                        id="transaction_date"

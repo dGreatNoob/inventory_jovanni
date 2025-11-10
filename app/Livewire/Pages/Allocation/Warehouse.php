@@ -22,7 +22,9 @@ class Warehouse extends Component
     public $showCreateBatchModal = false;
     public $showAddBranchesModal = false;
     public $showAddItemsModal = false;
+    public $showEditItemModal = false;
     public $selectedBranchAllocation = null;
+    public $selectedEditItem = null;
 
     // Filter fields
     public $search = '';
@@ -45,6 +47,10 @@ class Warehouse extends Component
     public $selectedProductId = null;
     public $productQuantity = 1;
     public $productUnitPrice = null;
+
+    // Edit item fields
+    public $editProductQuantity = 1;
+    public $editProductUnitPrice = null;
 
     public function mount()
     {
@@ -218,6 +224,49 @@ class Warehouse extends Component
 
         session()->flash('message', 'Item added to branch successfully.');
         $this->closeAddItemsModal();
+        $this->loadBatchAllocations();
+    }
+
+    public function openEditItemModal(BranchAllocationItem $item)
+    {
+        if ($item->branchAllocation->batchAllocation->status !== 'draft') {
+            session()->flash('error', 'Cannot edit item from non-draft batch.');
+            return;
+        }
+
+        $this->selectedEditItem = $item;
+        $this->showEditItemModal = true;
+        $this->editProductQuantity = $item->quantity;
+        $this->editProductUnitPrice = $item->unit_price;
+    }
+
+    public function closeEditItemModal()
+    {
+        $this->showEditItemModal = false;
+        $this->selectedEditItem = null;
+        $this->editProductQuantity = 1;
+        $this->editProductUnitPrice = null;
+    }
+
+    public function updateItem()
+    {
+        if (!$this->selectedEditItem) {
+            session()->flash('error', 'No item selected for editing.');
+            return;
+        }
+
+        $this->validate([
+            'editProductQuantity' => 'required|integer|min:1',
+            'editProductUnitPrice' => 'nullable|numeric|min:0',
+        ]);
+
+        $this->selectedEditItem->update([
+            'quantity' => $this->editProductQuantity,
+            'unit_price' => $this->editProductUnitPrice,
+        ]);
+
+        session()->flash('message', 'Item updated successfully.');
+        $this->closeEditItemModal();
         $this->loadBatchAllocations();
     }
 

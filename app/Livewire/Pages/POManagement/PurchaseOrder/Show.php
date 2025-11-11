@@ -8,6 +8,7 @@ use App\Models\PurchaseOrderApprovalLog;
 use App\Models\ProductOrder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Enums\PurchaseOrderStatus;
 
 class Show extends Component
@@ -29,10 +30,17 @@ class Show extends Component
     public $totalReceived;
     public $totalDestroyed;
     public $batch_numbers = [];
+    public $batches; // ✅ ADDED - Store batches for this PO
 
     public function mount($Id)
     {
         $this->Id = $Id;
+        
+        Log::info('Loading Purchase Order details', [
+            'po_id' => $Id,
+            'user' => 'Wts135',
+            'timestamp' => '2025-11-11 08:01:50',
+        ]);
         
         // Load purchase order with relationships
         $this->purchaseOrder = PurchaseOrder::with([
@@ -43,11 +51,14 @@ class Show extends Component
             'approverInfo',
             'department',
             'approvalLogs.user',
-            'deliveries',  // ✅ ADD THIS - for delivery information cards
+            'deliveries',
         ])->findOrFail($Id);
 
         // Initialize computed properties
         $this->updateComputedProperties();
+        
+        // ✅ ADDED - Load batches for this PO
+        $this->loadBatches();
 
         // ✅ CORRECT - Compare enum to enum
         if ($this->purchaseOrder->status === PurchaseOrderStatus::APPROVED) {
@@ -75,6 +86,45 @@ class Show extends Component
                 $this->batch_numbers[$order->id] = $order->batch_number ?? '';
             }
         }
+        
+        Log::info('Purchase Order loaded successfully', [
+            'po_id' => $Id,
+            'po_num' => $this->purchaseOrder->po_num,
+            'status' => $this->purchaseOrder->status->value,
+            'batch_count' => $this->batches->count(),
+            'user' => 'Wts135',
+            'timestamp' => '2025-11-11 08:01:50',
+        ]);
+    }
+
+    /**
+     * ✅ ADDED - Load batches for THIS purchase order ONLY
+     */
+    protected function loadBatches()
+    {
+        Log::info('Loading batches for Purchase Order', [
+            'po_id' => $this->purchaseOrder->id,
+            'po_num' => $this->purchaseOrder->po_num,
+            'user' => 'Wts135',
+            'timestamp' => '2025-11-11 08:01:50',
+        ]);
+        
+        // ✅ Filter by purchase_order_id (not product_id)
+        $this->batches = \App\Models\ProductBatch::with(['product', 'receivedByUser'])
+            ->where('purchase_order_id', $this->purchaseOrder->id)
+            ->orderBy('received_date', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        Log::info('Batches loaded successfully', [
+            'po_id' => $this->purchaseOrder->id,
+            'po_num' => $this->purchaseOrder->po_num,
+            'batch_count' => $this->batches->count(),
+            'batch_numbers' => $this->batches->pluck('batch_number')->unique()->toArray(),
+            'product_ids' => $this->batches->pluck('product_id')->unique()->toArray(),
+            'user' => 'Wts135',
+            'timestamp' => '2025-11-11 08:01:50',
+        ]);
     }
 
     // Update all computed properties
@@ -103,13 +153,21 @@ class Show extends Component
         try {
             DB::beginTransaction();
             
+            Log::info('Starting approval process', [
+                'po_id' => $this->purchaseOrder->id,
+                'po_num' => $this->purchaseOrder->po_num,
+                'current_status' => $this->purchaseOrder->status->value,
+                'user' => 'Wts135',
+                'timestamp' => '2025-11-11 08:01:50',
+            ]);
+            
             // ✅ CORRECT - Compare enum to enum
             if ($this->purchaseOrder->status === PurchaseOrderStatus::PENDING) {
                 // ✅ First approval: PENDING → APPROVED
                 $autoExpectedDate = now()->addDays(7)->format('Y-m-d');
                 
                 $this->purchaseOrder->update([
-                    'status' => PurchaseOrderStatus::APPROVED,  // ✅ Use enum, not string
+                    'status' => PurchaseOrderStatus::APPROVED,
                     'approver' => Auth::id(),
                     'approved_at' => now(),
                     'approved_by' => Auth::id(),
@@ -125,14 +183,25 @@ class Show extends Component
                 ]);
 
                 DB::commit();
+                
+                Log::info('Purchase order approved (PENDING → APPROVED)', [
+                    'po_id' => $this->purchaseOrder->id,
+                    'po_num' => $this->purchaseOrder->po_num,
+                    'expected_delivery_date' => $autoExpectedDate,
+                    'user' => 'Wts135',
+                    'timestamp' => '2025-11-11 08:01:50',
+                ]);
+                
                 session()->flash('message', 'Purchase order #' . $this->purchaseOrder->po_num . ' approved successfully! Expected delivery: ' . now()->addDays(7)->format('M d, Y'));
                 
-            } elseif ($this->purchaseOrder->status === PurchaseOrderStatus::APPROVED) {  // ✅ Compare enum to enum
+            } elseif ($this->purchaseOrder->status === PurchaseOrderStatus::APPROVED) {
                 // ✅ Second approval: APPROVED → TO_RECEIVE (with batch numbers)
                 
-                \Log::info('Attempting to save batch numbers', [
+                Log::info('Attempting to save batch numbers', [
                     'batch_numbers' => $this->batch_numbers,
                     'po_id' => $this->purchaseOrder->id,
+                    'user' => 'Wts135',
+                    'timestamp' => '2025-11-11 08:01:50',
                 ]);
                 
                 // Check if batch numbers are provided
@@ -142,6 +211,11 @@ class Show extends Component
                 
                 if (empty($batchNumbersProvided)) {
                     DB::rollBack();
+                    Log::warning('No batch numbers provided', [
+                        'po_id' => $this->purchaseOrder->id,
+                        'user' => 'Wts135',
+                        'timestamp' => '2025-11-11 08:01:50',
+                    ]);
                     session()->flash('error', 'Please enter at least one batch number before completing approval.');
                     return;
                 }
@@ -159,25 +233,36 @@ class Show extends Component
                             $productOrder->save();
                             $savedCount++;
                             
-                            \Log::info("Saved batch number", [
+                            Log::info('Batch number saved to product order', [
                                 'order_id' => $orderId,
+                                'product_id' => $productOrder->product_id,
                                 'batch_number' => trim($batchNumber),
-                                'saved' => $productOrder->batch_number,
+                                'user' => 'Wts135',
+                                'timestamp' => '2025-11-11 08:01:50',
                             ]);
                         } else {
-                            \Log::warning("Product order not found", ['order_id' => $orderId]);
+                            Log::warning('Product order not found', [
+                                'order_id' => $orderId,
+                                'user' => 'Wts135',
+                                'timestamp' => '2025-11-11 08:01:50',
+                            ]);
                         }
                     }
                 }
 
                 if ($savedCount === 0) {
                     DB::rollBack();
+                    Log::error('Failed to save batch numbers', [
+                        'po_id' => $this->purchaseOrder->id,
+                        'user' => 'Wts135',
+                        'timestamp' => '2025-11-11 08:01:50',
+                    ]);
                     session()->flash('error', 'Failed to save batch numbers. Please try again.');
                     return;
                 }
 
                 // Update status to TO_RECEIVE
-                $this->purchaseOrder->status = PurchaseOrderStatus::TO_RECEIVE;  // ✅ Use enum
+                $this->purchaseOrder->status = PurchaseOrderStatus::TO_RECEIVE;
                 $this->purchaseOrder->save();
 
                 PurchaseOrderApprovalLog::create([
@@ -193,15 +278,27 @@ class Show extends Component
                 // Refresh data
                 $this->purchaseOrder->refresh();
                 $this->updateComputedProperties();
+                $this->loadBatches(); // ✅ ADDED - Refresh batches
+                
+                Log::info('Purchase order marked as ready to receive (APPROVED → TO_RECEIVE)', [
+                    'po_id' => $this->purchaseOrder->id,
+                    'po_num' => $this->purchaseOrder->po_num,
+                    'batch_count' => $savedCount,
+                    'user' => 'Wts135',
+                    'timestamp' => '2025-11-11 08:01:50',
+                ]);
                 
                 session()->flash('message', "Purchase order is now ready for receiving. {$savedCount} batch number(s) have been saved.");
             }
             
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('Approval error', [
+            Log::error('Approval error', [
+                'po_id' => $this->purchaseOrder->id ?? null,
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
+                'user' => 'Wts135',
+                'timestamp' => '2025-11-11 08:01:50',
             ]);
             session()->flash('error', 'Failed to approve purchase order: ' . $e->getMessage());
         }
@@ -215,8 +312,16 @@ class Show extends Component
                     'cancellation_reason' => 'required|string|min:5|max:500',
                 ]);
 
+                Log::info('Rejecting purchase order', [
+                    'po_id' => $this->purchaseOrder->id,
+                    'po_num' => $this->purchaseOrder->po_num,
+                    'reason' => $this->cancellation_reason,
+                    'user' => 'Wts135',
+                    'timestamp' => '2025-11-11 08:01:50',
+                ]);
+
                 $this->purchaseOrder->update([
-                    'status' => PurchaseOrderStatus::CANCELLED,  // ✅ Use enum
+                    'status' => PurchaseOrderStatus::CANCELLED,
                     'cancellation_reason' => $this->cancellation_reason,
                     'cancelled_at' => now(),
                     'cancelled_by' => Auth::id(),
@@ -235,10 +340,23 @@ class Show extends Component
                 $this->purchaseOrder->refresh();
                 $this->updateComputedProperties();
                 
+                Log::info('Purchase order rejected successfully', [
+                    'po_id' => $this->purchaseOrder->id,
+                    'po_num' => $this->purchaseOrder->po_num,
+                    'user' => 'Wts135',
+                    'timestamp' => '2025-11-11 08:01:50',
+                ]);
+                
                 session()->flash('message', 'Purchase order rejected.');
             });
             
         } catch (\Exception $e) {
+            Log::error('Rejection error', [
+                'po_id' => $this->purchaseOrder->id ?? null,
+                'message' => $e->getMessage(),
+                'user' => 'Wts135',
+                'timestamp' => '2025-11-11 08:01:50',
+            ]);
             session()->flash('error', 'Failed to reject purchase order: ' . $e->getMessage());
         }
     }
@@ -251,8 +369,16 @@ class Show extends Component
                     'cancellation_reason' => 'required|string|min:5|max:500',
                 ]);
 
+                Log::info('Returning purchase order to approved status', [
+                    'po_id' => $this->purchaseOrder->id,
+                    'po_num' => $this->purchaseOrder->po_num,
+                    'reason' => $this->cancellation_reason,
+                    'user' => 'Wts135',
+                    'timestamp' => '2025-11-11 08:01:50',
+                ]);
+
                 $this->purchaseOrder->update([
-                    'status' => PurchaseOrderStatus::APPROVED,  // ✅ Use enum
+                    'status' => PurchaseOrderStatus::APPROVED,
                     'loaded_date' => null,
                     'return_reason' => $this->cancellation_reason,
                 ]);
@@ -279,11 +405,25 @@ class Show extends Component
                 // Refresh the purchase order and computed properties
                 $this->purchaseOrder->refresh();
                 $this->updateComputedProperties();
+                $this->loadBatches(); // ✅ ADDED - Refresh batches
+                
+                Log::info('Purchase order returned to approved status successfully', [
+                    'po_id' => $this->purchaseOrder->id,
+                    'po_num' => $this->purchaseOrder->po_num,
+                    'user' => 'Wts135',
+                    'timestamp' => '2025-11-11 08:01:50',
+                ]);
                 
                 session()->flash('message', 'Purchase order returned to approved status. Batch numbers cleared.');
             });
             
         } catch (\Exception $e) {
+            Log::error('Return to approved error', [
+                'po_id' => $this->purchaseOrder->id ?? null,
+                'message' => $e->getMessage(),
+                'user' => 'Wts135',
+                'timestamp' => '2025-11-11 08:01:50',
+            ]);
             session()->flash('error', 'Failed to return purchase order: ' . $e->getMessage());
         }
     }

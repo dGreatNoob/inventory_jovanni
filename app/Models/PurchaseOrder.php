@@ -78,6 +78,11 @@ class PurchaseOrder extends Model
         return $this->belongsTo(User::class, 'cancelled_by');
     }
 
+        public function batches(): HasMany
+    {
+        return $this->hasMany(ProductBatch::class, 'purchase_order_id');
+    }
+
     public function productOrders()
     {
         return $this->hasMany(ProductOrder::class);

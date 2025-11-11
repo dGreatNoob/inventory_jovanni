@@ -58,6 +58,9 @@ class ProductOrder extends Model
 
     public function getRemainingQuantityAttribute()
     {
-        return max(0, $this->quantity - $this->received_quantity);
+        $expected = $this->expected_qty ?? $this->quantity;
+        $totalDelivered = ($this->received_quantity ?? 0) + ($this->destroyed_qty ?? 0);
+        
+        return max(0, $expected - $totalDelivered);
     }
 }

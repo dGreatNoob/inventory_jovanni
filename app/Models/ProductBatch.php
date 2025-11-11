@@ -12,6 +12,7 @@ class ProductBatch extends Model
 
     protected $fillable = [
         'product_id',
+        'purchase_order_id', // ✅ ADDED
         'batch_number',
         'initial_qty',
         'current_qty',
@@ -36,6 +37,12 @@ class ProductBatch extends Model
     public function receivedByUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'received_by');
+    }
+
+    // ✅ ADDED - Relationship to Purchase Order
+    public function purchaseOrder(): BelongsTo
+    {
+        return $this->belongsTo(PurchaseOrder::class, 'purchase_order_id');
     }
 
     // Helper methods

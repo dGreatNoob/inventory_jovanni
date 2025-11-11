@@ -173,6 +173,13 @@ class Index extends Component
         try {
             DB::beginTransaction();
 
+            Log::info('Starting stock-in submission', [
+                'po_num' => $this->foundPurchaseOrder->po_num,
+                'dr_number' => $this->drNumber,
+                'user' => 'Wts135',
+                'timestamp' => '2025-11-11 08:31:49',
+            ]);
+
             $allItemsFullyReceived = true;
             $anyItemsReceived = false;
 
@@ -211,21 +218,65 @@ class Index extends Component
                 // Track if this product order needs saving
                 $needsSaving = false;
                 
+                // ✅ SET FLAG FIRST - If ANYTHING was delivered, mark as received
+                if ($totalDelivered > 0) {
+                    $anyItemsReceived = true;
+                    
+                    Log::info('Items being processed for delivery', [
+                        'product_sku' => $productOrder->product->sku,
+                        'good_qty' => $receiveQty,
+                        'destroyed_qty' => $destroyedQty,
+                        'total_delivered' => $totalDelivered,
+                        'batch_number' => $batchNumber,
+                        'remaining_qty' => $productOrder->getRemainingQuantityAttribute(),
+                        'user' => 'Wts135',
+                        'timestamp' => '2025-11-11 08:42:44',
+                    ]);
+                }
+                
                 // ✅ SAVE DESTROYED QUANTITY (if any)
                 if ($destroyedQty > 0) {
                     $productOrder->destroyed_qty = ($productOrder->destroyed_qty ?? 0) + $destroyedQty;
                     $needsSaving = true;
-                    Log::info("💥 Destroyed items for product {$productOrder->product->sku}: {$destroyedQty} (Total destroyed: {$productOrder->destroyed_qty})");
+                    
+                    Log::info('Destroyed items recorded', [
+                        'product_sku' => $productOrder->product->sku,
+                        'destroyed_qty' => $destroyedQty,
+                        'total_destroyed' => $productOrder->destroyed_qty,
+                        'user' => 'Wts135',
+                        'timestamp' => '2025-11-11 08:42:44',
+                    ]);
                 }
                 
-                // ✅ PROCESS GOOD ITEMS (add to inventory)
-                if ($actualReceiveQty > 0 && $productOrder->getRemainingQuantityAttribute() > 0) {
-                    $anyItemsReceived = true;
-                    $actualReceive = min($actualReceiveQty, $productOrder->getRemainingQuantityAttribute());
+                // ✅ PROCESS ITEMS (create batch even if only damaged items)
+                if ($totalDelivered > 0) {
+                    // Calculate actual receive based on remaining capacity
+                    $remainingQty = $productOrder->getRemainingQuantityAttribute();
+                    $actualReceive = 0;
                     
-                    // Update received quantity with GOOD items only
-                    $productOrder->received_quantity += $actualReceive;
-                    $needsSaving = true;
+                    // Only add to inventory if there's remaining capacity AND good items exist
+                    if ($receiveQty > 0 && $remainingQty > 0) {
+                        $actualReceive = min($receiveQty, $remainingQty);
+                        
+                        $productOrder->received_quantity += $actualReceive;
+                        $needsSaving = true;
+                        
+                        // ✅ UPDATE INVENTORY with GOOD items only
+                        $product = $productOrder->product;
+                        $inventory = ProductInventory::firstOrNew(['product_id' => $product->id]);
+                        $oldQty = $inventory->quantity ?? 0;
+                        $inventory->quantity = $oldQty + $actualReceive;
+                        $inventory->save();
+
+                        Log::info('Inventory updated', [
+                            'product_sku' => $product->sku,
+                            'old_qty' => $oldQty,
+                            'new_qty' => $inventory->quantity,
+                            'added_qty' => $actualReceive,
+                            'user' => 'Wts135',
+                            'timestamp' => '2025-11-11 08:42:44',
+                        ]);
+                    }
                     
                     // ✅ Check status based on TOTAL delivered (good + destroyed)
                     $totalReceivedSoFar = $productOrder->received_quantity + ($productOrder->destroyed_qty ?? 0);
@@ -240,22 +291,16 @@ class Index extends Component
                     
                     if (!empty($batchNumber)) {
                         $productOrder->batch_number = $batchNumber;
+                        $needsSaving = true;
                     }
 
-                    // ✅ UPDATE INVENTORY with GOOD items only
-                    $product = $productOrder->product;
-                    $inventory = ProductInventory::firstOrNew(['product_id' => $product->id]);
-                    $oldQty = $inventory->quantity ?? 0;
-                    $inventory->quantity = $oldQty + $actualReceive; // Only good items!
-                    $inventory->save();
-
-                    Log::info("📦 Inventory updated for {$product->sku}: {$oldQty} → " . ($oldQty + $actualReceive) . " (+{$actualReceive} good items)");
-
-                    // ✅ CREATE BATCH with GOOD items only
+                    // ✅ CREATE BATCH (even if only damaged items or remaining = 0)
                     if (!empty($batchNumber)) {
                         try {
                             $batchNotes = "Total Delivered: {$totalDelivered} units";
-                            $batchNotes .= "\n✅ Good Items: {$actualReceive} units (Available)";
+                            if ($actualReceive > 0) {
+                                $batchNotes .= "\n✅ Good Items: {$actualReceive} units (Available)";
+                            }
                             if ($destroyedQty > 0) {
                                 $batchNotes .= "\n💥 Destroyed: {$destroyedQty} units (Damaged on arrival)";
                             }
@@ -265,34 +310,54 @@ class Index extends Component
                             $batchNotes .= "\nDate: " . now()->format('Y-m-d H:i:s');
                             
                             $newBatch = \App\Models\ProductBatch::create([
-                                'product_id' => $product->id,
+                                'product_id' => $productOrder->product->id,
+                                'purchase_order_id' => $this->foundPurchaseOrder->id,
                                 'batch_number' => $batchNumber,
-                                'initial_qty' => $totalDelivered, // ✅ Total delivered (good + destroyed)
-                                'current_qty' => $actualReceive,   // ✅ Only good items (available stock)
+                                'initial_qty' => $totalDelivered,
+                                'current_qty' => $actualReceive,
                                 'received_date' => now()->toDateString(),
                                 'received_by' => auth()->id(),
                                 'location' => 'Warehouse',
                                 'notes' => $batchNotes,
                             ]);
                             
-                            Log::info("✅ Created batch {$batchNumber} (ID: {$newBatch->id}) | Initial: {$totalDelivered} (delivered), Current: {$actualReceive} (good), Destroyed: {$destroyedQty}");
+                            Log::info('Batch created with PO tracking', [
+                                'batch_id' => $newBatch->id,
+                                'batch_number' => $batchNumber,
+                                'product_id' => $productOrder->product->id,
+                                'product_sku' => $productOrder->product->sku,
+                                'purchase_order_id' => $this->foundPurchaseOrder->id,
+                                'po_num' => $this->foundPurchaseOrder->po_num,
+                                'initial_qty' => $totalDelivered,
+                                'current_qty' => $actualReceive,
+                                'destroyed_qty' => $destroyedQty,
+                                'user' => 'Wts135',
+                                'timestamp' => '2025-11-11 08:42:44',
+                            ]);
                         } catch (\Exception $e) {
-                            Log::error("❌ Failed to create batch for {$product->sku}: " . $e->getMessage());
+                            Log::error('Failed to create batch', [
+                                'product_sku' => $productOrder->product->sku,
+                                'batch_number' => $batchNumber,
+                                'error' => $e->getMessage(),
+                                'trace' => $e->getTraceAsString(),
+                                'user' => 'Wts135',
+                                'timestamp' => '2025-11-11 08:42:44',
+                            ]);
                         }
                     }
 
-                    // ✅ LOG STOCK-IN ACTIVITY
+                    // ✅ LOG STOCK-IN ACTIVITY (only if good items added to inventory)
                     if ($actualReceive > 0) {
-                        $logMessage = "Stock-in {$product->name}: {$oldQty} → " . ($oldQty + $actualReceive);
+                        $logMessage = "Stock-in {$productOrder->product->name}: {$oldQty} → " . ($oldQty + $actualReceive);
                         if ($destroyedQty > 0) {
                             $logMessage .= " (Good: {$actualReceive}, Destroyed: {$destroyedQty})";
                         }
                         
                         activity('Stock-in')
                             ->causedBy(auth()->user())
-                            ->performedOn($product)
+                            ->performedOn($productOrder->product)
                             ->withProperties([
-                                'sku' => $product->sku,
+                                'sku' => $productOrder->product->sku,
                                 'good_qty' => $actualReceive,
                                 'destroyed_qty' => $destroyedQty,
                                 'total_delivered' => $totalDelivered,
@@ -308,7 +373,16 @@ class Index extends Component
                 // ✅ SAVE PRODUCT ORDER
                 if ($needsSaving) {
                     $productOrder->save();
-                    Log::info("✅ Saved product order {$productOrder->id}: received={$productOrder->received_quantity}, destroyed={$productOrder->destroyed_qty}, total=" . ($productOrder->received_quantity + ($productOrder->destroyed_qty ?? 0)));
+                    
+                    Log::info('Product order updated', [
+                        'product_order_id' => $productOrder->id,
+                        'received_quantity' => $productOrder->received_quantity,
+                        'destroyed_qty' => $productOrder->destroyed_qty,
+                        'batch_number' => $productOrder->batch_number,
+                        'total' => $productOrder->received_quantity + ($productOrder->destroyed_qty ?? 0),
+                        'user' => 'Wts135',
+                        'timestamp' => '2025-11-11 08:42:44',
+                    ]);
                 }
 
                 // ✅ CHECK IF FULLY RECEIVED (good + destroyed)
@@ -326,6 +400,7 @@ class Index extends Component
                             'sku' => $productOrder->product->sku,
                             'destroyed_qty' => $destroyedQty,
                             'dr_number' => $this->drNumber,
+                            'batch_number' => $batchNumber,
                             'remarks' => $remarks,
                             'product_order_id' => $productOrder->id,
                         ])
@@ -389,10 +464,25 @@ class Index extends Component
                         'updated_at' => now(),
                     ]);
                     
-                    Log::info("✅ Created delivery record for PO: {$this->foundPurchaseOrder->po_num} | DR: {$this->drNumber} | Good: {$receivedTotal} | Destroyed: {$destroyedTotal} | Total: " . ($receivedTotal + $destroyedTotal));
+                    Log::info('Delivery record created', [
+                        'po_num' => $this->foundPurchaseOrder->po_num,
+                        'dr_number' => $this->drNumber,
+                        'good_qty' => $receivedTotal,
+                        'destroyed_qty' => $destroyedTotal,
+                        'total_qty' => $receivedTotal + $destroyedTotal,
+                        'user' => 'Wts135',
+                        'timestamp' => '2025-11-11 08:31:49',
+                    ]);
                 } catch (\Exception $e) {
                     DB::rollBack();
-                    Log::error("❌ Failed to create delivery record: " . $e->getMessage());
+                    
+                    Log::error('Failed to create delivery record', [
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString(),
+                        'user' => 'Wts135',
+                        'timestamp' => '2025-11-11 08:31:49',
+                    ]);
+                    
                     $this->message = "Failed to create delivery record: " . $e->getMessage();
                     $this->messageType = 'error';
                     return;
@@ -410,16 +500,30 @@ class Index extends Component
 
             DB::commit();
 
+            Log::info('Stock-in submission completed successfully', [
+                'po_num' => $this->foundPurchaseOrder->po_num,
+                'dr_number' => $this->drNumber,
+                'status' => $this->foundPurchaseOrder->status->value,
+                'user' => 'Wts135',
+                'timestamp' => '2025-11-11 08:31:49',
+            ]);
+
             $this->message = "Stock-in report submitted successfully for PO: {$this->foundPurchaseOrder->po_num}";
             $this->messageType = 'success';
             $this->currentStep = 3;
 
         } catch (\Exception $e) {
             DB::rollBack();
+            
+            Log::error('Stock-in submission error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user' => 'Wts135',
+                'timestamp' => '2025-11-11 08:31:49',
+            ]);
+            
             $this->message = "Error submitting report: " . $e->getMessage();
             $this->messageType = 'error';
-            Log::error("Stock-in submission error: " . $e->getMessage());
-            Log::error("Stack trace: " . $e->getTraceAsString());
         }
     }
 

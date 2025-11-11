@@ -229,10 +229,16 @@
             <div class="space-y-4">
                 @foreach($foundPurchaseOrder->productOrders as $productOrder)
                 @php
-                    $receivedQty = $productOrder->received_quantity ?? 0;
                     $orderedQty = $productOrder->quantity;
-                    $remainingQty = $productOrder->remaining_quantity;
-                    $isFullyReceived = $receivedQty >= $orderedQty;
+                    $expectedQty = $productOrder->expected_qty ?? $productOrder->quantity;
+                    $receivedQty = $productOrder->received_quantity ?? 0;
+                    $destroyedQty = $productOrder->destroyed_qty ?? 0;
+                    $totalDelivered = $receivedQty + $destroyedQty;
+                    $remainingQty = $productOrder->remaining_quantity; // ✅ Uses the model accessor
+                    $isFullyReceived = $totalDelivered >= $expectedQty;
+                    
+                    $orderedUomDisplay = $productOrder->product->uom ?? 'pcs';
+                    $remainingUomDisplay = $orderedUomDisplay;
                 @endphp
                 
                 <div class="border border-gray-200 dark:border-zinc-600 rounded-xl p-4 space-y-3">

@@ -175,6 +175,12 @@ Route::middleware(['auth'])->group(function () {
         return view('livewire.pages.qrcode.salesorderprint', compact('salesOrder'));
     })->name('sales-orders.print');
 
+    // VDR Print Route
+    Route::get('/allocation/vdr/print/{batchId}', [\App\Http\Controllers\VDRPrintController::class, 'printVDR'])->name('allocation.vdr.print');
+    
+    // VDR Excel Export Route
+    Route::get('/allocation/vdr/excel/{batchId}', [\App\Http\Controllers\VDRExcelController::class, 'exportVDR'])->name('allocation.vdr.excel');
+
     Route::get('/sales-order', SalesManagementIndex::class)->name('salesorder.index');
     Route::get('/sales-order/{salesOrderId}', Viewsalesorder::class)->name('salesorder.view');
     Route::get('/sales-return', SalesManagementSalesReturn::class)->name('salesorder.return');

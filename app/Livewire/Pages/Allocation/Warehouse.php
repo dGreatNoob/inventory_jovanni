@@ -26,6 +26,13 @@ class Warehouse extends Component
     public $selectedBranchAllocation = null;
     public $selectedEditItem = null;
 
+    // VDR Export fields
+    public $showVDRPreviewModal = false;
+    public $selectedBatchForVDR = null;
+    public $vendorCode = '';
+    public $vendorName = '';
+    public $preparedBy = '';
+
     // Filter fields
     public $search = '';
     public $dateFrom = '';
@@ -381,5 +388,265 @@ class Warehouse extends Component
     public function updatedDateTo()
     {
         $this->loadBatchAllocations();
+    }
+
+    // VDR Export Methods
+    public function openVDRPreview(BatchAllocation $batch)
+    {
+        $this->selectedBatchForVDR = $batch;
+        $this->showVDRPreviewModal = true;
+        // Set default vendor info
+        $this->vendorCode = '104148'; // Default vendor code
+        $this->vendorName = 'JKF CORP.'; // Default vendor name
+        $this->preparedBy = '';
+    }
+
+    public function closeVDRPreview()
+    {
+        $this->showVDRPreviewModal = false;
+        $this->selectedBatchForVDR = null;
+        $this->vendorCode = '';
+        $this->vendorName = '';
+        $this->preparedBy = '';
+    }
+
+    public function exportToExcel()
+    {
+        if (!$this->selectedBatchForVDR) {
+            session()->flash('error', 'No batch selected for export.');
+            return;
+        }
+
+        // Validation
+        $this->validate([
+            'vendorCode' => 'required|string',
+            'vendorName' => 'required|string',
+            'preparedBy' => 'required|string',
+        ]);
+
+        try {
+            // Generate file name
+            $fileName = 'VDR_' . $this->selectedBatchForVDR->ref_no . '_' . now()->format('YmdHis') . '.csv';
+            
+            // Generate CSV content
+            $csvContent = $this->generateVDRCSVContent();
+            
+            // Set session data for download
+            session(['vdr_csv_content' => $csvContent]);
+            session(['vdr_filename' => $fileName]);
+            
+            // For Livewire, we'll redirect to a download route or use JavaScript
+            // For now, return the data and let JavaScript handle the download
+            $this->dispatch('download-vdr', content: $csvContent, filename: $fileName);
+            
+            // Store the data temporarily for backup download
+            cache()->put('vdr_export_' . time(), [
+                'content' => $csvContent,
+                'filename' => $fileName
+            ], 300); // Store for 5 minutes
+            
+            session()->flash('message', 'VDR CSV file should download automatically. If it doesn\'t, check your browser\'s download folder or downloads bar.');
+        } catch (\Exception $e) {
+            session()->flash('error', 'Failed to export VDR: ' . $e->getMessage());
+        }
+    }
+
+    private function generateVDRCSVContent()
+    {
+        $batch = $this->selectedBatchForVDR;
+        $csvData = [];
+        
+        // Header information
+        $csvData[] = [
+            'DR#' => $batch->ref_no,
+            'STORE CODE' => '',
+            'STORE NAME' => '',
+            'EXP. DELIVERY DATE' => \Carbon\Carbon::parse($batch->transaction_date)->format('m/d/y'),
+            'DP' => '',
+            'SD' => '',
+            'CL' => '',
+            'CLASS DESC' => '',
+            'BOXES' => '',
+            'SKU #' => '',
+            'SKU DESCRIPTION' => '',
+            'QTY' => ''
+        ];
+
+        $totalQty = 0;
+        $totalBoxes = 0;
+        $uniqueSkus = collect();
+
+        // Process each branch allocation
+        foreach ($batch->branchAllocations as $branchAllocation) {
+            $branch = $branchAllocation->branch;
+            $storeCode = $branch->code ?? '';
+            $storeName = $branch->name ?? '';
+
+            // Process each item
+            foreach ($branchAllocation->items as $item) {
+                $product = $item->product;
+                $skuNumber = $product->sku ?? $product->id;
+                $skuDescription = $product->name ?? '';
+                
+                $csvData[] = [
+                    'DR#' => $batch->ref_no,
+                    'STORE CODE' => $storeCode,
+                    'STORE NAME' => $storeName,
+                    'EXP. DELIVERY DATE' => \Carbon\Carbon::parse($batch->transaction_date)->format('m/d/y'),
+                    'DP' => '04', // Default values as per your requirements
+                    'SD' => '10',
+                    'CL' => '72007',
+                    'CLASS DESC' => 'JOVANNI', // Default as per your example
+                    'BOXES' => '0', // Will be implemented later
+                    'SKU #' => $skuNumber,
+                    'SKU DESCRIPTION' => $skuDescription,
+                    'QTY' => $item->quantity
+                ];
+
+                $totalQty += $item->quantity;
+                $totalBoxes += 0; // To be implemented later
+                $uniqueSkus->push($skuNumber);
+            }
+        }
+
+        // Add summary rows
+        $csvData[] = ['', '', '', '', '', '', '', '', '', '', '', '']; // Empty row
+        $csvData[] = [
+            'DR#' => '',
+            'STORE CODE' => 'Prepared By:_______________________________',
+            'STORE NAME' => 'SC Representative',
+            'EXP. DELIVERY DATE' => '',
+            'DP' => '',
+            'SD' => '',
+            'CL' => '',
+            'CLASS DESC' => '',
+            'BOXES' => '',
+            'SKU #' => '',
+            'SKU DESCRIPTION' => 'TOTAL QTY: ' . $totalQty,
+            'QTY' => ''
+        ];
+        $csvData[] = [
+            'DR#' => '',
+            'STORE CODE' => '',
+            'STORE NAME' => '',
+            'EXP. DELIVERY DATE' => '',
+            'DP' => '',
+            'SD' => '',
+            'CL' => '',
+            'CLASS DESC' => '',
+            'BOXES' => '',
+            'SKU #' => '',
+            'SKU DESCRIPTION' => 'TOTAL BOXES: ' . $totalBoxes,
+            'QTY' => ''
+        ];
+        $csvData[] = [
+            'DR#' => '',
+            'STORE CODE' => '',
+            'STORE NAME' => '',
+            'EXP. DELIVERY DATE' => '',
+            'DP' => '',
+            'SD' => '',
+            'CL' => '',
+            'CLASS DESC' => '',
+            'BOXES' => '',
+            'SKU #' => '',
+            'SKU DESCRIPTION' => 'TOTAL SKU/S: ' . $uniqueSkus->unique()->count(),
+            'QTY' => ''
+        ];
+
+        // Create CSV content
+        $csvContent = '';
+        foreach ($csvData as $row) {
+            $csvContent .= implode(',', array_map(function($field) {
+                return '"' . str_replace('"', '""', $field) . '"';
+            }, $row)) . "\n";
+        }
+
+        return $csvContent;
+    }
+
+    public function manualDownload()
+    {
+        if (!$this->selectedBatchForVDR) {
+            session()->flash('error', 'No batch selected for download.');
+            return;
+        }
+
+        // Validation
+        $this->validate([
+            'vendorCode' => 'required|string',
+            'vendorName' => 'required|string',
+            'preparedBy' => 'required|string',
+        ]);
+
+        try {
+            // Generate CSV content
+            $csvContent = $this->generateVDRCSVContent();
+            $fileName = 'VDR_' . $this->selectedBatchForVDR->ref_no . '_' . now()->format('YmdHis') . '.csv';
+            
+            // Store in session for direct download
+            session(['vdr_csv_content' => $csvContent]);
+            session(['vdr_filename' => $fileName]);
+            
+            // Close modal and show success
+            $this->closeVDRPreview();
+            session()->flash('message', 'VDR file is ready for download. Please check your browser downloads or Downloads folder.');
+            
+        } catch (\Exception $e) {
+            session()->flash('error', 'Failed to generate VDR: ' . $e->getMessage());
+        }
+    }
+
+    public function printVDR()
+    {
+        if (!$this->selectedBatchForVDR) {
+            session()->flash('error', 'No batch selected for printing.');
+            return;
+        }
+
+        // Validation
+        $this->validate([
+            'vendorCode' => 'required|string',
+            'vendorName' => 'required|string',
+            'preparedBy' => 'required|string',
+        ]);
+
+        try {
+            // Open print window with prepared by value
+            $this->dispatch('open-vdr-print', batchId: $this->selectedBatchForVDR->id, preparedBy: $this->preparedBy);
+            session()->flash('message', 'Opening VDR print view in new window...');
+        } catch (\Exception $e) {
+            session()->flash('error', 'Failed to open VDR print view: ' . $e->getMessage());
+        }
+    }
+
+    public function exportVDRToExcel()
+    {
+        if (!$this->selectedBatchForVDR) {
+            session()->flash('error', 'No batch selected for export.');
+            return;
+        }
+
+        // Validation
+        $this->validate([
+            'vendorCode' => 'required|string',
+            'vendorName' => 'required|string',
+            'preparedBy' => 'required|string',
+        ]);
+
+        try {
+            // Open Excel export in new window (this will trigger download)
+            $excelUrl = route('allocation.vdr.excel', [
+                'batchId' => $this->selectedBatchForVDR->id,
+                'vendor_code' => urlencode($this->vendorCode),
+                'vendor_name' => urlencode($this->vendorName),
+                'prepared_by' => urlencode($this->preparedBy)
+            ]);
+            
+            $this->dispatch('open-excel-download', url: $excelUrl);
+            session()->flash('message', 'Opening VDR Excel export in new window...');
+        } catch (\Exception $e) {
+            session()->flash('error', 'Failed to export VDR to Excel: ' . $e->getMessage());
+        }
     }
 }

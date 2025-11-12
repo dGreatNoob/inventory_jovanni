@@ -28,10 +28,10 @@ window.addEventListener('download-vdr', (event) => {
 
 // VDR Print Handler
 window.addEventListener('open-vdr-print', (event) => {
-    const { batchId, preparedBy } = event.detail;
+    const { batchId } = event.detail;
     
     // Open print window with the VDR content
-    const printUrl = preparedBy ? `/allocation/vdr/print/${batchId}?prepared_by=${encodeURIComponent(preparedBy)}` : `/allocation/vdr/print/${batchId}`;
+    const printUrl = `/allocation/vdr/print/${batchId}`;
     window.open(printUrl, '_blank', 'width=800,height=600');
 });
 
@@ -67,9 +67,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // VDR Print
     window.Livewire.on('open-vdr-print', (data) => {
-        const { batchId, preparedBy } = data[0];
+        const { batchId } = data[0];
         
-        const printUrl = preparedBy ? `/allocation/vdr/print/${batchId}?prepared_by=${encodeURIComponent(preparedBy)}` : `/allocation/vdr/print/${batchId}`;
+        const printUrl = `/allocation/vdr/print/${batchId}`;
         window.open(printUrl, '_blank', 'width=800,height=600');
     });
 
@@ -685,19 +685,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         @enderror
                     </div>
 
-                    <div>
-                        <label for="preparedBy" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
-                            Prepared By *
-                        </label>
-                        <input type="text"
-                               id="preparedBy"
-                               wire:model="preparedBy"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white"
-                               placeholder="Your name">
-                        @error('preparedBy')
-                            <span class="text-red-500 text-sm">{{ $message }}</span>
-                        @enderror
-                    </div>
                 </div>
             </div>
 
@@ -713,15 +700,16 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Store Code</th>
                                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Store Name</th>
                                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Exp. Date</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">DP</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">SD</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">CL</th>
                                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">SKU #</th>
-                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">SKU Description</th>
                                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Qty</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                                 @php
                                     $totalQty = 0;
-                                    $totalBoxes = 0;
                                     $uniqueSkus = collect();
                                 @endphp
                                 
@@ -736,8 +724,10 @@ document.addEventListener('DOMContentLoaded', function() {
                                             <td class="px-3 py-2 text-sm text-gray-900 dark:text-white">{{ $branchAllocation->branch->code ?? '' }}</td>
                                             <td class="px-3 py-2 text-sm text-gray-900 dark:text-white">{{ $branchAllocation->branch->name ?? '' }}</td>
                                             <td class="px-3 py-2 text-sm text-gray-900 dark:text-white">{{ \Carbon\Carbon::parse($selectedBatchForVDR->transaction_date)->format('m/d/y') }}</td>
+                                            <td class="px-3 py-2 text-sm text-gray-900 dark:text-white">04</td>
+                                            <td class="px-3 py-2 text-sm text-gray-900 dark:text-white">10</td>
+                                            <td class="px-3 py-2 text-sm text-gray-900 dark:text-white">72007</td>
                                             <td class="px-3 py-2 text-sm text-gray-900 dark:text-white">{{ $item->product->sku ?? $item->product->id }}</td>
-                                            <td class="px-3 py-2 text-sm text-gray-900 dark:text-white">{{ $item->product->name ?? '' }}</td>
                                             <td class="px-3 py-2 text-sm text-gray-900 dark:text-white font-medium">{{ $item->quantity }}</td>
                                         </tr>
                                     @endforeach
@@ -745,15 +735,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                 
                                 <!-- Summary Row -->
                                 <tr class="bg-gray-50 dark:bg-gray-700 font-medium">
-                                    <td colspan="6" class="px-3 py-2 text-sm text-gray-900 dark:text-white">TOTAL QTY:</td>
+                                    <td colspan="8" class="px-3 py-2 text-sm text-gray-900 dark:text-white">TOTAL QTY:</td>
                                     <td class="px-3 py-2 text-sm text-gray-900 dark:text-white">{{ $totalQty }}</td>
                                 </tr>
                                 <tr class="bg-gray-50 dark:bg-gray-700 font-medium">
-                                    <td colspan="6" class="px-3 py-2 text-sm text-gray-900 dark:text-white">TOTAL BOXES:</td>
-                                    <td class="px-3 py-2 text-sm text-gray-900 dark:text-white">{{ $totalBoxes }}</td>
-                                </tr>
-                                <tr class="bg-gray-50 dark:bg-gray-700 font-medium">
-                                    <td colspan="6" class="px-3 py-2 text-sm text-gray-900 dark:text-white">TOTAL SKU/S:</td>
+                                    <td colspan="8" class="px-3 py-2 text-sm text-gray-900 dark:text-white">TOTAL SKU/S:</td>
                                     <td class="px-3 py-2 text-sm text-gray-900 dark:text-white">{{ $uniqueSkus->unique()->count() }}</td>
                                 </tr>
                             </tbody>

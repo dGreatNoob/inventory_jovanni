@@ -14,10 +14,8 @@ class VDRPrintController extends Controller
             'branchAllocations.branch',
             'branchAllocations.items.product'
         ])->findOrFail($batchId);
-
-        $preparedBy = $request->query('prepared_by');
         
-        $html = $this->generateVDRHTML($batch, $preparedBy);
+        $html = $this->generateVDRHTML($batch);
         
         return response($html)
             ->header('Content-Type', 'text/html')
@@ -26,12 +24,16 @@ class VDRPrintController extends Controller
 
     private function generateVDRHTML($batch)
     {
+        // Extract batch properties to avoid IDE warnings
+        $batchRefNo = $batch->ref_no;
+        $batchTransactionDate = $batch->transaction_date;
+        
         $html = '
         <!DOCTYPE html>
         <html>
         <head>
             <meta charset="utf-8">
-            <title>VDR - ' . $batch->ref_no . '</title>
+            <title>VDR - ' . $batchRefNo . '</title>
             <style>
                 body {
                     font-family: "Courier New", monospace;
@@ -152,16 +154,6 @@ class VDRPrintController extends Controller
                 </div>
             </div>
             
-            <!-- Vendor Information Header -->
-            <div class="vendor-header" style="text-align: center; margin: 20px 0; padding: 15px; border: 2px solid #000; background-color: #f8f9fa;">
-                <div style="font-weight: bold; font-size: 16px; margin-bottom: 10px;">STORE CONSIGNOR</div>
-                <div style="font-weight: bold; font-size: 14px; margin-bottom: 8px;">VALIDATED DELIVERY RECEIPT</div>
-                <div style="font-size: 12px; line-height: 1.4;">
-                    <strong>VENDOR CODE:</strong> 104148<br>
-                    <strong>VENDOR NAME:</strong> JKF CORP.
-                </div>
-            </div>
-            
             <table>
                 <thead>
                     <tr>
@@ -172,17 +164,13 @@ class VDRPrintController extends Controller
                         <th>DP</th>
                         <th>SD</th>
                         <th>CL</th>
-                        <th>CLASS DESC</th>
-                        <th>BOXES</th>
                         <th>SKU #</th>
-                        <th>SKU DESC</th>
                         <th>QTY</th>
                     </tr>
                 </thead>
                 <tbody>';
 
         $totalQty = 0;
-        $totalBoxes = 0;
         $uniqueSkus = collect();
 
         foreach ($batch->branchAllocations as $branchAllocation) {
@@ -193,25 +181,20 @@ class VDRPrintController extends Controller
             foreach ($branchAllocation->items as $item) {
                 $product = $item->product;
                 $skuNumber = $product->sku ?? $product->id;
-                $skuDescription = $product->name ?? '';
                 
                 $html .= '<tr>';
-                $html .= '<td>' . $batch->ref_no . '</td>';
+                $html .= '<td>' . $batchRefNo . '</td>';
                 $html .= '<td>' . $storeCode . '</td>';
                 $html .= '<td>' . $storeName . '</td>';
-                $html .= '<td>' . \Carbon\Carbon::parse($batch->transaction_date)->format('m/d/y') . '</td>';
+                $html .= '<td>' . \Carbon\Carbon::parse($batchTransactionDate)->format('m/d/y') . '</td>';
                 $html .= '<td>04</td>';
                 $html .= '<td>10</td>';
                 $html .= '<td>72007</td>';
-                $html .= '<td>JOVANNI</td>';
-                $html .= '<td>0</td>'; // Will be implemented later
                 $html .= '<td>' . $skuNumber . '</td>';
-                $html .= '<td>' . $skuDescription . '</td>';
                 $html .= '<td>' . $item->quantity . '</td>';
                 $html .= '</tr>';
 
                 $totalQty += $item->quantity;
-                $totalBoxes += 0; // To be implemented later
                 $uniqueSkus->push($skuNumber);
             }
         }
@@ -224,7 +207,7 @@ class VDRPrintController extends Controller
                 <div class="totals">
                     <div class="total-row">
                         <span><strong>TOTAL QTY: ' . $totalQty . '</strong></span>
-                        <span><strong>TOTAL BOXES: ' . $totalBoxes . '</strong></span>
+                        <span>&nbsp;</span>
                     </div>
                     <div class="total-row">
                         <span><strong>TOTAL SKU/S: ' . $uniqueSkus->unique()->count() . '</strong></span>
@@ -232,10 +215,6 @@ class VDRPrintController extends Controller
                     </div>
                     <div class="total-row">
                         <span><strong>RUN DATE: ' . now()->format('m/d/Y') . '</strong></span>
-                        <span>&nbsp;</span>
-                    </div>
-                    <div class="total-row" style="margin-top: 20px; text-align: left;">
-                        <span><strong>Prepared By: ' . ($preparedBy ?? '_______________________________') . '</strong></span>
                         <span>&nbsp;</span>
                     </div>
                 </div>

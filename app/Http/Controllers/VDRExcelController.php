@@ -21,10 +21,6 @@ class VDRExcelController extends Controller
             'branchAllocations.items.product'
         ])->findOrFail($batchId);
 
-        $vendorCode = $request->query('vendor_code', '104148');
-        $vendorName = $request->query('vendor_name', 'JKF CORP.');
-        $preparedBy = $request->query('prepared_by', '');
-
         try {
             // Create new Spreadsheet object
             $spreadsheet = new Spreadsheet();
@@ -34,7 +30,7 @@ class VDRExcelController extends Controller
             $sheet->setTitle('VDR - ' . $batch->ref_no);
 
             // Add data to the spreadsheet
-            $this->addDataToSheet($sheet, $batch, $vendorCode, $vendorName, $preparedBy);
+            $this->addDataToSheet($sheet, $batch);
 
             // Create Excel file
             $writer = new Xlsx($spreadsheet);
@@ -64,7 +60,7 @@ class VDRExcelController extends Controller
         }
     }
 
-    private function addDataToSheet($sheet, $batch, $vendorCode, $vendorName, $preparedBy)
+    private function addDataToSheet($sheet, $batch)
     {
         $row = 1;
         
@@ -73,25 +69,10 @@ class VDRExcelController extends Controller
         $sheet->setCellValue('B' . $row, '1 of 1');
         $row += 2;
         
-        // Vendor information section
-        $sheet->setCellValue('A' . $row, 'STORE CONSIGNOR');
-        $sheet->getStyle('A' . $row)->getFont()->setBold(true);
-        $row++;
-        
-        $sheet->setCellValue('A' . $row, 'VALIDATED DELIVERY RECEIPT');
-        $sheet->getStyle('A' . $row)->getFont()->setBold(true);
-        $row++;
-        
-        $sheet->setCellValue('A' . $row, 'VENDOR CODE: ' . $vendorCode);
-        $row++;
-        
-        $sheet->setCellValue('A' . $row, 'VENDOR NAME: ' . $vendorName);
-        $row += 2;
-        
         // Table headers
         $headers = [
-            'DR#', 'STORE CODE', 'STORE NAME', 'EXP. DELIVERY DATE (MMDDYY)', 
-            'DP', 'SD', 'CL', 'CLASS DESC', 'BOXES', 'SKU #', 'SKU DESC', 'QTY'
+            'DR#', 'STORE CODE', 'STORE NAME', 'EXP. DELIVERY DATE (MMDDYY)',
+            'DP', 'SD', 'CL', 'SKU #', 'QTY'
         ];
         
         $col = 'A';
@@ -105,7 +86,6 @@ class VDRExcelController extends Controller
         $row++;
 
         $totalQty = 0;
-        $totalBoxes = 0;
         $uniqueSkus = collect();
 
         // Process each branch allocation
@@ -118,7 +98,6 @@ class VDRExcelController extends Controller
             foreach ($branchAllocation->items as $item) {
                 $product = $item->product;
                 $skuNumber = $product->sku ?? $product->id;
-                $skuDescription = $product->name ?? '';
                 
                 $sheet->setCellValue('A' . $row, $batch->ref_no);
                 $sheet->setCellValue('B' . $row, $storeCode);
@@ -127,19 +106,15 @@ class VDRExcelController extends Controller
                 $sheet->setCellValue('E' . $row, '04'); // Default values
                 $sheet->setCellValue('F' . $row, '10');
                 $sheet->setCellValue('G' . $row, '72007');
-                $sheet->setCellValue('H' . $row, 'JOVANNI');
-                $sheet->setCellValue('I' . $row, '0'); // Will be implemented later
-                $sheet->setCellValue('J' . $row, $skuNumber);
-                $sheet->setCellValue('K' . $row, $skuDescription);
-                $sheet->setCellValue('L' . $row, $item->quantity);
+                $sheet->setCellValue('H' . $row, $skuNumber);
+                $sheet->setCellValue('I' . $row, $item->quantity);
                 
                 // Add borders to all cells
-                for ($colIndex = 'A'; $colIndex <= 'L'; $colIndex++) {
+                for ($colIndex = 'A'; $colIndex <= 'I'; $colIndex++) {
                     $sheet->getStyle($colIndex . $row)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
                 }
 
                 $totalQty += $item->quantity;
-                $totalBoxes += 0; // To be implemented later
                 $uniqueSkus->push($skuNumber);
                 $row++;
             }
@@ -148,17 +123,7 @@ class VDRExcelController extends Controller
         // Add summary rows
         $row += 2; // Empty row
         
-        if ($preparedBy) {
-            $sheet->setCellValue('A' . $row, 'Prepared By: ' . $preparedBy);
-            $row++;
-        }
-        $row++;
-        
         $sheet->setCellValue('A' . $row, 'TOTAL QTY: ' . $totalQty);
-        $sheet->getStyle('A' . $row)->getFont()->setBold(true);
-        $row++;
-        
-        $sheet->setCellValue('A' . $row, 'TOTAL BOXES: ' . $totalBoxes);
         $sheet->getStyle('A' . $row)->getFont()->setBold(true);
         $row++;
         
@@ -172,7 +137,7 @@ class VDRExcelController extends Controller
         $sheet->setCellValue('A' . $row, 'RUN DATE: ' . now()->format('m/d/Y'));
         
         // Auto-size columns
-        foreach (range('A', 'L') as $col) {
+        foreach (range('A', 'I') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
     }

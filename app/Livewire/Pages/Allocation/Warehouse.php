@@ -31,7 +31,6 @@ class Warehouse extends Component
     public $selectedBatchForVDR = null;
     public $vendorCode = '';
     public $vendorName = '';
-    public $preparedBy = '';
 
     // Filter fields
     public $search = '';
@@ -398,7 +397,6 @@ class Warehouse extends Component
         // Set default vendor info
         $this->vendorCode = '104148'; // Default vendor code
         $this->vendorName = 'JKF CORP.'; // Default vendor name
-        $this->preparedBy = '';
     }
 
     public function closeVDRPreview()
@@ -407,7 +405,6 @@ class Warehouse extends Component
         $this->selectedBatchForVDR = null;
         $this->vendorCode = '';
         $this->vendorName = '';
-        $this->preparedBy = '';
     }
 
     public function exportToExcel()
@@ -421,7 +418,6 @@ class Warehouse extends Component
         $this->validate([
             'vendorCode' => 'required|string',
             'vendorName' => 'required|string',
-            'preparedBy' => 'required|string',
         ]);
 
         try {
@@ -465,15 +461,11 @@ class Warehouse extends Component
             'DP' => '',
             'SD' => '',
             'CL' => '',
-            'CLASS DESC' => '',
-            'BOXES' => '',
             'SKU #' => '',
-            'SKU DESCRIPTION' => '',
             'QTY' => ''
         ];
 
         $totalQty = 0;
-        $totalBoxes = 0;
         $uniqueSkus = collect();
 
         // Process each branch allocation
@@ -486,43 +478,35 @@ class Warehouse extends Component
             foreach ($branchAllocation->items as $item) {
                 $product = $item->product;
                 $skuNumber = $product->sku ?? $product->id;
-                $skuDescription = $product->name ?? '';
                 
                 $csvData[] = [
                     'DR#' => $batch->ref_no,
                     'STORE CODE' => $storeCode,
                     'STORE NAME' => $storeName,
                     'EXP. DELIVERY DATE' => \Carbon\Carbon::parse($batch->transaction_date)->format('m/d/y'),
-                    'DP' => '04', // Default values as per your requirements
+                    'DP' => '04', // Default values
                     'SD' => '10',
                     'CL' => '72007',
-                    'CLASS DESC' => 'JOVANNI', // Default as per your example
-                    'BOXES' => '0', // Will be implemented later
                     'SKU #' => $skuNumber,
-                    'SKU DESCRIPTION' => $skuDescription,
                     'QTY' => $item->quantity
                 ];
 
                 $totalQty += $item->quantity;
-                $totalBoxes += 0; // To be implemented later
                 $uniqueSkus->push($skuNumber);
             }
         }
 
         // Add summary rows
-        $csvData[] = ['', '', '', '', '', '', '', '', '', '', '', '']; // Empty row
+        $csvData[] = ['', '', '', '', '', '', '', '', '']; // Empty row
         $csvData[] = [
             'DR#' => '',
-            'STORE CODE' => 'Prepared By:_______________________________',
-            'STORE NAME' => 'SC Representative',
+            'STORE CODE' => '',
+            'STORE NAME' => '',
             'EXP. DELIVERY DATE' => '',
             'DP' => '',
             'SD' => '',
             'CL' => '',
-            'CLASS DESC' => '',
-            'BOXES' => '',
-            'SKU #' => '',
-            'SKU DESCRIPTION' => 'TOTAL QTY: ' . $totalQty,
+            'SKU #' => 'TOTAL QTY: ' . $totalQty,
             'QTY' => ''
         ];
         $csvData[] = [
@@ -533,24 +517,7 @@ class Warehouse extends Component
             'DP' => '',
             'SD' => '',
             'CL' => '',
-            'CLASS DESC' => '',
-            'BOXES' => '',
-            'SKU #' => '',
-            'SKU DESCRIPTION' => 'TOTAL BOXES: ' . $totalBoxes,
-            'QTY' => ''
-        ];
-        $csvData[] = [
-            'DR#' => '',
-            'STORE CODE' => '',
-            'STORE NAME' => '',
-            'EXP. DELIVERY DATE' => '',
-            'DP' => '',
-            'SD' => '',
-            'CL' => '',
-            'CLASS DESC' => '',
-            'BOXES' => '',
-            'SKU #' => '',
-            'SKU DESCRIPTION' => 'TOTAL SKU/S: ' . $uniqueSkus->unique()->count(),
+            'SKU #' => 'TOTAL SKU/S: ' . $uniqueSkus->unique()->count(),
             'QTY' => ''
         ];
 
@@ -576,7 +543,6 @@ class Warehouse extends Component
         $this->validate([
             'vendorCode' => 'required|string',
             'vendorName' => 'required|string',
-            'preparedBy' => 'required|string',
         ]);
 
         try {
@@ -608,12 +574,11 @@ class Warehouse extends Component
         $this->validate([
             'vendorCode' => 'required|string',
             'vendorName' => 'required|string',
-            'preparedBy' => 'required|string',
         ]);
 
         try {
-            // Open print window with prepared by value
-            $this->dispatch('open-vdr-print', batchId: $this->selectedBatchForVDR->id, preparedBy: $this->preparedBy);
+            // Open print window
+            $this->dispatch('open-vdr-print', batchId: $this->selectedBatchForVDR->id);
             session()->flash('message', 'Opening VDR print view in new window...');
         } catch (\Exception $e) {
             session()->flash('error', 'Failed to open VDR print view: ' . $e->getMessage());
@@ -631,7 +596,6 @@ class Warehouse extends Component
         $this->validate([
             'vendorCode' => 'required|string',
             'vendorName' => 'required|string',
-            'preparedBy' => 'required|string',
         ]);
 
         try {
@@ -640,7 +604,6 @@ class Warehouse extends Component
                 'batchId' => $this->selectedBatchForVDR->id,
                 'vendor_code' => urlencode($this->vendorCode),
                 'vendor_name' => urlencode($this->vendorName),
-                'prepared_by' => urlencode($this->preparedBy)
             ]);
             
             $this->dispatch('open-excel-download', url: $excelUrl);

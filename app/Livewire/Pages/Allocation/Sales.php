@@ -21,6 +21,9 @@ class Sales extends Component
     public $batchReceipts = [];
     public $selectedReceipt = null;
     public $showReceiptDetails = false;
+    
+    // Date filter
+    public $selectedDate = '';
 
     // Receipt confirmation fields
     public $receiptItems = [];
@@ -36,15 +39,28 @@ class Sales extends Component
 
     public function mount()
     {
+        // Start with empty date to show all batches
+        $this->selectedDate = '';
         $this->loadAvailableBatches();
     }
 
     public function loadAvailableBatches()
     {
-        $this->availableBatches = BatchAllocation::with(['branchAllocations.branch'])
-            ->where('status', 'dispatched')
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $query = BatchAllocation::with(['branchAllocations.branch'])
+            ->where('status', 'dispatched');
+            
+        // Filter by selected date if provided
+        if ($this->selectedDate) {
+            $query->whereDate('transaction_date', $this->selectedDate);
+        }
+        
+        $this->availableBatches = $query->orderBy('created_at', 'desc')->get();
+    }
+    public function updatedSelectedDate()
+    {
+        $this->selectedBatchId = null; // Reset selected batch when date changes
+        $this->batchReceipts = []; // Clear batch receipts
+        $this->loadAvailableBatches();
     }
 
     public function loadBatchReceipts()

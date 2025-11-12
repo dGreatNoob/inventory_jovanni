@@ -1,6 +1,89 @@
 <x-slot:header>Allocation - Warehouse</x-slot:header>
 <x-slot:subheader>Master control panel for preparing and sending goods from warehouse to branches through delivery batches.</x-slot:subheader>
 
+@script
+<script>
+// VDR CSV Download Handler
+window.addEventListener('download-vdr', (event) => {
+    const { content, filename } = event.detail;
+    
+    // Create a blob with the CSV content
+    const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    
+    // Create a temporary link and trigger download
+    const link = document.createElement('a');
+    if (link.download !== undefined) {
+        link.href = url;
+        link.download = filename;
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+    
+    // Clean up
+    window.URL.revokeObjectURL(url);
+});
+
+// VDR Print Handler
+window.addEventListener('open-vdr-print', (event) => {
+    const { batchId, preparedBy } = event.detail;
+    
+    // Open print window with the VDR content
+    const printUrl = preparedBy ? `/allocation/vdr/print/${batchId}?prepared_by=${encodeURIComponent(preparedBy)}` : `/allocation/vdr/print/${batchId}`;
+    window.open(printUrl, '_blank', 'width=800,height=600');
+});
+
+// VDR Excel Download Handler
+window.addEventListener('open-excel-download', (event) => {
+    const { url } = event.detail;
+    
+    // Open the Excel export URL which will trigger a download
+    window.open(url, '_blank');
+});
+
+// Alternative: Listen for Livewire events
+document.addEventListener('DOMContentLoaded', function() {
+    // VDR CSV Download
+    window.Livewire.on('download-vdr', (data) => {
+        const { content, filename } = data[0];
+        
+        const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+        const url = window.URL.createObjectURL(blob);
+        
+        const link = document.createElement('a');
+        if (link.download !== undefined) {
+            link.href = url;
+            link.download = filename;
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        window.URL.revokeObjectURL(url);
+    });
+
+    // VDR Print
+    window.Livewire.on('open-vdr-print', (data) => {
+        const { batchId, preparedBy } = data[0];
+        
+        const printUrl = preparedBy ? `/allocation/vdr/print/${batchId}?prepared_by=${encodeURIComponent(preparedBy)}` : `/allocation/vdr/print/${batchId}`;
+        window.open(printUrl, '_blank', 'width=800,height=600');
+    });
+
+    // VDR Excel Download
+    window.Livewire.on('open-excel-download', (data) => {
+        const { url } = data[0];
+        
+        // Open the Excel export URL which will trigger a download
+        window.open(url, '_blank');
+    });
+});
+</script>
+@endscript
+
 <div>
     <!-- Success/Error Messages -->
     @if (session()->has('message'))
@@ -158,6 +241,11 @@
                                     wire:confirm="Are you sure you want to dispatch this batch? This action cannot be undone."
                                     class="bg-blue-600 hover:bg-blue-700 text-white text-sm py-1 px-3 rounded">
                                 Dispatch Batch
+                            </button>
+                        @endif
+                        @if($batch->branchAllocations->count() > 0)
+                            <button wire:click="openVDRPreview({{ $batch->id }})" class="bg-purple-600 hover:bg-purple-700 text-white text-sm py-1 px-3 rounded">
+                                Export to Excel
                             </button>
                         @endif
                     </div>
@@ -555,5 +643,157 @@
                 </button>
             </div>
         </form>
+    </x-modal>
+
+    <!-- VDR PREVIEW MODAL -->
+    <x-modal wire:model="showVDRPreviewModal" class="max-w-4xl">
+        <h2 class="text-xl font-bold mb-4">VDR Preview & Export</h2>
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">
+            Validate Delivery Receipt for Batch: {{ $selectedBatchForVDR?->ref_no ?? '' }}
+        </p>
+
+        @if($selectedBatchForVDR)
+            <!-- Vendor Information Form -->
+            <div class="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Vendor Information</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="vendorCode" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                            Vendor Code *
+                        </label>
+                        <input type="text"
+                               id="vendorCode"
+                               wire:model="vendorCode"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white"
+                               placeholder="104148">
+                        @error('vendorCode')
+                            <span class="text-red-500 text-sm">{{ $message }}</span>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label for="vendorName" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                            Vendor Name *
+                        </label>
+                        <input type="text"
+                               id="vendorName"
+                               wire:model="vendorName"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white"
+                               placeholder="JKF CORP.">
+                        @error('vendorName')
+                            <span class="text-red-500 text-sm">{{ $message }}</span>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label for="preparedBy" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                            Prepared By *
+                        </label>
+                        <input type="text"
+                               id="preparedBy"
+                               wire:model="preparedBy"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white"
+                               placeholder="Your name">
+                        @error('preparedBy')
+                            <span class="text-red-500 text-sm">{{ $message }}</span>
+                        @enderror
+                    </div>
+                </div>
+            </div>
+
+            <!-- VDR Preview Table -->
+            <div class="mb-6">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">VDR Preview</h3>
+                <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead class="bg-gray-50 dark:bg-gray-700">
+                                <tr>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">DR#</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Store Code</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Store Name</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Exp. Date</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">SKU #</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">SKU Description</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Qty</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                @php
+                                    $totalQty = 0;
+                                    $totalBoxes = 0;
+                                    $uniqueSkus = collect();
+                                @endphp
+                                
+                                @foreach($selectedBatchForVDR->branchAllocations as $branchAllocation)
+                                    @foreach($branchAllocation->items as $item)
+                                        @php
+                                            $totalQty += $item->quantity;
+                                            $uniqueSkus->push($item->product->sku ?? $item->product->id);
+                                        @endphp
+                                        <tr>
+                                            <td class="px-3 py-2 text-sm text-gray-900 dark:text-white">{{ $selectedBatchForVDR->ref_no }}</td>
+                                            <td class="px-3 py-2 text-sm text-gray-900 dark:text-white">{{ $branchAllocation->branch->code ?? '' }}</td>
+                                            <td class="px-3 py-2 text-sm text-gray-900 dark:text-white">{{ $branchAllocation->branch->name ?? '' }}</td>
+                                            <td class="px-3 py-2 text-sm text-gray-900 dark:text-white">{{ \Carbon\Carbon::parse($selectedBatchForVDR->transaction_date)->format('m/d/y') }}</td>
+                                            <td class="px-3 py-2 text-sm text-gray-900 dark:text-white">{{ $item->product->sku ?? $item->product->id }}</td>
+                                            <td class="px-3 py-2 text-sm text-gray-900 dark:text-white">{{ $item->product->name ?? '' }}</td>
+                                            <td class="px-3 py-2 text-sm text-gray-900 dark:text-white font-medium">{{ $item->quantity }}</td>
+                                        </tr>
+                                    @endforeach
+                                @endforeach
+                                
+                                <!-- Summary Row -->
+                                <tr class="bg-gray-50 dark:bg-gray-700 font-medium">
+                                    <td colspan="6" class="px-3 py-2 text-sm text-gray-900 dark:text-white">TOTAL QTY:</td>
+                                    <td class="px-3 py-2 text-sm text-gray-900 dark:text-white">{{ $totalQty }}</td>
+                                </tr>
+                                <tr class="bg-gray-50 dark:bg-gray-700 font-medium">
+                                    <td colspan="6" class="px-3 py-2 text-sm text-gray-900 dark:text-white">TOTAL BOXES:</td>
+                                    <td class="px-3 py-2 text-sm text-gray-900 dark:text-white">{{ $totalBoxes }}</td>
+                                </tr>
+                                <tr class="bg-gray-50 dark:bg-gray-700 font-medium">
+                                    <td colspan="6" class="px-3 py-2 text-sm text-gray-900 dark:text-white">TOTAL SKU/S:</td>
+                                    <td class="px-3 py-2 text-sm text-gray-900 dark:text-white">{{ $uniqueSkus->unique()->count() }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex justify-between pt-4 border-t border-gray-200 dark:border-gray-600">
+                <div class="flex space-x-3">
+                    <button type="button"
+                            wire:click="printVDR"
+                            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                        </svg>
+                        Print VDR
+                    </button>
+                    <button type="button"
+                            wire:click="exportVDRToExcel"
+                            class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                        <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        Export to Excel
+                    </button>
+                </div>
+                <div>
+                    <button type="button"
+                            wire:click="closeVDRPreview"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
+                        Close
+                    </button>
+                </div>
+            </div>
+        @else
+            <div class="text-center py-4">
+                <p class="text-gray-500 dark:text-gray-400">No batch selected for VDR preview.</p>
+            </div>
+        @endif
     </x-modal>
 </div>

@@ -29,6 +29,17 @@
     <div class="mb-6">
         <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Sales Allocation Management</h2>
 
+        <!-- Date Filter -->
+        <div class="mb-6">
+            <label for="selectedDate" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                Select Date
+            </label>
+            <input type="date"
+                   id="selectedDate"
+                   wire:model.live="selectedDate"
+                   class="w-full max-w-sm px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+        </div>
+
         <!-- Batch Selector -->
         @if(count($availableBatches) > 0)
             <div class="mb-6">
@@ -115,13 +126,21 @@
                 <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No branch receipts</h3>
                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">This batch has no branch receipts yet.</p>
             </div>
-        @else
+        @elseif(!$selectedDate)
+            <div class="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2 2v-5m16 0h-2M4 13h2m10-3h2m-3 3h2m-4 3h2"></path>
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">Please select a date</h3>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Select a date above to view available dispatched batches.</p>
+            </div>
+        @elseif($selectedDate && count($availableBatches) === 0)
             <div class="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
                 <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2 2v-5m16 0h-2M4 13h2m10-3h2m-3 3h2m-4 3h2"></path>
                 </svg>
                 <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No batches available</h3>
-                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">No dispatched batches available for receipt management.</p>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">No dispatched batches available for the selected date.</p>
             </div>
         @endif
     </div>

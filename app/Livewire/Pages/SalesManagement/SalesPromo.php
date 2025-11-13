@@ -197,27 +197,46 @@ class SalesPromo extends Component
     // Handle first product selection for "Buy one Take one"
     public function updatedSelectedProducts()
     {
-        if ($this->promo_type === 'Buy one Take one' && count($this->selected_products) > 1) {
-            $last = end($this->selected_products);
-            $this->selected_products = [$last];
+        if ($this->promo_type === 'Buy one Take one') {
+            // If no products selected, clear second products and return
+            if (empty($this->selected_products)) {
+                $this->selected_second_products = [];
+                return;
+            }
+            
+            // Limit to only one product for Buy one Take one
+            if (count($this->selected_products) > 1) {
+                $last = end($this->selected_products);
+                $this->selected_products = [$last];
+            }
+
+            // Filter second products based on first product's price
+            $firstPrice = $this->products->firstWhere('id', $this->selected_products[0])->price ?? 0;
+
+            $this->selected_second_products = array_filter($this->selected_second_products, function ($id) use ($firstPrice) {
+                $product = $this->products->firstWhere('id', $id);
+                return $product && $product->price <= $firstPrice;
+            });
         }
-
-        $firstPrice = $this->products->firstWhere('id', $this->selected_products[0])->price ?? 0;
-
-        $this->selected_second_products = array_filter($this->selected_second_products, function ($id) use ($firstPrice) {
-            $product = $this->products->firstWhere('id', $id);
-            return $product && $product->price <= $firstPrice;
-        });
     }
 
     public function updatedEditSelectedProducts()
     {
-        if ($this->edit_type === 'Buy one Take one' && count($this->edit_selected_products) > 1) {
-            $last = end($this->edit_selected_products);
-            $this->edit_selected_products = [$last];
-        }
+        if ($this->edit_type === 'Buy one Take one') {
+            // If no products selected, clear second products and return
+            if (empty($this->edit_selected_products)) {
+                $this->edit_selected_second_products = [];
+                return;
+            }
+            
+            // Limit to only one product for Buy one Take one
+            if (count($this->edit_selected_products) > 1) {
+                $last = end($this->edit_selected_products);
+                $this->edit_selected_products = [$last];
+            }
 
-        $this->edit_selected_second_products = [];
+            $this->edit_selected_second_products = [];
+        }
     }
 
     // Close modals
@@ -290,7 +309,7 @@ class SalesPromo extends Component
     {
         $items = Promo::when($this->search, function ($query) {
             $query->where('name', 'like', '%' . $this->search . '%')
-                  ->orWhere('code', 'like', '%' . $this->search . '%');
+                ->orWhere('code', 'like', '%' . $this->search . '%');
         })
         ->orderBy('created_at', 'desc')
         ->paginate($this->perPage);
@@ -299,6 +318,8 @@ class SalesPromo extends Component
             'items' => $items,
             'branches' => $this->branches,
             'products' => $this->products,
+            'totalPromos' => Promo::count(),
+            'activePromos' => Promo::where('endDate', '>=', now())->count(),
         ]);
     }
 }

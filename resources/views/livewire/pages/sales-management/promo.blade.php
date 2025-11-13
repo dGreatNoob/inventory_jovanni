@@ -6,7 +6,7 @@
         <section class="mb-6">
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
 
-                <!-- Total Suppliers -->
+                <!-- Total Promo -->
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
                     <div class="p-5">
                         <div class="flex items-center">
@@ -14,19 +14,20 @@
                                 <svg class="w-6 h-6 text-indigo-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
                                     <path fill-rule="evenodd" d="M12 6a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Zm-1.5 8a4 4 0 0 0-4 4 2 2 0 0 0 2 2h7a2 2 0 0 0 2-2 4 4 0 0 0-4-4h-3Zm6.82-3.096a5.51 5.51 0 0 0-2.797-6.293 3.5 3.5 0 1 1 2.796 6.292ZM19.5 18h.5a2 2 0 0 0 2-2 4 4 0 0 0-4-4h-1.1a5.503 5.503 0 0 1-.471.762A5.998 5.998 0 0 1 19.5 18ZM4 7.5a3.5 3.5 0 0 1 5.477-2.889 5.5 5.5 0 0 0-2.796 6.293A3.501 3.501 0 0 1 4 7.5ZM7.1 12H6a4 4 0 0 0-4 4 2 2 0 0 0 2 2h.5a5.998 5.998 0 0 1 3.071-5.238A5.505 5.505 0 0 1 7.1 12Z" clip-rule="evenodd"/>
                                 </svg>
-
                             </div>
                             <div class="ml-5 w-0 flex-1">
                                 <dl>
                                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Total Promos</dt>
-                                    <dd class="text-lg font-medium text-gray-900 dark:text-white">T1</dd>
+                                    <dd class="text-lg font-medium text-gray-900 dark:text-white">
+                                        {{ $totalPromos }}
+                                    </dd>
                                 </dl>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Active Contracts -->
+                <!-- Active Promo -->
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
                     <div class="p-5">
                         <div class="flex items-center">
@@ -38,13 +39,14 @@
                             <div class="ml-5 w-0 flex-1">
                                 <dl>
                                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Active Promos</dt>
-                                    <dd class="text-lg font-medium text-gray-900 dark:text-white">T1</dd>
+                                    <dd class="text-lg font-medium text-gray-900 dark:text-white">
+                                        {{ $activePromos }}
+                                    </dd>
                                 </dl>
                             </div>
                         </div>
                     </div>
                 </div>
-                
             </div>
         </section>
 
@@ -246,7 +248,13 @@
                                             <div class="flex flex-wrap gap-1 items-center">
                                                 @if(!$secondProductDropdown)
                                                     @if(empty($selected_second_products))
-                                                        <span class="text-gray-400 dark:text-gray-300">Select Second Product</span>
+                                                        <span class="text-gray-400 dark:text-gray-300">
+                                                            @if(empty($selected_products))
+                                                                Select first product first
+                                                            @else
+                                                                Select Second Product
+                                                            @endif
+                                                        </span>
                                                     @else
                                                         @foreach($products as $product)
                                                             @if(in_array($product->id, $selected_second_products))
@@ -258,7 +266,13 @@
                                                         @endforeach
                                                     @endif
                                                 @else
-                                                    <span class="text-gray-400 dark:text-gray-300">Select Second Product</span>
+                                                    <span class="text-gray-400 dark:text-gray-300">
+                                                        @if(empty($selected_products))
+                                                            Select first product first
+                                                        @else
+                                                            Select Second Product
+                                                        @endif
+                                                    </span>
                                                 @endif
                                             </div>
 
@@ -268,7 +282,7 @@
                                         </div>
 
                                         {{-- Dropdown List --}}
-                                        @if($secondProductDropdown)
+                                        @if($secondProductDropdown && !empty($selected_products))
                                             <div class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto dark:bg-gray-700 dark:border-gray-600">
                                                 @foreach($products as $product)
                                                     @if(!empty($selected_products) && $product->price <= $products->find($selected_products[0])->price && $product->id != $selected_products[0])
@@ -308,8 +322,8 @@
                                         focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 
                                         dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 
                                         resize-y"
-                                    style="min-height: 50px; overflow: auto;"  {{-- 👈 this enforces true min height --}}
-                                    placeholder="Promo for Halloween" required></textarea>
+                                    style="min-height: 50px; overflow: auto;"
+                                    placeholder="Promo for Halloween"></textarea>
                                 @error('promo_description')
                                     <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                                 @enderror
@@ -318,9 +332,9 @@
 
                         <!-- Submit button -->
                         <div class="flex justify-end mt-6">
-                            <flux:button type="submit" wire:loading.attr="disabled">
-                                <span wire:loading.remove>Submit</span>
-                                <span wire:loading>Saving...</span>
+                            <flux:button type="submit" wire:loading.attr="disabled" wire:target="submit">
+                                <span wire:loading.remove wire:target="submit">Submit</span>
+                                <span wire:loading wire:target="submit">Saving...</span>
                             </flux:button>
                         </div>
 
@@ -502,7 +516,7 @@
                         {{-- Modal Header --}}
                         <div class="flex items-start justify-between p-4 border-b rounded-t dark:border-gray-600">
                             <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Edit Promo</h3>
-                            <button type="button" wire:click="cancel"
+                            <button type="button" wire:click="cancelEdit"
                                     class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ml-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
                                 <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
                                     fill="none" viewBox="0 0 14 14">
@@ -724,123 +738,187 @@
 
         <!-- View Modal -->
         <section>
-    <div x-data="{ show: @entangle('showViewModal').live }" x-show="show" x-cloak
-        class="fixed top-0 left-0 right-0 z-50 w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] max-h-full flex items-center justify-center">
-        <div class="relative w-full max-w-2xl max-h-full">
-            <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
+            <div x-data="{ show: @entangle('showViewModal').live }" 
+                x-show="show" 
+                x-cloak
+                class="fixed top-0 left-0 right-0 z-50 w-full p-4 overflow-x-hidden overflow-y-auto 
+                        md:inset-0 h-[calc(100%-1rem)] max-h-full flex items-center justify-center bg-black/50">
 
-                <!-- Modal Header -->
-                <div class="flex items-start justify-between p-4 border-b rounded-t dark:border-gray-600">
-                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white">View Promo</h3>
-                    <button type="button" wire:click="$set('showViewModal', false)"
-                        class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ml-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
-                        <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
-                            fill="none" viewBox="0 0 14 14">
-                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                                stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
-                        </svg>
-                        <span class="sr-only">Close modal</span>
-                    </button>
-                </div>
+                <div class="relative w-full max-w-3xl max-h-full">
+                    <div class="relative bg-white rounded-lg shadow-xl dark:bg-gray-700">
 
-                <!-- Modal Body -->
-                <div class="p-6 space-y-6">
-
-                    <!-- Promo Name & Code -->
-                    <div class="grid gap-6 md:grid-cols-2">
-                        <div>
-                            <label class="block mb-2 text-sm font-medium text-gray-500 dark:text-gray-300">Promo Name</label>
-                            <p class="text-gray-900 dark:text-white">{{ $view_name ?? '-' }}</p>
-                        </div>
-                        <div>
-                            <label class="block mb-2 text-sm font-medium text-gray-500 dark:text-gray-300">Promo Code</label>
-                            <p class="text-gray-900 dark:text-white">{{ $view_code ?? '-' }}</p>
-                        </div>
-                    </div>
-
-                    <!-- Promo Type -->
-                    <div>
-                        <label class="block mb-2 text-sm font-medium text-gray-500 dark:text-gray-300">Promo Type</label>
-                        <p class="text-gray-900 dark:text-white">{{ $view_type ?? '-' }}</p>
-                    </div>
-
-                    <!-- Branches -->
-                    <div>
-                        <label class="block mb-2 text-sm font-medium text-gray-500 dark:text-gray-300">Branches</label>
-                        <div class="flex flex-wrap gap-1 mt-1">
-                            @foreach($branches as $branch)
-                                @if(in_array($branch->id, $view_selected_branches))
-                                    <span class="inline-block bg-blue-500 text-white px-2 py-0.5 rounded text-xs">
-                                        {{ $branch->name }}
-                                    </span>
-                                @endif
-                            @endforeach
-                        </div>
-                    </div>
-
-                    <!-- First Product -->
-                    <div>
-                        <label class="block mb-2 text-sm font-medium text-gray-500 dark:text-gray-300">Product</label>
-                        <div class="flex flex-wrap gap-1 mt-1">
-                            @foreach($products as $product)
-                                @if(in_array($product->id, $view_selected_products))
-                                    <span class="inline-flex items-center bg-gray-600 text-white text-xs font-medium px-2 py-0.5 rounded-full">
-                                        {{ $product->name }}
-                                        <span class="ml-1 text-gray-200 text-[11px]">₱{{ number_format($product->price, 0) }}</span>
-                                    </span>
-                                @endif
-                            @endforeach
-                        </div>
-                    </div>
-
-                    <!-- Second Product (only if Buy one Take one) -->
-                    @if($view_type === 'Buy one Take one')
-                        <div>
-                            <label class="block mb-2 text-sm font-medium text-gray-500 dark:text-gray-300">Second Product</label>
-                            <div class="flex flex-wrap gap-1 mt-1">
-                                @foreach($products as $product)
-                                    @if(in_array($product->id, $view_selected_second_products))
-                                        <span class="inline-flex items-center bg-emerald-500 text-white text-xs font-medium px-2 py-0.5 rounded-full">
-                                            {{ $product->name }}
-                                            <span class="ml-1 text-gray-200 text-[11px]">₱{{ number_format($product->price, 0) }}</span>
-                                        </span>
-                                    @endif
-                                @endforeach
+                        <!-- Header -->
+                        <div class="flex items-start justify-between p-5 border-b dark:border-gray-600 bg-gray-50 dark:bg-gray-700">
+                            <div class="flex items-center space-x-3">
+                                <div class="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                                    <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white">View Promo</h3>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Promotion details</p>
+                                </div>
                             </div>
+                            <button type="button" 
+                                    wire:click="$set('showViewModal', false)"
+                                    class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 
+                                        rounded-lg text-sm w-8 h-8 ml-auto inline-flex justify-center items-center 
+                                        dark:hover:bg-gray-600 dark:hover:text-white">
+                                <svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                        stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                                </svg>
+                            </button>
                         </div>
-                    @endif
 
-                    <!-- Description -->
-                    <div>
-                        <label class="block mb-2 text-sm font-medium text-gray-500 dark:text-gray-300">Description</label>
-                        <p class="text-gray-900 dark:text-white">{{ $view_description ?? '-' }}</p>
+                        <!-- Body -->
+                        <div class="p-6 space-y-6">
+
+                            <!-- Basic Information Section -->
+                            <div class="space-y-4">
+                                <h4 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                                    <span class="w-1.5 h-5 bg-blue-500 rounded-full mr-2"></span>
+                                    Basic Information
+                                </h4>
+                                
+                                <div class="grid md:grid-cols-3 gap-6">
+                                    <div class="bg-gray-50 dark:bg-gray-600/30 p-4 rounded-lg border border-gray-100 dark:border-gray-600">
+                                        <h4 class="text-sm font-medium text-gray-500 dark:text-gray-300 mb-2">Promo Name</h4>
+                                        <p class="text-gray-900 dark:text-white font-medium">{{ $view_name }}</p>
+                                    </div>
+                                    <div class="bg-gray-50 dark:bg-gray-600/30 p-4 rounded-lg border border-gray-100 dark:border-gray-600">
+                                        <h4 class="text-sm font-medium text-gray-500 dark:text-gray-300 mb-2">Promo Code</h4>
+                                        <p class="text-gray-900 dark:text-white font-medium">
+                                            @if($view_code)
+                                                <span class="inline-flex items-center bg-blue-100 text-blue-800 px-3 py-1.5 rounded-full text-xs font-medium dark:bg-blue-900/30 dark:text-blue-300">
+                                                    {{ $view_code }}
+                                                </span>
+                                            @else
+                                                <span class="text-gray-400">-</span>
+                                            @endif
+                                        </p>
+                                    </div>
+                                    <div class="bg-gray-50 dark:bg-gray-600/30 p-4 rounded-lg border border-gray-100 dark:border-gray-600">
+                                        <h4 class="text-sm font-medium text-gray-500 dark:text-gray-300 mb-2">Promo Type</h4>
+                                        <p class="text-gray-900 dark:text-white font-medium">{{ $view_type }}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Date Information Section -->
+                            <div class="space-y-4">
+                                <h4 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                                    <span class="w-1.5 h-5 bg-blue-500 rounded-full mr-2"></span>
+                                    Date Information
+                                </h4>
+                                
+                                <div class="grid md:grid-cols-2 gap-6">
+                                    <div class="bg-gray-50 dark:bg-gray-600/30 p-4 rounded-lg border border-gray-100 dark:border-gray-600">
+                                        <h4 class="text-sm font-medium text-gray-500 dark:text-gray-300 mb-2">Start Date</h4>
+                                        <p class="text-gray-900 dark:text-white font-medium">{{ $view_startDate ?? '-' }}</p>
+                                    </div>
+                                    <div class="bg-gray-50 dark:bg-gray-600/30 p-4 rounded-lg border border-gray-100 dark:border-gray-600">
+                                        <h4 class="text-sm font-medium text-gray-500 dark:text-gray-300 mb-2">End Date</h4>
+                                        <p class="text-gray-900 dark:text-white font-medium">{{ $view_endDate ?? '-' }}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Branches & Products Section -->
+                            <div class="space-y-4">
+                                <h4 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                                    <span class="w-1.5 h-5 bg-blue-500 rounded-full mr-2"></span>
+                                    Branches & Products
+                                </h4>
+                                
+                                <div class="grid md:grid-cols-3 gap-6 ml-2">
+                                    <div>
+                                        <h4 class="text-sm font-medium text-gray-500 dark:text-gray-300 mb-3">Branches</h4>
+                                        <div class="flex flex-wrap gap-2">
+                                            @forelse($branches as $branch)
+                                                @if(in_array($branch->id, $view_selected_branches ?? []))
+                                                    <span class="inline-flex items-center bg-blue-100 text-blue-800 px-3 py-1.5 rounded-full text-xs font-medium dark:bg-blue-900/30 dark:text-blue-300">
+                                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                                            <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
+                                                        </svg>
+                                                        {{ $branch->name }}
+                                                    </span>
+                                                @endif
+                                            @empty
+                                                <span class="text-gray-400 text-sm">-</span>
+                                            @endforelse
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <h4 class="text-sm font-medium text-gray-500 dark:text-gray-300 mb-3">Products</h4>
+                                        <div class="flex flex-wrap gap-2">
+                                            @forelse($products as $product)
+                                                @if(in_array($product->id, $view_selected_products ?? []))
+                                                    <span class="inline-flex items-center bg-gray-100 text-gray-800 text-xs font-medium px-3 py-1.5 rounded-full dark:bg-gray-600 dark:text-gray-300">
+                                                        {{ $product->name }}
+                                                        <span class="ml-1 text-gray-600 dark:text-gray-400 text-[11px] font-medium">₱{{ number_format($product->price, 0) }}</span>
+                                                    </span>
+                                                @endif
+                                            @empty
+                                                <span class="text-gray-400 text-sm">-</span>
+                                            @endforelse
+                                        </div>
+                                    </div>
+
+                                    @if($view_type === 'Buy one Take one')
+                                        <div>
+                                            <h4 class="text-sm font-medium text-gray-500 dark:text-gray-300 mb-3">Second Product</h4>
+                                            <div class="flex flex-wrap gap-2">
+                                                @forelse($products as $product)
+                                                    @if(in_array($product->id, $view_selected_second_products ?? []))
+                                                        <span class="inline-flex items-center bg-emerald-100 text-emerald-800 text-xs font-medium px-3 py-1.5 rounded-full dark:bg-emerald-900/30 dark:text-emerald-300">
+                                                            {{ $product->name }}
+                                                            <span class="ml-1 text-emerald-600 dark:text-emerald-400 text-[11px] font-medium">₱{{ number_format($product->price, 0) }}</span>
+                                                        </span>
+                                                    @endif
+                                                @empty
+                                                    <span class="text-gray-400 text-sm">-</span>
+                                                @endforelse
+                                            </div>
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <!-- Description Section -->
+                            <div class="space-y-4">
+                                <h4 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                                    <span class="w-1.5 h-5 bg-blue-500 rounded-full mr-2"></span>
+                                    Description
+                                </h4>
+                                
+                                <div class="bg-gray-50 dark:bg-gray-600/30 p-4 rounded-lg border border-gray-100 dark:border-gray-600">
+                                    <p class="text-gray-900 dark:text-white">
+                                        @if($view_description)
+                                            {{ $view_description }}
+                                        @else
+                                            <span class="text-gray-400 italic">No description</span>
+                                        @endif
+                                    </p>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- Footer -->
+                        <div class="flex items-center p-6 space-x-2 border-t border-gray-200 rounded-b dark:border-gray-600 bg-gray-50 dark:bg-gray-700">
+                            <flux:button wire:click="$set('showViewModal', false)" class="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-lg">
+                                Close
+                            </flux:button>
+                        </div>
+
                     </div>
-
-                    <!-- Start & End Dates -->
-                    <div class="grid md:grid-cols-2 gap-6">
-                        <div>
-                            <label class="block mb-2 text-sm font-medium text-gray-500 dark:text-gray-300">Start Date</label>
-                            <p class="text-gray-900 dark:text-white">{{ $view_startDate ?? '-' }}</p>
-                        </div>
-                        <div>
-                            <label class="block mb-2 text-sm font-medium text-gray-500 dark:text-gray-300">End Date</label>
-                            <p class="text-gray-900 dark:text-white">{{ $view_endDate ?? '-' }}</p>
-                        </div>
-                    </div>
-
                 </div>
-
-                <!-- Modal Footer -->
-                <div class="flex items-center p-6 space-x-2 border-t border-gray-200 rounded-b dark:border-gray-600">
-                    <flux:button wire:click="$set('showViewModal', false)">
-                        Close
-                    </flux:button>
-                </div>
-
             </div>
-        </div>
-    </div>
-</section>
+        </section>
 
         <!-- End -->
     </div>

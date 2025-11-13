@@ -84,7 +84,7 @@
         </section>
 
         <!-- Profiling -->
-        <x-collapsible-card title="Create supplier" open="false" size="full">
+        @can('supplier create')
         <section class="mb-6">
                 <div class="px-4 py-5 sm:p-6">
             <form wire:submit.prevent="submit">
@@ -197,7 +197,7 @@
             </form>
                 </div>
         </section>
-        </x-collapsible-card>
+        @endcan
 
         @if (session()->has('message'))
             <div class="mb-4 p-4 text-sm text-green-700 bg-green-100 rounded-lg dark:bg-green-200 dark:text-green-800">
@@ -275,6 +275,7 @@
                                         </div>
                                     </td>
 
+<<<<<<< HEAD
                                     <!-- Contact -->
                                     <td class="px-6 py-4">
                                         <div class="flex flex-col space-y-1 text-sm text-gray-500 dark:text-gray-300">
@@ -404,8 +405,15 @@
                                         <a href="{{ route('supplier.view', ['id' => $item->id]) }}">
                                             <flux:button type="button" variant="outline" size="sm">View</flux:button>
                                         </a>
-                                        <flux:button wire:click.prevent="edit({{ $item->id }})" variant="outline" size="sm">Edit</flux:button>
-                                        <flux:button wire:click.prevent="confirmDelete({{ $item->id }})" variant="outline" size="sm" class="text-red-600 hover:text-red-700">Delete</flux:button>
+                                        @can('supplier edit')
+                                        <flux:button wire:click.prevent="edit({{ $item->id }})" variant="outline" size="sm">
+                                            Edit</flux:button>
+                                        @endcan
+
+                                        @can('supplier delete')
+                                        <flux:button wire:click.prevent="confirmDelete({{ $item->id }})" variant="outline" size="sm" class="text-red-600 hover:text-red-700">
+                                            Delete</flux:button>
+                                        @endcan
                                     </td>
                                 </tr>
                             @endforeach

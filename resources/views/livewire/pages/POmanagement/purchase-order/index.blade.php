@@ -15,6 +15,18 @@
                         Purchase Orders
                     </button>
                 </li>
+                <li class="mr-2" role="presentation">
+                    @can('po report view')
+                    <button wire:click="$set('activeTab', 'analytics')" 
+                        class="inline-block p-4 border-b-2 rounded-t-lg {{ $activeTab === 'analytics' ? 'text-blue-600 border-blue-600 dark:text-blue-500 dark:border-blue-500' : 'border-transparent hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300' }}" 
+                        type="button" role="tab">
+                        <svg class="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                        Reports & Analytics
+                    </button>
+                    @endcan
+                </li>
             </ul>
         </div>
 
@@ -55,12 +67,14 @@
                     </div>
 
                     <div class="flex space-x-3 items-center">
+                    @can('po create')
                     <a href="{{ route('pomanagement.purchaseorder.create') }}" class="inline-flex items-center px-5 py-2.5 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
                         <svg class="w-3.5 h-3.5 me-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 18">
                         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 1v16M1 9h16"/>
                         </svg>
                         Create Purchase Order
                     </a>
+                    @endcan
                     </div>
                 </div>
                 <div class="overflow-x-auto">
@@ -125,14 +139,18 @@
                                 class="font-medium text-blue-600 dark:text-blue-500 hover:underline">View</a>
                                 
                                 @if ($po->status === 'pending')
+                                @can('po edit') 
                                 <a href="{{ route('pomanagement.purchaseorder.edit', ['Id' => $po->id]) }}"
                                     class="font-medium text-yellow-600 dark:text-yellow-500 hover:underline">Edit</a>
+                                @endcan
                                 @endif
-
-
+                                
+                                
                                 @if ($po->status !== 'received' && $po->status !== 'to_receive')
+                                @can('po delete')
                                 <button type="button" wire:click="confirmDelete({{ $po->id }})"
                                     class="font-medium text-red-600 dark:text-red-500 hover:underline">Delete</button>
+                                @endcan
                                 @endif
                             </div>
                             </td>

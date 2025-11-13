@@ -375,6 +375,10 @@ class CategoryManagement extends Component
 
     public function render()
     {
+        if (!auth()->user()->hasAnyPermission(['category view'])) {
+            return view('livewire.pages.errors.403');
+        }
+        
         return view('livewire.pages.product-management.category-management', [
             'categories' => $this->categories,
             'stats' => $this->stats,

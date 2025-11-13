@@ -255,6 +255,10 @@ class InventoryDashboard extends Component
 
     public function render()
     {
+        if (!auth()->user()->hasAnyPermission(['product analytic view'])) {
+            return view('livewire.pages.errors.403');
+        }
+
         return view('livewire.pages.product-management.inventory-dashboard', [
             'overviewStats' => $this->overviewStats,
             'inventoryMovements' => $this->inventoryMovements,

@@ -110,7 +110,7 @@
                                 
 
 
-                {{-- <flux:navlist.group expandable
+                <flux:navlist.group expandable
                     :expanded="request()->routeIs('salesorder.*') || request()->routeIs('salesreturn.*')"
                     :heading="__('Sales Management')" class="lg:grid text-left">
 
@@ -120,7 +120,10 @@
                     <flux:navlist.item icon="inbox-stack" href="{{ route('salesorder.return') }}"
                         :current="request()->routeIs('salesorder.return')" wire:navigate>{{ __('Sales Return') }}
                     </flux:navlist.item>
-                </flux:navlist.group> --}}
+                    <flux:navlist.item icon="gift" href="{{ route('sales.promo') }}"
+                        :current="request()->routeIs('sales.promo')" wire:navigate>{{ __('Promo Creation') }}
+                        </flux:navlist.item>
+                </flux:navlist.group>
 
                 {{-- <flux:navlist.group expandable :expanded="request()->routeIs('finance.*')" :heading="__('Finance')"
                     class="lg:grid">

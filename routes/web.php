@@ -48,6 +48,8 @@ use App\Livewire\Pages\SalesManagement\Index as SalesManagementIndex;
 use App\Livewire\Pages\SalesManagement\SalesReturn as SalesManagementSalesReturn;
 use App\Livewire\Pages\SalesManagement\View as Viewsalesorder;
 use App\Livewire\Pages\SalesManagement\ViewSalesReturn;
+use App\Livewire\Pages\SalesManagement\SalesPromo as SalesManagementPromo;
+
 use App\Livewire\Pages\Shipment\Index as createShipmentIndex;
 use App\Livewire\Pages\Shipment\View as createShipmentView;
 use App\Livewire\Pages\Shipment\QrScannder as ShipmentQrScannder;
@@ -142,6 +144,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/sales-order/{salesOrderId}', Viewsalesorder::class)->name('salesorder.view');
     Route::get('/sales-return', SalesManagementSalesReturn::class)->name('salesorder.return');
     Route::get('/sales-return/{salesreturnId}', ViewSalesReturn::class)->name('salesreturn.view');
+    Route::get('/sales-promo', SalesManagementPromo::class)->name('sales.promo');
 
     // Product Management
     Route::prefix('product-management')->name('product-management.')->group(function () {

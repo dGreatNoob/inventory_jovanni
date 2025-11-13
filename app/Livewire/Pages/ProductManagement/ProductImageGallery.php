@@ -432,6 +432,10 @@ class ProductImageGallery extends Component
 
     public function render()
     {
+        if (!auth()->user()->hasAnyPermission(['image view'])) {
+            return view('livewire.pages.errors.403');
+        }
+
         return view('livewire.pages.product-management.product-image-gallery', [
             'images' => $this->images,
             'stats' => $this->stats,

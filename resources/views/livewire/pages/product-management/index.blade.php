@@ -7,6 +7,7 @@
                 <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Manage your product catalog, inventory, and suppliers</p>
             </div>
             <div class="flex flex-row items-center space-x-3">
+                @can('product export')
                 <flux:button 
                     wire:click="exportProducts" 
                     variant="outline"
@@ -17,15 +18,18 @@
                     </svg>
                     <span>Export</span>
                 </flux:button>
+                @endcan
 
 
                 <flux:modal.trigger name="create-edit-product">
+                    @can('product create')
                     <flux:button variant="primary" class="flex items-center gap-2 whitespace-nowrap min-w-fit">
                         <svg class="inline w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                         </svg>
                         <span>Add Product</span>
                     </flux:button>
+                    @endcan
                 </flux:modal.trigger>
 
             </div>

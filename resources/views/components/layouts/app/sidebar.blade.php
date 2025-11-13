@@ -48,9 +48,19 @@
                     </flux:navlist.item>
                 </flux:navlist.group> --}}
 
+                {{-- Purchase Order Management --}}
+
+                @if(Auth::user()->hasAnyPermission([
+                    'po view',          
+                    'po create',        
+                    'po edit',          
+                    'po delete',        
+                    'po approve',      
+                    'po receive',       
+                    'po report view'    
+                ]))
+
                 <flux:navlist.group expandable :expanded="request()->routeIs('pomanagement.*')" :heading="__('PO Management')" class="lg:grid">
-
-
                     <flux:navlist.item icon="inbox-stack" href="{{ route('pomanagement.purchaseorder') }}"
                         :current="request()->routeIs('pomanagement.purchaseorder')" wire:navigate>
                         {{ __('Purchase Order') }}
@@ -61,53 +71,61 @@
                         {{ __('Deliveries') }}
                     </flux:navlist.item>
 
-
                 </flux:navlist.group>
+                @endif
 
-                <flux:navlist.group 
-                    expandable 
-                    :expanded="request()->routeIs('product-management.*')" 
-                    :heading="__('Product Management')" 
-                    class="lg:grid text-left"
-                >
-                    <flux:navlist.item 
-                        icon="cube" 
-                        href="{{ route('product-management.index') }}" 
-                        :current="request()->routeIs('product-management.index')" 
-                        wire:navigate
+                {{-- Product Management --}}
+
+                @if(Auth::user()->hasAnyPermission([
+                    'product view', 
+                    'product create', 
+                    'product edit', 
+                    'product delete', 
+                    'product export'
+                ]))
+                    <flux:navlist.group 
+                        expandable 
+                        :expanded="request()->routeIs('product-management.*')" 
+                        :heading="__('Product Management')" 
+                        class="lg:grid text-left"
                     >
-                        {{ __('Products') }}
-                    </flux:navlist.item>
+                        <flux:navlist.item 
+                            icon="cube" 
+                            href="{{ route('product-management.index') }}" 
+                            :current="request()->routeIs('product-management.index')" 
+                            wire:navigate
+                        >
+                            {{ __('Products') }}
+                        </flux:navlist.item>
 
-                    <flux:navlist.item 
-                        icon="tag" 
-                        href="{{ route('product-management.categories') }}" 
-                        :current="request()->routeIs('product-management.categories')" 
-                        wire:navigate
-                    >
-                        {{ __('Categories') }}
-                    </flux:navlist.item>
+                        <flux:navlist.item 
+                            icon="tag" 
+                            href="{{ route('product-management.categories') }}" 
+                            :current="request()->routeIs('product-management.categories')" 
+                            wire:navigate
+                        >
+                            {{ __('Categories') }}
+                        </flux:navlist.item>
 
-                    <flux:navlist.item 
-                        icon="photo" 
-                        href="{{ route('product-management.images') }}" 
-                        :current="request()->routeIs('product-management.images')" 
-                        wire:navigate
-                    >
-                        {{ __('Images') }}
-                    </flux:navlist.item>
+                        <flux:navlist.item 
+                            icon="photo" 
+                            href="{{ route('product-management.images') }}" 
+                            :current="request()->routeIs('product-management.images')" 
+                            wire:navigate
+                        >
+                            {{ __('Images') }}
+                        </flux:navlist.item>
 
-                    <flux:navlist.item 
-                        icon="chart-bar" 
-                        href="{{ route('product-management.dashboard') }}" 
-                        :current="request()->routeIs('product-management.dashboard')" 
-                        wire:navigate
-                    >
-                        {{ __('Analytics') }}
-                    </flux:navlist.item>
-
-                    
-                </flux:navlist.group>
+                        <flux:navlist.item 
+                            icon="chart-bar" 
+                            href="{{ route('product-management.dashboard') }}" 
+                            :current="request()->routeIs('product-management.dashboard')" 
+                            wire:navigate
+                        >
+                            {{ __('Analytics') }}
+                        </flux:navlist.item>
+                    </flux:navlist.group>
+                @endif
                                 
 
 
@@ -185,16 +203,39 @@
                     </flux:navlist.item>
                 </flux:navlist.group> --}}
 
-                <flux:navlist.group expandable :expanded="request()->routeIs('supplier.*')"
-                    :heading="__('Supplier Management')" class="lg:grid">
-                    <flux:navlist.item icon="users" href="{{ route('supplier.profile') }}"
-                        :current="request()->routeIs('supplier.profile')" wire:navigate>{{ __('Profile') }}
-                    </flux:navlist.item>
-                    {{-- <flux:navlist.item icon="building-office" href="{{ route('product-management.suppliers') }}"
-                        :current="request()->routeIs('product-management.suppliers')" wire:navigate>{{ __('Suppliers') }}
-                    </flux:navlist.item> --}}
-                </flux:navlist.group>
+                {{-- Supplier Management --}}
 
+                @if(Auth::user()->hasAnyPermission([
+                    'supplier view', 
+                    'supplier create', 
+                    'supplier edit', 
+                    'supplier delete', 
+                    'supplier report view'
+                ]))
+                    <flux:navlist.group expandable :expanded="request()->routeIs('supplier.*')"
+                        :heading="__('Supplier Management')" class="lg:grid">
+                        <flux:navlist.item icon="users" href="{{ route('supplier.profile') }}"
+                            :current="request()->routeIs('supplier.profile')" wire:navigate>
+                            {{ __('Profile') }}
+                        </flux:navlist.item>
+                        {{-- Add more supplier links here if needed --}}
+                    </flux:navlist.group>
+                @endif
+
+                {{-- Agent & Branches Management --}}
+
+                @if(Auth::user()->hasAnyPermission([
+                    'agent view',
+                    'agent create',
+                    'agent edit',
+                    'agent delete',
+                    'branch view',
+                    'branch create',
+                    'branch edit',
+                    'branch delete',
+                    'agent assign branch',
+                    'agent transfer branch'
+                ]))
                 <flux:navlist.group expandable :expanded="request()->routeIs('customer.*', 'branch.*', 'agent.*')"
                     :heading="__('Operational Management')" class="lg:grid">
                      {{-- <flux:navlist.item icon="users" href="{{ route('customer.profile') }}"
@@ -215,6 +256,7 @@
 
 
                 </flux:navlist.group>
+                @endif
 
                 {{--@role(['Super Admin', 'Admin'])
                     <flux:navlist.group expandable :expanded="request()->routeIs('setup.*')"
@@ -233,19 +275,8 @@
                     </flux:navlist.group>
                 @endrole--}}
 
-                {{--  <flux:navlist.group expandable :expanded="request()->routeIs('bodegero.*')"
-                    :heading="__('Warehouse Staff')" class="lg:grid">
-                    <flux:navlist.item icon="qr-code" href="{{ route('bodegero.stockin') }}"
-                        :current="request()->routeIs('bodegero.stockin')" wire:navigate>{{ __('Stock In') }}
-                    </flux:navlist.item>
-                    <flux:navlist.item icon="qr-code" href="{{ route('bodegero.stockout') }}"
-                        :current="request()->routeIs('bodegero.stockout')" wire:navigate>{{ __('Stock Out') }}
-                    </flux:navlist.item>
-                    <!-- <flux:navlist.item icon="banknotes" href=""  wire:navigate>{{ __('Returns') }}
-                    </flux:navlist.item> -->
-                </flux:navlist.group>--}}
-
-
+                {{-- Warehouse Staff --}}
+                
                 <flux:navlist.group expandable :expanded="request()->routeIs('warehousestaff.*')"
                     :heading="__('Warehouse Staff')" class="lg:grid">
                     <flux:navlist.item icon="qr-code" href="{{ route('warehousestaff.stockin') }}"
@@ -284,10 +315,12 @@
                     <flux:navlist.item icon="clipboard-document-list" href="{{ route('reports.top-products') }}"
                         :current="request()->routeIs('reports.top-products')" wire:navigate>{{ __('Top Products') }}
                     </flux:navlist.item>
+                    
                     <flux:navlist.item icon="clipboard-document-list" href="{{ route('reports.supplier-performance') }}"
                         :current="request()->routeIs('reports.supplier-performance')" wire:navigate>
                         {{ __('Supplier') }}
                     </flux:navlist.item>
+                    
                     <flux:navlist.item icon="clipboard-document-list" href="{{ route('reports.customer-analysis') }}"
                         :current="request()->routeIs('reports.customer-analysis')" wire:navigate>
                         {{ __('Customer') }}
@@ -326,7 +359,17 @@
                     </flux:navlist.item>
                 </flux:navlist.group>--}}
 
-                 @role(['Super Admin', 'Admin'])
+                @if(Auth::user()->hasAnyPermission([
+                    'user view',
+                    'user create',
+                    'user edit',
+                    'user delete',
+                    'role view',
+                    'role create',
+                    'role edit',
+                    'role delete',
+                    'permission manage'
+                ]))
                     <flux:navlist.group expandable
                         :expanded="request()->routeIs('user.index') || request()->routeIs('roles.index')"
                         :heading="__('User Management')" class="lg:grid">
@@ -339,7 +382,7 @@
                             {{ __('Roles & Permissions') }}
                         </flux:navlist.item>
                     </flux:navlist.group>
-                @endrole
+                @endif
 
                 {{-- Activity Logs moved to top level for easier access --}}
                 {{--<flux:navlist.item icon="clipboard-document-list" href="{{ route('activity.logs') }}"

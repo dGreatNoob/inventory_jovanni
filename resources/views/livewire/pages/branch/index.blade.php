@@ -4,6 +4,7 @@
 <div class="pt-4">
     <div class="space-y-6">
         <!-- Create New Branch Form -->
+         @can ('branch create')
         <section class="bg-white dark:bg-gray-800 shadow rounded-lg mb-8">
             <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
                 <h3 class="text-lg font-medium text-gray-900 dark:text-white">Create New Branch</h3>
@@ -20,14 +21,14 @@
                                 class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                 placeholder="Main Branch" required />
                             @error('name') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
-                </div>
+                        </div>
                         <div>
                             <label for="code" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Code</label>
                             <input type="text" id="code" wire:model="code"
                                 class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                 placeholder="BR-001" required />
                             @error('code') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
-    </div>
+                        </div>
                     <div>
                             <label for="category" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
                             <input type="text" id="category" wire:model="category"
@@ -181,6 +182,7 @@
                 </div>
             </form>
         </section>
+        @endcan
 
         @if (session()->has('message'))
             <div class="mb-6 p-4 text-sm text-green-700 bg-green-100 rounded-lg dark:bg-green-200 dark:text-green-800">
@@ -268,12 +270,17 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ $item->manager_name ?? 'N/A' }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-center">
                                     <div class="flex items-center justify-center space-x-2">
+                                        @can('branch edit')
                                         <flux:button wire:click.prevent="edit({{ $item->id }})" variant="outline" size="sm">
                                             Edit
                                         </flux:button>
+                                        @endcan
+
+                                        @can('branch delete')
                                         <flux:button wire:click.prevent="confirmDelete({{ $item->id }})" variant="outline" size="sm" class="text-red-600 hover:text-red-700">
                                             Delete
                                         </flux:button>
+                                        @endcan
                                     </div>
                                 </td>
                             </tr>

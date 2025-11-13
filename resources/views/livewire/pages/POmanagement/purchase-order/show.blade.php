@@ -1205,9 +1205,14 @@
 
         <!-- Right Section: Action Buttons -->
         <div class="flex items-center space-x-3">
-            @if($purchaseOrder->status === \App\Enums\PurchaseOrderStatus::PENDING)
-                @can('approve_supply_purchase_order')
-                    <button type="button" wire:click="ApprovePurchaseOrder"
+            @php
+                use App\Enums\Enum\PermissionEnum;
+            @endphp
+
+            @can('po approve')
+                @if($purchaseOrder->status === \App\Enums\PurchaseOrderStatus::PENDING || $purchaseOrder->status === 'pending')
+                    <button type="button" 
+                        wire:click="ApprovePurchaseOrder"
                         wire:confirm="Are you sure you want to approve Purchase Order #{{ $purchaseOrder->po_num }}?"
                         class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-lg hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-300 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800 transition-colors">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1231,7 +1236,7 @@
                     </button>
                 @endcan
             @elseif($purchaseOrder->status === \App\Enums\PurchaseOrderStatus::APPROVED)
-                @can('approve_supply_purchase_order')
+                @can('po approve')
                     <button type="button" wire:click="ApprovePurchaseOrder"
                         wire:confirm="Are you sure you want to submit this information? Make sure batch information is correct."
                         class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 transition-colors">
@@ -1252,7 +1257,7 @@
                         Start Receiving
                     </a>
                 @endcan
-                @can('approve_supply_purchase_order')
+                @can('po approve')
                     <button type="button"
                         onclick="const returnReason = prompt('Please enter reason for returning to approved status:');
                                 if(returnReason && returnReason.trim()) {

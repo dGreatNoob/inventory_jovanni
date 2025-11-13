@@ -172,6 +172,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/user-management', UserIndex::class)
         ->name('user.index');
+
     Route::get('/roles-permissions', RolePermissionIndex::class)->name('roles.index');
 
     Route::prefix('finance')->name('finance.')->group(function () {

@@ -35,12 +35,14 @@
             </flux:button>
 
             <flux:modal.trigger name="upload-images">
+                @can('image create')
                 <flux:button variant="primary" class="whitespace-nowrap min-w-fit flex items-center">
                     <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                     </svg>
                     <span>Upload Images</span>
                 </flux:button>
+                @endcan
             </flux:modal.trigger>
         </div>
     </div>

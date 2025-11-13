@@ -185,15 +185,32 @@ class Index extends Component
 
     public function render()
     {
-        if (!auth()->user()->hasAnyRole(['Admin', 'Super Admin'])) {
+        if (!auth()->user()->hasAnyPermission(['user view'])) {
             return view('livewire.pages.errors.403');
         }
+
+        $search = trim($this->search);
+
+        $users = User::with(['department', 'roles'])
+            ->when($search, function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhereHas('department', function ($dept) use ($search) {
+                            $dept->where('name', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('roles', function ($role) use ($search) {
+                            $role->where('name', 'like', "%{$search}%");
+                        });
+                });
+            })
+            ->latest()
+            ->paginate($this->perPage);
+
         return view('livewire.pages.user.index', [
-            'users' => User::where('name', 'like', '%' . $this->search . '%')
-                ->orWhere('email', 'like', '%' . $this->search . '%')
-                ->orderBy('id', 'desc')
-                ->paginate($this->perPage),
-            'roles' => $this->roles = \Spatie\Permission\Models\Role::orderBy('name')->get()
+            'users' => $users,
+            'roles' => $this->roles = Role::orderBy('name')->get(),
         ]);
     }
 }
+

@@ -529,6 +529,10 @@ class Index extends Component
 
     public function render()
     {
+        if (!auth()->user()->hasAnyPermission(['product view'])) {
+            return view('livewire.pages.errors.403');
+        }
+
         return view('livewire.pages.product-management.index', [
             'products' => $this->products,
             'stats' => $this->stats,

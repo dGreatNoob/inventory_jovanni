@@ -252,8 +252,8 @@ class Index extends Component
 
                         // Check if batch number already exists for this product
                         $existingBatch = SupplyBatch::where('supply_profile_id', $supplyProfile->id)
-                                                  ->where('batch_number', $batchNumber)
-                                                  ->first();
+                                                ->where('batch_number', $batchNumber)
+                                                ->first();
 
                         if ($existingBatch) {
                             // Add to existing batch
@@ -321,14 +321,28 @@ class Index extends Component
                 'receiving_remarks' => $this->generalRemarks,
             ]);
 
-            // // Log the activity
-            // \App\Models\ActivityLog::create([
-            //     'user_id' => auth()->id(),
-            //     'action' => 'stock_in_report',
-            //     'description' => "Stock In Report submitted for PO: {$this->foundPurchaseOrder->po_num}. Status: {$poStatus}. General Remarks: {$this->generalRemarks}",
-            //     'subject_type' => PurchaseOrder::class,
-            //     'subject_id' => $this->foundPurchaseOrder->id,
-            // ]);
+            // ✅ AUTO-CREATE DELIVERY RECORD when PO is received/damaged/incomplete
+            if (in_array($poStatus, ['received', 'damaged', 'incomplete'])) {
+                // Check if delivery record already exists
+                $deliveryExists = \App\Models\PurchaseOrderDelivery::where('purchase_order_id', $this->foundPurchaseOrder->id)->exists();
+                
+                if (!$deliveryExists) {
+                    try {
+                        \Illuminate\Support\Facades\DB::table('purchase_order_deliveries')->insert([
+                            'purchase_order_id' => $this->foundPurchaseOrder->id,
+                            'dr_number' => $this->foundPurchaseOrder->dr_number ?: ('DR-' . $this->foundPurchaseOrder->po_num),
+                            'delivery_date' => now()->toDateString(),
+                            'notes' => $this->generalRemarks ?: 'Received via stock-in process',
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                        
+                        Log::info("✅ Auto-created delivery record for PO: {$this->foundPurchaseOrder->po_num}");
+                    } catch (\Exception $e) {
+                        Log::error("❌ Failed to create delivery record for PO {$this->foundPurchaseOrder->po_num}: " . $e->getMessage());
+                    }
+                }
+            }
 
             $this->message = "Stock-in report submitted successfully for PO: {$this->foundPurchaseOrder->po_num}";
             $this->messageType = 'success';

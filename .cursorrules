@@ -36,5 +36,108 @@
         ]
       }
     }
+  },
+  "erpComponentPatterns": {
+    "modals": {
+      "bestFor": [
+        "Confirming destructive or high-impact actions (delete record, cancel PO)",
+        "Blocking approvals and security prompts that must resolve before proceeding",
+        "Critical alerts or compliance warnings that require acknowledgement",
+        "Short previews or confirmations before committing (e.g., invoice PDF check)"
+      ],
+      "notes": "Keep concise with decisive actions; modal should monopolize attention until resolved."
+    },
+    "slideovers": {
+      "bestFor": [
+        "Editing or creating records while retaining list context (products, suppliers)",
+        "Reviewing audit trails, logs, or supporting analytics alongside the main page",
+        "Supplementary collaboration features (notes, attachments) without leaving the workflow"
+      ],
+      "notes": "Use when reference to underlying page matters; structure sections vertically, provide easy dismiss."
+    },
+    "tablesAndGrids": {
+      "bestFor": [
+        "Inventory, GL entries, order lines with dense data and filtering",
+        "Batch operations such as bulk update, approval queues",
+        "Inline adjustments on frequent fields (quantities, statuses)"
+      ],
+      "notes": "Include pagination, column preferences, selection states, and inline validation where appropriate."
+    },
+    "cardsAndDashboards": {
+      "bestFor": [
+        "Role-based KPI snapshots and drill downs",
+        "Quick analytics summaries (inventory health, sales targets)",
+        "Highlighting attention items or upcoming tasks"
+      ],
+      "notes": "Group by persona; provide clear CTAs leading to detailed pages."
+    },
+    "kanbanAndSwimlanes": {
+      "bestFor": [
+        "Workflow-driven entities (sales pipeline, manufacturing stages, service tickets)",
+        "Status transitions that benefit from drag-and-drop"
+      ]
+    },
+    "tabsAndAccordions": {
+      "bestFor": [
+        "Segmenting related data (Overview, Pricing, Logistics, Audit)",
+        "Large forms where users focus on one section at a time"
+      ],
+      "notes": "Use accordions for read-heavy sections; tabs for mutually exclusive content."
+    },
+    "commandPalette": {
+      "bestFor": [
+        "Global search across entities (customers, orders, products)",
+        "Keyboard-triggered quick actions (log payment, open ticket)"
+      ]
+    },
+    "alertsAndToasts": {
+      "bestFor": [
+        "Real-time warnings (stock thresholds, budget overruns)",
+        "Success confirmations for async tasks",
+        "Background job updates (imports, sync failures)"
+      ]
+    },
+    "timelineFeeds": {
+      "bestFor": [
+        "Audit history and compliance tracking per record",
+        "Collaboration notes with user mentions"
+      ]
+    },
+    "formsAndWizards": {
+      "bestFor": [
+        "Long or multi-step flows (supplier onboarding, BOM creation)",
+        "Processes that require autosave or staged validation"
+      ],
+      "notes": "Provide inline help, contextual validation, and save states."
+    },
+    "contextMenus": {
+      "bestFor": [
+        "Secondary row-level actions (duplicate, print, mark complete)",
+        "Reducing clutter on dense tables"
+      ]
+    },
+    "attachmentsAndViewers": {
+      "bestFor": [
+        "Previewing invoices, receipts, manuals without context switching",
+        "Drag-and-drop uploads with version history"
+      ]
+    },
+    "mapsAndGeospatial": {
+      "bestFor": [
+        "Delivery routing, warehouse planning, field service coverage"
+      ]
+    },
+    "notificationsInbox": {
+      "bestFor": [
+        "Approval requests, escalations, workflow triggers grouped by severity",
+        "Providing quick actions directly within messages"
+      ]
+    },
+    "dataImportExport": {
+      "bestFor": [
+        "Monitoring long-running jobs",
+        "Providing templates, validation feedback, retry options"
+      ]
+    }
   }
 }

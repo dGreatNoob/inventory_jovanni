@@ -29,7 +29,7 @@ class Index extends Component
     public $sortBy = 'created_at';
     public $sortDirection = 'desc';
     public $perPage = 20;
-    public $viewMode = 'grid'; // grid or table
+    public $viewMode = 'table'; // grid or table
 
     // Data
     // public $products = []; // Removed - using computed property instead
@@ -42,6 +42,7 @@ class Index extends Component
     // Modals
     public $editingProduct = null;
     public $isEditMode = false;
+    public $priceHistories = [];
     // Viewer state for product details modal
     public $viewerProductId = null;
     public $viewerImages = [];
@@ -292,6 +293,7 @@ class Index extends Component
         $this->resetForm();
         $this->editingProduct = null;
         $this->isEditMode = false;
+        $this->priceHistories = [];
         $this->showProductPanel = true;
     }
 
@@ -300,6 +302,7 @@ class Index extends Component
         $this->editingProduct = Product::findOrFail($productId);
         $this->loadProductData();
         $this->isEditMode = true;
+        $this->loadPriceHistory($productId);
         $this->showProductPanel = true;
     }
 
@@ -428,6 +431,7 @@ class Index extends Component
             'discount_tiers' => [],
         ];
         $this->filteredSubcategories = [];
+        $this->priceHistories = [];
     }
 
     public function loadProductData()
@@ -475,6 +479,29 @@ class Index extends Component
                 'initial_quantity' => '',
             ]);
         }
+    }
+
+    protected function loadPriceHistory(int $productId): void
+    {
+        if (empty($productId)) {
+            $this->priceHistories = [];
+            return;
+        }
+
+        $histories = $this->productService->getProductPriceHistory($productId);
+
+        $this->priceHistories = $histories->map(function ($history) {
+            return [
+                'changed_at' => optional($history->changed_at)->toIso8601String(),
+                'old_price' => $history->old_price,
+                'new_price' => $history->new_price,
+                'pricing_note' => $history->pricing_note,
+                'changed_by' => [
+                    'id' => $history->changedBy?->id,
+                    'name' => $history->changedBy?->name,
+                ],
+            ];
+        })->toArray();
     }
 
     public function saveProduct()
@@ -555,6 +582,7 @@ class Index extends Component
         $this->isEditMode = false;
         $this->editingProduct = null;
         $this->resetForm();
+        $this->priceHistories = [];
     }
 
     public function openProductViewer($productId, $startImageId = null)
@@ -589,6 +617,7 @@ class Index extends Component
 
         $currentId = $this->viewerImages[$this->viewerIndex] ?? null;
         $this->viewingImage = $currentId ? ProductImage::find($currentId) : null;
+        $this->loadPriceHistory($this->viewerProductId);
     }
 
     public function viewerPrev()

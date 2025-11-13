@@ -67,6 +67,11 @@ class Product extends Model
         return $this->hasMany(InventoryMovement::class);
     }
 
+    public function priceHistories(): HasMany
+    {
+        return $this->hasMany(ProductPriceHistory::class)->orderByDesc('changed_at');
+    }
+
     public function inventoryMovements(): HasMany
     {
         return $this->hasMany(InventoryMovement::class);

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Product;
 use App\Models\ProductInventory;
+use App\Models\ProductPriceHistory;
 use App\Models\InventoryMovement;
 use App\Models\Category;
 use App\Models\Supplier;
@@ -85,6 +86,15 @@ class ProductService
                 $this->createInitialInventory($product, $data['initial_quantity']);
             }
 
+            ProductPriceHistory::create([
+                'product_id' => $product->id,
+                'old_price' => null,
+                'new_price' => $product->price,
+                'pricing_note' => $product->price_note,
+                'changed_by' => auth()->id() ?? 1,
+                'changed_at' => now(),
+            ]);
+
             return $product->load(['category', 'supplier', 'images', 'inventory']);
         });
     }
@@ -95,12 +105,44 @@ class ProductService
     public function updateProduct(Product $product, array $data): Product
     {
         return DB::transaction(function () use ($product, $data) {
+            $originalPrice = $product->price;
+            $originalNote = $product->price_note;
+
             $product->update(array_merge($data, [
                 'updated_by' => auth()->id(),
             ]));
 
+            if (array_key_exists('price', $data)) {
+                $newPrice = $data['price'];
+                $priceChanged = $this->hasPriceChanged($originalPrice, $newPrice);
+
+                if ($priceChanged) {
+                    ProductPriceHistory::create([
+                        'product_id' => $product->id,
+                        'old_price' => $originalPrice,
+                        'new_price' => $newPrice,
+                        'pricing_note' => $data['price_note'] ?? $originalNote,
+                        'changed_by' => auth()->id() ?? 1,
+                        'changed_at' => now(),
+                    ]);
+                }
+            }
+
             return $product->fresh(['category', 'supplier', 'images', 'inventory']);
         });
+    }
+
+    protected function hasPriceChanged($oldPrice, $newPrice): bool
+    {
+        if (is_null($oldPrice) && is_null($newPrice)) {
+            return false;
+        }
+
+        if (is_null($oldPrice) xor is_null($newPrice)) {
+            return true;
+        }
+
+        return round((float) $oldPrice, 2) !== round((float) $newPrice, 2);
     }
 
     /**
@@ -294,5 +336,14 @@ class ProductService
         return DB::transaction(function () use ($productIds) {
             return Product::whereIn('id', $productIds)->delete();
         });
+    }
+
+    public function getProductPriceHistory(int $productId, int $limit = 50): Collection
+    {
+        return ProductPriceHistory::with(['changedBy:id,name'])
+            ->where('product_id', $productId)
+            ->orderByDesc('changed_at')
+            ->limit($limit)
+            ->get();
     }
 }

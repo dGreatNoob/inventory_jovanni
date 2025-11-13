@@ -37,6 +37,13 @@ class Sales extends Component
     public $remarks = '';
     public $showEditItemModal = false;
 
+    // Export preview fields
+    public $showPreviewModal = false;
+    public $exportItems = [];
+    public $totalItems = 0;
+    public $totalQuantity = 0;
+    public $totalPrice = 0;
+
     public function mount()
     {
         // Start with empty date to show all batches
@@ -140,6 +147,104 @@ class Sales extends Component
         // Don't clear selectedReceipt here - we want to return to the receipt details modal
         // Refresh the table data
         $this->loadBatchReceipts();
+    }
+
+    public function openPreviewModal()
+    {
+        if (!$this->selectedReceipt) {
+            session()->flash('error', 'No receipt selected.');
+            return;
+        }
+
+        // Calculate preview data
+        $this->exportItems = [];
+        $this->totalItems = 0;
+        $this->totalQuantity = 0;
+        $this->totalPrice = 0;
+
+        foreach ($this->selectedReceipt->items as $item) {
+            $quantity = $item->received_qty ?? 0;
+            $unitPrice = $item->product->price ?? 0;
+            $totalPricePerItem = $quantity * $unitPrice;
+
+            $this->exportItems[] = [
+                'product_description' => $item->product->name ?? 'Unknown Product',
+                'quantity' => $quantity,
+                'unit_price' => $unitPrice,
+                'total_price' => $totalPricePerItem,
+            ];
+
+            $this->totalItems++;
+            $this->totalQuantity += $quantity;
+            $this->totalPrice += $totalPricePerItem;
+        }
+
+        $this->showPreviewModal = true;
+    }
+
+    public function closePreviewModal()
+    {
+        $this->showPreviewModal = false;
+        $this->exportItems = [];
+        $this->totalItems = 0;
+        $this->totalQuantity = 0;
+        $this->totalPrice = 0;
+    }
+
+    public function exportPDF()
+    {
+        try {
+            if (!$this->selectedReceipt) {
+                session()->flash('error', 'No receipt selected.');
+                return;
+            }
+
+            // Generate filename
+            $branchName = str_replace(' ', '_', $this->selectedReceipt->branch->name);
+            $refNo = str_replace(' ', '_', $this->selectedReceipt->batchAllocation->ref_no);
+            $filename = "receipt_{$branchName}_{$refNo}_" . now()->format('Y-m-d_H-i-s') . '.pdf';
+            
+            // Generate PDF URL - use a direct route approach
+            $pdfUrl = route('allocation.receipt.pdf', [
+                'receiptId' => $this->selectedReceipt->id,
+                'filename' => urlencode($filename)
+            ]);
+            
+            // Dispatch event to JavaScript to handle download
+            $this->dispatch('download-pdf', url: $pdfUrl, filename: $filename);
+            
+            session()->flash('message', 'PDF download should start automatically. If it doesn\'t, check your browser downloads.');
+        } catch (\Exception $e) {
+            session()->flash('error', 'Failed to export PDF: ' . $e->getMessage());
+        }
+    }
+
+    public function exportExcel()
+    {
+        try {
+            if (!$this->selectedReceipt) {
+                session()->flash('error', 'No receipt selected.');
+                return;
+            }
+
+            // Generate filename
+            $branchName = str_replace(' ', '_', $this->selectedReceipt->branch->name);
+            $refNo = str_replace(' ', '_', $this->selectedReceipt->batchAllocation->ref_no);
+            $filename = "receipt_{$branchName}_{$refNo}_" . now()->format('Y-m-d_H-i-s') . '.xlsx';
+            
+            // Generate Excel URL - use a direct route approach
+            $excelUrl = route('allocation.receipt.excel', [
+                'receiptId' => $this->selectedReceipt->id,
+                'filename' => urlencode($filename)
+            ]);
+            
+            // Dispatch event to JavaScript to handle download
+            $this->dispatch('download-excel', url: $excelUrl, filename: $filename);
+            
+            session()->flash('message', 'Excel download should start automatically. If it doesn\'t, check your browser downloads.');
+        } catch (\Exception $e) {
+            session()->flash('error', 'Failed to export Excel: ' . $e->getMessage());
+        }
     }
 
     public function confirmReceipt()

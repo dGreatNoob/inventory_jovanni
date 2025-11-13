@@ -144,13 +144,13 @@ class VDRPrintController extends Controller
             <!-- Print Button -->
             <div class="print-button">
                 <button onclick="window.print()" title="Print this VDR document">
-                    🖨️ Print VDR
+                    🖨️ Print Delivery Receipt
                 </button>
                 <button onclick="window.close()" class="close-btn" title="Close this window">
                     ✕ Close
                 </button>
                 <div style="font-size: 11px; color: #666; margin-top: 5px;">
-                    Click "Print VDR" to open printer options
+                    Click "Print Delivery Receipt" to open printer options
                 </div>
             </div>
             

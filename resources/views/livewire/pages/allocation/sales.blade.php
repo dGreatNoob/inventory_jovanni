@@ -1,6 +1,93 @@
 <x-slot:header>Allocation - Sales</x-slot:header>
 <x-slot:subheader>Branch receipt management system for incoming deliveries from warehouse.</x-slot:subheader>
 
+@script
+<script>
+// PDF Download Handler
+window.addEventListener('download-pdf', (event) => {
+    const { url, filename } = event.detail;
+    
+    // Create a temporary link and trigger download
+    const link = document.createElement('a');
+    if (link.download !== undefined) {
+        link.href = url;
+        link.download = filename;
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+    
+    // Clean up after a delay
+    setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+    }, 1000);
+});
+
+// Excel Download Handler
+window.addEventListener('download-excel', (event) => {
+    const { url, filename } = event.detail;
+    
+    // Create a temporary link and trigger download
+    const link = document.createElement('a');
+    if (link.download !== undefined) {
+        link.href = url;
+        link.download = filename;
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+    
+    // Clean up after a delay
+    setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+    }, 1000);
+});
+
+// Alternative: Listen for Livewire events
+document.addEventListener('DOMContentLoaded', function() {
+    // PDF Download
+    window.Livewire.on('download-pdf', (data) => {
+        const { url, filename } = data[0];
+        
+        const link = document.createElement('a');
+        if (link.download !== undefined) {
+            link.href = url;
+            link.download = filename;
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        setTimeout(() => {
+            window.URL.revokeObjectURL(url);
+        }, 1000);
+    });
+
+    // Excel Download
+    window.Livewire.on('download-excel', (data) => {
+        const { url, filename } = data[0];
+        
+        const link = document.createElement('a');
+        if (link.download !== undefined) {
+            link.href = url;
+            link.download = filename;
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        setTimeout(() => {
+            window.URL.revokeObjectURL(url);
+        }, 1000);
+    });
+});
+</script>
+@endscript
+
 <div>
     <!-- Success/Error Messages -->
     @if (session()->has('message'))
@@ -184,6 +271,12 @@
                                 Confirm Receipt
                             </button>
                         @endif
+                        @if($selectedReceipt->status === 'received')
+                            <button wire:click="openPreviewModal"
+                                    class="bg-blue-600 hover:bg-blue-700 text-white text-sm py-1 px-3 rounded">
+                                Preview & Export
+                            </button>
+                        @endif
                     </div>
                 </div>
 
@@ -340,8 +433,92 @@
                 </button>
                 <button type="button"
                         wire:click="confirmReceipt"
-                        class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                     Confirm Receipt
+                </button>
+            </div>
+        </x-modal>
+    @endif
+
+    <!-- STEP 4: PREVIEW MODAL -->
+    @if($showPreviewModal)
+        <x-modal wire:model.live="showPreviewModal" class="max-w-6xl">
+            <x-slot:title>
+                Receipt Preview - Export Documents
+            </x-slot:title>
+            
+            <div class="mb-6">
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    {{ $selectedReceipt->branch->name }} - Batch: {{ $selectedReceipt->batchAllocation->ref_no }}
+                </p>
+                <p class="text-sm text-green-600 dark:text-green-400 mb-4">
+                    Review the receipt details below before exporting. You can download both PDF and Excel formats.
+                </p>
+            </div>
+
+            <!-- Preview Table -->
+            <div class="overflow-x-auto border border-gray-200 dark:border-gray-600 rounded-lg">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
+                    <thead class="bg-gray-50 dark:bg-gray-700">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                Product Description
+                            </th>
+                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                Qty
+                            </th>
+                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                Unit Price
+                            </th>
+                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                Total Price
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-600">
+                        @foreach($exportItems as $item)
+                            <tr>
+                                <td class="px-4 py-4">
+                                    <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $item['product_description'] }}</div>
+                                </td>
+                                <td class="px-4 py-4 text-center">
+                                    <div class="text-sm text-gray-900 dark:text-white">{{ $item['quantity'] }}</div>
+                                </td>
+                                <td class="px-4 py-4 text-center">
+                                    <div class="text-sm text-gray-900 dark:text-white">₱{{ number_format($item['unit_price'], 2) }}</div>
+                                </td>
+                                <td class="px-4 py-4 text-center">
+                                    <div class="text-sm text-gray-900 dark:text-white">₱{{ number_format($item['total_price'], 2) }}</div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                    <tfoot class="bg-gray-50 dark:bg-gray-700">
+                        <tr>
+                            <td class="px-4 py-3 font-bold text-gray-900 dark:text-white">Total</td>
+                            <td class="px-4 py-3 text-center font-bold text-gray-900 dark:text-white">{{ $totalQuantity }}</td>
+                            <td class="px-4 py-3"></td>
+                            <td class="px-4 py-3 text-center font-bold text-gray-900 dark:text-white">₱{{ number_format($totalPrice, 2) }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600 mt-6">
+                <button type="button"
+                        wire:click="closePreviewModal"
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
+                    Back
+                </button>
+                <button type="button"
+                        wire:click="exportPDF"
+                        class="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                    Download PDF
+                </button>
+                <button type="button"
+                        wire:click="exportExcel"
+                        class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    Download Excel
                 </button>
             </div>
         </x-modal>

@@ -136,9 +136,10 @@ class Sales extends Component
     public function closeConfirmModal()
     {
         $this->showConfirmModal = false;
-        $this->selectedReceipt = null;
         $this->receiptItems = [];
-        $this->loadBatchReceipts(); // Refresh the table data
+        // Don't clear selectedReceipt here - we want to return to the receipt details modal
+        // Refresh the table data
+        $this->loadBatchReceipts();
     }
 
     public function confirmReceipt()

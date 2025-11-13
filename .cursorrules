@@ -17,5 +17,24 @@
         "stat"
       ]
     }
+  },
+  "uiGuidelines": {
+    "productSlideover": {
+      "description": "Product create/edit uses a right-anchored slideover with a 1px indigo divider, single-column stacked sections, and persistent background.",
+      "structure": [
+        "Heading row with icon, title, description, close button",
+        "Scrollable content container with grouped sections: Product Details, Inventory, Categorization, Supplier, Pricing, Advanced Pricing, Status",
+        "Footer with helper text, Reset, and primary submit button"
+      ],
+      "interaction": {
+        "openStateBinding": "Livewire boolean showProductPanel entangled to Alpine x-data",
+        "backdrop": "semi-transparent overlay that does not blur background",
+        "closeHandlers": [
+          "ESC key",
+          "Backdrop click",
+          "Footer actions through Livewire closeProductPanel()"
+        ]
+      }
+    }
   }
 }

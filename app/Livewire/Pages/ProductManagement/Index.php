@@ -37,6 +37,7 @@ class Index extends Component
     public $suppliers = [];
     public $selectedProducts = [];
     public $showFilters = false;
+    public $showProductPanel = false;
 
     // Modals
     public $editingProduct = null;
@@ -291,6 +292,7 @@ class Index extends Component
         $this->resetForm();
         $this->editingProduct = null;
         $this->isEditMode = false;
+        $this->showProductPanel = true;
     }
 
     public function editProduct($productId)
@@ -298,6 +300,7 @@ class Index extends Component
         $this->editingProduct = Product::findOrFail($productId);
         $this->loadProductData();
         $this->isEditMode = true;
+        $this->showProductPanel = true;
     }
 
     public function deleteProduct($productId)
@@ -530,19 +533,13 @@ class Index extends Component
                 // Update existing product
                 $this->productService->updateProduct($this->editingProduct, $this->form);
                 session()->flash('message', 'Product updated successfully.');
-                // Close modal without flipping UI to create-state before close
-                $this->dispatch('close-modal', name: 'create-edit-product');
-                // Keep isEditMode true for this response to avoid flicker
             } else {
                 // Create new product
                 $this->productService->createProduct($this->form);
                 session()->flash('message', 'Product created successfully.');
-                // Close modal and reset form for next open
-                $this->dispatch('close-modal', name: 'create-edit-product');
-                $this->resetForm();
-                $this->isEditMode = false;
-                $this->editingProduct = null;
             }
+
+            $this->closeProductPanel();
 
         } catch (\Illuminate\Validation\ValidationException $e) {
             // Re-throw validation exceptions to show field errors
@@ -550,6 +547,14 @@ class Index extends Component
         } catch (\Exception $e) {
             session()->flash('error', 'Error saving product: ' . $e->getMessage());
         }
+    }
+
+    public function closeProductPanel(): void
+    {
+        $this->showProductPanel = false;
+        $this->isEditMode = false;
+        $this->editingProduct = null;
+        $this->resetForm();
     }
 
     public function openProductViewer($productId, $startImageId = null)

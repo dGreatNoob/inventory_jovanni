@@ -962,9 +962,10 @@
                                     </tr>
                                     
                                     {{-- Detailed Batch Information Display --}}
-                                    {{-- Detailed Batch Information Display --}}
+                                    {{-- ✅ UPDATED: Detailed Batch Information Display - Filter by PO --}}
                                     @php
                                         $itemBatches = \App\Models\ProductBatch::where('product_id', $order->product_id)
+                                            ->where('purchase_order_id', $purchaseOrder->id) // ✅ CHANGED: Filter by PO instead of batch_number
                                             ->where('batch_number', $order->batch_number)
                                             ->orderBy('created_at', 'desc')
                                             ->get();

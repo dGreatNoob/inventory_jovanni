@@ -73,7 +73,7 @@
                             </div>
                             <div class="ml-5 w-0 flex-1">
                                 <dl>
-                                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Total Value</dt>
+                                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Total Ordered Value</dt>
                                     <dd class="text-lg font-medium text-gray-900 dark:text-white">₱{{ number_format($this->totalValue, 2) }}</dd>
                                 </dl>
                             </div>
@@ -236,7 +236,7 @@
                                 <th scope="col" class="px-6 py-3">Categories</th>
                                 <th scope="col" class="px-6 py-3">Products</th>
                                 <th scope="col" class="px-6 py-3">Orders</th>
-                                <th scope="col" class="px-6 py-3">Total Value</th>
+                                <th scope="col" class="px-6 py-3">Total Ordered Value</th>
                                 <th scope="col" class="px-6 py-3">Last order</th>
                                 <th scope="col" class="px-6 py-3">Status</th>
                                 <th scope="col" class="px-6 py-3">Action</th>

@@ -13,61 +13,37 @@ class SalesPromo extends Component
     use WithPagination;
 
     // Form fields
-    public $promo_name;
-    public $promo_code;
-    public $promo_description;
-    public $startDate;
-    public $endDate;
-    public $selected_branches = [];
-    public $selected_products = [];
-    public $selected_second_products = [];
+    public $promo_name, $promo_code, $promo_description, $startDate, $endDate;
+    public $selected_branches = [], $selected_products = [], $selected_second_products = [];
 
     // Promo type
-    public $promo_type_options = ['Buy one Take one', '70% Discount', '60% Discount'];
     public $promo_type = '';
+    public $promo_type_options = ['Buy one Take one', '70% Discount', '60% Discount'];
 
-    public $branches = [];
-    public $products = [];
+    // Lists
+    public $branches = [], $products = [];
 
-    public $branchDropdown = false;
-    public $productDropdown = false;
-    public $secondProductDropdown = false;
-    public $showSecondProductDropdown = false;
+    // Dropdowns
+    public $branchDropdown = false, $productDropdown = false, $secondProductDropdown = false, $showSecondProductDropdown = false;
 
+    // Delete modal
     public $showDeleteModal = false;
     public $deleteId = null;
+
+    // Edit modal fields
+    public $showEditModal = false;
+    public $edit_id, $edit_name, $edit_code, $edit_description, $edit_startDate, $edit_endDate, $edit_type;
+    public $edit_selected_branches = [], $edit_selected_products = [], $edit_selected_second_products = [];
+    public $editBranchDropdown = false, $editProductDropdown = false, $editSecondProductDropdown = false;
+
+    // View modal fields
+    public $showViewModal = false;
+    public $view_name, $view_code, $view_type, $view_startDate, $view_endDate, $view_description;
+    public $view_selected_branches = [], $view_selected_products = [], $view_selected_second_products = [];
 
     // Search & pagination
     public $search = '';
     public $perPage = 10;
-
-    // Edit modal fields
-    public $showEditModal = false;
-    public $edit_id;
-    public $edit_name;
-    public $edit_code;
-    public $edit_description;
-    public $edit_startDate;
-    public $edit_endDate;
-    public $edit_type;
-    public $edit_selected_branches = [];
-    public $edit_selected_products = [];
-    public $edit_selected_second_products = [];
-    public $editBranchDropdown = false;
-    public $editProductDropdown = false;
-    public $editSecondProductDropdown = false;
-
-    // View modal fields
-    public $showViewModal = false;
-    public $view_name;
-    public $view_code;
-    public $view_type;
-    public $view_startDate;
-    public $view_endDate;
-    public $view_selected_branches = [];
-    public $view_selected_products = [];
-    public $view_selected_second_products = [];
-    public $view_description;
 
     // Load branches and products
     public function mount()

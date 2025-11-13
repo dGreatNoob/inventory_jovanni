@@ -5,7 +5,6 @@
     <div class="">
         <section class="mb-6">
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
-
                 <!-- Total Promo -->
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
                     <div class="p-5">
@@ -914,12 +913,10 @@
                                 Close
                             </flux:button>
                         </div>
-
                     </div>
                 </div>
             </div>
         </section>
-
         <!-- End -->
     </div>
 </div>

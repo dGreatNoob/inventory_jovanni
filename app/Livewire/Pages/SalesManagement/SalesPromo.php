@@ -7,6 +7,7 @@ use Livewire\WithPagination;
 use App\Models\Promo;
 use App\Models\Branch;
 use App\Models\Product;
+use Carbon\Carbon;
 
 class SalesPromo extends Component
 {
@@ -52,7 +53,7 @@ class SalesPromo extends Component
         $this->products = Product::orderBy('name')->get();
     }
 
-    // Validation rules
+    // Validation rules for create form
     protected function rules()
     {
         $rules = [
@@ -69,17 +70,59 @@ class SalesPromo extends Component
         ];
 
         if ($this->promo_type === 'Buy one Take one') {
-            $rules['selected_second_products'] = 'required|array|min:1';
+            $rules['selected_second_products'] = 'required|array|min:1|max:1';
             $rules['selected_second_products.*'] = 'exists:products,id';
         }
 
         return $rules;
     }
 
-    // Create Promo
+    // Validation rules for edit form
+    protected function editRules()
+    {
+        $rules = [
+            'edit_name' => 'required|string|max:255',
+            'edit_code' => 'nullable|string|max:100|unique:promos,code,' . $this->edit_id,
+            'edit_description' => 'nullable|string|max:500',
+            'edit_startDate' => 'required|date',
+            'edit_endDate' => 'required|date|after_or_equal:edit_startDate',
+            'edit_selected_branches' => 'required|array|min:1',
+            'edit_selected_branches.*' => 'exists:branches,id',
+            'edit_selected_products' => 'required|array|min:1',
+            'edit_selected_products.*' => 'exists:products,id',
+            'edit_type' => 'required|string|in:' . implode(',', $this->promo_type_options),
+        ];
+
+        if ($this->edit_type === 'Buy one Take one') {
+            $rules['edit_selected_second_products'] = 'required|array|min:1|max:1';
+            $rules['edit_selected_second_products.*'] = 'exists:products,id';
+        }
+
+        return $rules;
+    }
+
+    // Validation messages
+    protected $messages = [
+        'selected_products.required' => 'Please select at least one product.',
+        'selected_second_products.required' => 'For Buy One Take One promotions, you must select a second product.',
+        'selected_second_products.min' => 'Please select one second product.',
+        'selected_second_products.max' => 'You can only select one second product for Buy One Take One.',
+        'edit_selected_products.required' => 'Please select at least one product.',
+        'edit_selected_second_products.required' => 'For Buy One Take One promotions, you must select a second product.',
+        'edit_selected_second_products.min' => 'Please select one second product.',
+        'edit_selected_second_products.max' => 'You can only select one second product for Buy One Take One.',
+    ];
+
+    // Create Promo with overlap validation
     public function submit()
     {
         $this->validate();
+
+        // Check for overlapping promos
+        $overlapError = $this->checkForOverlappingPromos();
+        if ($overlapError) {
+            return;
+        }
 
         Promo::create([
             'name' => $this->promo_name,
@@ -128,7 +171,6 @@ class SalesPromo extends Component
         $this->showViewModal = true;
     }
 
-
     // Edit Promo
     public function edit($id)
     {
@@ -148,10 +190,25 @@ class SalesPromo extends Component
         $this->showEditModal = true;
     }
 
-    // Update Promo
+    // Update Promo with overlap validation
     public function update()
     {
+        // Validate the edit form
+        $this->validate($this->editRules());
+
         $promo = Promo::findOrFail($this->edit_id);
+
+        // Additional validation for Buy One Take One
+        if ($this->edit_type === 'Buy one Take one' && empty($this->edit_selected_second_products)) {
+            $this->addError('edit_selected_second_products', 'For Buy One Take One promotions, you must select a second product.');
+            return;
+        }
+
+        // Check for overlapping promos (excluding current promo)
+        $overlapError = $this->checkForOverlappingPromos($this->edit_id);
+        if ($overlapError) {
+            return;
+        }
 
         $promo->update([
             'name' => $this->edit_name,
@@ -169,6 +226,109 @@ class SalesPromo extends Component
         session()->flash('message', 'Promo updated successfully!');
     }
 
+    /**
+     * Check for overlapping promos - COMPLETELY REWRITTEN
+     */
+    private function checkForOverlappingPromos($excludeId = null)
+    {
+        // Determine if we're in create or edit mode
+        $isEdit = $this->showEditModal;
+        
+        $startDate = $isEdit ? $this->edit_startDate : $this->startDate;
+        $endDate = $isEdit ? $this->edit_endDate : $this->endDate;
+        $products = $isEdit ? $this->edit_selected_products : $this->selected_products;
+        $secondProducts = $isEdit ? $this->edit_selected_second_products : $this->selected_second_products;
+
+        // Convert dates to Carbon for proper comparison
+        $newStart = Carbon::parse($startDate);
+        $newEnd = Carbon::parse($endDate);
+
+        // Get ALL promos first (we'll filter manually for better control)
+        $allPromos = Promo::when($excludeId, function($query) use ($excludeId) {
+            $query->where('id', '!=', $excludeId);
+        })->get();
+
+        $conflictingPromos = collect();
+
+        foreach ($allPromos as $existingPromo) {
+            $existingStart = Carbon::parse($existingPromo->startDate);
+            $existingEnd = Carbon::parse($existingPromo->endDate);
+
+            // Check if dates overlap
+            $datesOverlap = ($newStart <= $existingEnd) && ($newEnd >= $existingStart);
+            
+            if ($datesOverlap) {
+                // Get products from existing promo
+                $existingMainProducts = $this->safeJsonDecode($existingPromo->product);
+                $existingSecondProducts = $this->safeJsonDecode($existingPromo->second_product);
+
+                // Check if any of our selected products exist in the existing promo
+                foreach ($products as $productId) {
+                    if (in_array($productId, $existingMainProducts) || in_array($productId, $existingSecondProducts)) {
+                        $conflictingPromos->push([
+                            'promo' => $existingPromo,
+                            'product_id' => $productId,
+                            'type' => 'main'
+                        ]);
+                    }
+                }
+
+                // Check second products
+                foreach ($secondProducts as $productId) {
+                    if (in_array($productId, $existingMainProducts) || in_array($productId, $existingSecondProducts)) {
+                        $conflictingPromos->push([
+                            'promo' => $existingPromo,
+                            'product_id' => $productId,
+                            'type' => 'second'
+                        ]);
+                    }
+                }
+            }
+        }
+
+        // If we found conflicts, show errors
+        if ($conflictingPromos->isNotEmpty()) {
+            // Group by product to show consolidated errors
+            $productConflicts = $conflictingPromos->groupBy('product_id');
+            
+            foreach ($productConflicts as $productId => $conflicts) {
+                $productName = $this->products->firstWhere('id', $productId)->name ?? 'Unknown Product';
+                $promoNames = $conflicts->pluck('promo.name')->unique()->implode(', ');
+                
+                $errorMessage = "Product '{$productName}' is already in promotion(s): {$promoNames} during the selected dates.";
+                
+                // Determine which field to show error on
+                $isSecondProduct = $conflicts->first()['type'] === 'second';
+                $field = $isEdit 
+                    ? ($isSecondProduct ? 'edit_selected_second_products' : 'edit_selected_products')
+                    : ($isSecondProduct ? 'selected_second_products' : 'selected_products');
+                
+                session()->flash('error', $errorMessage);
+                $this->addError($field, $errorMessage);
+            }
+            
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Safe JSON decode helper
+     */
+    private function safeJsonDecode($jsonString)
+    {
+        if (empty($jsonString)) {
+            return [];
+        }
+
+        try {
+            $decoded = json_decode($jsonString, true);
+            return is_array($decoded) ? $decoded : [];
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
 
     // Handle first product selection for "Buy one Take one"
     public function updatedSelectedProducts()
@@ -196,7 +356,7 @@ class SalesPromo extends Component
         }
     }
 
-    public function updatedEditSelectedProducts()
+    public function updatedEditSelectedProducts($value)
     {
         if ($this->edit_type === 'Buy one Take one') {
             // If no products selected, clear second products and return
@@ -213,12 +373,36 @@ class SalesPromo extends Component
 
             $this->edit_selected_second_products = [];
         }
+        
+        $this->validateOnly('edit_selected_products', $this->editRules());
+    }
+
+    public function updatedEditSelectedSecondProducts($value)
+    {
+        $this->validateOnly('edit_selected_second_products', $this->editRules());
+    }
+
+    public function updatedEditType($value)
+    {
+        // Reset second products when type changes
+        if ($value !== 'Buy one Take one') {
+            $this->edit_selected_second_products = [];
+        }
+        
+        // Validate immediately when type changes
+        $this->validateOnly('edit_selected_second_products', $this->editRules());
     }
 
     // Close modals
     public function cancelEdit()
     {
         $this->showEditModal = false;
+        $this->resetValidation();
+        $this->reset([
+            'edit_id', 'edit_name', 'edit_code', 'edit_description', 
+            'edit_startDate', 'edit_endDate', 'edit_type',
+            'edit_selected_branches', 'edit_selected_products', 'edit_selected_second_products'
+        ]);
     }
 
     public function cancelView()
@@ -269,11 +453,17 @@ class SalesPromo extends Component
     public function getEditSecondProductsProperty()
     {
         if (empty($this->edit_selected_products)) {
-            return $this->products;
+            return collect();
         }
 
         $firstProductId = $this->edit_selected_products[0];
-        $firstPrice = $this->products->firstWhere('id', $firstProductId)->price ?? 0;
+        $firstProduct = $this->products->firstWhere('id', $firstProductId);
+        
+        if (!$firstProduct) {
+            return collect();
+        }
+
+        $firstPrice = $firstProduct->price;
 
         return $this->products->filter(function ($product) use ($firstProductId, $firstPrice) {
             return $product->id != $firstProductId && $product->price <= $firstPrice;

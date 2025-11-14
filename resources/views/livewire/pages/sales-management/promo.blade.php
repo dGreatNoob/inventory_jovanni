@@ -612,7 +612,7 @@
 
                             {{-- First Product Dropdown --}}
                             <div class="relative" wire:click.outside="$set('editProductDropdown', false)">
-                                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Product</label>
+                                <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Product <span class="text-red-500">*</span></label>
                                 <div wire:click="$toggle('editProductDropdown')" 
                                     class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5 cursor-pointer flex justify-between items-center flex-wrap gap-2 min-h-[42px]">
                                     <div class="flex flex-wrap gap-1 items-center">
@@ -661,53 +661,63 @@
                             </div>
 
                             {{-- Second Product Dropdown (only for Buy-One-Take-One) --}}
-                            @if($edit_type === 'Buy one Take one')
-                                <div class="relative" wire:click.outside="$set('editSecondProductDropdown', false)">
-                                    <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Second Product</label>
-                                    <div wire:click="$toggle('editSecondProductDropdown')" 
-                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5 cursor-pointer flex justify-between items-center flex-wrap gap-2 min-h-[42px]">
-                                        <div class="flex flex-wrap gap-1 items-center">
-                                            @if(!$editSecondProductDropdown)
-                                                @if(empty($edit_selected_second_products))
-                                                    <span class="text-gray-400 dark:text-gray-300">Select Second Product</span>
-                                                @else
-                                                    @foreach($this->editSecondProducts as $product)
-                                                        @if(in_array($product->id, $edit_selected_second_products))
-                                                            <span class="inline-flex items-center bg-gray-600 text-white text-xs font-medium px-2 py-0.5 rounded-full">
-                                                                {{ $product->name }}
-                                                                <span class="ml-1 text-gray-200 text-[11px]">₱{{ number_format($product->price, 0) }}</span>
-                                                            </span>
-                                                        @endif
-                                                    @endforeach
-                                                @endif
-                                            @else
-                                                <span class="text-gray-400 dark:text-gray-300">Select Second Product</span>
-                                            @endif
-                                        </div>
-                                        <svg class="w-4 h-4 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                        </svg>
-                                    </div>
-
-                                    @if($editSecondProductDropdown)
-                                        <div class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto dark:bg-gray-700 dark:border-gray-600">
-                                            @foreach($this->editSecondProducts as $product)
-                                                <label class="flex items-center justify-between p-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 rounded-md">
-                                                    <div class="flex items-center space-x-2">
-                                                        <input type="checkbox" value="{{ $product->id }}" wire:model="edit_selected_second_products" onclick="event.stopPropagation()"
-                                                            class="form-checkbox h-4 w-4 text-green-600 dark:text-green-400">
-                                                        <span class="text-sm text-gray-900 dark:text-white">{{ $product->name }}</span>
-                                                    </div>
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500 text-white dark:bg-emerald-400 dark:text-gray-900 shadow-sm">
-                                                        ₱ {{ number_format($product->price, 0) }}
-                                                    </span>
-                                                </label>
-                                            @endforeach
-                                        </div>
-                                    @endif
-                                    @error('edit_selected_second_products') <p class="mt-1 text-sm text-red-500">{{ $message }}</p> @enderror
-                                </div>
+@if($edit_type === 'Buy one Take one')
+    <div class="relative" wire:click.outside="$set('editSecondProductDropdown', false)">
+        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Second Product <span class="text-red-500">*</span></label>
+        <div wire:click="$toggle('editSecondProductDropdown')" 
+            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5 cursor-pointer flex justify-between items-center flex-wrap gap-2 min-h-[42px] 
+                   @error('edit_selected_second_products') border-red-500 @enderror">
+            <div class="flex flex-wrap gap-1 items-center">
+                @if(!$editSecondProductDropdown)
+                    @if(empty($edit_selected_second_products))
+                        <span class="text-gray-400 dark:text-gray-300">Select Second Product</span>
+                    @else
+                        @foreach($this->editSecondProducts as $product)
+                            @if(in_array($product->id, $edit_selected_second_products))
+                                <span class="inline-flex items-center bg-gray-600 text-white text-xs font-medium px-2 py-0.5 rounded-full">
+                                    {{ $product->name }}
+                                    <span class="ml-1 text-gray-200 text-[11px]">₱{{ number_format($product->price, 0) }}</span>
+                                </span>
                             @endif
+                        @endforeach
+                    @endif
+                @else
+                    <span class="text-gray-400 dark:text-gray-300">Select Second Product</span>
+                @endif
+            </div>
+            <svg class="w-4 h-4 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+        </div>
+
+        @if($editSecondProductDropdown)
+            <div class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto dark:bg-gray-700 dark:border-gray-600">
+                @if($this->editSecondProducts->count() > 0)
+                    @foreach($this->editSecondProducts as $product)
+                        <label class="flex items-center justify-between p-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 rounded-md">
+                            <div class="flex items-center space-x-2">
+                                <input type="checkbox" value="{{ $product->id }}" 
+                                    wire:model="edit_selected_second_products" 
+                                    onclick="event.stopPropagation()"
+                                    @if(!in_array($product->id, $edit_selected_second_products) && count($edit_selected_second_products) >= 1) disabled @endif
+                                    class="form-checkbox h-4 w-4 text-green-600 dark:text-green-400">
+                                <span class="text-sm text-gray-900 dark:text-white">{{ $product->name }}</span>
+                            </div>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500 text-white dark:bg-emerald-400 dark:text-gray-900 shadow-sm">
+                                ₱ {{ number_format($product->price, 0) }}
+                            </span>
+                        </label>
+                    @endforeach
+                @else
+                    <div class="p-4 text-center text-gray-500 dark:text-gray-400">
+                        No products available for selection
+                    </div>
+                @endif
+            </div>
+        @endif
+        @error('edit_selected_second_products') <p class="mt-1 text-sm text-red-500">{{ $message }}</p> @enderror
+    </div>
+@endif
 
                             {{-- Description --}}
                             <div>

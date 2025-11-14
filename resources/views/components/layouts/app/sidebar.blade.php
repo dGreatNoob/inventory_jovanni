@@ -108,7 +108,7 @@
                             :current="request()->routeIs('product-management.index')" 
                             wire:navigate
                         >
-                            {{ __('Products') }}
+                            {{ __('Product Masterlist') }}
                         </flux:navlist.item>
 
                         <flux:navlist.item 

@@ -3,7 +3,7 @@
     <div class="mb-6">
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div class="flex-1">
-                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Product Management</h1>
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Product Masterlist</h1>
                 <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Manage your product catalog, inventory, and suppliers</p>
             </div>
             <div class="flex flex-row items-center space-x-3">

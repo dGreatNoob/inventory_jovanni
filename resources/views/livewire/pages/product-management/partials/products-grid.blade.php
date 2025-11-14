@@ -48,17 +48,13 @@
 
                     <!-- Barcode Display -->
                     @if($product->barcode)
-                        <div class="bg-white w-full py-3">
-                            <div class="flex flex-col items-center justify-center px-4">
-                                @php
-                                    $generator = new Picqer\Barcode\BarcodeGeneratorHTML();
-                                    $barcodeHtml = $generator->getBarcode($product->barcode, $generator::TYPE_CODE_128, 2, 30);
-                                @endphp
-                                <div class="barcode-container mb-2">
-                                    {!! $barcodeHtml !!}
-                                </div>
-                                <p class="text-xs font-mono text-gray-800 text-center">{{ $product->barcode }}</p>
+                        @php $isSale = str(\Illuminate\Support\Str::upper((string) $product->price_note))->startsWith('SAL'); @endphp
+                        <div class="h-24 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center space-y-1 px-3">
+                            <div class="px-2 py-1 rounded border {{ $isSale ? 'bg-red-600 border-red-600 shadow-lg' : 'bg-white border-gray-200 dark:border-gray-600' }}">
+                                <img src="{{ app(\App\Services\BarcodeService::class)->generateBarcodePNG($product->barcode, 1, 42) }}"
+                                     alt="Barcode {{ $product->barcode }}" class="h-10" style="image-rendering: pixelated;">
                             </div>
+                            <p class="text-xs font-mono {{ $isSale ? 'text-red-700 dark:text-red-300' : 'text-gray-800 dark:text-gray-200' }}">{{ $product->barcode }}</p>
                         </div>
                     @endif
 

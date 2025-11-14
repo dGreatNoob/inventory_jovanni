@@ -105,6 +105,7 @@
                                 <div class="flex justify-center">
                                     <x-barcode-display 
                                         :barcode="$product->barcode"
+                                        :product="$product"
                                         size="sm"
                                         :showLabel="false"
                                         :showText="true"

@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 #[Layout('components.layouts.app')]
-#[Title('Product Management')]
+#[Title('Product Masterlist')]
 class Index extends Component
 {
     use WithPagination;

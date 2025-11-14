@@ -204,7 +204,7 @@
 </flux:modal>
 
 @if($editingProduct)
-    <flux:modal name="product-image-zoom" class="w-[900px] max-w-full">
+    <flux:modal name="product-image-zoom" class="w-[720px] max-w-full">
         <div class="space-y-4">
             <div class="flex justify-between items-start">
                 <div>
@@ -214,17 +214,59 @@
                 <flux:modal.close aria-label="Close" />
             </div>
 
-            <div x-data="{ scale: 1, origin: { x: 0, y: 0 }, translate: { x: 0, y: 0 }, dragging: false, last: { x: 0, y: 0 } }"
-                 class="relative h-[500px] rounded-2xl border border-gray-200 bg-white dark:bg-gray-900 overflow-hidden">
-                <img src="{{ $viewingImage?->url }}" alt="{{ $editingProduct->name }} zoomed"
-                     class="h-full w-full object-contain"
-                     :style="`transform-origin: ${origin.x}% ${origin.y}%; transform: scale(${scale}) translate(${translate.x}px, ${translate.y}px); transition: ${dragging ? 'none' : 'transform 150ms ease'};`"
-                     @wheel.prevent="scale = Math.min(5, Math.max(1, scale + ($event.deltaY < 0 ? 0.2 : -0.2)))"
-                     @mousedown.prevent="dragging = true; last = { x: $event.clientX, y: $event.clientY }"
-                     @mousemove.prevent="if(dragging){ translate.x += $event.clientX - last.x; translate.y += $event.clientY - last.y; last = { x: $event.clientX, y: $event.clientY }; }"
-                     @mouseup="dragging = false"
-                     @mouseleave="dragging = false"
+            <div
+                x-data="{
+                    scale: 1,
+                    translate: { x: 0, y: 0 },
+                    dragging: false,
+                    last: { x: 0, y: 0 },
+                    startDrag(event) {
+                        this.dragging = true;
+                        this.last = { x: event.clientX, y: event.clientY };
+                    },
+                    onDrag(event) {
+                        if (!this.dragging) return;
+                        this.translate.x += event.clientX - this.last.x;
+                        this.translate.y += event.clientY - this.last.y;
+                        this.last = { x: event.clientX, y: event.clientY };
+                    },
+                    endDrag() {
+                        this.dragging = false;
+                    },
+                    zoom(event) {
+                        event.preventDefault();
+                        const next = Math.min(5, Math.max(1, this.scale + (event.deltaY < 0 ? 0.25 : -0.25)));
+                        if (next === 1) {
+                            this.translate = { x: 0, y: 0 };
+                        }
+                        this.scale = next;
+                    },
+                    reset() {
+                        this.scale = 1;
+                        this.translate = { x: 0, y: 0 };
+                    }
+                }"
+                x-init="reset()"
+                class="relative rounded-2xl border border-gray-200 bg-white dark:bg-gray-900 overflow-hidden"
+            >
+                <div class="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Drag to pan • Scroll to zoom • Double-click reset</p>
+                    <button type="button" class="text-xs text-indigo-500 hover:text-indigo-600" @click.prevent="reset">Reset</button>
+                </div>
+
+                <div class="relative h-[460px] cursor-grab active:cursor-grabbing"
+                     @wheel="zoom($event)"
+                     @mousedown="startDrag($event)"
+                     @mousemove="onDrag($event)"
+                     @mouseup="endDrag()"
+                     @mouseleave="endDrag()"
+                     @dblclick.prevent="reset()"
                 >
+                    <img src="{{ $viewingImage?->url }}" alt="{{ $editingProduct->name }} zoomed"
+                         class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+                         :style="`transform: translate(calc(-50% + ${translate.x}px), calc(-50% + ${translate.y}px)) scale(${scale}); transition: ${dragging ? 'none' : 'transform 120ms ease'};`"
+                    >
+                </div>
             </div>
         </div>
     </flux:modal>

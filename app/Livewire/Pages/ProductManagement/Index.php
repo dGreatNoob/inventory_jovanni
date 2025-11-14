@@ -12,6 +12,7 @@ use App\Models\Supplier;
 use App\Models\ProductImage;
 use App\Services\ProductService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 #[Layout('components.layouts.app')]
 #[Title('Product Management')]
@@ -52,6 +53,7 @@ class Index extends Component
     // Form Data
     public $form = [
         'name' => '',
+        'product_number' => '',
         'sku' => '',
         'barcode' => '',
         'remarks' => '',
@@ -69,10 +71,26 @@ class Index extends Component
         'initial_quantity' => '',
         'price_levels' => [],
         'discount_tiers' => [],
+        'color_id' => '',
     ];
     
     // Filtered subcategories based on root selection
     public $filteredSubcategories = [];
+
+    public $colorOptions = [
+        ['id' => '0111', 'label' => 'Mocha', 'symbol' => 'MOC'],
+        ['id' => '0160', 'label' => 'Dark Mocha', 'symbol' => 'D.MCHA'],
+        ['id' => '0164', 'label' => 'Light Mocha', 'symbol' => 'L.MOC'],
+        ['id' => '0189', 'label' => 'Mocha/Purple', 'symbol' => 'MOC/PURP'],
+        ['id' => '0318', 'label' => 'Black/Mocha', 'symbol' => 'BLK/MOC'],
+        ['id' => '0360', 'label' => 'Mocha/Black', 'symbol' => 'MOC/BLK'],
+        ['id' => '0384', 'label' => 'Brown/Mocha', 'symbol' => 'BRO/MOC'],
+        ['id' => '0385', 'label' => 'Pink/Mocha', 'symbol' => 'PNK/MOC'],
+        ['id' => '0390', 'label' => 'Red/Mocha', 'symbol' => 'RED/MOC'],
+        ['id' => '0410', 'label' => 'Checkered Mocha', 'symbol' => 'CHKRD MOC'],
+        ['id' => '0413', 'label' => 'Cherry Mocha', 'symbol' => 'CHRY MOC'],
+        ['id' => '0447', 'label' => 'Apricot/Mocha', 'symbol' => 'APRI/MOC'],
+    ];
 
     // Bulk Actions
     public $bulkAction = '';
@@ -294,6 +312,7 @@ class Index extends Component
         $this->editingProduct = null;
         $this->isEditMode = false;
         $this->priceHistories = [];
+        $this->refreshBarcode();
         $this->showProductPanel = true;
     }
 
@@ -303,6 +322,7 @@ class Index extends Component
         $this->loadProductData();
         $this->isEditMode = true;
         $this->loadPriceHistory($productId);
+        $this->refreshBarcode();
         $this->showProductPanel = true;
     }
 
@@ -412,6 +432,7 @@ class Index extends Component
     {
         $this->form = [
             'name' => '',
+            'product_number' => '',
             'sku' => '',
             'barcode' => '',
             'remarks' => '',
@@ -429,9 +450,11 @@ class Index extends Component
             'initial_quantity' => '',
             'price_levels' => [],
             'discount_tiers' => [],
+            'color_id' => '',
         ];
         $this->filteredSubcategories = [];
         $this->priceHistories = [];
+        $this->refreshBarcode();
     }
 
     public function loadProductData()
@@ -464,6 +487,7 @@ class Index extends Component
             
             $this->form = array_merge($this->form, [
                 'name' => $this->editingProduct->name,
+                'product_number' => $this->editingProduct->product_number,
                 'sku' => $this->editingProduct->sku,
                 'barcode' => $this->editingProduct->barcode,
                 'remarks' => $this->editingProduct->remarks,
@@ -477,7 +501,9 @@ class Index extends Component
                 'shelf_life_days' => $this->editingProduct->shelf_life_days,
                 'disabled' => $this->editingProduct->disabled,
                 'initial_quantity' => '',
+                'color_id' => $this->editingProduct->color_id,
             ]);
+            $this->refreshBarcode();
         }
     }
 
@@ -512,6 +538,10 @@ class Index extends Component
                 $this->productService = app(ProductService::class);
             }
 
+            $this->form['product_number'] = $this->normalizeProductNumber($this->form['product_number']);
+            $this->form['color_id'] = $this->normalizeColorId($this->form['color_id']);
+            $this->refreshBarcode();
+
             // Determine final category_id: use subcategory if selected, otherwise use root
             $finalCategoryId = !empty($this->form['category_id']) 
                 ? $this->form['category_id'] 
@@ -519,8 +549,9 @@ class Index extends Component
 
             $this->validate([
                 'form.name' => 'required|string|max:255',
+                'form.product_number' => 'required|regex:/^\d{6}$/|unique:products,product_number' . ($this->editingProduct ? ',' . $this->editingProduct->id : ''),
                 'form.sku' => 'required|string|max:255|unique:products,sku' . ($this->editingProduct ? ',' . $this->editingProduct->id : ''),
-                'form.barcode' => ['required','regex:/^\d{13}$/','unique:products,barcode' . ($this->editingProduct ? ',' . $this->editingProduct->id : '')],
+                'form.barcode' => ['required','regex:/^\d{10}$/','unique:products,barcode' . ($this->editingProduct ? ',' . $this->editingProduct->id : '')],
                 'form.root_category_id' => 'required|exists:categories,id',
                 'form.category_id' => 'nullable|exists:categories,id',
                 'form.supplier_id' => 'required|exists:suppliers,id',
@@ -534,6 +565,10 @@ class Index extends Component
                 'form.discount_tiers.*.min_qty' => 'nullable|integer|min:1',
                 'form.discount_tiers.*.max_qty' => 'nullable|integer|min:1',
                 'form.discount_tiers.*.discount_percent' => 'nullable|numeric|min:0|max:100',
+                'form.color_id' => [
+                    'required',
+                    Rule::in(collect($this->colorOptions)->pluck('id')->all()),
+                ],
             ]);
 
             // Ensure remarks include WT when product is Regular
@@ -618,6 +653,65 @@ class Index extends Component
         $currentId = $this->viewerImages[$this->viewerIndex] ?? null;
         $this->viewingImage = $currentId ? ProductImage::find($currentId) : null;
         $this->loadPriceHistory($this->viewerProductId);
+        $this->refreshBarcode();
+    }
+
+    public function updatedFormProductNumber($value): void
+    {
+        $this->form['product_number'] = $this->sanitizeProductNumber($value);
+        $this->refreshBarcode();
+    }
+
+    public function updatedFormColorId($value): void
+    {
+        $this->form['color_id'] = $this->sanitizeColorId($value);
+        $this->refreshBarcode();
+    }
+
+    protected function sanitizeProductNumber($value): string
+    {
+        $digits = preg_replace('/\D/', '', (string) $value);
+        return substr($digits, 0, 6);
+    }
+
+    protected function sanitizeColorId($value): string
+    {
+        $digits = preg_replace('/\D/', '', (string) $value);
+        return substr($digits, 0, 4);
+    }
+
+    protected function normalizeProductNumber($value): string
+    {
+        $digits = $this->sanitizeProductNumber($value);
+
+        if ($digits === '') {
+            return '';
+        }
+
+        return str_pad($digits, 6, '0', STR_PAD_LEFT);
+    }
+
+    protected function normalizeColorId($value): string
+    {
+        $digits = $this->sanitizeColorId($value);
+
+        if ($digits === '') {
+            return '';
+        }
+
+        return str_pad($digits, 4, '0', STR_PAD_LEFT);
+    }
+
+    protected function refreshBarcode(): void
+    {
+        $productNumber = $this->normalizeProductNumber($this->form['product_number'] ?? '');
+        $colorId = $this->normalizeColorId($this->form['color_id'] ?? '');
+
+        if (strlen($productNumber) === 6 && strlen($colorId) === 4) {
+            $this->form['barcode'] = $productNumber . $colorId;
+        } else {
+            $this->form['barcode'] = '';
+        }
     }
 
     public function viewerPrev()
@@ -650,6 +744,7 @@ class Index extends Component
             'products' => $this->products,
             'stats' => $this->stats,
             'selectedProduct' => $this->editingProduct,
+            'colorOptions' => $this->colorOptions,
         ]);
     }
 }

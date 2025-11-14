@@ -9,10 +9,9 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Log::info('Creating product_batches table with purchase_order_id tracking', [
-            'user' => 'Wts135',
-            'timestamp' => '2025-11-11 07:53:16',
-        ]);
+        if (Schema::hasTable('product_batches')) {
+            return;
+        }
 
         Schema::create('product_batches', function (Blueprint $table) {
             $table->id();

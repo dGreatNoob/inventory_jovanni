@@ -11,20 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Add new fields to products
-        Schema::table('products', function (Blueprint $table) {
-            if (!Schema::hasColumn('products', 'product_type')) {
-                $table->string('product_type', 20)->default('regular')->index()->after('name');
-            }
-            if (!Schema::hasColumn('products', 'price_levels')) {
-                $table->json('price_levels')->nullable()->after('price_note');
-            }
-            if (!Schema::hasColumn('products', 'discount_tiers')) {
-                $table->json('discount_tiers')->nullable()->after('price_levels');
-            }
-        });
+        if (Schema::hasTable('product_price_histories')) {
+            return;
+        }
 
-        // Create price history table
         Schema::create('product_price_histories', function (Blueprint $table) {
             $table->id();
             $table->foreignId('product_id')->constrained('products')->onDelete('cascade');

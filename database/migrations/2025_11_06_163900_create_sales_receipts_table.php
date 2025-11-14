@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('sales_receipts')) {
+            return;
+        }
+
         Schema::create('sales_receipts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('batch_allocation_id')->constrained('batch_allocations')->onDelete('cascade');

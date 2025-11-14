@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('branch_allocations')) {
+            return;
+        }
+
         Schema::create('branch_allocations', function (Blueprint $table) {
             $table->id();
             $table->foreignId('batch_allocation_id')->constrained('batch_allocations')->onDelete('cascade');

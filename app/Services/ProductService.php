@@ -53,15 +53,18 @@ class ProductService
     public function createProduct(array $data): Product
     {
         return DB::transaction(function () use ($data) {
-            // Auto-generate barcode if not provided
-            if (empty($data['barcode'])) {
-                $barcodeService = app(BarcodeService::class);
-                $data['barcode'] = $barcodeService->generateSequentialBarcode();
+            $data['product_number'] = $this->normalizeProductNumber($data['product_number'] ?? null);
+            $data['color_id'] = $this->normalizeColorId($data['color_id'] ?? null);
+
+            if (empty($data['barcode']) && !empty($data['product_number']) && !empty($data['color_id'])) {
+                $data['barcode'] = $this->composeBarcode($data['product_number'], $data['color_id']);
             }
-            
+
             // Create the product
             $product = Product::create([
                 'entity_id' => $data['entity_id'] ?? 1,
+                'product_number' => $data['product_number'] ?? null,
+                'color_id' => $data['color_id'] ?? null,
                 'sku' => $data['sku'],
                 'barcode' => $data['barcode'],
                 'name' => $data['name'],
@@ -108,9 +111,26 @@ class ProductService
             $originalPrice = $product->price;
             $originalNote = $product->price_note;
 
-            $product->update(array_merge($data, [
+            $data['product_number'] = $this->normalizeProductNumber($data['product_number'] ?? $product->product_number);
+            $data['color_id'] = $this->normalizeColorId($data['color_id'] ?? $product->color_id);
+
+            $updatePayload = array_merge($data, [
                 'updated_by' => auth()->id(),
-            ]));
+            ]);
+
+            if (array_key_exists('product_number', $data) || array_key_exists('color_id', $data)) {
+                $updatedProductNumber = $data['product_number'] ?? $product->product_number;
+                $updatedColorId = $data['color_id'] ?? $product->color_id;
+
+                if ($updatedProductNumber && $updatedColorId) {
+                    $composedBarcode = $this->composeBarcode($updatedProductNumber, $updatedColorId);
+                    if ($composedBarcode) {
+                        $updatePayload['barcode'] = $composedBarcode;
+                    }
+                }
+            }
+
+            $product->update($updatePayload);
 
             if (array_key_exists('price', $data)) {
                 $newPrice = $data['price'];
@@ -340,10 +360,59 @@ class ProductService
 
     public function getProductPriceHistory(int $productId, int $limit = 50): Collection
     {
-        return ProductPriceHistory::with(['changedBy:id,name'])
+            return ProductPriceHistory::with(['changedBy:id,name'])
             ->where('product_id', $productId)
             ->orderByDesc('changed_at')
             ->limit($limit)
             ->get();
+    }
+
+    protected function composeBarcode(?string $productNumber, ?string $colorId): ?string
+    {
+        if (!$productNumber || !$colorId) {
+            return null;
+        }
+
+        $digitsProduct = substr(preg_replace('/\D/', '', $productNumber), 0, 6);
+        $digitsColor = substr(preg_replace('/\D/', '', $colorId), 0, 4);
+
+        if ($digitsProduct === '' || $digitsColor === '') {
+            return null;
+        }
+
+        $normalizedProduct = str_pad($digitsProduct, 6, '0', STR_PAD_LEFT);
+        $normalizedColor = str_pad($digitsColor, 4, '0', STR_PAD_LEFT);
+
+        return $normalizedProduct . $normalizedColor;
+    }
+
+    protected function normalizeProductNumber(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $digits = substr(preg_replace('/\D/', '', $value), 0, 6);
+
+        if ($digits === '') {
+            return null;
+        }
+
+        return str_pad($digits, 6, '0', STR_PAD_LEFT);
+    }
+
+    protected function normalizeColorId(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $digits = substr(preg_replace('/\D/', '', $value), 0, 4);
+
+        if ($digits === '') {
+            return null;
+        }
+
+        return str_pad($digits, 4, '0', STR_PAD_LEFT);
     }
 }

@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('stock_batches')) {
+            return;
+        }
+
         Schema::create('stock_batches', function (Blueprint $table) {
             $table->id();
             $table->timestamps();

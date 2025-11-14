@@ -12,7 +12,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-     
+        if (Schema::hasTable('raw_mat_invs')) {
+            return;
+        }
+
         Schema::create('raw_mat_invs', function (Blueprint $table) {
             $table->id();
             $table->foreignIdFor(RawMatOrder::class)->constrained()->onDelete('cascade');

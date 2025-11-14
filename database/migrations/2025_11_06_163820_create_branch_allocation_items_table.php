@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('branch_allocation_items')) {
+            return;
+        }
+
         Schema::create('branch_allocation_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('branch_allocation_id')->constrained('branch_allocations')->onDelete('cascade');

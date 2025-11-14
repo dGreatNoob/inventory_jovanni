@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('batch_allocations')) {
+            return;
+        }
+
         Schema::create('batch_allocations', function (Blueprint $table) {
             $table->id();
             $table->string('ref_no')->unique();

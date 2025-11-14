@@ -13,6 +13,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('request_slips')) {
+            return;
+        }
+
         Schema::create('request_slips', function (Blueprint $table) {
             $table->id();
             $table->enum('status',[

@@ -86,6 +86,42 @@
                                             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                                 <div>
                                                     <flux:input
+                                                        wire:model="form.product_number"
+                                                        label="Product ID"
+                                                        required
+                                                        placeholder="6-digit Product ID"
+                                                        inputmode="numeric"
+                                                        pattern="\\d*"
+                                                        maxlength="6"
+                                                        class="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                                    />
+                                                    @error('form.product_number') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                                        Enter a 6-digit identifier (leading zeros allowed).
+                                                    </p>
+                                                </div>
+
+                                                <div>
+                                                    <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Color Code</label>
+                                                    <select
+                                                        wire:model="form.color_id"
+                                                        class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                        required
+                                                    >
+                                                        <option value="">Select color</option>
+                                                        @foreach($colorOptions as $option)
+                                                            <option value="{{ $option['id'] }}">
+                                                                {{ $option['label'] }} ({{ $option['symbol'] }}) — {{ $option['id'] }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                    @error('form.color_id') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                                </div>
+                                            </div>
+
+                                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                                <div>
+                                                    <flux:input
                                                         wire:model="form.sku"
                                                         label="SKU"
                                                         required
@@ -99,18 +135,19 @@
                                                     <flux:input
                                                         wire:model="form.barcode"
                                                         label="Barcode"
-                                                        placeholder="Enter 13-digit barcode (first 6 fixed + price)"
+                                                        placeholder="Auto-generated from Product ID + Color"
                                                         class="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                                         inputmode="numeric"
-                                                        pattern="\\d{13}"
-                                                        maxlength="13"
+                                                        pattern="\\d{10}"
+                                                        maxlength="10"
+                                                        readonly
                                                     />
                                                     @error('form.barcode') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                                                     <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
                                                         <svg class="mr-1 inline h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
                                                             <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
                                                         </svg>
-                                                        Enter 13 digits. First 6 fixed from product info, last 7 represent price.
+                                                        10-digit format: first 6 digits = Product ID, last 4 digits = Color ID.
                                                     </p>
                                                 </div>
                                             </div>

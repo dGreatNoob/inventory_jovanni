@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('supply_batches')) {
+            return;
+        }
+
         Schema::create('supply_batches', function (Blueprint $table) {
             $table->id();
             $table->foreignIdFor(\App\Models\SupplyProfile::class)->constrained()->onDelete('cascade');

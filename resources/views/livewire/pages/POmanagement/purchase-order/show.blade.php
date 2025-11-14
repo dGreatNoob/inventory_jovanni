@@ -884,20 +884,29 @@
                                                 $itemExpected = $order->expected_qty ?? $order->quantity;
                                                 $itemDeliveryRate = $itemExpected > 0 ? ($itemDelivered / $itemExpected * 100) : 0;
                                                 
-                                                // ✅ Determine status based on GOOD items received vs expected
+                                                // ✅ Determine status based on delivery completion and damage
                                                 $goodReceivedRate = $itemExpected > 0 ? ($itemReceived / $itemExpected * 100) : 0;
                                                 
                                                 if ($goodReceivedRate >= 100) {
+                                                    // All expected items received in good condition
                                                     $receivingStatus = 'complete';
                                                     $statusLabel = 'Complete';
                                                     $statusColor = 'green';
                                                     $statusIcon = '✓';
+                                                } elseif ($itemDelivered >= $itemExpected && $itemDestroyed > 0) {
+                                                    // Fully delivered but contains damaged items
+                                                    $receivingStatus = 'damaged';
+                                                    $statusLabel = 'Damaged';
+                                                    $statusColor = 'orange';
+                                                    $statusIcon = '⚠';
                                                 } elseif ($itemReceived > 0 || $itemDestroyed > 0) {
+                                                    // Partially received/delivered
                                                     $receivingStatus = 'incomplete';
                                                     $statusLabel = 'Incomplete';
                                                     $statusColor = 'yellow';
                                                     $statusIcon = '⚠';
                                                 } else {
+                                                    // Nothing received yet
                                                     $receivingStatus = 'pending';
                                                     $statusLabel = 'Pending';
                                                     $statusColor = 'gray';
@@ -927,6 +936,13 @@
                                                         <span class="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
                                                             <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                                                 <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                                            </svg>
+                                                            {{ $statusLabel }}
+                                                        </span>
+                                                    @elseif($receivingStatus === 'damaged')
+                                                        <span class="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300">
+                                                            <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
                                                             </svg>
                                                             {{ $statusLabel }}
                                                         </span>
@@ -1377,7 +1393,7 @@ function printQRCode() {
         <body>
             <div class="print-container">
                 <div class="header">
-                    <div class="company-name">Gentle Walker</div>
+                    <div class="company-name">Jovanni</div>
                     <div class="document-title">Purchase Order QR Code</div>
                 </div>
                 

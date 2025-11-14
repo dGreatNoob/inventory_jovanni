@@ -97,7 +97,7 @@
         <div class="po-label">Purchase Order Number</div>
 
         <div class="details">
-            <p><span>Status:</span> {{ ucfirst($purchaseOrder->status) }}</p>
+            <p><span>Status:</span> {{ ucfirst($purchaseOrder->status->value) }}</p>
             <p><span>Supplier:</span> {{ $purchaseOrder->supplier?->name ?? 'N/A' }}</p>
             <p><span>Department:</span> {{ $purchaseOrder->department?->name ?? 'N/A' }}</p>
             <p><span>Order Date:</span> {{ \Carbon\Carbon::parse($purchaseOrder->order_date)->format('M d, Y') }}</p>

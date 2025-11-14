@@ -103,19 +103,154 @@
 
                                                 <div>
                                                     <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Color Code</label>
-                                                    <select
-                                                        wire:model="form.color_id"
-                                                        class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
-                                                        required
-                                                    >
-                                                        <option value="">Select color</option>
-                                                        @foreach($colorOptions as $option)
-                                                            <option value="{{ $option['id'] }}">
-                                                                {{ $option['label'] }} ({{ $option['symbol'] }}) — {{ $option['id'] }}
-                                                            </option>
-                                                        @endforeach
-                                                    </select>
-                                                    @error('form.color_id') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                                    <div class="flex flex-col gap-2">
+                                                        <div
+                                                            x-data="{
+                                                                colors: @js($colors),
+                                                                open: false,
+                                                                search: '',
+                                                                selectedId: @entangle('form.product_color_id').live,
+                                                                get filtered() {
+                                                                    if (!this.search) {
+                                                                        return this.colors;
+                                                                    }
+                                                                    const q = this.search.toLowerCase();
+                                                                    return this.colors.filter((color) => {
+                                                                        return [
+                                                                            color.code ?? '',
+                                                                            color.name ?? '',
+                                                                            color.shortcut ?? ''
+                                                                        ].join(' ').toLowerCase().includes(q);
+                                                                    });
+                                                                },
+                                                                displayLabel(color) {
+                                                                    if (!color) return '';
+                                                                    return color.shortcut
+                                                                        ? `${color.name} - ${color.shortcut}`
+                                                                        : color.name;
+                                                                },
+                                                                select(color) {
+                                                                    this.selectedId = String(color.id);
+                                                                    this.search = this.displayLabel(color);
+                                                                    this.open = false;
+                                                                },
+                                                                init() {
+                                                                    this.$watch('selectedId', (value) => {
+                                                                        if (!value) {
+                                                                            return;
+                                                                        }
+                                                                        const existing = this.colors.find((color) => String(color.id) === String(value));
+                                                                        if (existing) {
+                                                                            this.search = this.displayLabel(existing);
+                                                                        }
+                                                                    });
+
+                                                                    if (this.selectedId) {
+                                                                        const existing = this.colors.find((color) => String(color.id) === String(this.selectedId));
+                                                                        if (existing) {
+                                                                            this.search = this.displayLabel(existing);
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }"
+                                                            x-init="init()"
+                                                            class="relative"
+                                                            x-on:click.away="open = false"
+                                                            x-on:keydown.escape.window="open = false"
+                                                        >
+                                                            <input
+                                                                type="text"
+                                                                x-model="search"
+                                                                @focus="open = true"
+                                                                @input="open = true; selectedId = '';"
+                                                            class="block h-11 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                                placeholder="Search color by code, name, or shortcut"
+                                                                autocomplete="off"
+                                                                required
+                                                            />
+
+                                                            <div
+                                                                x-show="open"
+                                                                x-transition
+                                                                class="absolute z-30 mt-2 max-h-60 w-full overflow-auto rounded-md border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
+                                                            >
+                                                                <template x-if="filtered.length === 0">
+                                                                    <p class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+                                                                        No colors found. Adjust your search or add a new color.
+                                                                    </p>
+                                                                </template>
+
+                                                                <ul class="divide-y divide-gray-100 dark:divide-gray-700">
+                                                                    <template x-for="color in filtered" :key="color.id">
+                                                                        <li>
+                                                                            <button
+                                                                                type="button"
+                                                                                class="w-full px-3 py-2 text-left transition hover:bg-indigo-50 dark:hover:bg-indigo-500/20"
+                                                                                @click="select(color)"
+                                                                            >
+                                                                                <p class="text-sm font-semibold text-gray-800 dark:text-gray-100">
+                                                                                    <span x-text="color.name"></span>
+                                                                                    <span x-show="color.shortcut" x-text="` - ${color.shortcut}`"></span>
+                                                                                </p>
+                                                                            </button>
+                                                                        </li>
+                                                                    </template>
+                                                                </ul>
+                                                            </div>
+
+                                                            <div class="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+                                                                <p class="text-xs text-gray-500 dark:text-gray-400">
+                                                                    Selected: <span class="font-medium text-gray-700 dark:text-gray-200" x-text="search || 'None'"></span>
+                                                                </p>
+                                                                <flux:button type="button" wire:click="startColorCreation" variant="ghost" size="sm">
+                                                                    Add Color
+                                                                </flux:button>
+                                                            </div>
+                                                        </div>
+
+                                                        @error('form.product_color_id') <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+
+                                                        @if($showColorForm)
+                                                            <div class="space-y-2 rounded-md border border-dashed border-gray-300 p-3 dark:border-gray-600">
+                                                                <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                                                                    <flux:input
+                                                                        wire:model="colorForm.code"
+                                                                        label="Color ID"
+                                                                        placeholder="{{ $latestColorCode ? 'Enter next 4-digit ID (last: ' . $latestColorCode . ')' : 'Enter 4-digit ID' }}"
+                                                                        inputmode="text"
+                                                                        maxlength="8"
+                                                                        class="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                                                    />
+                                                                    <div class="sm:col-span-2">
+                                                                        <flux:input
+                                                                            wire:model="colorForm.name"
+                                                                            label="Color Name"
+                                                                            placeholder="Enter color name"
+                                                                            class="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                                <flux:input
+                                                                    wire:model="colorForm.shortcut"
+                                                                    label="Shortcut (optional)"
+                                                                    placeholder="3-5 char symbol"
+                                                                    class="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                                                />
+
+                                                                <div class="flex items-center gap-2 pt-1">
+                                                                    <flux:button type="button" wire:click="saveNewColor" variant="primary" size="sm">
+                                                                        Save Color
+                                                                    </flux:button>
+                                                                    <flux:button type="button" wire:click="cancelColorCreation" variant="ghost" size="sm">
+                                                                        Cancel
+                                                                    </flux:button>
+                                                                </div>
+                                                                @error('colorForm.code') <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                                                @error('colorForm.name') <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                                                @error('colorForm.shortcut') <p class="text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                                            </div>
+                                                        @endif
+                                                    </div>
                                                 </div>
                                             </div>
 
@@ -153,13 +288,12 @@
                                             </div>
 
                                             <div>
-                                                <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
-                                                <textarea
+                                                <flux:input
                                                     wire:model="form.remarks"
-                                                    rows="3"
-                                                    placeholder="Enter product description"
-                                                    class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
-                                                ></textarea>
+                                                    label="Description"
+                                                    readonly
+                                                    class="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                                />
                                             </div>
                                             @error('form.remarks') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                                         </div>
@@ -177,7 +311,7 @@
                                                 <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Unit of Measure</label>
                                                 <select
                                                     wire:model="form.uom"
-                                                    class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                class="block h-11 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
                                                 >
                                                     <option value="pcs">Pieces</option>
                                                     <option value="kg">Kilograms</option>
@@ -232,7 +366,7 @@
                                                 </label>
                                                 <select
                                                     wire:model.live="form.root_category_id"
-                                                    class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                class="block h-11 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
                                                 >
                                                     <option value="">Select Root Category</option>
                                                     @foreach($this->rootCategories as $rootCategory)
@@ -249,7 +383,7 @@
                                                 </label>
                                                 <select
                                                     wire:model="form.category_id"
-                                                    class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                class="block h-11 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
                                                     @disabled(empty($form['root_category_id']))
                                                 >
                                                     <option value="">No Sub-category (use root category only)</option>
@@ -286,12 +420,12 @@
                                             <p class="text-sm text-gray-500 dark:text-gray-400">Link the product to its sourcing partner.</p>
                                         </div>
 
-                                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                            <div>
+                                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                                            <div class="sm:col-span-1">
                                                 <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Supplier</label>
                                                 <select
                                                     wire:model.live="form.supplier_id"
-                                                    class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                    class="block h-11 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
                                                 >
                                                     <option value="">Select Supplier</option>
                                                     @foreach($suppliers as $supplier)
@@ -301,7 +435,20 @@
                                                 @error('form.supplier_id') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                                             </div>
 
-                                            <div>
+                                            <div class="sm:col-span-1">
+                                                <flux:input
+                                                    wire:model="form.cost"
+                                                    label="Cost"
+                                                    type="number"
+                                                    step="0.01"
+                                                    required
+                                                    placeholder="0.00"
+                                                    class="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                                />
+                                                @error('form.cost') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                            </div>
+
+                                            <div class="sm:col-span-1">
                                                 <flux:input
                                                     wire:model="form.supplier_code"
                                                     label="Supplier Code"
@@ -326,27 +473,23 @@
                                                 <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Product Type</label>
                                                 <select
                                                     wire:model="form.product_type"
-                                                    class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                    class="block h-11 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
                                                 >
                                                     <option value="regular">Regular Item</option>
                                                     <option value="sale">Sale Item</option>
                                                 </select>
                                             </div>
                                             <div>
-                                                <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Pricing Note</label>
-                                                <select
+                                                <flux:input
                                                     wire:model="form.price_note"
-                                                    class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
-                                                >
-                                                    <option value="">Select</option>
-                                                    @if(($form['product_type'] ?? 'regular') === 'sale')
-                                                        <option value="SAL1">SAL1</option>
-                                                        <option value="SAL2">SAL2</option>
-                                                    @else
-                                                        <option value="REG1">REG1</option>
-                                                        <option value="REG2">REG2</option>
-                                                    @endif
-                                                </select>
+                                                    label="Price Note"
+                                                    readonly
+                                                    class="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                                />
+                                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                                    Auto-managed (increments when selling price changes). Regular price changes (REG*): {{ $regularPriceChangeCount }} |
+                                                    Sale markdowns (SAL*): {{ $salePriceChangeCount }}
+                                                </p>
                                             </div>
                                         </div>
 
@@ -360,77 +503,44 @@
                                         </div>
 
                                         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+
                                             <div>
-                                                <flux:input
-                                                    wire:model="form.price"
-                                                    label="Selling Price"
-                                                    type="number"
-                                                    step="0.01"
-                                                    required
-                                                    placeholder="0.00"
-                                                    class="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                                />
+                                                <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Selling Price</label>
+                                                <div class="flex items-center gap-2">
+                                                    <flux:input
+                                                        wire:model="form.price"
+                                                        type="number"
+                                                        step="0.01"
+                                                        required
+                                                        placeholder="0.00"
+                                                        class="flex-1 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                                    />
+                                                    <flux:modal.trigger name="product-price-history">
+                                                        <flux:button variant="ghost">View Price History</flux:button>
+                                                    </flux:modal.trigger>
+                                                </div>
                                                 @error('form.price') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
-                                            </div>
-                                            <div class="flex items-end justify-end">
-                                                <flux:modal.trigger name="product-price-history">
-                                                    <flux:button variant="ghost">View Price History</flux:button>
-                                                </flux:modal.trigger>
-                                            </div>
-                                            <div>
-                                                <flux:input
-                                                    wire:model="form.cost"
-                                                    label="Cost"
-                                                    type="number"
-                                                    step="0.01"
-                                                    required
-                                                    placeholder="0.00"
-                                                    class="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                                />
-                                                @error('form.cost') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
-                                            </div>
-                                        </div>
-                                    </section>
-
-                                    <!-- Advanced Pricing -->
-                                    <section class="space-y-4">
-                                        <div>
-                                            <flux:heading size="md" class="text-gray-900 dark:text-white">Advanced Pricing</flux:heading>
-                                            <p class="text-sm text-gray-500 dark:text-gray-400">Optional price levels and discount tiers.</p>
-                                        </div>
-
-                                        <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-                                            <div>
-                                                <div class="mb-2 flex items-center justify-between">
-                                                    <h4 class="text-sm font-medium text-gray-900 dark:text-white">Price Levels</h4>
-                                                    <flux:button wire:click="addPriceLevel" size="sm" variant="ghost">Add Level</flux:button>
-                                                </div>
-                                                <div class="space-y-2">
-                                                    @foreach(($form['price_levels'] ?? []) as $idx => $pl)
-                                                        <div class="grid grid-cols-3 gap-2">
-                                                            <flux:input wire:model="form.price_levels.{{ $idx }}.label" placeholder="Label (e.g., REG1)" />
-                                                            <flux:input wire:model="form.price_levels.{{ $idx }}.amount" type="number" step="0.01" placeholder="Amount" />
-                                                            <flux:button wire:click="removePriceLevel({{ $idx }})" size="sm" variant="ghost">Remove</flux:button>
-                                                        </div>
-                                                    @endforeach
-                                                </div>
-                                            </div>
-
-                                            <div>
-                                                <div class="mb-2 flex items-center justify-between">
-                                                    <h4 class="text-sm font-medium text-gray-900 dark:text-white">Discount Tiers</h4>
-                                                    <flux:button wire:click="addDiscountTier" size="sm" variant="ghost">Add Tier</flux:button>
-                                                </div>
-                                                <div class="space-y-2">
-                                                    @foreach(($form['discount_tiers'] ?? []) as $idx => $dt)
-                                                        <div class="grid grid-cols-4 gap-2">
-                                                            <flux:input wire:model="form.discount_tiers.{{ $idx }}.min_qty" type="number" step="1" placeholder="Min Qty" />
-                                                            <flux:input wire:model="form.discount_tiers.{{ $idx }}.max_qty" type="number" step="1" placeholder="Max Qty" />
-                                                            <flux:input wire:model="form.discount_tiers.{{ $idx }}.discount_percent" type="number" step="0.01" placeholder="% Discount" />
-                                                            <flux:button wire:click="removeDiscountTier({{ $idx }})" size="sm" variant="ghost">Remove</flux:button>
-                                                        </div>
-                                                    @endforeach
-                                                </div>
+                                            @php
+                                                $priceContext = ($form['product_type'] ?? 'regular') === 'sale' ? ($lastSalePrice ?? null) : ($lastRegularPrice ?? null);
+                                                $priceLabel = ($form['product_type'] ?? 'regular') === 'sale' ? 'Sale' : 'Regular';
+                                            @endphp
+                                            @if($priceContext && isset($priceContext['price']))
+                                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                                    Last {{ strtolower($priceLabel) }} price: ₱{{ number_format($priceContext['price'], 2) }}
+                                                    @if(!empty($priceContext['note']))
+                                                        <span class="font-medium text-gray-600 dark:text-gray-300">({{ $priceContext['note'] }})</span>
+                                                    @endif
+                                                    @if(!empty($priceContext['changed_at']))
+                                                        <span>
+                                                            on {{ \Carbon\Carbon::parse($priceContext['changed_at'])->format('d M Y, h:i A') }}
+                                                        </span>
+                                                    @endif
+                                                </p>
+                                            @else
+                                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                                    No previous {{ strtolower($priceLabel) }} price recorded yet.
+                                                </p>
+                                            @endif
                                             </div>
                                         </div>
                                     </section>

@@ -2,9 +2,7 @@
     <div class="space-y-4">
         <div class="flex items-center justify-between">
             <flux:heading id="price-history-title" size="lg" class="text-gray-900 dark:text-white">Price History</flux:heading>
-            <flux:modal.close>
-                <flux:button variant="ghost" aria-label="Close">Close</flux:button>
-            </flux:modal.close>
+            <flux:modal.close aria-label="Close" />
         </div>
 
         @if(empty($priceHistories))

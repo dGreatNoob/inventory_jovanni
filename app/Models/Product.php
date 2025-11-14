@@ -16,7 +16,8 @@ class Product extends Model
     protected $fillable = [
         'entity_id',
         'product_number',
-        'color_id',
+        'product_color_id',
+        'product_type',
         'sku',
         'barcode',
         'name',
@@ -41,6 +42,7 @@ class Product extends Model
         'disabled' => 'boolean',
         'price' => 'decimal:2',
         'cost' => 'decimal:2',
+        'product_color_id' => 'integer',
     ];
 
     // Relationships
@@ -52,6 +54,11 @@ class Product extends Model
     public function supplier(): BelongsTo
     {
         return $this->belongsTo(Supplier::class);
+    }
+
+    public function color(): BelongsTo
+    {
+        return $this->belongsTo(ProductColor::class, 'product_color_id');
     }
 
     public function images(): HasMany

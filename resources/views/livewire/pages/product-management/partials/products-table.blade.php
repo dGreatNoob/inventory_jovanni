@@ -11,7 +11,8 @@
                     </th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         <button wire:click="sortBy('name')" class="group inline-flex">
-                            Product
+                            <button wire:click="sortBy('remarks')" class="group inline-flex">
+                            Description
                             @if($sortBy === 'name')
                                 @if($sortDirection === 'asc')
                                     <svg class="ml-2 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -94,7 +95,7 @@
                                     @endif
                                 </div>
                                 <div class="ml-4">
-                                    <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $product->name }}</div>
+                                    <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $product->remarks ?? $product->name }}</div>
                                     <div class="text-sm text-gray-500 dark:text-gray-400">SKU: {{ $product->sku }}</div>
                                 </div>
                             </div>

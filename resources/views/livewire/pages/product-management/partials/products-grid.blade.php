@@ -65,7 +65,7 @@
                     <!-- Product Info -->
                     <div class="p-3">
                         <h3 class="text-sm font-medium text-gray-900 dark:text-white truncate">
-                            {{ $product->name }}
+                            {{ $product->remarks ?? $product->name }}
                         </h3>
                         <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                             SKU: {{ $product->sku }}

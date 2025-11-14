@@ -10,6 +10,8 @@ use App\Models\Product;
 use App\Models\Category;
 use App\Models\Supplier;
 use App\Models\ProductImage;
+use App\Models\ProductColor;
+use App\Models\ProductPriceHistory;
 use App\Services\ProductService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -63,7 +65,7 @@ class Index extends Component
         'supplier_code' => '',
         'product_type' => 'regular',
         'price' => '',
-        'price_note' => '',
+        'price_note' => 'REG1',
         'cost' => '',
         'uom' => 'pcs',
         'shelf_life_days' => '',
@@ -71,26 +73,23 @@ class Index extends Component
         'initial_quantity' => '',
         'price_levels' => [],
         'discount_tiers' => [],
-        'color_id' => '',
+        'product_color_id' => '',
     ];
     
     // Filtered subcategories based on root selection
     public $filteredSubcategories = [];
-
-    public $colorOptions = [
-        ['id' => '0111', 'label' => 'Mocha', 'symbol' => 'MOC'],
-        ['id' => '0160', 'label' => 'Dark Mocha', 'symbol' => 'D.MCHA'],
-        ['id' => '0164', 'label' => 'Light Mocha', 'symbol' => 'L.MOC'],
-        ['id' => '0189', 'label' => 'Mocha/Purple', 'symbol' => 'MOC/PURP'],
-        ['id' => '0318', 'label' => 'Black/Mocha', 'symbol' => 'BLK/MOC'],
-        ['id' => '0360', 'label' => 'Mocha/Black', 'symbol' => 'MOC/BLK'],
-        ['id' => '0384', 'label' => 'Brown/Mocha', 'symbol' => 'BRO/MOC'],
-        ['id' => '0385', 'label' => 'Pink/Mocha', 'symbol' => 'PNK/MOC'],
-        ['id' => '0390', 'label' => 'Red/Mocha', 'symbol' => 'RED/MOC'],
-        ['id' => '0410', 'label' => 'Checkered Mocha', 'symbol' => 'CHKRD MOC'],
-        ['id' => '0413', 'label' => 'Cherry Mocha', 'symbol' => 'CHRY MOC'],
-        ['id' => '0447', 'label' => 'Apricot/Mocha', 'symbol' => 'APRI/MOC'],
+    public $colors = [];
+    public $colorForm = [
+        'code' => '',
+        'name' => '',
+        'shortcut' => '',
     ];
+    public $showColorForm = false;
+    public $latestColorCode = null;
+    public $lastRegularPrice = null;
+    public $lastSalePrice = null;
+    public $regularPriceChangeCount = 0;
+    public $salePriceChangeCount = 0;
 
     // Bulk Actions
     public $bulkAction = '';
@@ -106,6 +105,7 @@ class Index extends Component
     public function mount()
     {
         $this->loadFilters();
+        $this->loadColors();
     }
 
     public function loadFilters()
@@ -124,6 +124,84 @@ class Index extends Component
 
     }
     
+    protected function loadColors(): void
+    {
+        $colorsCollection = ProductColor::orderBy('code')
+            ->get(['id', 'code', 'name', 'shortcut']);
+
+        $this->colors = $colorsCollection
+            ->map(fn ($color) => [
+                'id' => $color->id,
+                'code' => $color->code,
+                'name' => $color->name,
+                'shortcut' => $color->shortcut,
+            ])
+            ->toArray();
+
+        $maxNumeric = null;
+        foreach ($colorsCollection as $color) {
+            $digits = preg_replace('/\D/', '', (string) $color->code);
+            if ($digits === '') {
+                continue;
+            }
+            $value = (int) $digits;
+            if ($maxNumeric === null || $value > $maxNumeric) {
+                $maxNumeric = $value;
+            }
+        }
+
+        $this->latestColorCode = $maxNumeric !== null
+            ? str_pad((string) $maxNumeric, 4, '0', STR_PAD_LEFT)
+            : null;
+    }
+
+    protected function resetColorForm(): void
+    {
+        $this->colorForm = [
+            'code' => '',
+            'name' => '',
+            'shortcut' => '',
+        ];
+    }
+
+    public function startColorCreation(): void
+    {
+        $this->resetColorForm();
+        $this->showColorForm = true;
+    }
+
+    public function cancelColorCreation(): void
+    {
+        $this->resetColorForm();
+        $this->showColorForm = false;
+    }
+
+    public function saveNewColor(): void
+    {
+        $this->colorForm['code'] = $this->normalizeColorCodeInput($this->colorForm['code'] ?? '');
+        $this->colorForm['name'] = trim((string) ($this->colorForm['name'] ?? ''));
+        $this->colorForm['shortcut'] = trim((string) ($this->colorForm['shortcut'] ?? ''));
+
+        $validated = $this->validate([
+            'colorForm.code' => ['required', 'regex:/^\d{4}$/', Rule::unique('product_colors', 'code')],
+            'colorForm.name' => ['required', 'string', 'max:255'],
+            'colorForm.shortcut' => ['nullable', 'string', 'max:32'],
+        ]);
+
+        $color = ProductColor::create([
+            'code' => $validated['colorForm']['code'],
+            'name' => $validated['colorForm']['name'],
+            'shortcut' => $validated['colorForm']['shortcut'] ?? null,
+        ]);
+
+        $this->loadColors();
+        $this->form['product_color_id'] = (string) $color->id;
+        $this->showColorForm = false;
+        $this->resetColorForm();
+        $this->refreshBarcode();
+        $this->refreshDescription();
+    }
+
     // Get root categories only (for first dropdown)
     public function getRootCategoriesProperty()
     {
@@ -313,6 +391,8 @@ class Index extends Component
         $this->isEditMode = false;
         $this->priceHistories = [];
         $this->refreshBarcode();
+        $this->lastRegularPrice = null;
+        $this->lastSalePrice = null;
         $this->showProductPanel = true;
     }
 
@@ -442,7 +522,7 @@ class Index extends Component
             'supplier_code' => '',
             'product_type' => 'regular',
             'price' => '',
-            'price_note' => '',
+            'price_note' => 'REG1',
             'cost' => '',
             'uom' => 'pcs',
             'shelf_life_days' => '',
@@ -450,11 +530,15 @@ class Index extends Component
             'initial_quantity' => '',
             'price_levels' => [],
             'discount_tiers' => [],
-            'color_id' => '',
+            'product_color_id' => '',
         ];
         $this->filteredSubcategories = [];
         $this->priceHistories = [];
         $this->refreshBarcode();
+        $this->lastRegularPrice = null;
+        $this->lastSalePrice = null;
+        $this->regularPriceChangeCount = 0;
+        $this->salePriceChangeCount = 0;
     }
 
     public function loadProductData()
@@ -501,9 +585,10 @@ class Index extends Component
                 'shelf_life_days' => $this->editingProduct->shelf_life_days,
                 'disabled' => $this->editingProduct->disabled,
                 'initial_quantity' => '',
-                'color_id' => $this->editingProduct->color_id,
+                'product_color_id' => $this->editingProduct->product_color_id ? (string) $this->editingProduct->product_color_id : '',
             ]);
             $this->refreshBarcode();
+            $this->refreshDescription();
         }
     }
 
@@ -511,6 +596,10 @@ class Index extends Component
     {
         if (empty($productId)) {
             $this->priceHistories = [];
+            $this->lastRegularPrice = null;
+            $this->lastSalePrice = null;
+            $this->regularPriceChangeCount = 0;
+            $this->salePriceChangeCount = 0;
             return;
         }
 
@@ -528,6 +617,8 @@ class Index extends Component
                 ],
             ];
         })->toArray();
+
+        $this->updateLastPrices($histories, $productId);
     }
 
     public function saveProduct()
@@ -539,8 +630,8 @@ class Index extends Component
             }
 
             $this->form['product_number'] = $this->normalizeProductNumber($this->form['product_number']);
-            $this->form['color_id'] = $this->normalizeColorId($this->form['color_id']);
             $this->refreshBarcode();
+            $this->refreshDescription();
 
             // Determine final category_id: use subcategory if selected, otherwise use root
             $finalCategoryId = !empty($this->form['category_id']) 
@@ -565,29 +656,12 @@ class Index extends Component
                 'form.discount_tiers.*.min_qty' => 'nullable|integer|min:1',
                 'form.discount_tiers.*.max_qty' => 'nullable|integer|min:1',
                 'form.discount_tiers.*.discount_percent' => 'nullable|numeric|min:0|max:100',
-                'form.color_id' => [
+                'form.product_color_id' => [
                     'required',
-                    Rule::in(collect($this->colorOptions)->pluck('id')->all()),
+                    Rule::exists('product_colors', 'id'),
                 ],
             ]);
 
-            // Ensure remarks include WT when product is Regular
-            if (($this->form['product_type'] ?? 'regular') === 'regular') {
-                $remarks = (string) ($this->form['remarks'] ?? '');
-                if (stripos($remarks, 'WT') === false) {
-                    $this->form['remarks'] = trim($remarks . ' WT');
-                }
-                // Default REG1 if none chosen
-                if (empty($this->form['price_note'])) {
-                    $this->form['price_note'] = 'REG1';
-                }
-            } else {
-                // Sale product: default SAL1 if none chosen
-                if (empty($this->form['price_note'])) {
-                    $this->form['price_note'] = 'SAL1';
-                }
-            }
-            
             // Update form with final category_id for saving
             $this->form['category_id'] = $finalCategoryId;
 
@@ -662,22 +736,46 @@ class Index extends Component
         $this->refreshBarcode();
     }
 
-    public function updatedFormColorId($value): void
+    public function updatedFormProductColorId($value): void
     {
-        $this->form['color_id'] = $this->sanitizeColorId($value);
+        $this->form['product_color_id'] = (string) $value;
         $this->refreshBarcode();
+        $this->refreshDescription();
+    }
+
+    public function updatedFormProductType($value): void
+    {
+        $value = (string) $value;
+
+        if (!$this->isEditMode) {
+            $this->form['price_note'] = $value === 'sale' ? 'SAL1' : 'REG1';
+            return;
+        }
+
+        if (!$this->editingProduct) {
+            $this->form['price_note'] = $value === 'sale' ? 'SAL1' : 'REG1';
+            return;
+        }
+
+        $currentNote = strtoupper((string) ($this->form['price_note'] ?? ''));
+
+        if ($value === 'sale' && !str_starts_with($currentNote, 'SAL')) {
+            $this->form['price_note'] = 'SAL' . max($this->salePriceChangeCount + 1, 1);
+        } elseif ($value !== 'sale' && !str_starts_with($currentNote, 'REG')) {
+            $this->form['price_note'] = 'REG' . max($this->regularPriceChangeCount + 1, 1);
+        }
+    }
+
+    public function updatedFormName($value): void
+    {
+        $this->form['name'] = (string) $value;
+        $this->refreshDescription();
     }
 
     protected function sanitizeProductNumber($value): string
     {
         $digits = preg_replace('/\D/', '', (string) $value);
         return substr($digits, 0, 6);
-    }
-
-    protected function sanitizeColorId($value): string
-    {
-        $digits = preg_replace('/\D/', '', (string) $value);
-        return substr($digits, 0, 4);
     }
 
     protected function normalizeProductNumber($value): string
@@ -691,24 +789,136 @@ class Index extends Component
         return str_pad($digits, 6, '0', STR_PAD_LEFT);
     }
 
-    protected function normalizeColorId($value): string
+    protected function normalizeColorCodeInput(?string $code): string
     {
-        $digits = $this->sanitizeColorId($value);
+        $digits = preg_replace('/\D/', '', (string) $code);
 
         if ($digits === '') {
             return '';
         }
 
-        return str_pad($digits, 4, '0', STR_PAD_LEFT);
+        return str_pad(substr($digits, 0, 4), 4, '0', STR_PAD_LEFT);
+    }
+
+    protected function getSelectedColorCode(): ?string
+    {
+        $colorId = $this->form['product_color_id'] ?? null;
+        if (empty($colorId)) {
+            return null;
+        }
+
+        $color = collect($this->colors)->firstWhere('id', (int) $colorId);
+
+        if (!$color) {
+            $colorModel = ProductColor::find($colorId);
+            if (!$colorModel) {
+                return null;
+            }
+
+            $this->colors[] = [
+                'id' => $colorModel->id,
+                'code' => $colorModel->code,
+                'name' => $colorModel->name,
+                'shortcut' => $colorModel->shortcut,
+            ];
+
+            return $colorModel->code;
+        }
+
+        return $color['code'];
+    }
+
+    protected function updateLastPrices($histories, int $productId): void
+    {
+        $regularHistory = $histories->filter(function ($history) {
+            $note = strtoupper((string) ($history->pricing_note ?? ''));
+            return str_starts_with($note, 'REG');
+        });
+
+        $saleHistory = $histories->filter(function ($history) {
+            $note = strtoupper((string) ($history->pricing_note ?? ''));
+            return str_starts_with($note, 'SAL');
+        });
+
+        $this->regularPriceChangeCount = ProductPriceHistory::where('product_id', $productId)
+            ->where('pricing_note', 'like', 'REG%')
+            ->count();
+
+        $this->salePriceChangeCount = ProductPriceHistory::where('product_id', $productId)
+            ->where('pricing_note', 'like', 'SAL%')
+            ->count();
+
+        $lastRegular = $regularHistory->first();
+        $lastSale = $saleHistory->first();
+
+        $this->lastRegularPrice = $lastRegular ? [
+            'price' => $lastRegular->new_price,
+            'note' => $lastRegular->pricing_note,
+            'changed_at' => optional($lastRegular->changed_at)->toIso8601String(),
+        ] : null;
+
+        $this->lastSalePrice = $lastSale ? [
+            'price' => $lastSale->new_price,
+            'note' => $lastSale->pricing_note,
+            'changed_at' => optional($lastSale->changed_at)->toIso8601String(),
+        ] : null;
+    }
+
+    protected function getSelectedColorLabel(): string
+    {
+        $colorId = $this->form['product_color_id'] ?? null;
+        if (empty($colorId)) {
+            return '';
+        }
+
+        $color = collect($this->colors)->firstWhere('id', (int) $colorId);
+
+        if (!$color) {
+            $colorModel = ProductColor::find($colorId);
+            if (!$colorModel) {
+                return '';
+            }
+
+            $this->colors[] = [
+                'id' => $colorModel->id,
+                'code' => $colorModel->code,
+                'name' => $colorModel->name,
+                'shortcut' => $colorModel->shortcut,
+            ];
+
+            $color = [
+                'code' => $colorModel->code,
+                'name' => $colorModel->name,
+                'shortcut' => $colorModel->shortcut,
+            ];
+        }
+
+        $shortcut = trim((string) ($color['shortcut'] ?? ''));
+        if ($shortcut !== '') {
+            return $shortcut;
+        }
+
+        return trim((string) ($color['name'] ?? ''));
+    }
+
+    protected function refreshDescription(): void
+    {
+        $name = trim((string) ($this->form['name'] ?? ''));
+        $colorLabel = $this->getSelectedColorLabel();
+
+        $parts = array_filter([$name, $colorLabel], fn ($part) => $part !== '');
+
+        $this->form['remarks'] = empty($parts) ? '' : implode(' ', $parts);
     }
 
     protected function refreshBarcode(): void
     {
         $productNumber = $this->normalizeProductNumber($this->form['product_number'] ?? '');
-        $colorId = $this->normalizeColorId($this->form['color_id'] ?? '');
+        $colorCode = $this->getSelectedColorCode();
+        $colorDigits = $colorCode ? substr(preg_replace('/\D/', '', $colorCode), 0, 4) : '';
 
-        if (strlen($productNumber) === 6 && strlen($colorId) === 4) {
-            $this->form['barcode'] = $productNumber . $colorId;
+        if (strlen($productNumber) === 6 && strlen($colorDigits) === 4) {
+            $this->form['barcode'] = $productNumber . str_pad($colorDigits, 4, '0', STR_PAD_LEFT);
         } else {
             $this->form['barcode'] = '';
         }
@@ -734,6 +944,22 @@ class Index extends Component
         $this->viewingImage = ProductImage::find($this->viewerImages[$this->viewerIndex]);
     }
 
+    public function setViewerImage(int $imageId): void
+    {
+        if (empty($this->viewerImages)) {
+            return;
+        }
+
+        $index = array_search($imageId, $this->viewerImages, true);
+
+        if ($index === false) {
+            return;
+        }
+
+        $this->viewerIndex = $index;
+        $this->viewingImage = ProductImage::find($this->viewerImages[$this->viewerIndex]);
+    }
+
     public function render()
     {
         if (!auth()->user()->hasAnyPermission(['product view'])) {
@@ -744,7 +970,12 @@ class Index extends Component
             'products' => $this->products,
             'stats' => $this->stats,
             'selectedProduct' => $this->editingProduct,
-            'colorOptions' => $this->colorOptions,
+            'colors' => $this->colors,
+            'latestColorCode' => $this->latestColorCode,
+            'lastRegularPrice' => $this->lastRegularPrice,
+            'lastSalePrice' => $this->lastSalePrice,
+            'regularPriceChangeCount' => $this->regularPriceChangeCount,
+            'salePriceChangeCount' => $this->salePriceChangeCount,
         ]);
     }
 }

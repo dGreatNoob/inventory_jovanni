@@ -9,10 +9,10 @@ use App\Models\InventoryMovement;
 use App\Models\Category;
 use App\Models\Supplier;
 use App\Models\ProductImage;
+use App\Models\ProductColor;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class ProductService
 {
@@ -54,17 +54,25 @@ class ProductService
     {
         return DB::transaction(function () use ($data) {
             $data['product_number'] = $this->normalizeProductNumber($data['product_number'] ?? null);
-            $data['color_id'] = $this->normalizeColorId($data['color_id'] ?? null);
 
-            if (empty($data['barcode']) && !empty($data['product_number']) && !empty($data['color_id'])) {
-                $data['barcode'] = $this->composeBarcode($data['product_number'], $data['color_id']);
+            $color = null;
+            if (!empty($data['product_color_id'])) {
+                $color = ProductColor::find($data['product_color_id']);
+            }
+
+            $productType = $data['product_type'] ?? 'regular';
+            $data['price_note'] = $this->generateInitialPriceNote($productType);
+
+            if (empty($data['barcode']) && !empty($data['product_number']) && $color) {
+                $data['barcode'] = $this->composeBarcode($data['product_number'], $color->code);
             }
 
             // Create the product
             $product = Product::create([
                 'entity_id' => $data['entity_id'] ?? 1,
                 'product_number' => $data['product_number'] ?? null,
-                'color_id' => $data['color_id'] ?? null,
+                'product_color_id' => $data['product_color_id'] ?? null,
+                'product_type' => $productType,
                 'sku' => $data['sku'],
                 'barcode' => $data['barcode'],
                 'name' => $data['name'],
@@ -75,7 +83,7 @@ class ProductService
                 'supplier_id' => $data['supplier_id'],
                 'supplier_code' => $data['supplier_code'] ?? null,
                 'price' => $data['price'],
-                'price_note' => $data['price_note'] ?? null,
+                'price_note' => $data['price_note'],
                 'cost' => $data['cost'],
                 'shelf_life_days' => $data['shelf_life_days'] ?? null,
                 'pict_name' => $data['pict_name'] ?? null,
@@ -112,40 +120,54 @@ class ProductService
             $originalNote = $product->price_note;
 
             $data['product_number'] = $this->normalizeProductNumber($data['product_number'] ?? $product->product_number);
-            $data['color_id'] = $this->normalizeColorId($data['color_id'] ?? $product->color_id);
+
+            $color = null;
+            if (array_key_exists('product_color_id', $data)) {
+                $color = $data['product_color_id'] ? ProductColor::find($data['product_color_id']) : null;
+            } else {
+                $color = $product->color;
+            }
 
             $updatePayload = array_merge($data, [
                 'updated_by' => auth()->id(),
             ]);
 
-            if (array_key_exists('product_number', $data) || array_key_exists('color_id', $data)) {
+            if (array_key_exists('product_number', $data) || array_key_exists('product_color_id', $data)) {
                 $updatedProductNumber = $data['product_number'] ?? $product->product_number;
-                $updatedColorId = $data['color_id'] ?? $product->color_id;
+                $colorCode = $color?->code;
 
-                if ($updatedProductNumber && $updatedColorId) {
-                    $composedBarcode = $this->composeBarcode($updatedProductNumber, $updatedColorId);
+                if ($updatedProductNumber && $colorCode) {
+                    $composedBarcode = $this->composeBarcode($updatedProductNumber, $colorCode);
                     if ($composedBarcode) {
                         $updatePayload['barcode'] = $composedBarcode;
                     }
                 }
             }
 
-            $product->update($updatePayload);
-
+            $priceChanged = false;
             if (array_key_exists('price', $data)) {
                 $newPrice = $data['price'];
                 $priceChanged = $this->hasPriceChanged($originalPrice, $newPrice);
 
                 if ($priceChanged) {
-                    ProductPriceHistory::create([
-                        'product_id' => $product->id,
-                        'old_price' => $originalPrice,
-                        'new_price' => $newPrice,
-                        'pricing_note' => $data['price_note'] ?? $originalNote,
-                        'changed_by' => auth()->id() ?? 1,
-                        'changed_at' => now(),
-                    ]);
+                    $productType = $data['product_type'] ?? null;
+                    $nextNote = $this->generateNextPriceNote($product, $productType);
+                    $updatePayload['price_note'] = $nextNote;
+                    $data['price_note'] = $nextNote;
                 }
+            }
+
+            $product->update($updatePayload);
+
+            if ($priceChanged) {
+                ProductPriceHistory::create([
+                    'product_id' => $product->id,
+                    'old_price' => $originalPrice,
+                    'new_price' => $data['price'],
+                    'pricing_note' => $data['price_note'] ?? $originalNote,
+                    'changed_by' => auth()->id() ?? 1,
+                    'changed_at' => now(),
+                ]);
             }
 
             return $product->fresh(['category', 'supplier', 'images', 'inventory']);
@@ -367,14 +389,14 @@ class ProductService
             ->get();
     }
 
-    protected function composeBarcode(?string $productNumber, ?string $colorId): ?string
+    protected function composeBarcode(?string $productNumber, ?string $colorCode): ?string
     {
-        if (!$productNumber || !$colorId) {
+        if (!$productNumber || !$colorCode) {
             return null;
         }
 
         $digitsProduct = substr(preg_replace('/\D/', '', $productNumber), 0, 6);
-        $digitsColor = substr(preg_replace('/\D/', '', $colorId), 0, 4);
+        $digitsColor = substr(preg_replace('/\D/', '', $colorCode), 0, 4);
 
         if ($digitsProduct === '' || $digitsColor === '') {
             return null;
@@ -401,18 +423,67 @@ class ProductService
         return str_pad($digits, 6, '0', STR_PAD_LEFT);
     }
 
-    protected function normalizeColorId(?string $value): ?string
+    protected function generateInitialPriceNote(?string $productType): string
     {
-        if ($value === null) {
-            return null;
+        $prefix = $this->determinePricePrefix($productType, null);
+        return $prefix . '1';
+    }
+
+    protected function generateNextPriceNote(Product $product, ?string $productType): string
+    {
+        $prefix = $this->determinePricePrefix($productType, $product->price_note);
+
+        $latestHistory = ProductPriceHistory::where('product_id', $product->id)
+            ->where('pricing_note', 'like', $prefix . '%')
+            ->orderByDesc('changed_at')
+            ->orderByDesc('id')
+            ->first();
+
+        $referenceNote = $latestHistory?->pricing_note;
+
+        if (!$referenceNote && str_starts_with(strtoupper((string) $product->price_note), $prefix)) {
+            $referenceNote = $product->price_note;
         }
 
-        $digits = substr(preg_replace('/\D/', '', $value), 0, 4);
+        $currentIndex = $this->extractTrailingIndex($referenceNote);
 
-        if ($digits === '') {
-            return null;
+        return $prefix . ($currentIndex + 1);
+    }
+
+    protected function determinePricePrefix(?string $productType, ?string $fallbackNote): string
+    {
+        $type = strtolower((string) $productType);
+
+        if ($type === 'sale') {
+            return 'SAL';
         }
 
-        return str_pad($digits, 4, '0', STR_PAD_LEFT);
+        if ($type === 'regular') {
+            return 'REG';
+        }
+
+        $fallback = strtoupper((string) $fallbackNote);
+        if (str_starts_with($fallback, 'SAL')) {
+            return 'SAL';
+        }
+
+        if (str_starts_with($fallback, 'REG')) {
+            return 'REG';
+        }
+
+        return 'REG';
+    }
+
+    protected function extractTrailingIndex(?string $note): int
+    {
+        if (empty($note)) {
+            return 0;
+        }
+
+        if (preg_match('/(\d+)$/', $note, $matches)) {
+            return (int) $matches[1];
+        }
+
+        return 0;
     }
 }

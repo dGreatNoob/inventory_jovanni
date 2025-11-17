@@ -39,13 +39,13 @@
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
             <div>
                 <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Category Management</h1>
-                <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Organize your products with hierarchical categories</p>
+                <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Organize your products with categories</p>
             </div>
-            <div class="mt-4 sm:mt-0 flex space-x-3">
+            <div class="mt-4 sm:mt-0">
             <flux:modal.trigger name="create-edit-category">
                 @can('category create')
                 <flux:button 
-                    wire:click="createRootCategory" 
+                    wire:click="createCategory" 
                     variant="primary"
                     class="inline-flex items-center space-x-2"
                 >
@@ -53,35 +53,17 @@
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                         </svg>
-                        <span>Create Root Category</span>
+                        <span>Create Category</span>
                     </span>
                 </flux:button>
                 @endcan
             </flux:modal.trigger>
-
-            <flux:modal.trigger name="create-edit-category">
-                @can('category create')
-                <flux:button 
-                    wire:click="createSubcategory" 
-                    variant="ghost"
-                    class="inline-flex items-center space-x-2 text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500"
-                >
-                    <span class="flex items-center">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                        </svg>
-                        <span>Create Subcategory</span>
-                    </span>
-                </flux:button>
-                @endcan
-            </flux:modal.trigger>
-
             </div>
         </div>
     </div>
 
     <!-- Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
             <div class="p-5">
                 <div class="flex items-center">
@@ -118,41 +100,6 @@
             </div>
         </div>
 
-        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
-            <div class="p-5">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"></path>
-                        </svg>
-                    </div>
-                    <div class="ml-5 w-0 flex-1">
-                        <dl>
-                            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Root Categories</dt>
-                            <dd class="text-lg font-medium text-gray-900 dark:text-white">{{ $stats['root_categories'] }}</dd>
-                        </dl>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
-            <div class="p-5">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <svg class="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-                        </svg>
-                    </div>
-                    <div class="ml-5 w-0 flex-1">
-                        <dl>
-                            <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Sub Categories</dt>
-                            <dd class="text-lg font-medium text-gray-900 dark:text-white">{{ $stats['sub_categories'] }}</dd>
-                        </dl>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 
     <!-- Search and Filters -->
@@ -187,20 +134,7 @@
             <!-- Advanced Filters -->
             @if($showFilters)
                 <div class="border-t pt-4">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <!-- Root Filter -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Root Filter</label>
-                            <select wire:model.live="parentFilter"
-                                    class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 sm:text-sm">
-                                <option value="">All Categories</option>
-                                <option value="root">Root Categories Only</option>
-                                @foreach($parentCategories as $category)
-                                    <option value="{{ $category->id }}">Only Subcategories of: {{ $category->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <!-- Status Filter -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Status</label>
@@ -271,7 +205,6 @@
                                            class="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded dark:border-gray-600 dark:focus:ring-gray-400">
                                 </th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">Category</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">Parent</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">Status</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">Products</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">Sort</th>
@@ -284,7 +217,6 @@
                                 <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
                                     <td class="px-4 py-3"><input type="checkbox" wire:click="toggleCategorySelection({{ $category->id }})" @if(in_array($category->id, $selectedCategories)) checked @endif class="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded dark:border-gray-600 dark:focus:ring-gray-400"></td>
                                     <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">{{ $category->name }}</td>
-                                    <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{{ $category->parent->name ?? ($category->parent_id ? '—' : 'Root') }}</td>
                                     <td class="px-4 py-3">
                                         @if($category->is_active)
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">Active</span>

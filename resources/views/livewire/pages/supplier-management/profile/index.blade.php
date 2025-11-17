@@ -275,7 +275,6 @@
                                         </div>
                                     </td>
 
-<<<<<<< HEAD
                                     <!-- Contact -->
                                     <td class="px-6 py-4">
                                         <div class="flex flex-col space-y-1 text-sm text-gray-500 dark:text-gray-300">

@@ -270,11 +270,11 @@
                                                     <flux:input
                                                         wire:model="form.barcode"
                                                         label="Barcode"
-                                                        placeholder="Auto-generated from Product ID + Color"
+                                                        placeholder="Auto-generated from Product ID + Color + Price"
                                                         class="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                                         inputmode="numeric"
-                                                        pattern="\\d{10}"
-                                                        maxlength="10"
+                                                        pattern="\\d{16}"
+                                                        maxlength="16"
                                                         readonly
                                                     />
                                                     @error('form.barcode') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
@@ -282,7 +282,7 @@
                                                         <svg class="mr-1 inline h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
                                                             <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
                                                         </svg>
-                                                        10-digit format: first 6 digits = Product ID, last 4 digits = Color ID.
+                                                        16-digit format: first 6 = Product ID, next 4 = Color ID, last 6 = Selling Price (e.g., 2500.00 → 250000).
                                                     </p>
                                                 </div>
                                             </div>
@@ -358,58 +358,20 @@
                                             <p class="text-sm text-gray-500 dark:text-gray-400">Organize the product within your catalog tree.</p>
                                         </div>
 
-                                        <div class="space-y-4">
-                                            <div>
-                                                <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                                    Root Category <span class="text-red-500">*</span>
-                                                    <span class="text-xs font-normal text-gray-500 dark:text-gray-400">(Select main category first)</span>
-                                                </label>
-                                                <select
-                                                    wire:model.live="form.root_category_id"
+                                        <div>
+                                            <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                Category <span class="text-red-500">*</span>
+                                            </label>
+                                            <select
+                                                wire:model="form.category_id"
                                                 class="block h-11 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
-                                                >
-                                                    <option value="">Select Root Category</option>
-                                                    @foreach($this->rootCategories as $rootCategory)
-                                                        <option value="{{ $rootCategory->id }}">{{ $rootCategory->name }}</option>
-                                                    @endforeach
-                                                </select>
-                                                @error('form.root_category_id') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
-                                            </div>
-
-                                            <div>
-                                                <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                                    Sub-category
-                                                    <span class="text-xs font-normal text-gray-500 dark:text-gray-400">(Optional - for more specific classification)</span>
-                                                </label>
-                                                <select
-                                                    wire:model="form.category_id"
-                                                class="block h-11 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
-                                                    @disabled(empty($form['root_category_id']))
-                                                >
-                                                    <option value="">No Sub-category (use root category only)</option>
-                                                    @if(!empty($filteredSubcategories))
-                                                        @foreach($filteredSubcategories as $subcategory)
-                                                            <option value="{{ $subcategory['id'] }}">{{ $subcategory['name'] }}</option>
-                                                        @endforeach
-                                                    @endif
-                                                </select>
-                                                @if(empty($form['root_category_id']))
-                                                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                                        <svg class="mr-1 inline h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
-                                                        </svg>
-                                                        Select a root category first to see available sub-categories
-                                                    </p>
-                                                @elseif(empty($filteredSubcategories))
-                                                    <p class="mt-1 text-xs text-yellow-600 dark:text-yellow-400">
-                                                        <svg class="mr-1 inline h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
-                                                        </svg>
-                                                        This root category has no sub-categories yet
-                                                    </p>
-                                                @endif
-                                                @error('form.category_id') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
-                                            </div>
+                                            >
+                                                <option value="">Select Category</option>
+                                                @foreach($this->categories as $category)
+                                                    <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                                @endforeach
+                                            </select>
+                                            @error('form.category_id') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                                         </div>
                                     </section>
 
@@ -420,8 +382,8 @@
                                             <p class="text-sm text-gray-500 dark:text-gray-400">Link the product to its sourcing partner.</p>
                                         </div>
 
-                                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                                            <div class="sm:col-span-1">
+                                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                            <div>
                                                 <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Supplier</label>
                                                 <select
                                                     wire:model.live="form.supplier_id"
@@ -435,7 +397,31 @@
                                                 @error('form.supplier_id') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                                             </div>
 
-                                            <div class="sm:col-span-1">
+                                            <div>
+                                                <flux:input
+                                                    wire:model="form.supplier_code"
+                                                    label="Supplier Code"
+                                                    placeholder="Auto-filled from supplier"
+                                                    readonly
+                                                    class="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                                />
+                                                @error('form.supplier_code') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                            </div>
+                                        </div>
+
+                                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                            <div>
+                                                <flux:input
+                                                    wire:model="form.soft_card"
+                                                    label="Soft Card (Optional)"
+                                                    placeholder="Enter cloth code from supplier"
+                                                    class="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                                />
+                                                @error('form.soft_card') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Cloth code of the product by the supplier (optional)</p>
+                                            </div>
+
+                                            <div>
                                                 <flux:input
                                                     wire:model="form.cost"
                                                     label="Cost"
@@ -446,17 +432,6 @@
                                                     class="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                                 />
                                                 @error('form.cost') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
-                                            </div>
-
-                                            <div class="sm:col-span-1">
-                                                <flux:input
-                                                    wire:model="form.supplier_code"
-                                                    label="Supplier Code"
-                                                    placeholder="Auto-filled from supplier"
-                                                    readonly
-                                                    class="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                                />
-                                                @error('form.supplier_code') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                                             </div>
                                         </div>
                                     </section>
@@ -503,6 +478,18 @@
                                         </div>
 
                                         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                            <div>
+                                                <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Original Price</label>
+                                                <flux:input
+                                                    wire:model="form.original_price"
+                                                    type="number"
+                                                    step="0.01"
+                                                    placeholder="0.00"
+                                                    class="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                                />
+                                                @error('form.original_price') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">The original price before any discounts or markdowns</p>
+                                            </div>
 
                                             <div>
                                                 <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Selling Price</label>

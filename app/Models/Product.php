@@ -27,7 +27,9 @@ class Product extends Model
         'uom',
         'supplier_id',
         'supplier_code',
+        'soft_card',
         'price',
+        'original_price',
         'price_note',
         'cost',
         'shelf_life_days',
@@ -41,6 +43,7 @@ class Product extends Model
         'specs' => 'array',
         'disabled' => 'boolean',
         'price' => 'decimal:2',
+        'original_price' => 'decimal:2',
         'cost' => 'decimal:2',
         'product_color_id' => 'integer',
     ];

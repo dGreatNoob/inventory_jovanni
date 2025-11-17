@@ -59,12 +59,13 @@ class Index extends Component
         'sku' => '',
         'barcode' => '',
         'remarks' => '',
-        'root_category_id' => '',  // For cascading dropdown
         'category_id' => '',
         'supplier_id' => '',
         'supplier_code' => '',
+        'soft_card' => '',
         'product_type' => 'regular',
         'price' => '',
+        'original_price' => '',
         'price_note' => 'REG1',
         'cost' => '',
         'uom' => 'pcs',
@@ -76,8 +77,6 @@ class Index extends Component
         'product_color_id' => '',
     ];
     
-    // Filtered subcategories based on root selection
-    public $filteredSubcategories = [];
     public $colors = [];
     public $colorForm = [
         'code' => '',
@@ -110,13 +109,11 @@ class Index extends Component
 
     public function loadFilters()
     {
-        // Load hierarchical categories with parent information
-        $this->categories = Category::with('parent')
-            ->active()
-            ->orderBy('parent_id')
+        // Load all categories (flat structure)
+        $this->categories = Category::active()
             ->orderBy('sort_order')
             ->orderBy('name')
-            ->get(['id', 'name', 'parent_id', 'sort_order']);
+            ->get(['id', 'name', 'sort_order']);
 
         $this->suppliers = Supplier::active()
             ->orderBy('name')
@@ -202,31 +199,6 @@ class Index extends Component
         $this->refreshDescription();
     }
 
-    // Get root categories only (for first dropdown)
-    public function getRootCategoriesProperty()
-    {
-        return Category::whereNull('parent_id')
-            ->active()
-            ->orderBy('sort_order')
-            ->orderBy('name')
-            ->get(['id', 'name']);
-    }
-    
-    // Update subcategories when root category changes
-    public function updatedFormRootCategoryId($value)
-    {
-        if ($value) {
-            $this->filteredSubcategories = Category::where('parent_id', $value)
-                ->active()
-                ->orderBy('sort_order')
-                ->orderBy('name')
-                ->get(['id', 'name'])
-                ->toArray();
-        } else {
-            $this->filteredSubcategories = [];
-            $this->form['category_id'] = '';
-        }
-    }
 
     public function updatedFormSupplierId($supplierId)
     {
@@ -516,12 +488,12 @@ class Index extends Component
             'sku' => '',
             'barcode' => '',
             'remarks' => '',
-            'root_category_id' => '',
             'category_id' => '',
             'supplier_id' => '',
             'supplier_code' => '',
             'product_type' => 'regular',
             'price' => '',
+            'original_price' => '',
             'price_note' => 'REG1',
             'cost' => '',
             'uom' => 'pcs',
@@ -532,7 +504,6 @@ class Index extends Component
             'discount_tiers' => [],
             'product_color_id' => '',
         ];
-        $this->filteredSubcategories = [];
         $this->priceHistories = [];
         $this->refreshBarcode();
         $this->lastRegularPrice = null;
@@ -544,41 +515,19 @@ class Index extends Component
     public function loadProductData()
     {
         if ($this->editingProduct) {
-            // Load the product's category to determine root and subcategory
-            $category = Category::find($this->editingProduct->category_id);
-            
-            // Determine root category and actual category
-            if ($category) {
-                if ($category->parent_id) {
-                    // Product has a subcategory, so set both root and sub
-                    $this->form['root_category_id'] = $category->parent_id;
-                    $this->form['category_id'] = $category->id;
-                    
-                    // Load subcategories for the selected root
-                    $this->filteredSubcategories = Category::where('parent_id', $category->parent_id)
-                        ->active()
-                        ->orderBy('sort_order')
-                        ->orderBy('name')
-                        ->get(['id', 'name'])
-                        ->toArray();
-                } else {
-                    // Product has a root category only
-                    $this->form['root_category_id'] = $category->id;
-                    $this->form['category_id'] = '';
-                    $this->filteredSubcategories = [];
-                }
-            }
-            
             $this->form = array_merge($this->form, [
                 'name' => $this->editingProduct->name,
                 'product_number' => $this->editingProduct->product_number,
                 'sku' => $this->editingProduct->sku,
                 'barcode' => $this->editingProduct->barcode,
                 'remarks' => $this->editingProduct->remarks,
+                'category_id' => $this->editingProduct->category_id,
                 'supplier_id' => $this->editingProduct->supplier_id,
                 'supplier_code' => $this->editingProduct->supplier_code,
+                'soft_card' => $this->editingProduct->soft_card,
                 'product_type' => $this->editingProduct->price_note && str_starts_with($this->editingProduct->price_note, 'SAL') ? 'sale' : 'regular',
                 'price' => $this->editingProduct->price,
+                'original_price' => $this->editingProduct->original_price,
                 'price_note' => $this->editingProduct->price_note,
                 'cost' => $this->editingProduct->cost,
                 'uom' => $this->editingProduct->uom,
@@ -633,20 +582,15 @@ class Index extends Component
             $this->refreshBarcode();
             $this->refreshDescription();
 
-            // Determine final category_id: use subcategory if selected, otherwise use root
-            $finalCategoryId = !empty($this->form['category_id']) 
-                ? $this->form['category_id'] 
-                : $this->form['root_category_id'];
-
             $this->validate([
                 'form.name' => 'required|string|max:255',
                 'form.product_number' => 'required|regex:/^\d{6}$/|unique:products,product_number' . ($this->editingProduct ? ',' . $this->editingProduct->id : ''),
                 'form.sku' => 'required|string|max:255|unique:products,sku' . ($this->editingProduct ? ',' . $this->editingProduct->id : ''),
-                'form.barcode' => ['required','regex:/^\d{10}$/','unique:products,barcode' . ($this->editingProduct ? ',' . $this->editingProduct->id : '')],
-                'form.root_category_id' => 'required|exists:categories,id',
-                'form.category_id' => 'nullable|exists:categories,id',
+                'form.barcode' => ['required','regex:/^\d{16}$/','unique:products,barcode' . ($this->editingProduct ? ',' . $this->editingProduct->id : '')],
+                'form.category_id' => 'required|exists:categories,id',
                 'form.supplier_id' => 'required|exists:suppliers,id',
                 'form.price' => 'required|numeric|min:0',
+                'form.original_price' => 'nullable|numeric|min:0',
                 'form.cost' => 'required|numeric|min:0',
                 'form.uom' => 'required|string|max:255',
                 'form.shelf_life_days' => 'nullable|integer|min:0',
@@ -661,9 +605,6 @@ class Index extends Component
                     Rule::exists('product_colors', 'id'),
                 ],
             ]);
-
-            // Update form with final category_id for saving
-            $this->form['category_id'] = $finalCategoryId;
 
             if ($this->editingProduct) {
                 // Update existing product
@@ -741,6 +682,11 @@ class Index extends Component
         $this->form['product_color_id'] = (string) $value;
         $this->refreshBarcode();
         $this->refreshDescription();
+    }
+
+    public function updatedFormPrice($value): void
+    {
+        $this->refreshBarcode();
     }
 
     public function updatedFormProductType($value): void
@@ -916,9 +862,13 @@ class Index extends Component
         $productNumber = $this->normalizeProductNumber($this->form['product_number'] ?? '');
         $colorCode = $this->getSelectedColorCode();
         $colorDigits = $colorCode ? substr(preg_replace('/\D/', '', $colorCode), 0, 4) : '';
+        $price = $this->form['price'] ?? '';
 
-        if (strlen($productNumber) === 6 && strlen($colorDigits) === 4) {
-            $this->form['barcode'] = $productNumber . str_pad($colorDigits, 4, '0', STR_PAD_LEFT);
+        if (strlen($productNumber) === 6 && strlen($colorDigits) === 4 && !empty($price)) {
+            // Format price: remove decimal point and zero-pad to 6 digits
+            $priceValue = (float) $price;
+            $priceDigits = str_pad((string) (int) ($priceValue * 100), 6, '0', STR_PAD_LEFT);
+            $this->form['barcode'] = $productNumber . str_pad($colorDigits, 4, '0', STR_PAD_LEFT) . $priceDigits;
         } else {
             $this->form['barcode'] = '';
         }

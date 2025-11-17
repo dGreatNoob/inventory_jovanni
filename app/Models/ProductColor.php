@@ -26,3 +26,4 @@ class ProductColor extends Model
     }
 }
 
+

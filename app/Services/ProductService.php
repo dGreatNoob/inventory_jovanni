@@ -63,8 +63,8 @@ class ProductService
             $productType = $data['product_type'] ?? 'regular';
             $data['price_note'] = $this->generateInitialPriceNote($productType);
 
-            if (empty($data['barcode']) && !empty($data['product_number']) && $color) {
-                $data['barcode'] = $this->composeBarcode($data['product_number'], $color->code);
+            if (empty($data['barcode']) && !empty($data['product_number']) && $color && !empty($data['price'])) {
+                $data['barcode'] = $this->composeBarcode($data['product_number'], $color->code, $data['price']);
             }
 
             // Create the product
@@ -82,7 +82,9 @@ class ProductService
                 'uom' => $data['uom'] ?? 'pcs',
                 'supplier_id' => $data['supplier_id'],
                 'supplier_code' => $data['supplier_code'] ?? null,
+                'soft_card' => $data['soft_card'] ?? null,
                 'price' => $data['price'],
+                'original_price' => $data['original_price'] ?? null,
                 'price_note' => $data['price_note'],
                 'cost' => $data['cost'],
                 'shelf_life_days' => $data['shelf_life_days'] ?? null,
@@ -132,12 +134,13 @@ class ProductService
                 'updated_by' => auth()->id(),
             ]);
 
-            if (array_key_exists('product_number', $data) || array_key_exists('product_color_id', $data)) {
+            if (array_key_exists('product_number', $data) || array_key_exists('product_color_id', $data) || array_key_exists('price', $data)) {
                 $updatedProductNumber = $data['product_number'] ?? $product->product_number;
                 $colorCode = $color?->code;
+                $price = $data['price'] ?? $product->price;
 
-                if ($updatedProductNumber && $colorCode) {
-                    $composedBarcode = $this->composeBarcode($updatedProductNumber, $colorCode);
+                if ($updatedProductNumber && $colorCode && $price) {
+                    $composedBarcode = $this->composeBarcode($updatedProductNumber, $colorCode, $price);
                     if ($composedBarcode) {
                         $updatePayload['barcode'] = $composedBarcode;
                     }
@@ -389,7 +392,7 @@ class ProductService
             ->get();
     }
 
-    protected function composeBarcode(?string $productNumber, ?string $colorCode): ?string
+    protected function composeBarcode(?string $productNumber, ?string $colorCode, $price = null): ?string
     {
         if (!$productNumber || !$colorCode) {
             return null;
@@ -405,7 +408,15 @@ class ProductService
         $normalizedProduct = str_pad($digitsProduct, 6, '0', STR_PAD_LEFT);
         $normalizedColor = str_pad($digitsColor, 4, '0', STR_PAD_LEFT);
 
-        return $normalizedProduct . $normalizedColor;
+        // Format price: remove decimal point and zero-pad to 6 digits
+        $priceDigits = '';
+        if ($price !== null) {
+            // Convert price to string, remove decimal point, and pad to 6 digits
+            $priceValue = (float) $price;
+            $priceDigits = str_pad((string) (int) ($priceValue * 100), 6, '0', STR_PAD_LEFT);
+        }
+
+        return $normalizedProduct . $normalizedColor . $priceDigits;
     }
 
     protected function normalizeProductNumber(?string $value): ?string

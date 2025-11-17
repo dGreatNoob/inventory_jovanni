@@ -55,12 +55,8 @@ class ProductImage extends Model
             return asset('images/placeholder.png');
         }
         
-        // Use Storage::url() for proper URL generation that works in all environments
-        if (Storage::disk('public')->exists('photos/' . $this->filename)) {
-            return Storage::disk('public')->url('photos/' . $this->filename);
-        }
-        
-        // Fallback to asset() if Storage URL doesn't work
+        // Use asset() directly for consistency with grid/table views that work
+        // This matches the pattern used in products-grid.blade.php and products-table.blade.php
         return asset('storage/photos/' . $this->filename);
     }
 
@@ -73,12 +69,7 @@ class ProductImage extends Model
         $pathInfo = pathinfo($this->filename);
         $thumbnailName = $pathInfo['filename'] . '_thumb.' . $pathInfo['extension'];
         
-        // Use Storage::url() for proper URL generation
-        if (Storage::disk('public')->exists('photos/thumbnails/' . $thumbnailName)) {
-            return Storage::disk('public')->url('photos/thumbnails/' . $thumbnailName);
-        }
-        
-        // Fallback to asset() if Storage URL doesn't work
+        // Use asset() directly for consistency
         return asset('storage/photos/thumbnails/' . $thumbnailName);
     }
 

@@ -76,9 +76,10 @@
                     <button type="button" wire:click="viewerPrev" class="absolute left-2 top-1/2 -translate-y-1/2 bg-white/70 dark:bg-gray-800/70 hover:bg-white dark:hover:bg-gray-800 rounded-full p-2 shadow">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                     </button>
-                    <img src="{{ $viewingImage->url }}" 
-                         alt="{{ $viewingImage->alt_text ?: $viewingImage->product->name }}"
-                         class="max-w-full max-h-96 mx-auto rounded-lg shadow-lg object-contain">
+                    <img src="{{ $this->viewingImageUrl ?? ($viewingImage->url ?? asset('storage/photos/' . $viewingImage->filename)) }}" 
+                         alt="{{ $viewingImage->alt_text ?: ($viewingImage->product->name ?? 'Product image') }}"
+                         class="max-w-full max-h-96 mx-auto rounded-lg shadow-lg object-contain"
+                         onerror="this.src='{{ asset('images/placeholder.png') }}'; this.onerror=null;">
                     <button type="button" wire:click="viewerNext" class="absolute right-2 top-1/2 -translate-y-1/2 bg-white/70 dark:bg-gray-800/70 hover:bg-white dark:hover:bg-gray-800 rounded-full p-2 shadow">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                     </button>

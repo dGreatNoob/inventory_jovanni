@@ -736,7 +736,18 @@ class Index extends Component
         }
 
         $currentId = $this->viewerImages[$this->viewerIndex] ?? null;
-        $this->viewingImage = $currentId ? ProductImage::find($currentId) : null;
+        $this->viewingImage = $currentId ? ProductImage::with('product')->find($currentId) : null;
+        
+        Log::debug('openProductViewer', [
+            'product_id' => $productId,
+            'viewer_images_count' => count($this->viewerImages),
+            'viewer_index' => $this->viewerIndex,
+            'current_id' => $currentId,
+            'viewing_image_id' => $this->viewingImage?->id,
+            'viewing_image_filename' => $this->viewingImage?->filename,
+            'viewing_image_url' => $this->viewingImage?->url,
+        ]);
+        
         $this->loadPriceHistory($this->viewerProductId);
         $this->refreshBarcode();
     }
@@ -957,7 +968,8 @@ class Index extends Component
         }
         $count = count($this->viewerImages);
         $this->viewerIndex = ($this->viewerIndex - 1 + $count) % $count;
-        $this->viewingImage = ProductImage::find($this->viewerImages[$this->viewerIndex]);
+        $currentId = $this->viewerImages[$this->viewerIndex] ?? null;
+        $this->viewingImage = $currentId ? ProductImage::with('product')->find($currentId) : null;
     }
 
     public function viewerNext()
@@ -967,7 +979,8 @@ class Index extends Component
         }
         $count = count($this->viewerImages);
         $this->viewerIndex = ($this->viewerIndex + 1) % $count;
-        $this->viewingImage = ProductImage::find($this->viewerImages[$this->viewerIndex]);
+        $currentId = $this->viewerImages[$this->viewerIndex] ?? null;
+        $this->viewingImage = $currentId ? ProductImage::with('product')->find($currentId) : null;
     }
 
     public function setViewerImage(int $imageId): void
@@ -983,7 +996,17 @@ class Index extends Component
         }
 
         $this->viewerIndex = $index;
-        $this->viewingImage = ProductImage::find($this->viewerImages[$this->viewerIndex]);
+        $currentId = $this->viewerImages[$this->viewerIndex] ?? null;
+        $this->viewingImage = $currentId ? ProductImage::with('product')->find($currentId) : null;
+    }
+
+    public function getViewingImageUrlProperty(): ?string
+    {
+        if (!$this->viewingImage || empty($this->viewingImage->filename)) {
+            return null;
+        }
+        
+        return asset('storage/photos/' . $this->viewingImage->filename);
     }
 
     public function render()

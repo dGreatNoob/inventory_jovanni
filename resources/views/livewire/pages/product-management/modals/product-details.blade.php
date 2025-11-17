@@ -57,7 +57,10 @@
                             </button>
 
                             <div class="h-full w-full flex items-center justify-center">
-                                <img src="{{ $viewingImage->url }}" alt="{{ $editingProduct->name }}" class="h-full w-full object-contain">
+                                <img src="{{ $this->viewingImageUrl ?? ($viewingImage->url ?? asset('storage/photos/' . $viewingImage->filename)) }}" 
+                                     alt="{{ $editingProduct->name }}" 
+                                     class="h-full w-full object-contain"
+                                     onerror="this.src='{{ asset('images/placeholder.png') }}'; this.onerror=null;">
                             </div>
 
                             <button type="button" wire:click="viewerNext" aria-label="Next image" class="absolute right-3 top-1/2 -translate-y-1/2 bg-white/85 dark:bg-gray-900/70 hover:bg-white dark:hover:bg-gray-800 rounded-full p-2 shadow transition">
@@ -92,8 +95,11 @@
                                         aria-label="View image {{ $loop->iteration }}"
                                         class="relative h-14 w-14 overflow-hidden rounded-lg border {{ ($viewingImage && $viewingImage->id === $imageId) ? 'border-indigo-500 ring-2 ring-indigo-200' : 'border-gray-200 dark:border-gray-700' }}"
                                     >
-                                        @if($thumb)
-                                            <img src="{{ $thumb->url }}" alt="Thumbnail {{ $loop->iteration }}" class="h-full w-full object-cover">
+                                        @if($thumb && $thumb->filename)
+                                            <img src="{{ asset('storage/photos/' . $thumb->filename) }}" 
+                                                 alt="Thumbnail {{ $loop->iteration }}" 
+                                                 class="h-full w-full object-cover"
+                                                 onerror="this.src='{{ asset('images/placeholder.png') }}'; this.onerror=null;">
                                         @else
                                             <div class="flex h-full w-full items-center justify-center text-xs text-gray-400">IMG</div>
                                         @endif

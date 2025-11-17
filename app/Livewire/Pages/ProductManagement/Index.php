@@ -14,6 +14,7 @@ use App\Models\ProductColor;
 use App\Models\ProductPriceHistory;
 use App\Services\ProductService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 #[Layout('components.layouts.app')]
@@ -572,16 +573,69 @@ class Index extends Component
 
     public function saveProduct()
     {
+        Log::info('=== saveProduct() called ===', [
+            'is_edit_mode' => $this->isEditMode ?? false,
+            'editing_product_id' => $this->editingProduct?->id ?? null,
+        ]);
+
         try {
+            // Log initial form data
+            Log::info('Initial form data:', [
+                'form' => $this->form,
+                'form_keys' => array_keys($this->form ?? []),
+            ]);
+
             // Ensure ProductService is available
             if (!$this->productService) {
                 $this->productService = app(ProductService::class);
+                Log::info('ProductService initialized');
             }
 
+            // Normalize and prepare form data
             $this->form['product_number'] = $this->normalizeProductNumber($this->form['product_number']);
-            $this->refreshBarcode();
+            Log::info('After normalizeProductNumber:', ['product_number' => $this->form['product_number']]);
+            
+            // Normalize product_color_id: convert empty string to null, ensure it's an integer if set
+            if (isset($this->form['product_color_id'])) {
+                $originalColorId = $this->form['product_color_id'];
+                $this->form['product_color_id'] = trim((string) $this->form['product_color_id']);
+                if ($this->form['product_color_id'] === '') {
+                    $this->form['product_color_id'] = null;
+                } else {
+                    $this->form['product_color_id'] = (int) $this->form['product_color_id'];
+                }
+                Log::info('Normalized product_color_id:', [
+                    'original' => $originalColorId,
+                    'normalized' => $this->form['product_color_id'],
+                ]);
+            } else {
+                Log::warning('product_color_id not set in form');
+            }
+            
             $this->refreshDescription();
+            Log::info('After refreshDescription:', ['remarks' => $this->form['remarks'] ?? '']);
+            
+            // Generate barcode before validation - ensure all required fields are present
+            $this->refreshBarcode();
+            Log::info('After refreshBarcode:', [
+                'barcode' => $this->form['barcode'] ?? '',
+                'product_number' => $this->form['product_number'] ?? '',
+                'product_color_id' => $this->form['product_color_id'] ?? '',
+                'price' => $this->form['price'] ?? '',
+            ]);
+            
+            // If barcode is still empty after refresh, it means required fields are missing
+            // This will be caught by validation, but let's ensure we have the latest attempt
+            if (empty($this->form['barcode']) && 
+                !empty($this->form['product_number']) && 
+                !empty($this->form['product_color_id']) && 
+                !empty($this->form['price'])) {
+                // Force regenerate barcode one more time
+                $this->refreshBarcode();
+                Log::info('Barcode regenerated after force refresh:', ['barcode' => $this->form['barcode'] ?? '']);
+            }
 
+            Log::info('Starting validation...');
             $this->validate([
                 'form.name' => 'required|string|max:255',
                 'form.product_number' => 'required|regex:/^\d{6}$/|unique:products,product_number' . ($this->editingProduct ? ',' . $this->editingProduct->id : ''),
@@ -602,26 +656,42 @@ class Index extends Component
                 'form.discount_tiers.*.discount_percent' => 'nullable|numeric|min:0|max:100',
                 'form.product_color_id' => [
                     'required',
+                    'integer',
                     Rule::exists('product_colors', 'id'),
                 ],
             ]);
+            Log::info('Validation passed successfully');
 
             if ($this->editingProduct) {
+                Log::info('Updating existing product', ['product_id' => $this->editingProduct->id]);
                 // Update existing product
                 $this->productService->updateProduct($this->editingProduct, $this->form);
                 session()->flash('message', 'Product updated successfully.');
+                Log::info('Product updated successfully');
             } else {
+                Log::info('Creating new product');
                 // Create new product
-                $this->productService->createProduct($this->form);
+                $product = $this->productService->createProduct($this->form);
                 session()->flash('message', 'Product created successfully.');
+                Log::info('Product created successfully', ['product_id' => $product->id ?? null]);
             }
 
             $this->closeProductPanel();
+            Log::info('Product panel closed');
 
         } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Validation failed:', [
+                'errors' => $e->errors(),
+                'form_data' => $this->form,
+            ]);
             // Re-throw validation exceptions to show field errors
             throw $e;
         } catch (\Exception $e) {
+            Log::error('Exception in saveProduct:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'form_data' => $this->form,
+            ]);
             session()->flash('error', 'Error saving product: ' . $e->getMessage());
         }
     }
@@ -864,10 +934,16 @@ class Index extends Component
         $colorDigits = $colorCode ? substr(preg_replace('/\D/', '', $colorCode), 0, 4) : '';
         $price = $this->form['price'] ?? '';
 
-        if (strlen($productNumber) === 6 && strlen($colorDigits) === 4 && !empty($price)) {
+        // Check if price is numeric (including 0) and all required fields are present
+        $hasValidPrice = $price !== '' && is_numeric($price) && (float) $price >= 0;
+
+        if (strlen($productNumber) === 6 && strlen($colorDigits) === 4 && $hasValidPrice) {
             // Format price: remove decimal point and zero-pad to 6 digits
             $priceValue = (float) $price;
-            $priceDigits = str_pad((string) (int) ($priceValue * 100), 6, '0', STR_PAD_LEFT);
+            $priceInCents = (int) ($priceValue * 100);
+            // Ensure price doesn't exceed 999999.99 (99999999 cents = 8 digits, but we need 6)
+            // Take only last 6 digits if price is too large
+            $priceDigits = substr(str_pad((string) $priceInCents, 6, '0', STR_PAD_LEFT), -6);
             $this->form['barcode'] = $productNumber . str_pad($colorDigits, 4, '0', STR_PAD_LEFT) . $priceDigits;
         } else {
             $this->form['barcode'] = '';

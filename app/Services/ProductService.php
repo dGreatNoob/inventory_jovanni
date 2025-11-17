@@ -63,7 +63,7 @@ class ProductService
             $productType = $data['product_type'] ?? 'regular';
             $data['price_note'] = $this->generateInitialPriceNote($productType);
 
-            if (empty($data['barcode']) && !empty($data['product_number']) && $color && !empty($data['price'])) {
+            if (empty($data['barcode']) && !empty($data['product_number']) && $color && isset($data['price']) && is_numeric($data['price']) && (float) $data['price'] >= 0) {
                 $data['barcode'] = $this->composeBarcode($data['product_number'], $color->code, $data['price']);
             }
 
@@ -410,10 +410,16 @@ class ProductService
 
         // Format price: remove decimal point and zero-pad to 6 digits
         $priceDigits = '';
-        if ($price !== null) {
+        if ($price !== null && $price !== '' && is_numeric($price)) {
             // Convert price to string, remove decimal point, and pad to 6 digits
             $priceValue = (float) $price;
-            $priceDigits = str_pad((string) (int) ($priceValue * 100), 6, '0', STR_PAD_LEFT);
+            $priceInCents = (int) ($priceValue * 100);
+            // Ensure price doesn't exceed 999999.99 (99999999 cents = 8 digits, but we need 6)
+            // Take only last 6 digits if price is too large
+            $priceDigits = substr(str_pad((string) $priceInCents, 6, '0', STR_PAD_LEFT), -6);
+        } else {
+            // If price is missing, pad with zeros
+            $priceDigits = '000000';
         }
 
         return $normalizedProduct . $normalizedColor . $priceDigits;

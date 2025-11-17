@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
 
 class ProductImage extends Model
 {
@@ -50,13 +51,34 @@ class ProductImage extends Model
     // Accessors
     public function getUrlAttribute(): string
     {
+        if (empty($this->filename)) {
+            return asset('images/placeholder.png');
+        }
+        
+        // Use Storage::url() for proper URL generation that works in all environments
+        if (Storage::disk('public')->exists('photos/' . $this->filename)) {
+            return Storage::disk('public')->url('photos/' . $this->filename);
+        }
+        
+        // Fallback to asset() if Storage URL doesn't work
         return asset('storage/photos/' . $this->filename);
     }
 
     public function getThumbnailUrlAttribute(): string
     {
+        if (empty($this->filename)) {
+            return asset('images/placeholder.png');
+        }
+        
         $pathInfo = pathinfo($this->filename);
         $thumbnailName = $pathInfo['filename'] . '_thumb.' . $pathInfo['extension'];
+        
+        // Use Storage::url() for proper URL generation
+        if (Storage::disk('public')->exists('photos/thumbnails/' . $thumbnailName)) {
+            return Storage::disk('public')->url('photos/thumbnails/' . $thumbnailName);
+        }
+        
+        // Fallback to asset() if Storage URL doesn't work
         return asset('storage/photos/thumbnails/' . $thumbnailName);
     }
 

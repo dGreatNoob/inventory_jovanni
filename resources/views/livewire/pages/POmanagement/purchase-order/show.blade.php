@@ -1432,7 +1432,7 @@ function printQRCode() {
                 </div>
                 
                 <div class="footer">
-                    Generated on ${new Date().toLocaleString()} | Gentle Walker PO System
+                    Generated on ${new Date().toLocaleString()} | Jovanni PO System
                 </div>
             </div>
         </body>

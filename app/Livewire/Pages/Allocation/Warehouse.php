@@ -42,17 +42,30 @@ class Warehouse extends Component
     public $remarks;
     public $ref_no;
     public $status = 'draft';
+    public $batch_number = ''; // New field for batch number selection
+
+    // Stepper workflow fields
+    public $currentStep = 1;
+    public $availableBatchNumbers = [];
+    public $filteredBranchesByBatch = [];
+    public $currentBatch = null;
+    public $showStepper = false;
+    public $selectedBranchAllocationId = null;
+
+    // Product allocation fields
+    public $availableProducts = [];
+    public $selectedProductId = null;
+    public $productQuantity = 1;
+    public $productUnitPrice = null;
+    public $productAllocations = []; // Array to store product allocations for all branches
+    public $branchQuantities = []; // Array of branch_id => quantity for per-branch allocation
+    public $matrixQuantities = []; // Matrix: branch_id => product_id => quantity
+    public $selectedProductIdsForAllocation = []; // Selected products for allocation matrix
 
     // Add branches fields
     public $availableBranches = [];
     public $selectedBranchIds = [];
     public $branchRemarks = [];
-
-    // Add items fields
-    public $availableProducts = [];
-    public $selectedProductId = null;
-    public $productQuantity = 1;
-    public $productUnitPrice = null;
 
     // Edit item fields
     public $editProductQuantity = 1;
@@ -61,6 +74,10 @@ class Warehouse extends Component
     public function mount()
     {
         $this->loadBatchAllocations();
+        $this->loadAvailableBatchNumbers();
+        $this->loadAvailableProducts();
+        $this->showStepper = true;
+        $this->ref_no = $this->generateRefNo();
     }
 
     public function loadBatchAllocations()
@@ -100,6 +117,396 @@ class Warehouse extends Component
         }
     }
 
+    public function loadAvailableBatchNumbers()
+    {
+        // Get unique batch numbers from Branch model
+        $this->availableBatchNumbers = Branch::whereNotNull('batch')
+            ->where('batch', '!=', '')
+            ->distinct()
+            ->pluck('batch')
+            ->sort()
+            ->values()
+            ->toArray();
+    }
+
+    public function loadAvailableProducts()
+    {
+        $this->availableProducts = Product::orderBy('name')->get();
+    }
+
+    public function loadBranchesByBatch()
+    {
+        if (empty($this->batch_number)) {
+            $this->filteredBranchesByBatch = [];
+            return;
+        }
+
+        $this->filteredBranchesByBatch = Branch::where('batch', $this->batch_number)
+            ->orderBy('name')
+            ->get()
+            ->toArray();
+    }
+
+    // Stepper Navigation Methods
+    public function nextStep()
+    {
+        if ($this->currentStep < 4) {
+            $this->currentStep++;
+
+            // When moving to step 2, load branches based on selected batch
+            if ($this->currentStep === 2 && !empty($this->batch_number)) {
+                $this->loadBranchesByBatch();
+            }
+
+            // When moving to step 3, initialize selected products for allocation
+            if ($this->currentStep === 3) {
+                $this->selectedProductIdsForAllocation = $this->availableProductsForBatch->pluck('id')->toArray();
+                $this->loadMatrix();
+            }
+        }
+    }
+
+    public function previousStep()
+    {
+        if ($this->currentStep > 1) {
+            $this->currentStep--;
+        }
+    }
+
+    public function goToStep($step)
+    {
+        if ($step >= 1 && $step <= 4) {
+            $this->currentStep = $step;
+
+            // Load branches if going to step 2 with batch selected
+            if ($step === 2 && !empty($this->batch_number)) {
+                $this->loadBranchesByBatch();
+            }
+
+            // Initialize selected products if going to step 3
+            if ($step === 3) {
+                $this->selectedProductIdsForAllocation = $this->availableProductsForBatch->pluck('id')->toArray();
+                $this->loadMatrix();
+            }
+        }
+    }
+
+    public function resetStepper()
+    {
+        $this->currentStep = 1;
+        $this->batch_number = '';
+        $this->transaction_date = '';
+        $this->remarks = '';
+        $this->ref_no = '';
+        $this->status = 'draft';
+        $this->filteredBranchesByBatch = [];
+        $this->currentBatch = null;
+        $this->selectedBranchIds = [];
+        $this->branchRemarks = [];
+        $this->selectedProductId = null;
+        $this->productQuantity = 1;
+        $this->productUnitPrice = null;
+        $this->productAllocations = [];
+        $this->selectedBranchAllocationId = null;
+    }
+
+    // Stepper-specific methods
+    public function addProductToAllBranches()
+    {
+        if (!$this->currentBatch || !$this->selectedProductId) {
+            session()->flash('error', 'Please select a product.');
+            return;
+        }
+
+        // Validate
+        $this->validate([
+            'selectedProductId' => 'required|exists:products,id',
+            'productQuantity' => 'required|integer|min:1',
+        ]);
+
+        $product = Product::find($this->selectedProductId);
+        $sellingPrice = $product->price ?? $product->selling_price ?? 0;
+
+        // Add the product to all branches in the batch
+        foreach ($this->currentBatch->branchAllocations as $branchAllocation) {
+            // Check for duplicate products per branch
+            $existingItem = BranchAllocationItem::where('branch_allocation_id', $branchAllocation->id)
+                ->where('product_id', $this->selectedProductId)
+                ->first();
+
+            if ($existingItem) {
+                continue; // Skip if already exists
+            }
+
+            // Create the item for this branch
+            BranchAllocationItem::create([
+                'branch_allocation_id' => $branchAllocation->id,
+                'product_id' => $this->selectedProductId,
+                'quantity' => $this->productQuantity,
+                'unit_price' => $sellingPrice,
+            ]);
+        }
+
+        // Store allocation info for tracking
+        $this->productAllocations[] = [
+            'product_id' => $this->selectedProductId,
+            'product_name' => $product->name,
+            'quantity' => $this->productQuantity,
+            'unit_price' => $sellingPrice,
+            'total_value' => $this->productQuantity * $sellingPrice,
+            'applied_to_branches' => $this->currentBatch->branchAllocations->count()
+        ];
+
+        // Reset form
+        $this->selectedProductId = null;
+        $this->productQuantity = 1;
+
+        // Reload batch data
+        $this->loadBatchAllocations();
+
+        session()->flash('message', 'Product added to all branches successfully.');
+    }
+
+    public function addProductToBranches()
+    {
+        if (!$this->currentBatch || !$this->selectedProductId) {
+            session()->flash('error', 'Please select a product.');
+            return;
+        }
+
+        // Validate
+        $this->validate([
+            'selectedProductId' => 'required|exists:products,id',
+        ]);
+
+        $product = Product::find($this->selectedProductId);
+        $sellingPrice = $product->price ?? $product->selling_price ?? 0;
+
+        $addedCount = 0;
+
+        // Add the product to selected branches with specified quantities
+        foreach ($this->branchQuantities as $branchAllocationId => $quantity) {
+            $quantity = (int) $quantity;
+            if ($quantity > 0) {
+                // Check for duplicate products per branch
+                $existingItem = BranchAllocationItem::where('branch_allocation_id', $branchAllocationId)
+                    ->where('product_id', $this->selectedProductId)
+                    ->first();
+
+                if (!$existingItem) {
+                    // Create the item for this branch
+                    BranchAllocationItem::create([
+                        'branch_allocation_id' => $branchAllocationId,
+                        'product_id' => $this->selectedProductId,
+                        'quantity' => $quantity,
+                        'unit_price' => $sellingPrice,
+                    ]);
+                    $addedCount++;
+                }
+            }
+        }
+
+        if ($addedCount > 0) {
+            // Store allocation info for tracking
+            $this->productAllocations[] = [
+                'product_id' => $this->selectedProductId,
+                'product_name' => $product->name,
+                'quantity' => 'Varies', // Since quantities vary per branch
+                'unit_price' => $sellingPrice,
+                'total_value' => 'Varies', // Varies per branch
+                'applied_to_branches' => $addedCount
+            ];
+
+            // Reset form
+            $this->selectedProductId = null;
+            $this->branchQuantities = [];
+
+            // Reload batch data
+            $this->loadBatchAllocations();
+
+            session()->flash('message', 'Product added to ' . $addedCount . ' branch(es) successfully.');
+        } else {
+            session()->flash('error', 'No valid quantities entered for any branch.');
+        }
+    }
+
+    public function getAvailableProductsForBatchProperty()
+    {
+        // Return all products for the matrix
+        return Product::orderBy('name')->get();
+    }
+
+    public function loadMatrix()
+    {
+        if (!$this->currentBatch) {
+            $this->matrixQuantities = [];
+            return;
+        }
+
+        // Initialize matrix with existing allocations for selected products
+        $this->matrixQuantities = [];
+        if (!empty($this->selectedProductIdsForAllocation)) {
+            foreach ($this->currentBatch->branchAllocations as $branchAllocation) {
+                foreach ($this->selectedProductIdsForAllocation as $productId) {
+                    // Find existing allocation for this product and branch
+                    $existingItem = $branchAllocation->items->where('product_id', $productId)->first();
+                    $this->matrixQuantities[$branchAllocation->id][$productId] = $existingItem ? $existingItem->quantity : 0;
+                }
+            }
+        }
+    }
+
+    public function saveMatrixAllocations()
+    {
+        if (!$this->currentBatch) {
+            session()->flash('error', 'No batch selected.');
+            return;
+        }
+
+        if (empty($this->selectedProductIdsForAllocation)) {
+            session()->flash('error', 'No products selected for allocation.');
+            return;
+        }
+
+        $changes = 0;
+
+        foreach ($this->matrixQuantities as $branchAllocationId => $products) {
+            foreach ($products as $productId => $quantity) {
+                // Only process selected products
+                if (!in_array($productId, $this->selectedProductIdsForAllocation)) {
+                    continue;
+                }
+
+                $quantity = (int) $quantity;
+
+                $existingItem = BranchAllocationItem::where('branch_allocation_id', $branchAllocationId)
+                    ->where('product_id', $productId)
+                    ->first();
+
+                if ($quantity > 0) {
+                    $product = Product::find($productId);
+                    $sellingPrice = $product->price ?? $product->selling_price ?? 0;
+
+                    if ($existingItem) {
+                        // Update existing
+                        $existingItem->update([
+                            'quantity' => $quantity,
+                            'unit_price' => $sellingPrice,
+                        ]);
+                    } else {
+                        // Create new
+                        BranchAllocationItem::create([
+                            'branch_allocation_id' => $branchAllocationId,
+                            'product_id' => $productId,
+                            'quantity' => $quantity,
+                            'unit_price' => $sellingPrice,
+                        ]);
+                    }
+                    $changes++;
+                } elseif ($existingItem) {
+                    // Delete if quantity is 0
+                    $existingItem->delete();
+                    $changes++;
+                }
+            }
+        }
+
+        if ($changes > 0) {
+            $this->loadMatrix(); // Reload to reflect changes
+            $this->loadBatchAllocations();
+            session()->flash('message', 'Allocations updated successfully.');
+        } else {
+            session()->flash('message', 'No changes made.');
+        }
+    }
+
+    public function removeProductAllocation($index)
+    {
+        if (isset($this->productAllocations[$index])) {
+            $allocation = $this->productAllocations[$index];
+
+            // Remove from all branches
+            foreach ($this->currentBatch->branchAllocations as $branchAllocation) {
+                BranchAllocationItem::where('branch_allocation_id', $branchAllocation->id)
+                    ->where('product_id', $allocation['product_id'])
+                    ->delete();
+            }
+
+            // Remove from tracking array
+            array_splice($this->productAllocations, $index, 1);
+
+            // Reload batch data
+            $this->loadBatchAllocations();
+
+            session()->flash('message', 'Product allocation removed from all branches.');
+        }
+    }
+
+    public function dispatchBatchFromStepper()
+    {
+        if (!$this->currentBatch) {
+            session()->flash('error', 'No batch selected for dispatch.');
+            return;
+        }
+
+        if ($this->currentBatch->status !== 'draft') {
+            session()->flash('error', 'Only draft batches can be dispatched.');
+            return;
+        }
+
+        if ($this->currentBatch->branchAllocations->isEmpty()) {
+            session()->flash('error', 'Cannot dispatch batch without branches.');
+            return;
+        }
+
+        foreach ($this->currentBatch->branchAllocations as $branchAllocation) {
+            if ($branchAllocation->items->isEmpty()) {
+                session()->flash('error', 'Cannot dispatch batch. Branch "' . $branchAllocation->branch->name . '" has no items.');
+                return;
+            }
+        }
+
+        DB::beginTransaction();
+        try {
+            // Update batch status
+            $this->currentBatch->update(['status' => 'dispatched']);
+
+            // Create sales receipts for each branch
+            foreach ($this->currentBatch->branchAllocations as $branchAllocation) {
+                // Create sales receipt
+                $salesReceipt = \App\Models\SalesReceipt::create([
+                    'batch_allocation_id' => $this->currentBatch->id,
+                    'branch_id' => $branchAllocation->branch_id,
+                    'status' => 'pending',
+                ]);
+
+                // Create sales receipt items
+                foreach ($branchAllocation->items as $item) {
+                    \App\Models\SalesReceiptItem::create([
+                        'sales_receipt_id' => $salesReceipt->id,
+                        'product_id' => $item->product_id,
+                        'allocated_qty' => $item->quantity,
+                        'received_qty' => 0,
+                        'damaged_qty' => 0,
+                        'missing_qty' => 0,
+                        'sold_qty' => 0,
+                        'status' => 'pending',
+                    ]);
+                }
+            }
+
+            DB::commit();
+            session()->flash('message', 'Batch dispatched successfully and sales allocations have been generated.');
+            
+            // Close stepper and reset
+            $this->closeStepper();
+            $this->loadBatchAllocations();
+        } catch (\Exception $e) {
+            DB::rollback();
+            session()->flash('error', 'Failed to dispatch batch: ' . $e->getMessage());
+        }
+    }
+
     public function generateRefNo()
     {
         $lastBatch = BatchAllocation::orderBy('id', 'desc')->first();
@@ -107,15 +514,19 @@ class Warehouse extends Component
         return 'WT-' . now()->format('Ymd') . '-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
     }
 
-    public function openCreateBatchModal()
+    public function openStepper()
     {
-        $this->showCreateBatchModal = true;
+        $this->showStepper = true;
+        $this->resetStepper();
         $this->ref_no = $this->generateRefNo();
+        $this->loadAvailableBatchNumbers();
+        $this->loadAvailableProducts();
     }
 
-    public function closeCreateBatchModal()
+    public function closeStepper()
     {
-        $this->showCreateBatchModal = false;
+        $this->showStepper = false;
+        $this->resetStepper();
         $this->reset(['transaction_date', 'remarks', 'ref_no']);
     }
 
@@ -125,17 +536,35 @@ class Warehouse extends Component
             'transaction_date' => 'required|date',
             'remarks' => 'nullable|string|max:1000',
             'ref_no' => 'required|string|unique:batch_allocations,ref_no',
+            'batch_number' => 'required|string|exists:branches,batch',
         ]);
 
-        BatchAllocation::create([
+        // Create the batch allocation
+        $batch = BatchAllocation::create([
             'transaction_date' => $this->transaction_date,
             'remarks' => $this->remarks,
             'ref_no' => $this->ref_no,
             'status' => $this->status,
         ]);
 
-        session()->flash('message', 'Batch allocation created successfully.');
-        $this->closeCreateBatchModal();
+        // Automatically create branch allocations for all branches in the selected batch
+        if (!empty($this->batch_number)) {
+            $branches = Branch::where('batch', $this->batch_number)->get();
+
+            foreach ($branches as $branch) {
+                BranchAllocation::create([
+                    'batch_allocation_id' => $batch->id,
+                    'branch_id' => $branch->id,
+                    'remarks' => $this->branchRemarks[$branch->id] ?? null,
+                    'status' => 'pending',
+                ]);
+            }
+        }
+
+        $this->currentBatch = $batch;
+        $this->loadMatrix(); // Load the allocation matrix
+        session()->flash('message', 'Batch allocation created successfully with branches from batch: ' . $this->batch_number);
+        $this->nextStep(); // Move to next step
         $this->loadBatchAllocations();
     }
 
@@ -357,6 +786,18 @@ class Warehouse extends Component
         }
     }
 
+    public function removeBatch(BatchAllocation $batch)
+    {
+        if ($batch->status !== 'draft') {
+            session()->flash('error', 'Cannot delete non-draft batch.');
+            return;
+        }
+
+        $batch->delete();
+        session()->flash('message', 'Batch deleted successfully.');
+        $this->loadBatchAllocations();
+    }
+
     public function render()
     {
         return view('livewire.pages.allocation.warehouse');
@@ -387,6 +828,11 @@ class Warehouse extends Component
     public function updatedDateTo()
     {
         $this->loadBatchAllocations();
+    }
+
+    public function updatedSelectedProductIdsForAllocation()
+    {
+        $this->loadMatrix();
     }
 
     // VDR Export Methods

@@ -131,6 +131,58 @@
                     </flux:navlist.group>
                 @endif
 
+                {{-- Allocation --}}
+                <flux:navlist.group
+                    expandable
+                    :expanded="request()->routeIs('allocation.*')"
+                    :heading="__('Allocation')"
+                    class="lg:grid text-left"
+                >
+                    <flux:navlist.item
+                            icon="building-storefront"
+                            href="{{ route('allocation.warehouse') }}"
+                            :current="request()->routeIs('allocation.warehouse')"
+                            wire:navigate
+                        >
+                            {{ __('Warehouse') }}
+                        </flux:navlist.item>
+                        <flux:navlist.item
+                            icon="chart-bar"
+                            href="{{ route('allocation.sales') }}"
+                            :current="request()->routeIs('allocation.sales')"
+                            wire:navigate
+                        >
+                            {{ __('Sales') }}
+                        </flux:navlist.item>
+                </flux:navlist.group>
+
+                {{-- Agent & Branches Management --}}
+                @if(Auth::user()->hasAnyPermission([
+                    'agent view',
+                    'agent create',
+                    'agent edit',
+                    'agent delete',
+                    'branch view',
+                    'branch create',
+                    'branch edit',
+                    'branch delete',
+                    'agent assign branch',
+                    'agent transfer branch'
+                ]))
+                <flux:navlist.group expandable :expanded="request()->routeIs('customer.*', 'branch.*', 'agent.*')"
+                    :heading="__('Operational Management')" class="lg:grid">
+                    <flux:navlist.item icon="users" href="{{ route('agent.profile') }}"
+                        :current="request()->routeIs('agent.profile')" wire:navigate>{{ __('Agent management') }}
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="building-storefront" href="{{ route('branch.profile') }}"
+                        :current="request()->routeIs('branch.profile')" wire:navigate>{{ __('Branch management') }}
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="banknotes" href="javascript:void(0);"
+                        :current="request()->routeIs('customer.rebate')" wire:navigate>{{ __('Rebate Criteria') }}
+                    </flux:navlist.item>
+                </flux:navlist.group>
+                @endif
+
                 {{-- Activity Logs --}}
                 <flux:navlist.item icon="clipboard-document-list" href="{{ route('activity.logs') }}"
                     :current="request()->routeIs('activity.logs')" wire:navigate>

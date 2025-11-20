@@ -154,7 +154,7 @@ class Create extends Component
         $product = Product::find($id);
         
         if ($product) {
-            $this->unit_price = $product->price;
+            $this->unit_price = $product->cost;
         }
     }
     

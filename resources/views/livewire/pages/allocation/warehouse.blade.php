@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                id="search"
                                wire:model.live="search"
                                placeholder="Search by reference no, remarks, or branch name..."
-                               class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                               class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
@@ -144,7 +144,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <input type="date"
                            id="dateFrom"
                            wire:model.live="dateFrom"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
                 </div>
 
                 <!-- Date To Filter -->
@@ -156,7 +156,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <input type="date"
                                id="dateTo"
                                wire:model.live="dateTo"
-                               class="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                               class="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
                         <button wire:click="clearFilters"
                                 class="px-3 py-2 bg-gray-500 hover:bg-gray-600 text-white text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
                             Clear
@@ -222,36 +222,36 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="px-6 py-8 border-b border-gray-200 dark:border-gray-700">
                     <nav aria-label="Progress">
                         <ol class="flex items-center w-full space-x-4">
-                            <li class="flex w-full items-center after:content-[''] after:w-full after:h-1 {{ $currentStep > 1 ? 'after:border-green-300' : 'after:border-gray-200 dark:after:border-gray-600' }} after:border-4 after:inline-block after:ms-4 after:rounded-full">
-                                <span class="flex items-center justify-center w-10 h-10 {{ $currentStep > 1 ? 'bg-green-100' : ($currentStep == 1 ? 'bg-blue-100' : 'bg-gray-100 dark:bg-gray-700') }} rounded-full lg:h-12 lg:w-12 shrink-0">
+                            <li class="flex w-full items-center after:content-[''] after:w-full after:h-1 {{ $currentStep > 1 ? 'after:border-gray-300' : 'after:border-gray-200 dark:after:border-gray-600' }} after:border-4 after:inline-block after:ms-4 after:rounded-full">
+                                <span class="flex items-center justify-center w-10 h-10 {{ $currentStep > 1 ? 'bg-gray-100' : ($currentStep == 1 ? 'bg-gray-100' : 'bg-gray-100 dark:bg-gray-700') }} rounded-full lg:h-12 lg:w-12 shrink-0">
                                     @if($currentStep > 1)
-                                        <svg class="w-5 h-5 text-green-600" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                        <svg class="w-5 h-5 text-gray-600" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 11.917 9.724 16.5 19 7.5"/>
                                         </svg>
                                     @else
-                                        <svg class="w-5 h-5 {{ $currentStep == 1 ? 'text-blue-600' : 'text-gray-400' }}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                        <svg class="w-5 h-5 {{ $currentStep == 1 ? 'text-gray-600' : 'text-gray-400' }}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                                         </svg>
                                     @endif
                                 </span>
                             </li>
-                            <li class="flex w-full items-center after:content-[''] after:w-full after:h-1 {{ $currentStep > 2 ? 'after:border-green-300' : 'after:border-gray-200 dark:after:border-gray-600' }} after:border-4 after:inline-block after:ms-4 after:rounded-full">
-                                <span class="flex items-center justify-center w-10 h-10 {{ $currentStep > 2 ? 'bg-green-100' : ($currentStep == 2 ? 'bg-blue-100' : 'bg-gray-100 dark:bg-gray-700') }} rounded-full lg:h-12 lg:w-12 shrink-0">
-                                    <svg class="w-5 h-5 {{ $currentStep > 2 ? 'text-green-600' : ($currentStep == 2 ? 'text-blue-600' : 'text-gray-400') }}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                            <li class="flex w-full items-center after:content-[''] after:w-full after:h-1 {{ $currentStep > 2 ? 'after:border-gray-300' : 'after:border-gray-200 dark:after:border-gray-600' }} after:border-4 after:inline-block after:ms-4 after:rounded-full">
+                                <span class="flex items-center justify-center w-10 h-10 {{ $currentStep > 2 ? 'bg-gray-100' : ($currentStep == 2 ? 'bg-gray-100' : 'bg-gray-100 dark:bg-gray-700') }} rounded-full lg:h-12 lg:w-12 shrink-0">
+                                    <svg class="w-5 h-5 {{ $currentStep > 2 ? 'text-gray-600' : ($currentStep == 2 ? 'text-gray-600' : 'text-gray-400') }}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                                         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 9h3m-3 3h3m-3 3h3m-6 1c-.306-.613-.933-1-1.618-1H7.618c-.685 0-1.312.387-1.618 1M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Zm7 5a2 2 0 1 1-4 0 2 2 0 0 1 4 0Z"/>
                                     </svg>
                                 </span>
                             </li>
-                            <li class="flex w-full items-center after:content-[''] after:w-full after:h-1 {{ $currentStep > 3 ? 'after:border-green-300' : 'after:border-gray-200 dark:after:border-gray-600' }} after:border-4 after:inline-block after:ms-4 after:rounded-full">
-                                <span class="flex items-center justify-center w-10 h-10 {{ $currentStep > 3 ? 'bg-green-100' : ($currentStep == 3 ? 'bg-blue-100' : 'bg-gray-100 dark:bg-gray-700') }} rounded-full lg:h-12 lg:w-12 shrink-0">
-                                    <svg class="w-5 h-5 {{ $currentStep > 3 ? 'text-green-600' : ($currentStep == 3 ? 'text-blue-600' : 'text-gray-400') }}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                            <li class="flex w-full items-center after:content-[''] after:w-full after:h-1 {{ $currentStep > 3 ? 'after:border-gray-300' : 'after:border-gray-200 dark:after:border-gray-600' }} after:border-4 after:inline-block after:ms-4 after:rounded-full">
+                                <span class="flex items-center justify-center w-10 h-10 {{ $currentStep > 3 ? 'bg-gray-100' : ($currentStep == 3 ? 'bg-gray-100' : 'bg-gray-100 dark:bg-gray-700') }} rounded-full lg:h-12 lg:w-12 shrink-0">
+                                    <svg class="w-5 h-5 {{ $currentStep > 3 ? 'text-gray-600' : ($currentStep == 3 ? 'text-gray-600' : 'text-gray-400') }}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                                         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7h-3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h3m-5 4H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2Z"/>
                                     </svg>
                                 </span>
                             </li>
                             <li class="flex items-center w-full">
-                                <span class="flex items-center justify-center w-10 h-10 {{ $currentStep == 4 ? 'bg-blue-100' : 'bg-gray-100 dark:bg-gray-700' }} rounded-full lg:h-12 lg:w-12 shrink-0">
-                                    <svg class="w-5 h-5 {{ $currentStep == 4 ? 'text-blue-600' : 'text-gray-400' }}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                <span class="flex items-center justify-center w-10 h-10 {{ $currentStep == 4 ? 'bg-gray-100' : 'bg-gray-100 dark:bg-gray-700' }} rounded-full lg:h-12 lg:w-12 shrink-0">
+                                    <svg class="w-5 h-5 {{ $currentStep == 4 ? 'text-gray-600' : 'text-gray-400' }}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                                         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.5 8.5v.01M8.5 12v.01M8.5 15.5v.01M12 8.5v.01M12 12v.01M12 15.5v.01M15.5 8.5v.01M15.5 12v.01M15.5 15.5v.01"/>
                                     </svg>
                                 </span>
@@ -304,7 +304,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                         <input type="date"
                                                id="transaction_date"
                                                wire:model="transaction_date"
-                                               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white"
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white"
                                                required>
                                         @error('transaction_date')
                                             <span class="text-red-500 text-sm">{{ $message }}</span>
@@ -317,7 +317,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                         </label>
                                         <select id="status"
                                                 wire:model="status"
-                                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
                                             <option value="draft">Draft</option>
                                         </select>
                                     </div>
@@ -340,11 +340,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
                                     <button type="button"
                                             wire:click="closeStepper"
-                                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
+                                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
                                         Cancel
                                     </button>
                                     <button type="submit"
-                                            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                            class="px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
                                         Create & Continue
                                     </button>
                                 </div>
@@ -385,13 +385,13 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
                                 <button type="button"
                                         wire:click="previousStep"
-                                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
+                                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
                                     Back
                                 </button>
                                 <button type="button"
                                         wire:click="nextStep"
                                         @if(empty($filteredBranchesByBatch)) disabled @endif
-                                        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400">
+                                        class="px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:bg-gray-400">
                                     Continue to Products
                                 </button>
                             </div>
@@ -420,7 +420,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                                 <input type="checkbox"
                                                        wire:model.live="selectedProductIdsForAllocation"
                                                        value="{{ $product->id }}"
-                                                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                                       class="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded">
                                                 <div class="ml-3 flex-1">
                                                     <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $product->name }}</div>
                                                     <div class="text-xs text-gray-500 dark:text-gray-400">
@@ -476,7 +476,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                                                        wire:model="matrixQuantities.{{ $branchAllocation->id }}.{{ $product->id }}"
                                                                        min="0"
                                                                        placeholder="0"
-                                                                       class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white text-center">
+                                                                       class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white text-center">
                                                             </td>
                                                         @endforeach
                                                     </tr>
@@ -544,12 +544,12 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600 mt-6">
                                 <button type="button"
                                         wire:click="previousStep"
-                                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
+                                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
                                     Back
                                 </button>
                                 <button type="button"
                                         wire:click="nextStep"
-                                        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                        class="px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
                                     Continue to Dispatch
                                 </button>
                             </div>
@@ -605,13 +605,13 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
                                 <button type="button"
                                         wire:click="previousStep"
-                                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
+                                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
                                     Back
                                 </button>
                                 <button type="button"
                                         wire:click="dispatchBatchFromStepper"
                                         wire:confirm="Are you sure you want to dispatch this batch? This action cannot be undone."
-                                        class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                        class="px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
                                     Dispatch Batch
                                 </button>
                             </div>
@@ -649,7 +649,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         @if($batch->status === 'draft')
                             <button wire:click="dispatchBatch({{ $batch->id }})"
                                     wire:confirm="Are you sure you want to dispatch this batch? This action cannot be undone."
-                                    class="bg-blue-600 hover:bg-blue-700 text-white text-sm py-1 px-3 rounded">
+                                    class="bg-gray-600 hover:bg-gray-700 text-white text-sm py-1 px-3 rounded">
                                 Dispatch Batch
                             </button>
                             <button wire:click="removeBatch({{ $batch->id }})"
@@ -659,7 +659,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             </button>
                         @endif
                         @if($batch->branchAllocations->count() > 0)
-                            <button wire:click="openVDRPreview({{ $batch->id }})" class="bg-purple-600 hover:bg-purple-700 text-white text-sm py-1 px-3 rounded">
+                            <button wire:click="openVDRPreview({{ $batch->id }})" class="bg-gray-600 hover:bg-gray-700 text-white text-sm py-1 px-3 rounded">
                                 Export to Excel
                             </button>
                         @endif
@@ -686,7 +686,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </div>
                                 <div class="flex space-x-2">
                                     @if($batch->status === 'draft')
-                                        <button wire:click="openAddItemsModal({{ $branchAllocation->id }})" class="bg-green-600 hover:bg-green-700 text-white text-sm py-1 px-3 rounded">
+                                        <button wire:click="openAddItemsModal({{ $branchAllocation->id }})" class="bg-gray-600 hover:bg-gray-700 text-white text-sm py-1 px-3 rounded">
                                             Add Items
                                         </button>
                                         <button wire:click="removeBranch({{ $branchAllocation->id }})"
@@ -712,14 +712,14 @@ document.addEventListener('DOMContentLoaded', function() {
                                                     @endif
                                                     @if($item->unit_price)
                                                         <span>Unit: ₱{{ number_format($item->unit_price, 2) }}</span>
-                                                        <span class="font-medium text-blue-600 dark:text-blue-400">Total: ₱{{ number_format($item->quantity * $item->unit_price, 2) }}</span>
+                                                        <span class="font-medium text-gray-600 dark:text-gray-400">Total: ₱{{ number_format($item->quantity * $item->unit_price, 2) }}</span>
                                                     @endif
                                                 </div>
                                             </div>
                                             @if($batch->status === 'draft')
                                                 <div class="flex space-x-2">
                                                     <button wire:click="openEditItemModal({{ $item->id }})"
-                                                            class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
+                                                            class="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                                         </svg>
@@ -779,35 +779,35 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="mb-8">
             <nav aria-label="Progress">
                 <ol class="flex items-center justify-center">
-                    <li class="relative {{ $currentStep >= 1 ? 'text-blue-600' : 'text-gray-400' }} {{ $currentStep == 1 ? 'pr-8 sm:pr-20' : '' }}">
+                    <li class="relative {{ $currentStep >= 1 ? 'text-gray-600' : 'text-gray-400' }} {{ $currentStep == 1 ? 'pr-8 sm:pr-20' : '' }}">
                         <div class="absolute inset-0 flex items-center" aria-hidden="true">
-                            <div class="h-0.5 w-full {{ $currentStep > 1 ? 'bg-blue-600' : 'bg-gray-200' }}"></div>
+                            <div class="h-0.5 w-full {{ $currentStep > 1 ? 'bg-gray-600' : 'bg-gray-200' }}"></div>
                         </div>
-                        <button wire:click="goToStep(1)" class="relative w-8 h-8 flex items-center justify-center {{ $currentStep >= 1 ? 'bg-blue-600 text-white' : 'bg-white border-2 border-gray-300 text-gray-500' }} rounded-full hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                        <button wire:click="goToStep(1)" class="relative w-8 h-8 flex items-center justify-center {{ $currentStep >= 1 ? 'bg-gray-600 text-white' : 'bg-white border-2 border-gray-300 text-gray-500' }} rounded-full hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
                             <span class="text-sm font-medium">1</span>
                         </button>
                         <span class="absolute top-10 left-1/2 transform -translate-x-1/2 text-xs font-medium whitespace-nowrap">Create Batch</span>
                     </li>
-                    <li class="relative {{ $currentStep >= 2 ? 'text-blue-600' : 'text-gray-400' }} {{ $currentStep == 2 ? 'px-8 sm:px-20' : '' }}">
+                    <li class="relative {{ $currentStep >= 2 ? 'text-gray-600' : 'text-gray-400' }} {{ $currentStep == 2 ? 'px-8 sm:px-20' : '' }}">
                         <div class="absolute inset-0 flex items-center" aria-hidden="true">
-                            <div class="h-0.5 w-full {{ $currentStep > 2 ? 'bg-blue-600' : 'bg-gray-200' }}"></div>
+                            <div class="h-0.5 w-full {{ $currentStep > 2 ? 'bg-gray-600' : 'bg-gray-200' }}"></div>
                         </div>
-                        <button wire:click="goToStep(2)" class="relative w-8 h-8 flex items-center justify-center {{ $currentStep >= 2 ? 'bg-blue-600 text-white' : 'bg-white border-2 border-gray-300 text-gray-500' }} rounded-full hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                        <button wire:click="goToStep(2)" class="relative w-8 h-8 flex items-center justify-center {{ $currentStep >= 2 ? 'bg-gray-600 text-white' : 'bg-white border-2 border-gray-300 text-gray-500' }} rounded-full hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
                             <span class="text-sm font-medium">2</span>
                         </button>
                         <span class="absolute top-10 left-1/2 transform -translate-x-1/2 text-xs font-medium whitespace-nowrap">Branches</span>
                     </li>
-                    <li class="relative {{ $currentStep >= 3 ? 'text-blue-600' : 'text-gray-400' }} {{ $currentStep == 3 ? 'px-8 sm:px-20' : '' }}">
+                    <li class="relative {{ $currentStep >= 3 ? 'text-gray-600' : 'text-gray-400' }} {{ $currentStep == 3 ? 'px-8 sm:px-20' : '' }}">
                         <div class="absolute inset-0 flex items-center" aria-hidden="true">
-                            <div class="h-0.5 w-full {{ $currentStep > 3 ? 'bg-blue-600' : 'bg-gray-200' }}"></div>
+                            <div class="h-0.5 w-full {{ $currentStep > 3 ? 'bg-gray-600' : 'bg-gray-200' }}"></div>
                         </div>
-                        <button wire:click="goToStep(3)" class="relative w-8 h-8 flex items-center justify-center {{ $currentStep >= 3 ? 'bg-blue-600 text-white' : 'bg-white border-2 border-gray-300 text-gray-500' }} rounded-full hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                        <button wire:click="goToStep(3)" class="relative w-8 h-8 flex items-center justify-center {{ $currentStep >= 3 ? 'bg-gray-600 text-white' : 'bg-white border-2 border-gray-300 text-gray-500' }} rounded-full hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
                             <span class="text-sm font-medium">3</span>
                         </button>
                         <span class="absolute top-10 left-1/2 transform -translate-x-1/2 text-xs font-medium whitespace-nowrap">Products</span>
                     </li>
-                    <li class="relative {{ $currentStep >= 4 ? 'text-blue-600' : 'text-gray-400' }} pl-8 sm:pl-20">
-                        <button wire:click="goToStep(4)" class="relative w-8 h-8 flex items-center justify-center {{ $currentStep >= 4 ? 'bg-blue-600 text-white' : 'bg-white border-2 border-gray-300 text-gray-500' }} rounded-full hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                    <li class="relative {{ $currentStep >= 4 ? 'text-gray-600' : 'text-gray-400' }} pl-8 sm:pl-20">
+                        <button wire:click="goToStep(4)" class="relative w-8 h-8 flex items-center justify-center {{ $currentStep >= 4 ? 'bg-gray-600 text-white' : 'bg-white border-2 border-gray-300 text-gray-500' }} rounded-full hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
                             <span class="text-sm font-medium">4</span>
                         </button>
                         <span class="absolute top-10 left-1/2 transform -translate-x-1/2 text-xs font-medium whitespace-nowrap">Dispatch</span>
@@ -829,7 +829,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             </label>
                             <select id="batch_number"
                                     wire:model.live="batch_number"
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white"
                                     required>
                                 <option value="">Select a batch number</option>
                                 @foreach($availableBatchNumbers as $batchNum)
@@ -860,7 +860,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <input type="date"
                                    id="transaction_date"
                                    wire:model="transaction_date"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white"
                                    required>
                             @error('transaction_date')
                                 <span class="text-red-500 text-sm">{{ $message }}</span>
@@ -884,11 +884,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
                             <button type="button"
                                     wire:click="closeCreateBatchModal"
-                                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
+                                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
                                 Cancel
                             </button>
                             <button type="submit"
-                                    class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                    class="px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
                                 Create & Continue
                             </button>
                         </div>
@@ -929,13 +929,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
                         <button type="button"
                                 wire:click="previousStep"
-                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
+                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
                             Back
                         </button>
                         <button type="button"
                                 wire:click="nextStep"
                                 @if(empty($filteredBranchesByBatch)) disabled @endif
-                                class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400">
+                                class="px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:bg-gray-400">
                             Continue to Products
                         </button>
                     </div>
@@ -956,7 +956,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             Select Branch to Add Products
                         </label>
                         <select wire:model.live="selectedBranchAllocationId"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
                             <option value="">Choose a branch...</option>
                             @if($currentBatch)
                                 @foreach($currentBatch->branchAllocations as $branchAllocation)
@@ -997,7 +997,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                             Product
                                         </label>
                                         <select wire:model="selectedProductId"
-                                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
                                             <option value="">Select a product</option>
                                             @foreach($availableProducts as $product)
                                                 @php
@@ -1018,7 +1018,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                             <input type="number"
                                                    wire:model="productQuantity"
                                                    min="1"
-                                                   class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                                                   class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
                                         </div>
                                         <div>
                                             <label for="productUnitPrice" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
@@ -1028,12 +1028,12 @@ document.addEventListener('DOMContentLoaded', function() {
                                                    wire:model="productUnitPrice"
                                                    min="0"
                                                    step="0.01"
-                                                   class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                                                   class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
                                         </div>
                                     </div>
 
                                     <button type="submit"
-                                            class="w-full px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                            class="w-full px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
                                         Add Item
                                     </button>
                                 </form>
@@ -1044,12 +1044,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
                         <button type="button"
                                 wire:click="previousStep"
-                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
+                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
                             Back
                         </button>
                         <button type="button"
                                 wire:click="nextStep"
-                                class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                class="px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
                             Continue to Dispatch
                         </button>
                     </div>
@@ -1105,13 +1105,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
                         <button type="button"
                                 wire:click="previousStep"
-                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
+                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
                             Back
                         </button>
                         <button type="button"
                                 wire:click="dispatchBatchFromStepper"
                                 wire:confirm="Are you sure you want to dispatch this batch? This action cannot be undone."
-                                class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                class="px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
                             Dispatch Batch
                         </button>
                     </div>
@@ -1134,7 +1134,7 @@ document.addEventListener('DOMContentLoaded', function() {
                            id="branch_{{ $branch->id }}"
                            wire:model="selectedBranchIds"
                            value="{{ $branch->id }}"
-                           class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                           class="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded">
                     <label for="branch_{{ $branch->id }}" class="ml-3 flex-1">
                         <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $branch->name }}</div>
                         @if($branch->address)
@@ -1151,7 +1151,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                id="branch_remarks_{{ $branch->id }}"
                                wire:model="branchRemarks.{{ $branch->id }}"
                                placeholder="e.g., 'Handled by Agent A'"
-                               class="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                               class="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
                     </div>
                 @endif
             @empty
@@ -1163,12 +1163,12 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
                 <button type="button"
                         wire:click="closeAddBranchesModal"
-                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
                     Cancel
                 </button>
                 <button type="submit"
                         @if(count($availableBranches) === 0) disabled @endif
-                        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400">
+                        class="px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:bg-gray-400">
                     Add Selected Branches
                 </button>
             </div>
@@ -1204,7 +1204,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 </label>
                 <select id="selectedProductId"
                         wire:model="selectedProductId"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
                     <option value="">Select a product</option>
                     @foreach($availableProducts as $product)
                         @php
@@ -1229,7 +1229,7 @@ document.addEventListener('DOMContentLoaded', function() {
                        id="productQuantity"
                        wire:model="productQuantity"
                        min="1"
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
                 @error('productQuantity')
                     <span class="text-red-500 text-sm">{{ $message }}</span>
                 @enderror
@@ -1245,7 +1245,7 @@ document.addEventListener('DOMContentLoaded', function() {
                        min="0"
                        step="0.01"
                        placeholder="0.00"
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
                 @error('productUnitPrice')
                     <span class="text-red-500 text-sm">{{ $message }}</span>
                 @enderror
@@ -1254,11 +1254,11 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
                 <button type="button"
                         wire:click="closeAddItemsModal"
-                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
                     Cancel
                 </button>
                 <button type="submit"
-                        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        class="px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
                     Add Item
                 </button>
             </div>
@@ -1294,38 +1294,12 @@ document.addEventListener('DOMContentLoaded', function() {
                        id="editProductQuantity"
                        wire:model="editProductQuantity"
                        min="1"
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
                 @error('editProductQuantity')
                     <span class="text-red-500 text-sm">{{ $message }}</span>
                 @enderror
             </div>
 
-            <div>
-                <label for="editProductUnitPrice" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
-                    Unit Price (Optional)
-                </label>
-                <input type="number"
-                       id="editProductUnitPrice"
-                       wire:model="editProductUnitPrice"
-                       min="0"
-                       step="0.01"
-                       placeholder="0.00"
-                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
-                @error('editProductUnitPrice')
-                    <span class="text-red-500 text-sm">{{ $message }}</span>
-                @enderror
-            </div>
-
-            @if($editProductQuantity && $editProductUnitPrice)
-                <div class="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                    <div class="text-sm text-green-700 dark:text-green-300">
-                        <div>New Total: Qty {{ $editProductQuantity }} × ₱{{ number_format($editProductUnitPrice, 2) }} = <span class="font-bold">₱{{ number_format($editProductQuantity * $editProductUnitPrice, 2) }}</span></div>
-                        @if($selectedEditItem && ($selectedEditItem->product->price ?? $selectedEditItem->product->selling_price ?? null))
-                            <div>Difference: ₱{{ number_format(($editProductQuantity * $editProductUnitPrice) - ($selectedEditItem->quantity * $selectedEditItem->unit_price), 2) }}</div>
-                        @endif
-                    </div>
-                </div>
-            @endif
 
             <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
                 <button type="button"
@@ -1334,7 +1308,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     Cancel
                 </button>
                 <button type="submit"
-                        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        class="px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
                     Update Item
                 </button>
             </div>
@@ -1360,7 +1334,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <input type="text"
                                id="vendorCode"
                                wire:model="vendorCode"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white"
                                placeholder="104148">
                         @error('vendorCode')
                             <span class="text-red-500 text-sm">{{ $message }}</span>
@@ -1374,7 +1348,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <input type="text"
                                id="vendorName"
                                wire:model="vendorName"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white"
                                placeholder="JKF CORP.">
                         @error('vendorName')
                             <span class="text-red-500 text-sm">{{ $message }}</span>
@@ -1449,7 +1423,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="flex space-x-3">
                     <button type="button"
                             wire:click="printVDR"
-                            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            class="px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
                         <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
                         </svg>
@@ -1457,7 +1431,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </button>
                     <button type="button"
                             wire:click="exportVDRToExcel"
-                            class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            class="px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
                         <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>

@@ -14,6 +14,8 @@ class Shipment extends Model
         'customer_id',
         'shipping_plan_num',
         'sales_order_id',
+        'batch_allocation_id',
+        'branch_allocation_id',
         'customer_name',
         'customer_address',
         'delivery_method',
@@ -60,8 +62,8 @@ class Shipment extends Model
     protected static function booted()
     {
         static::creating(function ($shipment) {
-            $date = now()->format('Ymd_His');
-            $latest = self::whereDate('created_at', now()->toDateString())->count() + 1;
+            $date = now()->format('Ymd');
+            $latest = self::count() + 1;
             $shipment->shipping_plan_num = 'SHIP-' . $date . '-' . str_pad($latest, 3, '0', STR_PAD_LEFT);
         });
     }
@@ -79,6 +81,16 @@ class Shipment extends Model
     public function salesOrder()
     {
         return $this->belongsTo(SalesOrder::class);
+    }
+
+    public function batchAllocation()
+    {
+        return $this->belongsTo(BatchAllocation::class);
+    }
+
+    public function branchAllocation()
+    {
+        return $this->belongsTo(BranchAllocation::class);
     }
 
     public function statusLogs()

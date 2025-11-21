@@ -59,7 +59,7 @@
 
     <!-- Step 1: Scan QR -->
     @if($currentStep === 0)
-        
+
     <!-- Camera Status Toast -->
     <div id="camera-status-toast" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-xs px-4 hidden">
         <div id="camera-status-toast-content" class="flex items-start gap-3 p-4 rounded-xl shadow-xl border bg-blue-50 border-blue-300 text-blue-900 dark:bg-blue-900 dark:border-blue-700 dark:text-blue-100">
@@ -74,24 +74,65 @@
             </button>
         </div>
     </div>
-    <div class="bg-zinc-50 dark:bg-zinc-900 rounded-2xl shadow-lg p-4 flex flex-col items-center w-full max-w-xs mx-auto space-y-4">
-        <div id="qr-reader"
-            class="w-full aspect-square bg-gray-100 dark:bg-zinc-700 border-2 border-dashed border-gray-300 dark:border-zinc-600 rounded-2xl overflow-hidden flex items-center justify-center relative">
-            <div class="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
-                <div class="text-center">
-                    <svg class="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V6a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1zm12 0h2a1 1 0 001-1V6a1 1 0 00-1-1h-2a1 1 0 00-1 1v1a1 1 0 001 1zM5 20h2a1 1 0 001-1v-1a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1z"></path>
-                    </svg>
-                    <p class="text-base">Camera will appear here</p>
+
+    <div class="w-full max-w-md mx-auto space-y-6">
+        <!-- QR Scanner Section -->
+        <div class="bg-zinc-50 dark:bg-zinc-900 rounded-2xl shadow-lg p-6">
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4 text-center">Scan Shipment QR Code</h3>
+
+            <div id="qr-reader"
+                class="w-full aspect-square bg-gray-100 dark:bg-zinc-700 border-2 border-dashed border-gray-300 dark:border-zinc-600 rounded-2xl overflow-hidden flex items-center justify-center relative">
+                <div class="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
+                    <div class="text-center">
+                        <svg class="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V6a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1zm12 0h2a1 1 0 001-1V6a1 1 0 00-1-1h-2a1 1 0 00-1 1v1a1 1 0 001 1zM5 20h2a1 1 0 001-1v-1a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1z"></path>
+                        </svg>
+                        <p class="text-base">Camera starting...</p>
+                    </div>
+                </div>
+                <div id="qr-loading" class="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-zinc-900/80 z-10 hidden">
+                    <svg class="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
                 </div>
             </div>
-            <div id="qr-loading" class="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-zinc-900/80 z-10 hidden">
-                <svg class="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
+
+            <div id="qr-result" class="hidden w-full mt-4 p-4 rounded-lg bg-green-50 border border-green-400 text-green-700 text-center font-semibold flex flex-col items-center justify-center">
+                <span class="text-2xl mb-2">✅</span>
+                <span id="qr-value" class="font-mono text-base break-words"></span>
             </div>
         </div>
-        <div id="qr-result" class="hidden w-full mt-2 p-3 rounded-lg bg-green-50 border border-green-400 text-green-700 text-center font-semibold flex flex-col items-center justify-center">
-            <span class="text-2xl mb-1">✅</span>
-            <span id="qr-value" class="font-mono text-base break-words"></span>
+
+        <!-- Manual Input Section -->
+        <div class="bg-zinc-50 dark:bg-zinc-900 rounded-2xl shadow-lg p-6">
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4 text-center">Or Enter Manually</h3>
+
+            <div class="space-y-4">
+                <div>
+                    <label for="manual-shipment-ref" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Shipment Reference Number
+                    </label>
+                    <input
+                        type="text"
+                        id="manual-shipment-ref"
+                        wire:model.live.debounce.300ms="manualShipmentRef"
+                        class="w-full px-4 py-3 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-400 dark:focus:border-blue-400"
+                        placeholder="Enter shipment reference number..."
+                    />
+                </div>
+
+                <button
+                    wire:click="processManualInput"
+                    wire:loading.attr="disabled"
+                    class="w-full px-6 py-3 text-base font-medium text-white bg-blue-600 border border-transparent rounded-xl hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-400 dark:focus:border-blue-400 transition-colors duration-200 flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" wire:loading.remove>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    <span wire:loading.remove>Process Shipment</span>
+                    <svg class="animate-spin h-5 w-5 hidden" fill="none" viewBox="0 0 24 24" wire:loading>
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                    </svg>
+                </button>
+            </div>
         </div>
     </div>
     @endif
@@ -117,14 +158,14 @@
                 <div class="flex justify-between">
                     <span class="text-sm font-medium text-gray-600 dark:text-gray-400">Shipping Plan Number:</span>
                     <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ $foundShipment->shipping_plan_num }}</span>
-                </div>              
+                </div>
                 <div class="flex justify-between">
                     <span class="text-sm font-medium text-gray-600 dark:text-gray-400">Shipment Created Date:</span>
                     <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ $foundShipment->created_at->format('M d, Y') }}</span>
-                </div>               
+                </div>
                 <div class="flex justify-between">
                     <span class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Items:</span>
-                    <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ $foundShipment->salesOrder->items->count() }}</span>
+                    <span class="text-sm font-semibold text-gray-900 dark:text-white">{{ $foundShipment->branchAllocation ? $foundShipment->branchAllocation->items->count() : 0 }}</span>
                 </div>
             </div>
         </div>
@@ -134,7 +175,8 @@
             <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Review Items</h3>
             
             <div class="space-y-4">
-                @foreach($foundShipment->salesOrder->items as $item)
+                @if($foundShipment->branchAllocation)
+                @foreach($foundShipment->branchAllocation->items as $item)
                 <div class="border border-gray-200 dark:border-zinc-600 rounded-xl p-4 space-y-3">
                     <!-- Item Header -->
                     <div class="flex justify-between items-start">
@@ -143,8 +185,8 @@
                             <p class="text-xs text-gray-600 dark:text-gray-400">SKU: {{ $item->product->supply_sku }}</p>
                         </div>
                         <div class="text-right">
-                            <p class="text-sm font-medium text-gray-900 dark:text-white">{{ $item->order_qty }} {{ $item->product->supply_uom }}</p>
-                            <p class="text-xs text-gray-600 dark:text-gray-400">Ordered</p>
+                            <p class="text-sm font-medium text-gray-900 dark:text-white">{{ $item->quantity }} {{ $item->product->supply_uom }}</p>
+                            <p class="text-xs text-gray-600 dark:text-gray-400">Allocated</p>
                         </div>
                     </div>
 
@@ -188,6 +230,11 @@
                     </div>
                 </div>
                 @endforeach
+                @else
+                    <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+                        <p>No order items found for this shipment.</p>
+                    </div>
+                @endif
             </div>
 
             <!-- General Remarks -->
@@ -248,7 +295,7 @@
                     </div>                  
                     <div class="flex justify-between">
                         <span class="font-bold text-blue-900 dark:text-white">Total Items:</span>
-                        <span class="font-bold text-blue-900 dark:text-white">{{ $foundShipment->salesOrder->items->count() }}</span>
+                        <span class="font-bold text-blue-900 dark:text-white">{{ $foundShipment->branchAllocation ? $foundShipment->branchAllocation->items->count() : 0 }}</span>
                     </div>
                 </div>
             </div>
@@ -256,8 +303,9 @@
             <!-- Items Review Summary -->
             <div class="space-y-4">
                 <h3 class="text-lg font-bold text-gray-900 dark:text-white">Items Review Summary</h3>
-                
-                @foreach($foundShipment->salesOrder->items as $item)
+
+                @if($foundShipment->branchAllocation)
+                @foreach($foundShipment->branchAllocation->items as $item)
                 <div class="border border-gray-200 dark:border-zinc-700 rounded-xl p-4 space-y-3 bg-white dark:bg-zinc-800">
                     <!-- Item Header -->
                     <div class="flex justify-between items-start">
@@ -266,8 +314,8 @@
                             <p class="text-xs text-gray-700 dark:text-gray-200">SKU: {{ $item->product->supply_sku }}</p>
                         </div>
                         <div class="text-right">
-                            <p class="text-sm font-bold text-gray-900 dark:text-white">{{ $item->order_qty }} {{ $item->product->supply_uom }}</p>
-                            <p class="text-xs text-gray-700 dark:text-gray-200">Ordered</p>
+                            <p class="text-sm font-bold text-gray-900 dark:text-white">{{ $item->quantity }} {{ $item->product->supply_uom }}</p>
+                            <p class="text-xs text-gray-700 dark:text-gray-200">Allocated</p>
                         </div>
                     </div>
 
@@ -313,6 +361,11 @@
                     @endif
                 </div>
                 @endforeach
+                @else
+                    <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+                        <p>No order items found for this shipment.</p>
+                    </div>
+                @endif
             </div>
 
             <!-- General Remarks -->

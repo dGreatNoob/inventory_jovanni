@@ -218,6 +218,30 @@
                     </flux:navlist.group>
                 @endif
 
+                {{-- Shipment Management --}}
+                @php
+                    $shipmentRoutes = [
+                        'shipment.index',
+                        'shipment.qrscanner',
+                    ];
+                    $hasShipmentRoutes = collect($shipmentRoutes)->some(fn ($name) => Route::has($name));
+                @endphp
+                @if ($hasShipmentRoutes)
+                    <flux:navlist.group expandable :expanded="request()->routeIs('shipment.*')"
+                        :heading="__('Shipment Management')" class="lg:grid">
+                        @if (Route::has('shipment.index'))
+                            <flux:navlist.item icon="banknotes" href="{{ route('shipment.index') }}"
+                                :current="request()->routeIs('shipment.index')" wire:navigate>{{ __('Shipments') }}
+                            </flux:navlist.item>
+                        @endif
+                        @if (Route::has('shipment.qrscanner'))
+                            <flux:navlist.item icon="banknotes" href="{{ route('shipment.qrscanner') }}"
+                                :current="request()->routeIs('shipment.qrscanner')" wire:navigate>{{ __('QR Scanner') }}
+                            </flux:navlist.item>
+                        @endif
+                    </flux:navlist.group>
+                @endif
+
                 {{-- Activity Logs --}}
                 <flux:navlist.item icon="clipboard-document-list" href="{{ route('activity.logs') }}"
                     :current="request()->routeIs('activity.logs')" wire:navigate>

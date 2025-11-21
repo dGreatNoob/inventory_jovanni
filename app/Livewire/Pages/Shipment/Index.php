@@ -5,6 +5,8 @@ namespace App\Livewire\Pages\Shipment;
 use App\Models\SalesOrder;
 use App\Models\Shipment;
 use App\Models\StockMovement;
+use App\Models\BatchAllocation;
+use App\Models\BranchAllocation;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Illuminate\Support\Facades\DB;
@@ -28,22 +30,24 @@ class Index extends Component
     public $perPage = 10;
     public $salesOrders;
     public $shipping_plan_num = '';
-    public $sales_order_id;   
     public $customer_name;
     public $customer_address;
     public $scheduled_ship_date;
     public $delivery_method;
-    public $carrier_name;
     public $vehicle_plate_number;
     public $shipping_priority = '';
-    public $special_handling_notes;
     public $filterStatus = '';
     public $search = '';
     public $salesOrderResults = [];
     public $phone = '';
-    public $email = '';
     public $editValue = null;
     public $statusFilter = '';
+
+    // Batch and Branch selection
+    public $availableBatches = [];
+    public $selectedBatchId = null;
+    public $availableBranches = [];
+    public $selectedBranchId = null;
         
     public $deliveryMethods = [
         'courier', 
@@ -58,69 +62,88 @@ class Index extends Component
     public function updatingSearch() { $this->resetPage(); }
     public function updatingFilterStatus() { $this->resetPage(); }
 
+    public function loadAvailableBatches()
+    {
+        $this->availableBatches = BatchAllocation::with(['branchAllocations.branch'])
+            ->where('status', 'dispatched')
+            ->orderBy('created_at', 'desc')
+            ->get();
+    }
+
+    public function loadAvailableBranches()
+    {
+        if (!$this->selectedBatchId) {
+            $this->availableBranches = [];
+            return;
+        }
+
+        $this->availableBranches = BranchAllocation::with('branch')
+            ->where('batch_allocation_id', $this->selectedBatchId)
+            ->get();
+    }
+
+    public function updatedSelectedBatchId()
+    {
+        $this->selectedBranchId = null;
+        $this->availableBranches = [];
+        $this->loadAvailableBranches();
+    }
+
     public function mount()
     {
         $this->deliveryMethods = Shipment::deliveryMethodDropDown();
+        $date = now()->format('Ymd');
+        $latest = Shipment::count() + 1;
+        $this->shipping_plan_num = 'SHIP-' . $date . '-' . str_pad($latest, 3, '0', STR_PAD_LEFT);
 
         // Get all sales orders marked as 'released' (after stock-out), including customer info
         $this->salesOrders = SalesOrder::where('status', 'released')->with('customer')->get();
+
+        $this->loadAvailableBatches();
     }
     
     public function edit($id){
-        
+
         $results = Shipment::with('customer')->find($id);
 
         if($results){
             if($results->shipping_status == 'pending'){
-                $this->sales_order_id = $results->sales_order_id;
+                $this->shipping_plan_num = $results->shipping_plan_num;
                 $this->scheduled_ship_date = $results->scheduled_ship_date;
-                $this->carrier_name = $results->carrier_name;
                 $this->vehicle_plate_number = $results->vehicle_plate_number;
-                $this->special_handling_notes = $results->special_handling_notes;
                 $this->customer_name = $results->customer_name;
                 $this->customer_address = $results->customer_address;
                 $this->phone = $results->customer_phone;
-                $this->email = $results->customer_email;
                 $this->delivery_method = $results->delivery_method;
-                $this->shipping_priority = $results->shipping_priority;                
-                $this->editValue = $id;   
+                $this->editValue = $id;
             }else{
                 session()->flash('error', 'You can only edit shipments that are in pending status.');
             }
-        }        
+        }
     }
 
     public function showShipmentQrCode($shipping_plan_num)
     {
         $this->showQrModal = true;
         $this->getShipmentDetails = Shipment::where('shipping_plan_num',$shipping_plan_num)
-            ->with(['salesOrder.items.product'])
-            ->first();        
+            ->with(['branchAllocation.items.product'])
+            ->first();
     }
 
     public function updatedStatusFilter($value){
         $this->statusFilter = $value;
     }
  
-    public function updatedSalesOrderId($value)
-    {
-        $order = SalesOrder::with('customer')->find($value);
-
-        if ($order) {
-            $this->customer_name = $order->customer->name ?? '';
-            $this->customer_address = $order->customer->address ?? '';
-            $this->phone = $order->customer->contact_num ?? '';           
-        } else {
-            $this->customer_name = '';
-            $this->customer_address = '';
-            $this->phone = '';
-        }
-    }
 
     public function createShipment()
     {
         $this->validate([
-            'sales_order_id' => 'required|exists:sales_orders,id',
+            'shipping_plan_num' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('shipments', 'shipping_plan_num')->ignore($this->editValue)
+            ],
             'scheduled_ship_date' => [
                 'required',
                 'date',
@@ -131,51 +154,49 @@ class Index extends Component
                 },
             ],
             'delivery_method' => 'required|string|max:255',
-            'carrier_name' => 'required|nullable|string|max:255',
             'vehicle_plate_number' => 'nullable|string|max:255',
-            'shipping_priority' => ['required', Rule::in(['normal', 'rush', 'express','scheduled','backorder','next-day','same-day'])],            
             'customer_name' => 'required|string|max:255',
-            'phone' => 'required|string|max:255',
-            'email' => 'string|max:255',
+            'phone' => 'required|digits:11',
             'customer_address' => 'required|string|max:255',
+            'selectedBranchId' => 'required|exists:branch_allocations,id',
         ]);
 
         DB::beginTransaction();
 
         try {
             if($this->editValue == null){
+                $branchAllocation = BranchAllocation::find($this->selectedBranchId);
                 Shipment::create([
-                    'sales_order_id' => $this->sales_order_id,                   
-                    'customer_id' => SalesOrder::find($this->sales_order_id)->customer->id,
+                    'shipping_plan_num' => $this->shipping_plan_num,
+                    'sales_order_id' => null,
+                    'batch_allocation_id' => $branchAllocation->batch_allocation_id,
+                    'branch_allocation_id' => $this->selectedBranchId,
+                    'customer_id' => null,
                     'customer_name' => $this->customer_name,
                     'customer_address' => $this->customer_address,
                     'scheduled_ship_date' => $this->scheduled_ship_date,
                     'delivery_method' => $this->delivery_method,
-                    'carrier_name' => $this->carrier_name,
                     'vehicle_plate_number' => $this->vehicle_plate_number,
-                    'shipping_priority' => $this->shipping_priority,
-                    'special_handling_notes' => $this->special_handling_notes,  
-                    'customer_email' => $this->email,            
-                    'customer_phone' => $this->phone,                                      
+                    'customer_phone' => $this->phone,
                 ]);
             }else{
 
                 $Shipment = Shipment::find($this->editValue);
+                $branchAllocation = BranchAllocation::find($this->selectedBranchId);
                 $ShipmentData = [
-                    'sales_order_id' => $this->sales_order_id,                   
-                    'customer_id' => SalesOrder::find($this->sales_order_id)->customer->id,
+                    'shipping_plan_num' => $this->shipping_plan_num,
+                    'sales_order_id' => null,
+                    'batch_allocation_id' => $branchAllocation->batch_allocation_id,
+                    'branch_allocation_id' => $this->selectedBranchId,
+                    'customer_id' => null,
                     'customer_name' => $this->customer_name,
                     'customer_address' => $this->customer_address,
                     'scheduled_ship_date' => $this->scheduled_ship_date,
                     'delivery_method' => $this->delivery_method,
-                    'carrier_name' => $this->carrier_name,
                     'vehicle_plate_number' => $this->vehicle_plate_number,
-                    'shipping_priority' => $this->shipping_priority,
-                    'special_handling_notes' => $this->special_handling_notes,
-                    'customer_email' => $this->email,            
-                    'customer_phone' => $this->phone                    
+                    'customer_phone' => $this->phone
                 ];
-             
+
                 $Shipment->update($ShipmentData);
 
             }
@@ -200,17 +221,20 @@ class Index extends Component
     protected function resetForm()
     {
         $this->reset([
-            'sales_order_id',
+            'shipping_plan_num',
             'customer_name',
             'customer_address',
             'scheduled_ship_date',
             'delivery_method',
-            'carrier_name',
             'vehicle_plate_number',
-            'shipping_priority',
-            'special_handling_notes',
-            'editValue'
+            'editValue',
+            'selectedBatchId',
+            'selectedBranchId',
+            'availableBranches'
         ]);
+        $date = now()->format('Ymd');
+        $latest = Shipment::count() + 1;
+        $this->shipping_plan_num = 'SHIP-' . $date . '-' . str_pad($latest, 3, '0', STR_PAD_LEFT);
     }
 
     public function markAsShipped($id)
@@ -233,20 +257,12 @@ class Index extends Component
 
     public function render()
     {
-        $getShipmentDetails = SalesOrder::with('shipments')
-            ->where('status', 'released')
-            ->doesntHave('shipments') // exclude orders that already have shipments
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->pluck('sales_order_number', 'id');
-
         $query = Shipment::with('customer');
 
         return view('livewire.pages.shipment.index', [
             'shipments' => $query->search( $this->search )->filterStatus($this->statusFilter)
                 ->latest()
-                ->paginate($this->perPage),
-            'salesorder_results' => $getShipmentDetails
+                ->paginate($this->perPage)
         ]);
     }
 }

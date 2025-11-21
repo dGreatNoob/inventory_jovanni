@@ -66,6 +66,7 @@ use App\Livewire\Pages\Branch\BranchInventory;
 use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\PurchaseOrderQRController;
 
+
 // Add missing PO Management imports
 use App\Livewire\Pages\POManagement\PurchaseOrder\Index as POManagementPurchaseOrder;
 use App\Livewire\Pages\POManagement\PurchaseOrder\Create as POManagementPurchaseOrderCreate;
@@ -205,7 +206,18 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('allocation')->name('allocation.')->group(function () {
         Route::get('/warehouse', Warehouse::class)->name('warehouse');
         Route::get('/sales', Sales::class)->name('sales');
+        
     });
+
+
+    Route::get('/receipts/{receipt}/show', [ReceiptController::class, 'show'])->name('receipts.show');
+    Route::get('/receipts/{receipt}/confirm', [ReceiptController::class, 'confirm'])->name('receipts.confirm');
+    Route::get('/receipts/{receipt}/preview', [ReceiptController::class, 'preview'])->name('receipts.preview');
+    Route::get('/receipts/{receipt}/items/{item}/edit', [ReceiptController::class, 'editItem'])->name('receipts.editItem');
+    Route::get('/receipts/{receipt}/items/{item}/mark-sold', [ReceiptController::class, 'markSold'])->name('receipts.markSold');
+    Route::get('/receipts/{receipt}/export-pdf', [ReceiptController::class, 'exportPDF'])->name('receipts.exportPDF');
+    Route::get('/receipts/{receipt}/export-excel', [ReceiptController::class, 'exportExcel'])->name('receipts.exportExcel');
+
 
     // Product Management
     Route::prefix('product-management')->name('product-management.')->group(function () {

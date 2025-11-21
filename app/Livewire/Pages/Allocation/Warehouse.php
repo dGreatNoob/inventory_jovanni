@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\DB;
 class Warehouse extends Component
 {
     public $batchAllocations = [];
+    public array $batch_numbers = [];
+
     public $openBatches = []; // Track which batches are open/closed
     public $selectedBatch = null;
     public $showCreateBatchModal = false;
@@ -76,6 +78,7 @@ class Warehouse extends Component
     public $availableBranches = [];
     public $selectedBranchIds = [];
     public $branchRemarks = [];
+    public $branchReferenceNumbers = [];
 
     // Edit item fields
     public $editProductQuantity = 1;

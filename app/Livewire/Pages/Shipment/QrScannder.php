@@ -203,6 +203,28 @@ class QrScannder extends Component
                             ])
                             ->log('Shipment Review' . $this->foundShipment->shipping_plan_num);
                     }
+                    // Update branch inventory matrix in the branch_product pivot
+                    $branchId = $this->foundShipment->branchAllocation->branch_id;
+                    $productId = $item->product_id;
+
+                    $pivot = \DB::table('branch_product')->where([
+                        ['branch_id', '=', $branchId],
+                        ['product_id', '=', $productId],
+                    ])->first();
+
+                    $newStock = ($pivot ? $pivot->stock : 0) + $qtyChange;
+
+                    \DB::table('branch_product')->updateOrInsert(
+                        ['branch_id' => $branchId, 'product_id' => $productId],
+                        ['stock' => $newStock]
+                    );
+
+                    // Now deduct from initial_quantity via the oldest ProductInventory record:
+                    $initialInventory = $supplyProfile->inventory()->orderBy('created_at', 'asc')->first();
+                    if ($initialInventory && $initialInventory->quantity >= $qtyChange) {
+                        $initialInventory->quantity -= $qtyChange;
+                        $initialInventory->save();
+                    }
                 }
             }
 

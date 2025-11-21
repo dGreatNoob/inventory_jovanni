@@ -166,6 +166,12 @@ class Product extends Model
         return (float) $this->inventory()->sum('available_quantity');
     }
 
+
+    public function getInitialQuantityAttribute()
+    {
+        return $this->inventory()->orderBy('created_at', 'asc')->value('quantity');
+    }
+
     /**
      * Helper accessor for profit margin
      */

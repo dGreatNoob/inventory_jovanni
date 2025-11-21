@@ -33,7 +33,7 @@ class View extends Component
     public $filteredProducts = [];
     public $currentUnitPrice = '';
     public $newUnitPrice = '';
-    public $selectedBranchId = '';
+    public $selectedBranchIds = [];
     public $selectedProductId = '';
     
     public function mount($salesOrderId)
@@ -151,7 +151,7 @@ class View extends Component
             // Get existing branch item data
             $branchItem = SalesOrderBranchItem::find($branchItemId);
             if ($branchItem) {
-                $this->selectedBranchId = $branchItem->branch_id;
+                $this->selectedBranchIds = $branchItem->branch_id;
                 $this->selectedProductId = $branchItem->product_id;
                 $this->currentUnitPrice = $branchItem->unit_price;
                 $this->newUnitPrice = $branchItem->unit_price;
@@ -160,7 +160,7 @@ class View extends Component
         } else {
             // Reset for new entry
             $this->reset([
-                'selectedBranchId',
+                'selectedBranchIds',
                 'selectedProductId',
                 'currentUnitPrice',
                 'newUnitPrice'
@@ -179,7 +179,7 @@ class View extends Component
         $this->resetErrorBag();
         $this->reset([
             'selectedBranchItemId',
-            'selectedBranchId',
+            'selectedBranchIds',
             'selectedProductId',
             'currentUnitPrice',
             'newUnitPrice',
@@ -194,12 +194,12 @@ class View extends Component
     public function updatePrice()
     {
         $this->validate([
-            'selectedBranchId' => 'required|exists:branches,id',
-            'selectedProductId' => 'required|exists:products,id',
+            'selectedBranchIds' => 'required|array|min:1',
+            'selectedBranchIds.*' => 'exists:branches,id',
             'newUnitPrice' => 'required|numeric|min:0.01',
         ], [
-            'selectedBranchId.required' => 'Please select a branch.',
-            'selectedBranchId.exists' => 'Selected branch does not exist.',
+            'selectedBranchIds.required' => 'Please select a branch.',
+            'selectedBranchIds.exists' => 'Selected branch does not exist.',
             'selectedProductId.required' => 'Please select a product.',
             'selectedProductId.exists' => 'Selected product does not exist.',
             'newUnitPrice.required' => 'Please enter a unit price.',
@@ -213,7 +213,7 @@ class View extends Component
                 $branchItem = SalesOrderBranchItem::find($this->selectedBranchItemId);
                 if ($branchItem) {
                     $branchItem->update([
-                        'branch_id' => $this->selectedBranchId,
+                        'branch_id' => $this->selectedBranchIds,
                         'product_id' => $this->selectedProductId,
                         'unit_price' => $this->newUnitPrice,
                         'subtotal' => $this->newUnitPrice * $branchItem->quantity,
@@ -228,7 +228,7 @@ class View extends Component
                 if ($salesOrder) {
                     // Check if this branch-product combination already exists
                     $existingItem = SalesOrderBranchItem::where('sales_order_id', $this->salesOrderId)
-                        ->where('branch_id', $this->selectedBranchId)
+                        ->where('branch_id', $this->selectedBranchIds)
                         ->where('product_id', $this->selectedProductId)
                         ->first();
                     
@@ -244,7 +244,7 @@ class View extends Component
                         // Create new item with default quantity of 1
                         SalesOrderBranchItem::create([
                             'sales_order_id' => $this->salesOrderId,
-                            'branch_id' => $this->selectedBranchId,
+                            'branch_id' => $this->selectedBranchIds,
                             'product_id' => $this->selectedProductId,
                             'unit_price' => $this->newUnitPrice,
                             'quantity' => 1,
@@ -262,7 +262,7 @@ class View extends Component
             session()->flash('error', 'An error occurred: ' . $e->getMessage());
             Log::error('Change Price Error: ' . $e->getMessage(), [
                 'sales_order_id' => $this->salesOrderId,
-                'selectedBranchId' => $this->selectedBranchId,
+                'selectedBranchIds' => $this->selectedBranchIds,
                 'selectedProductId' => $this->selectedProductId,
                 'newUnitPrice' => $this->newUnitPrice,
                 'exception' => $e

@@ -108,8 +108,14 @@ class ProductService
                 'changed_at' => now(),
             ]);
 
+            foreach (\App\Models\Branch::all() as $branch) {
+                $branch->products()->attach($product->id, ['stock' => 0]);
+            }
+
             return $product->load(['category', 'supplier', 'images', 'inventory']);
+            
         });
+        
     }
 
     /**

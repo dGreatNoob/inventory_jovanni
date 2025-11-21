@@ -57,6 +57,8 @@ use App\Livewire\Pages\Shipment\Index as createShipmentIndex;
 use App\Livewire\Pages\Shipment\View as createShipmentView;
 use App\Livewire\Pages\Shipment\QrScannder as ShipmentQrScannder;
 use App\Models\Branch;
+use App\Livewire\Pages\Branch\BranchInventory;
+
 
 
 
@@ -132,6 +134,9 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/Branchmanagement/profile', BranchProfile::class)
         ->name('branch.profile');
+    
+    Route::get('/branch-inventory', BranchInventory::class)
+        ->name('branch.inventory');
 
 
     Route::get('/RequestSlip/{request_slip_id}', View::class)

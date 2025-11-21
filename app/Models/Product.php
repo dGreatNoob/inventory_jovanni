@@ -188,4 +188,10 @@ class Product extends Model
     {
         return $this->hasMany(ProductBatch::class)->where('current_qty', '>', 0);
     }
+
+    public function branches()
+    {
+        return $this->belongsToMany(Branch::class, 'branch_product')
+                    ->withPivot('stock');
+    }
 }

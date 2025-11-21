@@ -175,6 +175,11 @@ Route::middleware(['auth'])->group(function () {
         return view('livewire.pages.qrcode.salesorderprint', compact('salesOrder'));
     })->name('sales-orders.print');
 
+    Route::get('/shipment/print/{shipping_plan_num}', function ($shipping_plan_num) {
+        $shipment = \App\Models\Shipment::with(['salesOrder.items.product'])->where('shipping_plan_num', $shipping_plan_num)->firstOrFail();
+        return view('livewire.pages.qrcode.shipmentprint', compact('shipment'));
+    })->name('shipments.print');
+
     // VDR Print Route
     Route::get('/allocation/vdr/print/{batchId}', [\App\Http\Controllers\VDRPrintController::class, 'printVDR'])->name('allocation.vdr.print');
     

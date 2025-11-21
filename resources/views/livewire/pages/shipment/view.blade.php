@@ -1,118 +1,80 @@
 <div class="mb-14">
     <x-collapsible-card title="Shipment Details" open="true" size="full">
         <form x-show="open" x-transition>   
-            <div class="grid gap-6 mb-2 md:grid-cols-2">         
-                <x-dropdown 
-                    wire:model.defer="status"
-                    value="{{ $shipment_view->shipping_status }}" 
-                    name="status" 
-                    label="Status" 
-                    :options="[
-                        'ready' => 'ready', 
-                        'shipped' => 'shipped', 
-                        'delivered' => 'delivered', 
-                        'cancelled' => 'cancelled'
-                    ]"
-                    placeholder="Select a Status" 
-                    readonly 
-                    disabled  
+            <div class="grid gap-6 mb-2 md:grid-cols-2">
+                <x-input
+                    type="text"
+                    value="{{$shipment_view->shipping_plan_num}}"
+                    name="shipping_plan_num"
+                    label="Shipment Reference Number"
+                    readonly
+                    disabled
                 />
 
-               <x-input 
-                    type="text" 
-                    value="{{$shipment_view->scheduled_ship_date}}" 
-                    name="scheduled_ship_date" 
-                    label="Scheduled Ship Date" 
-                    readonly 
-                    disabled   
-                />  
-            </div>
-
-            <div class="grid gap-6 mb-2 md:grid-cols-2">
-                <x-dropdown 
-                    readonly 
-                    disabled 
-                    value="{{$shipment_view->carrier_name}}" 
-                    name="carrier_name" 
-                    label="Carrier Name"  
-                    :options="$company_results" 
-                    placeholder="Carrier Name"
-                />
-                <x-input 
-                    type="text" 
-                    rows="8" 
-                    value="{{$shipment_view->vehicle_plate_number}}" 
-                    name="vehicle_plate_number" 
-                    label="Vehicle Plate Number" 
-                    readonly 
-                    disabled   
-                />
-            </div>
-              
-            <div class="grid gap-6 mb-2 md:grid-cols-2">
-                <x-input 
-                    type="textarea" 
-                    value="{{$shipment_view->special_handling_notes}}" 
-                    rows="8" 
-                    name="special_handling_notes" 
-                    label="Special Handling Notes" 
-                    readonly 
-                    disabled 
-                />
-                <x-input 
-                    type="text" 
-                    value="{{$shipment_view->customer_name}}" 
-                    rows="8" 
-                    name="customer_name" 
-                    label="Customer Name" 
-                    readonly 
-                    disabled 
+               <x-input
+                    type="text"
+                    value="{{$shipment_view->scheduled_ship_date}}"
+                    name="scheduled_ship_date"
+                    label="Scheduled Ship Date"
+                    readonly
+                    disabled
                 />
             </div>
 
             <div class="grid gap-6 mb-2 md:grid-cols-2">
-                <x-input 
-                    type="text" 
-                    value="{{$shipment_view->customer_phone}}" 
-                    rows="8" 
-                    name="phone" 
-                    label="Phone" 
-                    readonly 
-                    disabled 
+                <x-input
+                    type="text"
+                    rows="8"
+                    value="{{$shipment_view->vehicle_plate_number}}"
+                    name="vehicle_plate_number"
+                    label="Vehicle Plate Number"
+                    readonly
+                    disabled
                 />
-                <x-input 
-                    type="text" 
-                    value="{{$shipment_view->customer_email}}" 
-                    rows="8" 
-                    name="Email"
-                    label="Email" 
-                    readonly 
-                    disabled 
+                <x-input
+                    type="text"
+                    value="{{$shipment_view->customer_name}}"
+                    rows="8"
+                    name="customer_name"
+                    label="Customer Name"
+                    readonly
+                    disabled
                 />
             </div>
 
+            <div class="grid gap-6 mb-2 md:grid-cols-2">
+                <x-input
+                    type="text"
+                    value="{{$shipment_view->customer_address}}"
+                    rows="8"
+                    name="customer_address"
+                    label="Customer Address"
+                    readonly
+                    disabled
+                />
+                <x-input
+                    type="text"
+                    value="{{$shipment_view->customer_phone}}"
+                    rows="8"
+                    name="phone"
+                    label="Phone"
+                    readonly
+                    disabled
+                />
+            </div>
 
             <div class="grid gap-6 mb-2 md:grid-cols-2">
-                <x-input 
-                    type="text" 
-                    value="{{$shipment_view->delivery_method}}" 
-                    rows="2" 
-                    name="delivery_method" 
-                    label="Delivery Method" 
-                    readonly 
-                    disabled   
+                <x-input
+                    type="text"
+                    value="{{$shipment_view->delivery_method}}"
+                    rows="2"
+                    name="delivery_method"
+                    label="Delivery Method"
+                    readonly
+                    disabled
                 />
-                
-                <x-input 
-                    type="text" 
-                    value="{{$shipment_view->shipping_priority}}" 
-                    rows="2" 
-                    name="shipping_priority" 
-                    label="Shipping Priority" 
-                    readonly 
-                    disabled   
-                />  
-            </div>      
+            </div>
+
         </form>
 
     </x-collapsible-card>

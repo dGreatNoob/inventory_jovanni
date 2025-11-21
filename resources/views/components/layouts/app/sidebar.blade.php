@@ -183,6 +183,65 @@
                 </flux:navlist.group>
                 @endif
 
+                {{-- Finance --}}
+                @php
+                    $financeRoutes = [
+                        'finance.receivables',
+                        'finance.payables',
+                        'finance.expenses',
+                        'finance.currency-conversion',
+                    ];
+                    $hasFinanceRoutes = collect($financeRoutes)->some(fn ($name) => Route::has($name));
+                @endphp
+                @if ($hasFinanceRoutes)
+                    <flux:navlist.group expandable :expanded="request()->routeIs('finance.*')" :heading="__('Finance')"
+                        class="lg:grid">
+                        @if (Route::has('finance.receivables'))
+                            <flux:navlist.item icon="banknotes" href="{{ route('finance.receivables') }}"
+                                :current="request()->routeIs('finance.receivables')" wire:navigate>{{ __('Receivables') }}
+                            </flux:navlist.item>
+                        @endif
+                        @if (Route::has('finance.payables'))
+                            <flux:navlist.item icon="banknotes" href="{{ route('finance.payables') }}"
+                                :current="request()->routeIs('finance.payables')" wire:navigate>{{ __('Payables') }}
+                            </flux:navlist.item>
+                        @endif
+                        @if (Route::has('finance.expenses'))
+                            <flux:navlist.item icon="banknotes" href="{{ route('finance.expenses') }}"
+                                :current="request()->routeIs('finance.expenses')" wire:navigate>{{ __('Expenses') }}
+                            </flux:navlist.item>
+                        @endif
+                        @if (Route::has('finance.currency-conversion'))
+                            <flux:navlist.item icon="banknotes" href="{{ route('finance.currency-conversion') }}"  wire:navigate>{{ __('Currency Conversion') }}
+                            </flux:navlist.item>
+                        @endif
+                    </flux:navlist.group>
+                @endif
+
+                {{-- Shipment Management --}}
+                @php
+                    $shipmentRoutes = [
+                        'shipment.index',
+                        'shipment.qrscanner',
+                    ];
+                    $hasShipmentRoutes = collect($shipmentRoutes)->some(fn ($name) => Route::has($name));
+                @endphp
+                @if ($hasShipmentRoutes)
+                    <flux:navlist.group expandable :expanded="request()->routeIs('shipment.*')"
+                        :heading="__('Shipment Management')" class="lg:grid">
+                        @if (Route::has('shipment.index'))
+                            <flux:navlist.item icon="banknotes" href="{{ route('shipment.index') }}"
+                                :current="request()->routeIs('shipment.index')" wire:navigate>{{ __('Shipments') }}
+                            </flux:navlist.item>
+                        @endif
+                        @if (Route::has('shipment.qrscanner'))
+                            <flux:navlist.item icon="banknotes" href="{{ route('shipment.qrscanner') }}"
+                                :current="request()->routeIs('shipment.qrscanner')" wire:navigate>{{ __('QR Scanner') }}
+                            </flux:navlist.item>
+                        @endif
+                    </flux:navlist.group>
+                @endif
+
                 {{-- Activity Logs --}}
                 <flux:navlist.item icon="clipboard-document-list" href="{{ route('activity.logs') }}"
                     :current="request()->routeIs('activity.logs')" wire:navigate>

@@ -79,7 +79,6 @@ class Warehouse extends Component
 
     // Edit item fields
     public $editProductQuantity = 1;
-    public $editProductUnitPrice = null;
 
     public function mount()
     {
@@ -1434,7 +1433,6 @@ class Warehouse extends Component
         $this->selectedEditItem = $item;
         $this->showEditItemModal = true;
         $this->editProductQuantity = $item->quantity;
-        $this->editProductUnitPrice = $item->unit_price;
     }
 
     public function closeEditItemModal()
@@ -1442,7 +1440,6 @@ class Warehouse extends Component
         $this->showEditItemModal = false;
         $this->selectedEditItem = null;
         $this->editProductQuantity = 1;
-        $this->editProductUnitPrice = null;
     }
 
     public function updateItem()
@@ -1454,12 +1451,10 @@ class Warehouse extends Component
 
         $this->validate([
             'editProductQuantity' => 'required|integer|min:1',
-            'editProductUnitPrice' => 'nullable|numeric|min:0',
         ]);
 
         $this->selectedEditItem->update([
             'quantity' => $this->editProductQuantity,
-            'unit_price' => $this->editProductUnitPrice,
         ]);
 
         session()->flash('message', 'Item updated successfully.');

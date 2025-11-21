@@ -144,7 +144,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                id="search"
                                wire:model.live="search"
                                placeholder="Search by reference no, remarks, or branch name..."
-                               class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                               class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
@@ -161,7 +161,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <input type="date"
                            id="dateFrom"
                            wire:model.live="dateFrom"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
                 </div>
 
                 <!-- Date To Filter -->
@@ -173,7 +173,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <input type="date"
                                id="dateTo"
                                wire:model.live="dateTo"
-                               class="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                               class="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
                         <button wire:click="clearFilters"
                                 class="px-3 py-2 bg-gray-500 hover:bg-gray-600 text-white text-sm rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
                             Clear
@@ -239,36 +239,36 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="px-6 py-8 border-b border-gray-200 dark:border-gray-700">
                     <nav aria-label="Progress">
                         <ol class="flex items-center w-full space-x-4">
-                            <li class="flex w-full items-center after:content-[''] after:w-full after:h-1 {{ $currentStep > 1 ? 'after:border-green-300' : 'after:border-gray-200 dark:after:border-gray-600' }} after:border-4 after:inline-block after:ms-4 after:rounded-full">
-                                <span class="flex items-center justify-center w-10 h-10 {{ $currentStep > 1 ? 'bg-green-100' : ($currentStep == 1 ? 'bg-blue-100' : 'bg-gray-100 dark:bg-gray-700') }} rounded-full lg:h-12 lg:w-12 shrink-0">
+                            <li class="flex w-full items-center after:content-[''] after:w-full after:h-1 {{ $currentStep > 1 ? 'after:border-gray-300' : 'after:border-gray-200 dark:after:border-gray-600' }} after:border-4 after:inline-block after:ms-4 after:rounded-full">
+                                <span class="flex items-center justify-center w-10 h-10 {{ $currentStep > 1 ? 'bg-gray-100' : ($currentStep == 1 ? 'bg-gray-100' : 'bg-gray-100 dark:bg-gray-700') }} rounded-full lg:h-12 lg:w-12 shrink-0">
                                     @if($currentStep > 1)
-                                        <svg class="w-5 h-5 text-green-600" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                        <svg class="w-5 h-5 text-gray-600" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 11.917 9.724 16.5 19 7.5"/>
                                         </svg>
                                     @else
-                                        <svg class="w-5 h-5 {{ $currentStep == 1 ? 'text-blue-600' : 'text-gray-400' }}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                        <svg class="w-5 h-5 {{ $currentStep == 1 ? 'text-gray-600' : 'text-gray-400' }}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                                         </svg>
                                     @endif
                                 </span>
                             </li>
-                            <li class="flex w-full items-center after:content-[''] after:w-full after:h-1 {{ $currentStep > 2 ? 'after:border-green-300' : 'after:border-gray-200 dark:after:border-gray-600' }} after:border-4 after:inline-block after:ms-4 after:rounded-full">
-                                <span class="flex items-center justify-center w-10 h-10 {{ $currentStep > 2 ? 'bg-green-100' : ($currentStep == 2 ? 'bg-blue-100' : 'bg-gray-100 dark:bg-gray-700') }} rounded-full lg:h-12 lg:w-12 shrink-0">
-                                    <svg class="w-5 h-5 {{ $currentStep > 2 ? 'text-green-600' : ($currentStep == 2 ? 'text-blue-600' : 'text-gray-400') }}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                            <li class="flex w-full items-center after:content-[''] after:w-full after:h-1 {{ $currentStep > 2 ? 'after:border-gray-300' : 'after:border-gray-200 dark:after:border-gray-600' }} after:border-4 after:inline-block after:ms-4 after:rounded-full">
+                                <span class="flex items-center justify-center w-10 h-10 {{ $currentStep > 2 ? 'bg-gray-100' : ($currentStep == 2 ? 'bg-gray-100' : 'bg-gray-100 dark:bg-gray-700') }} rounded-full lg:h-12 lg:w-12 shrink-0">
+                                    <svg class="w-5 h-5 {{ $currentStep > 2 ? 'text-gray-600' : ($currentStep == 2 ? 'text-gray-600' : 'text-gray-400') }}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                                         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 9h3m-3 3h3m-3 3h3m-6 1c-.306-.613-.933-1-1.618-1H7.618c-.685 0-1.312.387-1.618 1M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Zm7 5a2 2 0 1 1-4 0 2 2 0 0 1 4 0Z"/>
                                     </svg>
                                 </span>
                             </li>
-                            <li class="flex w-full items-center after:content-[''] after:w-full after:h-1 {{ $currentStep > 3 ? 'after:border-green-300' : 'after:border-gray-200 dark:after:border-gray-600' }} after:border-4 after:inline-block after:ms-4 after:rounded-full">
-                                <span class="flex items-center justify-center w-10 h-10 {{ $currentStep > 3 ? 'bg-green-100' : ($currentStep == 3 ? 'bg-blue-100' : 'bg-gray-100 dark:bg-gray-700') }} rounded-full lg:h-12 lg:w-12 shrink-0">
-                                    <svg class="w-5 h-5 {{ $currentStep > 3 ? 'text-green-600' : ($currentStep == 3 ? 'text-blue-600' : 'text-gray-400') }}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                            <li class="flex w-full items-center after:content-[''] after:w-full after:h-1 {{ $currentStep > 3 ? 'after:border-gray-300' : 'after:border-gray-200 dark:after:border-gray-600' }} after:border-4 after:inline-block after:ms-4 after:rounded-full">
+                                <span class="flex items-center justify-center w-10 h-10 {{ $currentStep > 3 ? 'bg-gray-100' : ($currentStep == 3 ? 'bg-gray-100' : 'bg-gray-100 dark:bg-gray-700') }} rounded-full lg:h-12 lg:w-12 shrink-0">
+                                    <svg class="w-5 h-5 {{ $currentStep > 3 ? 'text-gray-600' : ($currentStep == 3 ? 'text-gray-600' : 'text-gray-400') }}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                                         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7h-3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h3m-5 4H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2Z"/>
                                     </svg>
                                 </span>
                             </li>
                             <li class="flex items-center w-full">
-                                <span class="flex items-center justify-center w-10 h-10 {{ $currentStep == 4 ? 'bg-blue-100' : 'bg-gray-100 dark:bg-gray-700' }} rounded-full lg:h-12 lg:w-12 shrink-0">
-                                    <svg class="w-5 h-5 {{ $currentStep == 4 ? 'text-blue-600' : 'text-gray-400' }}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                <span class="flex items-center justify-center w-10 h-10 {{ $currentStep == 4 ? 'bg-gray-100' : 'bg-gray-100 dark:bg-gray-700' }} rounded-full lg:h-12 lg:w-12 shrink-0">
+                                    <svg class="w-5 h-5 {{ $currentStep == 4 ? 'text-gray-600' : 'text-gray-400' }}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                                         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.5 8.5v.01M8.5 12v.01M8.5 15.5v.01M12 8.5v.01M12 12v.01M12 15.5v.01M15.5 8.5v.01M15.5 12v.01M15.5 15.5v.01"/>
                                     </svg>
                                 </span>
@@ -332,10 +332,17 @@ document.addEventListener('DOMContentLoaded', function() {
                                             Delivery Date *
                                         </label>
                                         <input type="date"
+<<<<<<< HEAD
                                             id="transaction_date"
                                             wire:model="transaction_date"
                                             class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white"
                                             required>
+=======
+                                               id="transaction_date"
+                                               wire:model="transaction_date"
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white"
+                                               required>
+>>>>>>> origin/integration/latest
                                         @error('transaction_date')
                                             <span class="text-red-500 text-sm">{{ $message }}</span>
                                         @enderror
@@ -347,7 +354,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                         </label>
                                         <select id="status"
                                                 wire:model="status"
-                                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
                                             <option value="draft">Draft</option>
                                         </select>
                                     </div>
@@ -387,9 +394,10 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
                                     <button type="button"
                                             wire:click="closeStepper"
-                                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
+                                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
                                         Cancel
                                     </button>
+<<<<<<< HEAD
                                     
                                     @if($isEditing)
                                         <!-- When editing, show Update and Continue buttons separately -->
@@ -409,6 +417,12 @@ document.addEventListener('DOMContentLoaded', function() {
                                             Create & Continue
                                         </button>
                                     @endif
+=======
+                                    <button type="submit"
+                                            class="px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                                        Create & Continue
+                                    </button>
+>>>>>>> origin/integration/latest
                                 </div>
                             </form>
                         </div>
@@ -447,13 +461,13 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
                                 <button type="button"
                                         wire:click="previousStep"
-                                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
+                                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
                                     Back
                                 </button>
                                 <button type="button"
                                         wire:click="nextStep"
                                         @if(empty($filteredBranchesByBatch)) disabled @endif
-                                        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400">
+                                        class="px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:bg-gray-400">
                                     Continue to Products
                                 </button>
                             </div>
@@ -482,7 +496,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                                 <input type="checkbox"
                                                        wire:model.live="selectedProductIdsForAllocation"
                                                        value="{{ $product->id }}"
-                                                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                                       class="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded">
                                                 <div class="ml-3 flex-1">
                                                     <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $product->name }}</div>
                                                     <div class="text-xs text-gray-500 dark:text-gray-400">
@@ -538,7 +552,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                                                        wire:model="matrixQuantities.{{ $branchAllocation->id }}.{{ $product->id }}"
                                                                        min="0"
                                                                        placeholder="0"
-                                                                       class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white text-center">
+                                                                       class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white text-center">
                                                             </td>
                                                         @endforeach
                                                     </tr>
@@ -606,12 +620,12 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600 mt-6">
                                 <button type="button"
                                         wire:click="previousStep"
-                                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
+                                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
                                     Back
                                 </button>
                                 <button type="button"
                                         wire:click="nextStep"
-                                        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                        class="px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
                                     Continue to Dispatch
                                 </button>
                             </div>
@@ -956,12 +970,13 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
                                 <button type="button"
                                         wire:click="previousStep"
-                                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
+                                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
                                     Back
                                 </button>
                                 <button type="button"
                                         wire:click="dispatchBatchFromStepper"
                                         wire:confirm="Are you sure you want to dispatch this batch? This action cannot be undone."
+<<<<<<< HEAD
                                         @if(!$this->allProductsFullyScanned()) disabled @endif
                                         class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:opacity-50">
                                     @if($this->allProductsFullyScanned())
@@ -969,6 +984,10 @@ document.addEventListener('DOMContentLoaded', function() {
                                     @else
                                         🔒 Complete All Branch Scanning to Dispatch
                                     @endif
+=======
+                                        class="px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                                    Dispatch Batch
+>>>>>>> origin/integration/latest
                                 </button>
                             </div>
                         </div>
@@ -1037,6 +1056,153 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
         @endif
+<<<<<<< HEAD
+=======
+
+        <!-- Batch Allocations List (Shown only when filters are active) -->
+        @if($search || $dateFrom || $dateTo)
+        @forelse($batchAllocations as $batch)
+            <x-batch-card
+                :title="$batch->ref_no"
+                :batch-id="$batch->id"
+                :open="$openBatches[$batch->id] ?? false"
+            >
+                <!-- Batch Header Content -->
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">
+                            Delivery Date: {{ \Carbon\Carbon::parse($batch->transaction_date)->format('M d, Y') }}
+                        </p>
+                        @if($batch->remarks)
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Remarks: {{ $batch->remarks }}</p>
+                        @endif
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="px-3 py-1 text-xs font-medium rounded-full
+                            @if($batch->status === 'draft') bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300
+                            @elseif($batch->status === 'dispatched') bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300
+                            @else bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300 @endif">
+                            {{ ucfirst($batch->status) }}
+                        </span>
+                        @if($batch->status === 'draft')
+                            <button wire:click="dispatchBatch({{ $batch->id }})"
+                                    wire:confirm="Are you sure you want to dispatch this batch? This action cannot be undone."
+                                    class="bg-gray-600 hover:bg-gray-700 text-white text-sm py-1 px-3 rounded">
+                                Dispatch Batch
+                            </button>
+                            <button wire:click="removeBatch({{ $batch->id }})"
+                                    wire:confirm="Are you sure you want to delete this batch? This action cannot be undone."
+                                    class="bg-red-600 hover:bg-red-700 text-white text-sm py-1 px-3 rounded ml-2">
+                                Delete Batch
+                            </button>
+                        @endif
+                        @if($batch->branchAllocations->count() > 0)
+                            <button wire:click="openVDRPreview({{ $batch->id }})" class="bg-gray-600 hover:bg-gray-700 text-white text-sm py-1 px-3 rounded">
+                                Export to Excel
+                            </button>
+                        @endif
+                    </div>
+                </div>
+
+                <!-- STEP 2 & 3: BRANCHES AND ITEMS -->
+                <div class="space-y-4">
+                    @forelse($batch->branchAllocations as $branchAllocation)
+                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <h4 class="text-md font-medium text-gray-900 dark:text-white">{{ $branchAllocation->branch->name }}</h4>
+                                    @if($branchAllocation->remarks)
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">Remarks: {{ $branchAllocation->remarks }}</p>
+                                    @endif
+                                    <span class="inline-block mt-1 px-2 py-1 text-xs font-medium rounded-full
+                                        @if($branchAllocation->status === 'pending') bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300
+                                        @elseif($branchAllocation->status === 'allocated') bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300
+                                        @elseif($branchAllocation->status === 'received') bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300
+                                        @else bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300 @endif">
+                                        {{ ucfirst($branchAllocation->status) }}
+                                    </span>
+                                </div>
+                                <div class="flex space-x-2">
+                                    @if($batch->status === 'draft')
+                                        <button wire:click="openAddItemsModal({{ $branchAllocation->id }})" class="bg-gray-600 hover:bg-gray-700 text-white text-sm py-1 px-3 rounded">
+                                            Add Items
+                                        </button>
+                                        <button wire:click="removeBranch({{ $branchAllocation->id }})"
+                                                wire:confirm="Are you sure you want to remove this branch from the batch?"
+                                                class="bg-red-600 hover:bg-red-700 text-white text-sm py-1 px-3 rounded">
+                                            Remove
+                                        </button>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <!-- Items Table -->
+                            <div class="space-y-2">
+                                @forelse($branchAllocation->items as $item)
+                                    <div class="bg-white dark:bg-gray-800 rounded p-3 border border-gray-200 dark:border-gray-600">
+                                        <div class="flex justify-between items-center">
+                                            <div class="flex-1">
+                                                <div class="font-medium text-gray-900 dark:text-white">{{ $item->product->name }}</div>
+                                                <div class="text-sm text-gray-600 dark:text-gray-400 space-x-4">
+                                                    <span>Qty: {{ $item->quantity }}</span>
+                                                    @if($item->product->price ?? $item->product->selling_price ?? null)
+                                                        <span>Selling: ₱{{ number_format($item->product->price ?? $item->product->selling_price ?? 0, 2) }}</span>
+                                                    @endif
+                                                    @if($item->unit_price)
+                                                        <span>Unit: ₱{{ number_format($item->unit_price, 2) }}</span>
+                                                        <span class="font-medium text-gray-600 dark:text-gray-400">Total: ₱{{ number_format($item->quantity * $item->unit_price, 2) }}</span>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                            @if($batch->status === 'draft')
+                                                <div class="flex space-x-2">
+                                                    <button wire:click="openEditItemModal({{ $item->id }})"
+                                                            class="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300">
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                        </svg>
+                                                    </button>
+                                                    <button wire:click="removeItem({{ $item->id }})"
+                                                            wire:confirm="Are you sure you want to remove this item?"
+                                                            class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300">
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @empty
+                                    <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
+                                        <p class="text-sm text-yellow-700 dark:text-yellow-300">No items assigned to this branch.</p>
+                                    </div>
+                                @endforelse
+                            </div>
+                        </div>
+                    @empty
+                        <div class="text-center py-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                            <p class="text-gray-500 dark:text-gray-400">No branches added to this batch yet.</p>
+                            @if($batch->status === 'draft')
+                                <p class="mt-2 text-gray-500 dark:text-gray-400 text-sm">
+                                    Branches are automatically added based on batch selection.
+                                </p>
+                            @endif
+                        </div>
+                    @endforelse
+                </div>
+            </x-batch-card>
+        @empty
+            <div class="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No batch allocations</h3>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by creating your first batch allocation.</p>
+            </div>
+        @endforelse
+        @endif
+>>>>>>> origin/integration/latest
     </div>
 
     <!-- Table All-->
@@ -1051,6 +1217,7 @@ document.addEventListener('DOMContentLoaded', function() {
             ];
         @endphp
 
+<<<<<<< HEAD
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 mt-6">
             <thead class="bg-gray-50 dark:bg-gray-700">
                 <tr>
@@ -1104,10 +1271,153 @@ document.addEventListener('DOMContentLoaded', function() {
                                     {{ ($batchStep == 4 && $record->status === 'dispatched') 
                                         ? 'Completed' 
                                         : ($stepLabels[$batchStep] ?? 'Not Started') }}
+=======
+        <!-- Stepper Navigation -->
+        <div class="mb-8">
+            <nav aria-label="Progress">
+                <ol class="flex items-center justify-center">
+                    <li class="relative {{ $currentStep >= 1 ? 'text-gray-600' : 'text-gray-400' }} {{ $currentStep == 1 ? 'pr-8 sm:pr-20' : '' }}">
+                        <div class="absolute inset-0 flex items-center" aria-hidden="true">
+                            <div class="h-0.5 w-full {{ $currentStep > 1 ? 'bg-gray-600' : 'bg-gray-200' }}"></div>
+                        </div>
+                        <button wire:click="goToStep(1)" class="relative w-8 h-8 flex items-center justify-center {{ $currentStep >= 1 ? 'bg-gray-600 text-white' : 'bg-white border-2 border-gray-300 text-gray-500' }} rounded-full hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                            <span class="text-sm font-medium">1</span>
+                        </button>
+                        <span class="absolute top-10 left-1/2 transform -translate-x-1/2 text-xs font-medium whitespace-nowrap">Create Batch</span>
+                    </li>
+                    <li class="relative {{ $currentStep >= 2 ? 'text-gray-600' : 'text-gray-400' }} {{ $currentStep == 2 ? 'px-8 sm:px-20' : '' }}">
+                        <div class="absolute inset-0 flex items-center" aria-hidden="true">
+                            <div class="h-0.5 w-full {{ $currentStep > 2 ? 'bg-gray-600' : 'bg-gray-200' }}"></div>
+                        </div>
+                        <button wire:click="goToStep(2)" class="relative w-8 h-8 flex items-center justify-center {{ $currentStep >= 2 ? 'bg-gray-600 text-white' : 'bg-white border-2 border-gray-300 text-gray-500' }} rounded-full hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                            <span class="text-sm font-medium">2</span>
+                        </button>
+                        <span class="absolute top-10 left-1/2 transform -translate-x-1/2 text-xs font-medium whitespace-nowrap">Branches</span>
+                    </li>
+                    <li class="relative {{ $currentStep >= 3 ? 'text-gray-600' : 'text-gray-400' }} {{ $currentStep == 3 ? 'px-8 sm:px-20' : '' }}">
+                        <div class="absolute inset-0 flex items-center" aria-hidden="true">
+                            <div class="h-0.5 w-full {{ $currentStep > 3 ? 'bg-gray-600' : 'bg-gray-200' }}"></div>
+                        </div>
+                        <button wire:click="goToStep(3)" class="relative w-8 h-8 flex items-center justify-center {{ $currentStep >= 3 ? 'bg-gray-600 text-white' : 'bg-white border-2 border-gray-300 text-gray-500' }} rounded-full hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                            <span class="text-sm font-medium">3</span>
+                        </button>
+                        <span class="absolute top-10 left-1/2 transform -translate-x-1/2 text-xs font-medium whitespace-nowrap">Products</span>
+                    </li>
+                    <li class="relative {{ $currentStep >= 4 ? 'text-gray-600' : 'text-gray-400' }} pl-8 sm:pl-20">
+                        <button wire:click="goToStep(4)" class="relative w-8 h-8 flex items-center justify-center {{ $currentStep >= 4 ? 'bg-gray-600 text-white' : 'bg-white border-2 border-gray-300 text-gray-500' }} rounded-full hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                            <span class="text-sm font-medium">4</span>
+                        </button>
+                        <span class="absolute top-10 left-1/2 transform -translate-x-1/2 text-xs font-medium whitespace-nowrap">Dispatch</span>
+                    </li>
+                </ol>
+            </nav>
+        </div>
+
+        <!-- Step Content -->
+        <div class="min-h-[400px]">
+            <!-- STEP 1: CREATE BATCH -->
+            @if($currentStep === 1)
+                <div>
+                    <h3 class="text-lg font-medium mb-4">Step 1: Create New Batch</h3>
+                    <form wire:submit="createBatch" class="space-y-4">
+                        <div>
+                            <label for="batch_number" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                                Batch Number *
+                            </label>
+                            <select id="batch_number"
+                                    wire:model.live="batch_number"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white"
+                                    required>
+                                <option value="">Select a batch number</option>
+                                @foreach($availableBatchNumbers as $batchNum)
+                                    <option value="{{ $batchNum }}">{{ $batchNum }}</option>
+                                @endforeach
+                            </select>
+                            @error('batch_number')
+                                <span class="text-red-500 text-sm">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label for="ref_no" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                                Reference Number
+                            </label>
+                            <input type="text"
+                                   id="ref_no"
+                                   wire:model="ref_no"
+                                   readonly
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 dark:bg-gray-500 dark:border-gray-500 dark:text-white">
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Auto-generated reference number</p>
+                        </div>
+
+                        <div>
+                            <label for="transaction_date" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                                Delivery Date *
+                            </label>
+                            <input type="date"
+                                   id="transaction_date"
+                                   wire:model="transaction_date"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white"
+                                   required>
+                            @error('transaction_date')
+                                <span class="text-red-500 text-sm">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label for="remarks" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                                Remarks (Optional)
+                            </label>
+                            <textarea id="remarks"
+                                      wire:model="remarks"
+                                      rows="3"
+                                      class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white"
+                                      placeholder="e.g., 'Dispatched by Mark', 'For VisMin route'"></textarea>
+                            @error('remarks')
+                                <span class="text-red-500 text-sm">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
+                            <button type="button"
+                                    wire:click="closeCreateBatchModal"
+                                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
+                                Cancel
+                            </button>
+                            <button type="submit"
+                                    class="px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                                Create & Continue
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            @endif
+
+            <!-- STEP 2: DISPLAY BRANCHES -->
+            @if($currentStep === 2)
+                <div>
+                    <h3 class="text-lg font-medium mb-4">Step 2: Branches from Batch: {{ $batch_number }}</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                        All branches from the selected batch have been automatically added to this allocation.
+                    </p>
+                    
+                    <div class="space-y-3 max-h-60 overflow-y-auto">
+                        @foreach($filteredBranchesByBatch as $branch)
+                            <div class="flex items-center p-3 border border-gray-200 dark:border-gray-600 rounded-lg">
+                                <div class="flex-1">
+                                    <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $branch['name'] }}</div>
+                                    @if($branch['address'])
+                                        <div class="text-sm text-gray-500 dark:text-gray-400">{{ $branch['address'] }}</div>
+                                    @endif
+                                </div>
+                                <span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300 rounded-full">
+                                    Auto-added
+>>>>>>> origin/integration/latest
                                 </span>
                             </div>
                         </td>
 
+<<<<<<< HEAD
                         <!-- Scan Progress -->
                         <td class="px-4 py-2 text-sm text-blue-900 dark:text-blue-200">
                             @php
@@ -1140,6 +1450,52 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </span>
                             @else
                                 <span class="text-gray-400 text-xs">No items</span>
+=======
+                    @if(empty($filteredBranchesByBatch))
+                        <div class="text-center py-8">
+                            <p class="text-gray-500 dark:text-gray-400">No branches found for batch: {{ $batch_number }}</p>
+                        </div>
+                    @endif
+
+                    <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
+                        <button type="button"
+                                wire:click="previousStep"
+                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
+                            Back
+                        </button>
+                        <button type="button"
+                                wire:click="nextStep"
+                                @if(empty($filteredBranchesByBatch)) disabled @endif
+                                class="px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:bg-gray-400">
+                            Continue to Products
+                        </button>
+                    </div>
+                </div>
+            @endif
+
+            <!-- STEP 3: ADD PRODUCTS -->
+            @if($currentStep === 3)
+                <div>
+                    <h3 class="text-lg font-medium mb-4">Step 3: Add Products to Branches</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                        Add products to each branch allocation. Select a branch first, then add products.
+                    </p>
+                    
+                    <!-- Branch Selection -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                            Select Branch to Add Products
+                        </label>
+                        <select wire:model.live="selectedBranchAllocationId"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                            <option value="">Choose a branch...</option>
+                            @if($currentBatch)
+                                @foreach($currentBatch->branchAllocations as $branchAllocation)
+                                    <option value="{{ $branchAllocation->id }}">
+                                        {{ $branchAllocation->branch->name }}
+                                    </option>
+                                @endforeach
+>>>>>>> origin/integration/latest
                             @endif
                         </td>
 
@@ -1148,6 +1504,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             {{ $record->status }}
                         </td>
 
+<<<<<<< HEAD
                         <!-- Branches -->
                         <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">
                             @if($record->branchAllocations->count() > 0)
@@ -1177,4 +1534,467 @@ document.addEventListener('DOMContentLoaded', function() {
             </tbody>
         </table>
     </div>
+=======
+                                <form wire:submit="addItemToBranchStep" class="space-y-3">
+                                    <div>
+                                        <label for="selectedProductId" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                                            Product
+                                        </label>
+                                        <select wire:model="selectedProductId"
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                                            <option value="">Select a product</option>
+                                            @foreach($availableProducts as $product)
+                                                @php
+                                                    $isExisting = $selectedBranchAllocation->items->where('product_id', $product->id)->isNotEmpty();
+                                                @endphp
+                                                <option value="{{ $product->id }}" @disabled($isExisting)>
+                                                    {{ $product->name }} @if($isExisting) (Already Added) @endif
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label for="productQuantity" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                                                Quantity
+                                            </label>
+                                            <input type="number"
+                                                   wire:model="productQuantity"
+                                                   min="1"
+                                                   class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                                        </div>
+                                        <div>
+                                            <label for="productUnitPrice" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                                                Unit Price (Optional)
+                                            </label>
+                                            <input type="number"
+                                                   wire:model="productUnitPrice"
+                                                   min="0"
+                                                   step="0.01"
+                                                   class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                                        </div>
+                                    </div>
+
+                                    <button type="submit"
+                                            class="w-full px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                                        Add Item
+                                    </button>
+                                </form>
+                            </div>
+                        @endif
+                    @endif
+
+                    <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
+                        <button type="button"
+                                wire:click="previousStep"
+                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
+                            Back
+                        </button>
+                        <button type="button"
+                                wire:click="nextStep"
+                                class="px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                            Continue to Dispatch
+                        </button>
+                    </div>
+                </div>
+            @endif
+
+            <!-- STEP 4: DISPATCH -->
+            @if($currentStep === 4)
+                <div>
+                    <h3 class="text-lg font-medium mb-4">Step 4: Dispatch Batch</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                        Review and dispatch your batch allocation. This action will create sales receipts for all branches.
+                    </p>
+                    
+                    @if($currentBatch)
+                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6">
+                            <h4 class="font-medium mb-2">Batch Summary</h4>
+                            <div class="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                    <span class="text-gray-600 dark:text-gray-400">Reference:</span>
+                                    <span class="font-medium ml-2">{{ $currentBatch->ref_no }}</span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-600 dark:text-gray-400">Delivery Date:</span>
+                                    <span class="font-medium ml-2">{{ \Carbon\Carbon::parse($currentBatch->transaction_date)->format('M d, Y') }}</span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-600 dark:text-gray-400">Branches:</span>
+                                    <span class="font-medium ml-2">{{ $currentBatch->branchAllocations->count() }}</span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-600 dark:text-gray-400">Total Items:</span>
+                                    <span class="font-medium ml-2">{{ $currentBatch->branchAllocations->sum(function($ba) { return $ba->items->count(); }) }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-6">
+                            <div class="flex">
+                                <svg class="h-5 w-5 text-yellow-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                </svg>
+                                <div class="ml-3">
+                                    <h3 class="text-sm font-medium text-yellow-800 dark:text-yellow-200">Ready to Dispatch</h3>
+                                    <p class="mt-1 text-sm text-yellow-700 dark:text-yellow-300">
+                                        Once dispatched, sales receipts will be generated for all branches and this batch cannot be modified.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
+                    <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
+                        <button type="button"
+                                wire:click="previousStep"
+                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
+                            Back
+                        </button>
+                        <button type="button"
+                                wire:click="dispatchBatchFromStepper"
+                                wire:confirm="Are you sure you want to dispatch this batch? This action cannot be undone."
+                                class="px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                            Dispatch Batch
+                        </button>
+                    </div>
+                </div>
+            @endif
+        </div>
+    </x-modal>
+
+    <!-- STEP 2: ADD BRANCHES MODAL -->
+    <x-modal wire:model="showAddBranchesModal" class="max-w-2xl">
+        <h2 class="text-xl font-bold mb-4">Add Branches to Batch: {{ $selectedBatch?->ref_no ?? '' }}</h2>
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            Select one or multiple branches to receive products in this batch.
+        </p>
+        
+        <form wire:submit="addBranchesToBatch" class="space-y-4">
+            @forelse($availableBranches as $branch)
+                <div class="flex items-center p-3 border border-gray-200 dark:border-gray-600 rounded-lg">
+                    <input type="checkbox"
+                           id="branch_{{ $branch->id }}"
+                           wire:model="selectedBranchIds"
+                           value="{{ $branch->id }}"
+                           class="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded">
+                    <label for="branch_{{ $branch->id }}" class="ml-3 flex-1">
+                        <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $branch->name }}</div>
+                        @if($branch->address)
+                            <div class="text-sm text-gray-500 dark:text-gray-400">{{ $branch->address }}</div>
+                        @endif
+                    </label>
+                </div>
+                @if(in_array($branch->id, $selectedBranchIds))
+                    <div class="ml-6">
+                        <label for="branch_remarks_{{ $branch->id }}" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Remarks for {{ $branch->name }} (Optional)
+                        </label>
+                        <input type="text"
+                               id="branch_remarks_{{ $branch->id }}"
+                               wire:model="branchRemarks.{{ $branch->id }}"
+                               placeholder="e.g., 'Handled by Agent A'"
+                               class="w-full px-2 py-1 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                    </div>
+                @endif
+            @empty
+                <div class="text-center py-4">
+                    <p class="text-gray-500 dark:text-gray-400">No additional branches available to add.</p>
+                </div>
+            @endforelse
+
+            <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
+                <button type="button"
+                        wire:click="closeAddBranchesModal"
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
+                    Cancel
+                </button>
+                <button type="submit"
+                        @if(count($availableBranches) === 0) disabled @endif
+                        class="px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:bg-gray-400">
+                    Add Selected Branches
+                </button>
+            </div>
+        </form>
+    </x-modal>
+
+    <!-- STEP 3: ADD ITEMS MODAL -->
+    <x-modal wire:model="showAddItemsModal" class="max-w-2xl">
+        <h2 class="text-xl font-bold mb-4">Add Items to Branch</h2>
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            {{ $selectedBranchAllocation?->branch->name ?? 'Selected Branch' }}
+        </p>
+        
+        <!-- Existing Items Display -->
+        @if($selectedBranchAllocation && $selectedBranchAllocation->items->count() > 0)
+            <div class="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                <h4 class="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-2">Current Items in this Branch:</h4>
+                <div class="space-y-1">
+                    @foreach($selectedBranchAllocation->items as $existingItem)
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-yellow-700 dark:text-yellow-300">{{ $existingItem->product->name }}</span>
+                            <span class="text-yellow-600 dark:text-yellow-400">Qty: {{ $existingItem->quantity }}</span>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+        
+        <form wire:submit="addItemToBranch" class="space-y-4">
+            <div>
+                <label for="selectedProductId" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                    Product * @if($selectedBranchAllocation && $selectedBranchAllocation->items->count() > 0)<span class="text-xs text-orange-600 dark:text-orange-400">(Already added products are disabled)</span>@endif
+                </label>
+                <select id="selectedProductId"
+                        wire:model="selectedProductId"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                    <option value="">Select a product</option>
+                    @foreach($availableProducts as $product)
+                        @php
+                            $isExisting = $selectedBranchAllocation && $selectedBranchAllocation->items->where('product_id', $product->id)->isNotEmpty();
+                            $productPrice = $product->price ?? $product->selling_price ?? null;
+                        @endphp
+                        <option value="{{ $product->id }}" @disabled($isExisting)>
+                            {{ $product->name }} @if($productPrice) (₱{{ number_format($productPrice, 2) }}) @endif @if($isExisting) (Already Added) @endif
+                        </option>
+                    @endforeach
+                </select>
+                @error('selectedProductId')
+                    <span class="text-red-500 text-sm">{{ $message }}</span>
+                @enderror
+            </div>
+
+            <div>
+                <label for="productQuantity" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                    Quantity *
+                </label>
+                <input type="number"
+                       id="productQuantity"
+                       wire:model="productQuantity"
+                       min="1"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                @error('productQuantity')
+                    <span class="text-red-500 text-sm">{{ $message }}</span>
+                @enderror
+            </div>
+
+            <div>
+                <label for="productUnitPrice" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                    Unit Price (Optional)
+                </label>
+                <input type="number"
+                       id="productUnitPrice"
+                       wire:model="productUnitPrice"
+                       min="0"
+                       step="0.01"
+                       placeholder="0.00"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                @error('productUnitPrice')
+                    <span class="text-red-500 text-sm">{{ $message }}</span>
+                @enderror
+            </div>
+
+            <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
+                <button type="button"
+                        wire:click="closeAddItemsModal"
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
+                    Cancel
+                </button>
+                <button type="submit"
+                        class="px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                    Add Item
+                </button>
+            </div>
+        </form>
+    </x-modal>
+
+    <!-- STEP 4: EDIT ITEM MODAL -->
+    <x-modal wire:model="showEditItemModal" class="max-w-2xl">
+        <h2 class="text-xl font-bold mb-4">Edit Item</h2>
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            {{ $selectedEditItem?->branchAllocation?->branch->name ?? 'Selected Branch' }} - {{ $selectedEditItem?->product->name ?? 'Selected Product' }}
+        </p>
+        
+        @if($selectedEditItem)
+            <div class="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <h4 class="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">Product Information:</h4>
+                <div class="text-sm text-blue-700 dark:text-blue-300 space-y-1">
+                    <div>Product: {{ $selectedEditItem->product->name }}</div>
+                    @if($selectedEditItem->product->price ?? $selectedEditItem->product->selling_price ?? null)
+                        <div>Selling Price: ₱{{ number_format($selectedEditItem->product->price ?? $selectedEditItem->product->selling_price ?? 0, 2) }}</div>
+                    @endif
+                    <div class="font-medium">Current Allocation: Qty: {{ $selectedEditItem->quantity }} @if($selectedEditItem->unit_price) at ₱{{ number_format($selectedEditItem->unit_price, 2) }} = ₱{{ number_format($selectedEditItem->quantity * $selectedEditItem->unit_price, 2) }} @endif</div>
+                </div>
+            </div>
+        @endif
+        
+        <form wire:submit="updateItem" class="space-y-4">
+            <div>
+                <label for="editProductQuantity" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                    Quantity *
+                </label>
+                <input type="number"
+                       id="editProductQuantity"
+                       wire:model="editProductQuantity"
+                       min="1"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                @error('editProductQuantity')
+                    <span class="text-red-500 text-sm">{{ $message }}</span>
+                @enderror
+            </div>
+
+
+            <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
+                <button type="button"
+                        wire:click="closeEditItemModal"
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
+                    Cancel
+                </button>
+                <button type="submit"
+                        class="px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                    Update Item
+                </button>
+            </div>
+        </form>
+    </x-modal>
+
+    <!-- VDR PREVIEW MODAL -->
+    <x-modal wire:model="showVDRPreviewModal" class="max-w-4xl">
+        <h2 class="text-xl font-bold mb-4">VDR Preview & Export</h2>
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">
+            Validate Delivery Receipt for Batch: {{ $selectedBatchForVDR?->ref_no ?? '' }}
+        </p>
+
+        @if($selectedBatchForVDR)
+            <!-- Vendor Information Form -->
+            <div class="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Vendor Information</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="vendorCode" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                            Vendor Code *
+                        </label>
+                        <input type="text"
+                               id="vendorCode"
+                               wire:model="vendorCode"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white"
+                               placeholder="104148">
+                        @error('vendorCode')
+                            <span class="text-red-500 text-sm">{{ $message }}</span>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label for="vendorName" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                            Vendor Name *
+                        </label>
+                        <input type="text"
+                               id="vendorName"
+                               wire:model="vendorName"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white"
+                               placeholder="JKF CORP.">
+                        @error('vendorName')
+                            <span class="text-red-500 text-sm">{{ $message }}</span>
+                        @enderror
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- VDR Preview Table -->
+            <div class="mb-6">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">VDR Preview</h3>
+                <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead class="bg-gray-50 dark:bg-gray-700">
+                                <tr>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">DR#</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Store Code</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Store Name</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Exp. Date</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">DP</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">SD</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">CL</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">SKU #</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Qty</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                @php
+                                    $totalQty = 0;
+                                    $uniqueSkus = collect();
+                                @endphp
+                                
+                                @foreach($selectedBatchForVDR->branchAllocations as $branchAllocation)
+                                    @foreach($branchAllocation->items as $item)
+                                        @php
+                                            $totalQty += $item->quantity;
+                                            $uniqueSkus->push($item->product->sku ?? $item->product->id);
+                                        @endphp
+                                        <tr>
+                                            <td class="px-3 py-2 text-sm text-gray-900 dark:text-white">{{ $selectedBatchForVDR->ref_no }}</td>
+                                            <td class="px-3 py-2 text-sm text-gray-900 dark:text-white">{{ $branchAllocation->branch->code ?? '' }}</td>
+                                            <td class="px-3 py-2 text-sm text-gray-900 dark:text-white">{{ $branchAllocation->branch->name ?? '' }}</td>
+                                            <td class="px-3 py-2 text-sm text-gray-900 dark:text-white">{{ \Carbon\Carbon::parse($selectedBatchForVDR->transaction_date)->format('m/d/y') }}</td>
+                                            <td class="px-3 py-2 text-sm text-gray-900 dark:text-white">04</td>
+                                            <td class="px-3 py-2 text-sm text-gray-900 dark:text-white">10</td>
+                                            <td class="px-3 py-2 text-sm text-gray-900 dark:text-white">72007</td>
+                                            <td class="px-3 py-2 text-sm text-gray-900 dark:text-white">{{ $item->product->sku ?? $item->product->id }}</td>
+                                            <td class="px-3 py-2 text-sm text-gray-900 dark:text-white font-medium">{{ $item->quantity }}</td>
+                                        </tr>
+                                    @endforeach
+                                @endforeach
+                                
+                                <!-- Summary Row -->
+                                <tr class="bg-gray-50 dark:bg-gray-700 font-medium">
+                                    <td colspan="8" class="px-3 py-2 text-sm text-gray-900 dark:text-white">TOTAL QTY:</td>
+                                    <td class="px-3 py-2 text-sm text-gray-900 dark:text-white">{{ $totalQty }}</td>
+                                </tr>
+                                <tr class="bg-gray-50 dark:bg-gray-700 font-medium">
+                                    <td colspan="8" class="px-3 py-2 text-sm text-gray-900 dark:text-white">TOTAL SKU/S:</td>
+                                    <td class="px-3 py-2 text-sm text-gray-900 dark:text-white">{{ $uniqueSkus->unique()->count() }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex justify-between pt-4 border-t border-gray-200 dark:border-gray-600">
+                <div class="flex space-x-3">
+                    <button type="button"
+                            wire:click="printVDR"
+                            class="px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                        <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                        </svg>
+                        Print Delivery Receipt
+                    </button>
+                    <button type="button"
+                            wire:click="exportVDRToExcel"
+                            class="px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                        <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        Export to Excel
+                    </button>
+                </div>
+                <div>
+                    <button type="button"
+                            wire:click="closeVDRPreview"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
+                        Close
+                    </button>
+                </div>
+            </div>
+        @else
+            <div class="text-center py-4">
+                <p class="text-gray-500 dark:text-gray-400">No batch selected for VDR preview.</p>
+            </div>
+        @endif
+    </x-modal>
+>>>>>>> origin/integration/latest
 </div>

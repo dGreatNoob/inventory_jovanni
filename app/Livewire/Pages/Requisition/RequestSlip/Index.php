@@ -29,7 +29,7 @@ class Index extends Component
     // #[Validate('required|in:pending,approved,rejected')]    
     public $status = 'pending';
 
-    #[Validate('required|in:Pet Food,Pet Toys,Pet Care,Pet Health,Pet Grooming,Pet Bedding,Pet Training,Pet Safety,Office Supplies,Packaging,Equipment,Other')]
+    #[Validate('required|in:Stock Replenishment,New Product Launch,Store Transfer,Return/Exchange,Quality Control,Display Materials,Consignment Adjustment,Inventory Audit,Store Setup,Seasonal Collection,Other')]
     public $purpose = '';
 
     #[Validate('required|string|max:255')]
@@ -51,21 +51,20 @@ class Index extends Component
     public $search = '';
     public int $perPage = 10;
 
-    public $showCreateModal = false;
+    public $showRequestSlipPanel = false;
 
     public array $purposes = [
-        'Pet Food' => 'Request Pet Food Supplies',
-        'Pet Toys' => 'Request Pet Toys & Accessories',
-        'Pet Care' => 'Request Pet Care Products',
-        'Pet Health' => 'Request Pet Health & Medical Supplies',
-        'Pet Grooming' => 'Request Pet Grooming Supplies',
-        'Pet Bedding' => 'Request Pet Bedding & Comfort Items',
-        'Pet Training' => 'Request Pet Training Supplies',
-        'Pet Safety' => 'Request Pet Safety & Security Items',
-        'Office Supplies' => 'Request Office Supplies',
-        'Packaging' => 'Request Packaging Materials',
-        'Equipment' => 'Request Equipment & Tools',
-        'Other' => 'Request Other Items',
+        'Stock Replenishment' => 'Request stock replenishment for SM stores',
+        'New Product Launch' => 'Request new bag collection for store launch',
+        'Store Transfer' => 'Transfer bags between SM store locations',
+        'Return/Exchange' => 'Return or exchange defective/damaged items',
+        'Quality Control' => 'Request items for quality inspection',
+        'Display Materials' => 'Request display fixtures and marketing materials',
+        'Consignment Adjustment' => 'Adjust consignment inventory levels',
+        'Inventory Audit' => 'Request for inventory counting and audit',
+        'Store Setup' => 'Request bags for new store opening',
+        'Seasonal Collection' => 'Request seasonal bag collection',
+        'Other' => 'Other request purposes',
     ];
 
     public $purposeFilter = '';
@@ -119,12 +118,17 @@ class Index extends Component
         // broadcast(new RequestSlipCreated(RequestSlip::latest()->first()->id))->toOthers();
 
         session()->flash('message', 'Request created successfully.');
-        $this->showCreateModal = false;
+        $this->closeRequestSlipPanel();
+        $this->resetPage();
+    }
+
+    public function closeRequestSlipPanel()
+    {
+        $this->showRequestSlipPanel = false;
         $this->purpose = array_key_first($this->purposes);
         $this->description = '';
         $this->sent_to = Department::orderBy('name')->first()?->id ?? '';
         $this->reset('request_date');
-        $this->resetPage();
     }
 
     public function delete($id)

@@ -301,6 +301,10 @@ class Index extends Component
 
     public function render()
     {
+        if (!auth()->user()->hasAnyPermission(['branch view'])) {
+            return view('livewire.pages.errors.403');
+        }
+
         $items = Branch::query()
             ->where(function ($query) {
                 $query->where('name', 'like', '%'.$this->search.'%')

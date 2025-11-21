@@ -7,10 +7,13 @@ use App\Livewire\Settings\Profile;
 use Illuminate\Support\Facades\Route;
 use App\Livewire\Pages\Requisition\RequestSlip\Index as RequestSlip;
 use App\Livewire\Pages\Requisition\RequestSlip\View;
-use App\Livewire\Pages\Bodegero\StockIn\Index as StockIn;
+use App\Livewire\Pages\Bodegero\StockIn\Index as BodegeroStockIn;
 use App\Livewire\Pages\Bodegero\StockIn\View as StockInView;
 use App\Livewire\Pages\Bodegero\StockIn\Receive as StockInReceive;
 use App\Livewire\Pages\Bodegero\StockOut\Index as StockOut;
+use App\Livewire\Pages\Warehousestaff\StockIn\Index as StockIn;
+
+
 
 use App\Livewire\Pages\PaperRollWarehouse\Inventory\Index as PRWInventory;
 use App\Livewire\Pages\PaperRollWarehouse\Inventory\Create as PRWInventoryCreate;
@@ -27,10 +30,11 @@ use App\Livewire\Pages\Customer\Index as CustomerProfile;
 use App\Livewire\Pages\Agent\Index as AgentProfile;
 use App\Livewire\Pages\Branch\Index as BranchProfile;
 
-use App\Livewire\Pages\Setup\Department\Index as DepartmentSetup;
-use App\Livewire\Pages\Setup\ItemType\Index as ItemTypeSetup;
-use App\Livewire\Pages\Setup\Allocation\Index as AllocationSetup;
 use App\Livewire\Pages\Notifications\Index as Notifications;
+
+// Allocation Management
+use App\Livewire\Pages\Allocation\Warehouse;
+use App\Livewire\Pages\Allocation\Sales;
 
 // Product Management
 use App\Livewire\Pages\ProductManagement\Index as ProductManagement;
@@ -49,11 +53,30 @@ use App\Livewire\Pages\SalesManagement\SalesReturn as SalesManagementSalesReturn
 use App\Livewire\Pages\SalesManagement\View as Viewsalesorder;
 use App\Livewire\Pages\SalesManagement\ViewSalesReturn;
 use App\Livewire\Pages\SalesManagement\SalesPromo as SalesManagementPromo;
+use App\Livewire\Pages\SalesManagement\PromoView;
 
+
+
+use App\Livewire\SalesPrice\Index as SalesPriceIndex;
 use App\Livewire\Pages\Shipment\Index as createShipmentIndex;
 use App\Livewire\Pages\Shipment\View as createShipmentView;
 use App\Livewire\Pages\Shipment\QrScannder as ShipmentQrScannder;
 use App\Models\Branch;
+
+
+
+
+use App\Http\Controllers\PurchaseOrderController;
+use App\Http\Controllers\PurchaseOrderQRController;
+
+// Add missing PO Management imports
+use App\Livewire\Pages\POManagement\PurchaseOrder\Index as POManagementPurchaseOrder;
+use App\Livewire\Pages\POManagement\PurchaseOrder\Create as POManagementPurchaseOrderCreate;
+use App\Livewire\Pages\POManagement\PurchaseOrder\Edit as POManagementPurchaseOrderEdit;
+use App\Livewire\Pages\POManagement\PurchaseOrder\Show as POManagementPurchaseOrderShow;
+use App\Livewire\Pages\POManagement\PurchaseOrder\ViewItem as POManagementPurchaseOrderViewItem;
+use App\Livewire\Pages\POManagement\PurchaseOrder\PODeliveries;
+
 
 Route::redirect('', '/login')->name('home');
 
@@ -86,12 +109,26 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/purchase-order/view-item/{poId?}', PRWPurchaseOrderViewItem::class)->name('purchaseorder.viewItem');
     });
 
+
+    Route::prefix('po-management')->name('pomanagement.')->group(function () {
+        Route::get('/purchase-order', POManagementPurchaseOrder::class)->name('purchaseorder');
+        Route::get('/purchase-order/create', POManagementPurchaseOrderCreate::class)->name('purchaseorder.create');
+        Route::get('/purchase-order/edit/{Id}', POManagementPurchaseOrderEdit::class)->name('purchaseorder.edit');
+        Route::get('/purchase-order/show/{Id}', POManagementPurchaseOrderShow::class)->name('purchaseorder.show');
+        Route::get('/purchase-order/view-item/{poId?}', POManagementPurchaseOrderViewItem::class)->name('purchaseorder.viewItem');
+        Route::get('/deliveries', PODeliveries::class)->name('deliveries');
+    });
+    Route::get('/po-management/purchaseorder/{Id}/qr', [PurchaseOrderQRController::class, 'show'])
+        ->name('pomanagement.purchaseorder.qr');
+    Route::get('/po-management/purchaseorder/{Id}/qr', [PurchaseOrderQRController::class, 'show'])
+        ->name('pomanagement.purchaseorder.qr');
     Route::get('/suppliermanagement/profile', SupplierProfile::class)
         ->name('supplier.profile');
         
     Route::get('/suppliermanagement/profile/{id}', SupplierProfileView::class)
         ->name('supplier.view');
 
+        
     Route::get('/customermanagement/profile', CustomerProfile::class)
         ->name('customer.profile');
 
@@ -105,26 +142,24 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/RequestSlip/{request_slip_id}', View::class)
         ->name('requisition.requestslip.view');
 
-    Route::get('/warehouseguy/stockin', StockIn::class)
-        ->name('bodegero.stockin');
+    //Route::get('/warehouseguy/stockin', BodegeroStockIn::class)
+        //->name('bodegero.stockin');
     Route::get('/warehouseguy/stockout', StockOut::class)
         ->name('bodegero.stockout');
     // Route::get('/Bodegero/StockIn/View/{purchaseOrder}', StockInView::class)
     // ->name('bodegero.stockin.view');
     // Route::get('/Bodegero/StockIn/Receive/{purchaseOrder}', StockInReceive::class)
     // ->name('bodegero.stockin.receive');
+    
+    Route::get('/warehousestaff/stockin', StockIn::class)
+        ->name('warehousestaff.stockin');
 
-    Route::get('/Setup/Department', DepartmentSetup::class)
-        ->name('setup.department');
 
-    Route::get('/Setup/ItemType', ItemTypeSetup::class)
-        ->name('setup.itemType');
 
-    Route::get('/Setup/Allocation', AllocationSetup::class)
-        ->name('setup.allocation');
 
     Route::get('/user-management', UserIndex::class)
         ->name('user.index');
+
     Route::get('/roles-permissions', RolePermissionIndex::class)->name('roles.index');
 
     Route::prefix('finance')->name('finance.')->group(function () {
@@ -140,11 +175,34 @@ Route::middleware(['auth'])->group(function () {
         return view('livewire.pages.qrcode.purchaseorderprint', compact('purchaseOrder'));
     })->name('purchase-orders.print');
 
+    Route::get('/sales-order/print/{sales_order_number}', function ($sales_order_number) {
+        $salesOrder = \App\Models\SalesOrder::with(['customers', 'agents', 'items.product'])->where('sales_order_number', $sales_order_number)->firstOrFail();
+        return view('livewire.pages.qrcode.salesorderprint', compact('salesOrder'));
+    })->name('sales-orders.print');
+
+    // VDR Print Route
+    Route::get('/allocation/vdr/print/{batchId}', [\App\Http\Controllers\VDRPrintController::class, 'printVDR'])->name('allocation.vdr.print');
+    
+    // VDR Excel Export Route
+    Route::get('/allocation/vdr/excel/{batchId}', [\App\Http\Controllers\VDRExcelController::class, 'exportVDR'])->name('allocation.vdr.excel');
+
+    // Receipt PDF and Excel Export Routes
+    Route::get('/allocation/receipt/pdf/{receiptId}', [\App\Http\Controllers\ReceiptController::class, 'exportPDF'])->name('allocation.receipt.pdf');
+    Route::get('/allocation/receipt/excel/{receiptId}', [\App\Http\Controllers\ReceiptController::class, 'exportExcel'])->name('allocation.receipt.excel');
+
     Route::get('/sales-order', SalesManagementIndex::class)->name('salesorder.index');
     Route::get('/sales-order/{salesOrderId}', Viewsalesorder::class)->name('salesorder.view');
     Route::get('/sales-return', SalesManagementSalesReturn::class)->name('salesorder.return');
     Route::get('/sales-return/{salesreturnId}', ViewSalesReturn::class)->name('salesreturn.view');
     Route::get('/sales-promo', SalesManagementPromo::class)->name('sales.promo');
+    Route::get('/promo/view/{id}', \App\Livewire\Pages\SalesManagement\PromoView::class)->name('promo.view');
+    Route::get('/sales-price', SalesPriceIndex::class)->name('sales-price.index');
+
+    // Allocation Management
+    Route::prefix('allocation')->name('allocation.')->group(function () {
+        Route::get('/warehouse', Warehouse::class)->name('warehouse');
+        Route::get('/sales', Sales::class)->name('sales');
+    });
 
     // Product Management
     Route::prefix('product-management')->name('product-management.')->group(function () {

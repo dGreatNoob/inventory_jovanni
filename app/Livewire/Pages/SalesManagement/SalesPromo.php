@@ -19,7 +19,7 @@ class SalesPromo extends Component
 
     // Promo type
     public $promo_type = '';
-    public $promo_type_options = ['Buy one Take one', '70% Discount', '60% Discount'];
+    public $promo_type_options = ['Buy one Take one', '70% Discount', '60% Discount', '50% Discount'];
 
     // Lists
     public $branches = [], $products = [];
@@ -41,6 +41,7 @@ class SalesPromo extends Component
     public $showViewModal = false;
     public $view_name, $view_code, $view_type, $view_startDate, $view_endDate, $view_description;
     public $view_selected_branches = [], $view_selected_products = [], $view_selected_second_products = [];
+    public $showCreatePanel = false;
 
     // Search & pagination
     public $search = '';
@@ -51,6 +52,18 @@ class SalesPromo extends Component
     {
         $this->branches = Branch::orderBy('name')->get();
         $this->products = Product::orderBy('name')->get();
+    }
+
+    public function showCreatePanel()
+    {
+        $this->showCreatePanel = true;
+    }
+
+    public function closeCreatePanel()
+    {
+        $this->showCreatePanel = false;
+        // Optional: reset form when closing
+        // $this->resetForm();
     }
 
     // Validation rules for create form

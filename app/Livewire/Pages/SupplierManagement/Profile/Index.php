@@ -6,21 +6,38 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\Supplier;
 use App\Models\Category;
+use App\Models\Product;
+use App\Models\PurchaseOrder;
 
 class Index extends Component
 {
     use WithPagination;
 
-    // Removed category properties
+    // Dashboard metrics
+    public $totalSuppliers = 0;
+    public $activeSuppliers = 0;
+    public $totalOrders = 0;
+    public $totalValue = 0;
+
+    // Create form properties
     public $supplier_name, $supplier_code, $supplier_address, $contact_person, $contact_num, $email, $tin_num, $status;
+    
+    // Edit form properties
     public $edit_name, $edit_code, $edit_address, $edit_contact_person, $edit_contact_num, $edit_email, $edit_tin_num, $edit_status;
-    public $view_name, $view_code, $view_address, $view_contact_person,
-       $view_contact_num, $view_email, $view_tin_num, $view_status, $view_categories = [];
+    
+    // View modal properties
+    public $view_name, $view_code, $view_address, $view_contact_person, $view_contact_num, $view_email, $view_tin_num, $view_status, $view_categories = [];
+    
+    // Table settings
     public $perPage = 10;
     public $search = '';
+    
+    // Modal states
     public $showDeleteModal = false;
     public $showEditModal = false;
     public $showViewModal = false;
+    
+    // Selected item tracking
     public $deleteId = null;
     public $selectedItemId;
 
@@ -28,36 +45,51 @@ class Index extends Component
         'search' => ['except' => ''],
     ];
 
+    /**
+     * Mount component and load dashboard metrics
+     */
+    public function mount()
+    {
+        $this->loadDashboardMetrics();
+    }
+
+    /**
+     * Load dashboard overview metrics
+     */
+    public function loadDashboardMetrics()
+    {
+        // 1. Total Suppliers
+        $this->totalSuppliers = Supplier::count();
+        
+        // 2. Active Suppliers
+        $this->activeSuppliers = Supplier::where('status', 'active')->count();
+        
+        // 3. Total Orders (Purchase Orders)
+        $this->totalOrders = PurchaseOrder::count();
+        
+        // 4. Total Value (Sum of all PO prices)
+        $this->totalValue = PurchaseOrder::sum('total_price') ?? 0;
+    }
+
+    /**
+     * Reset pagination when search is updated
+     */
     public function updatingSearch()
     {
         $this->resetPage();
     }
 
-    public function getTotalSuppliersProperty()
-    {
-        return Supplier::count();
-    }
-
-    public function getActiveSuppliersProperty()
-    {
-        return Supplier::where('status', 'active')->count();
-    }
-
-    public function getPendingSuppliersProperty()
-    {
-        return Supplier::where('status', 'pending')->count();
-    }
-
+    /**
+     * Reset pagination when per page is updated
+     */
     public function updatedPerPage()
     {
         $this->resetPage();
     }
 
-    public function mount()
-    {
-        // Removed category loading
-    }
-
+    /**
+     * View supplier details in modal
+     */
     public function view($id)
     {
         $supplier = Supplier::findOrFail($id);
@@ -76,7 +108,7 @@ class Index extends Component
     }
 
     /**
-     * ✅ Close the view modal
+     * Close the view modal
      */
     public function closeViewModal()
     {
@@ -95,12 +127,12 @@ class Index extends Component
     }
 
     /**
-     * ✅ Dynamic validation rules for create/edit
+     * Dynamic validation rules for create/edit
      */
     public function rules()
     {
         if ($this->selectedItemId) {
-            // 🔹 Edit mode
+            // Edit mode validation
             return [
                 'edit_name' => 'required|string|max:255',
                 'edit_code' => 'required|string|max:50|unique:suppliers,code,' . $this->selectedItemId,
@@ -109,11 +141,11 @@ class Index extends Component
                 'edit_contact_num' => ['required', 'regex:/^[0-9+\-\(\)\s]+$/'],
                 'edit_email' => 'required|email|unique:suppliers,email,' . $this->selectedItemId,
                 'edit_tin_num' => 'nullable|string|max:255',
-                'edit_status' => 'required|string',
+                'edit_status' => 'required|string|in:active,inactive,pending',
             ];
         }
 
-        // 🔹 Create mode
+        // Create mode validation
         return [
             'supplier_name' => 'required|string|max:255',
             'supplier_code' => 'required|string|max:50|unique:suppliers,code',
@@ -126,11 +158,11 @@ class Index extends Component
     }
 
     /**
-     * ✅ Create new supplier
+     * Create new supplier
      */
     public function submit()
     {
-        $this->validate(); // runs create-mode rules
+        $this->validate();
 
         Supplier::create([
             'entity_id' => 1, // Default entity ID
@@ -145,7 +177,8 @@ class Index extends Component
             'is_active' => true,
         ]);
 
-        session()->flash('message', 'Supplier Profile Added Successfully.');
+        session()->flash('message', 'Supplier profile added successfully.');
+        
         $this->reset([
             'supplier_name',
             'supplier_code',
@@ -155,10 +188,13 @@ class Index extends Component
             'email',
             'tin_num',
         ]);
+
+        // Refresh dashboard metrics
+        $this->loadDashboardMetrics();
     }
 
     /**
-     * ✅ Load supplier into edit modal
+     * Load supplier data into edit modal
      */
     public function edit($id)
     {
@@ -173,17 +209,16 @@ class Index extends Component
         $this->edit_email = $supplier->email;
         $this->edit_tin_num = $supplier->tin_num;
         $this->edit_status = $supplier->status;
-        $this->edit_categories = $supplier->categories ?? [];
 
         $this->showEditModal = true;
     }
 
     /**
-     * ✅ Update supplier record safely
+     * Update supplier record
      */
     public function update()
     {
-        $this->validate(); // runs edit-mode rules
+        $this->validate();
 
         $supplier = Supplier::findOrFail($this->selectedItemId);
 
@@ -200,22 +235,56 @@ class Index extends Component
 
         $this->showEditModal = false;
         session()->flash('message', 'Supplier profile updated successfully.');
+        
+        // Reset edit form
+        $this->reset([
+            'selectedItemId',
+            'edit_name',
+            'edit_code',
+            'edit_address',
+            'edit_contact_person',
+            'edit_contact_num',
+            'edit_email',
+            'edit_tin_num',
+            'edit_status',
+        ]);
+
+        // Refresh dashboard metrics
+        $this->loadDashboardMetrics();
     }
 
+    /**
+     * Show delete confirmation modal
+     */
     public function confirmDelete($id)
     {
         $this->deleteId = $id;
         $this->showDeleteModal = true;
     }
 
+    /**
+     * Delete supplier
+     */
     public function delete()
     {
-        Supplier::findOrFail($this->deleteId)->delete();
+        try {
+            $supplier = Supplier::findOrFail($this->deleteId);
+            $supplier->delete();
 
-        session()->flash('message', 'Supplier profile deleted successfully.');
+            session()->flash('message', 'Supplier profile deleted successfully.');
+            
+            // Refresh dashboard metrics
+            $this->loadDashboardMetrics();
+        } catch (\Exception $e) {
+            session()->flash('error', 'Error deleting supplier: ' . $e->getMessage());
+        }
+
         $this->cancel();
     }
 
+    /**
+     * Cancel and close modals
+     */
     public function cancel()
     {
         $this->resetValidation();
@@ -231,9 +300,20 @@ class Index extends Component
             'contact_num',
             'email',
             'tin_num',
+            'edit_name',
+            'edit_code',
+            'edit_address',
+            'edit_contact_person',
+            'edit_contact_num',
+            'edit_email',
+            'edit_tin_num',
+            'edit_status',
         ]);
     }
 
+    /**
+     * Get all categories associated with a supplier (direct + from products)
+     */
     public function getAllCategoriesForSupplier($supplier)
     {
         // Get supplier's direct categories
@@ -246,17 +326,22 @@ class Index extends Component
             ->pluck('category_id')
             ->toArray();
         
-        // Merge both arrays and remove duplicates
+        // Merge and remove duplicates
         $allCategoryIds = array_unique(array_merge($supplierCategories, $productCategories));
         
-        // Get category names
-        $categories = \App\Models\Category::whereIn('id', $allCategoryIds)->get();
-        
-        return $categories;
+        // Get category models
+        return Category::whereIn('id', $allCategoryIds)->get();
     }
 
+    /**
+     * Render component with suppliers list
+     */
     public function render()
     {
+        if (!auth()->user()->hasAnyPermission(['supplier view'])) {
+            return view('livewire.pages.errors.403');
+        }
+
         $search = trim($this->search);
 
         $items = Supplier::when($search, function ($query) use ($search) {
@@ -267,17 +352,21 @@ class Index extends Component
                     ->orWhere('contact_person', 'like', "%{$search}%")
                     ->orWhere('contact_num', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%")
-                    ->orWhere('status', 'like', "%{$search}%")
-                    ->orWhereJsonContains('categories', $search)
-                    ->orWhereRaw('LOWER(JSON_EXTRACT(categories, "$")) LIKE ?', ['%' . strtolower($search) . '%']);
+                    ->orWhere('status', 'like', "%{$search}%");
             });
         })
-        ->with(['products' => function($query) {
-            $query->select('id', 'supplier_id', 'category_id')
-                  ->whereNotNull('category_id');
-        }])
+        ->with([
+            'products' => function($query) {
+                $query->select('id', 'supplier_id', 'category_id')
+                      ->whereNotNull('category_id');
+            },
+            'purchaseOrders' => function($query) {
+                $query->select('id', 'supplier_id', 'total_price', 'order_date')
+                      ->orderBy('order_date', 'desc');
+            }
+        ])
         ->withCount(['products' => function ($query) {
-            $query->active();
+            $query->where('disabled', false); // Active products only
         }])
         ->latest()
         ->paginate($this->perPage);
@@ -285,4 +374,3 @@ class Index extends Component
         return view('livewire.pages.supplier-management.profile.index', compact('items'));
     }
 }
-

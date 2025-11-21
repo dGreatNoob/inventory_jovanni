@@ -17,7 +17,6 @@ class SupplyProfile extends Model
          'supply_sku',
         'supply_item_class',
         'item_type_id',
-        'allocation_id',
         'supply_description',
         'supply_qty',
         'supply_uom',
@@ -25,7 +24,7 @@ class SupplyProfile extends Model
         'supply_price1',
         'supply_price2',
         'supply_price3',
-        'unit_cost',    
+        'unit_cost',
     ];
 
     public function itemType()
@@ -33,10 +32,6 @@ class SupplyProfile extends Model
         return $this->belongsTo(ItemType::class);
     }
 
-    public function allocation()
-    {
-        return $this->belongsTo(Allocation::class);
-    }
 
     public function supplyOrders(): HasMany
     {
@@ -146,7 +141,7 @@ class SupplyProfile extends Model
             ->useLogName('supply_profile')
             ->setDescriptionForEvent(function(string $eventName) {
                 $itemTypeName = $this->relationLoaded('itemType') ? ($this->itemType->name ?? 'N/A') : (\App\Models\ItemType::find($this->item_type_id)->name ?? 'N/A');
-                $allocationName = $this->relationLoaded('allocation') ? ($this->allocation->name ?? 'N/A') : (\App\Models\Allocation::find($this->allocation_id)->name ?? 'N/A');
+                $allocationName = 'N/A';
                 if ($eventName === 'updated') {
                     $changes = collect($this->getChanges())->only($this->fillable);
                     $original = collect($this->getOriginal())->only($changes->keys());
@@ -172,11 +167,6 @@ class SupplyProfile extends Model
                             $oldName = \App\Models\ItemType::find($old)->name ?? $old;
                             $newName = \App\Models\ItemType::find($new)->name ?? $new;
                             return 'Item Type: ' . $oldName . ' → ' . $newName;
-                        }
-                        if ($field === 'allocation_id') {
-                            $oldName = \App\Models\Allocation::find($old)->name ?? $old;
-                            $newName = \App\Models\Allocation::find($new)->name ?? $new;
-                            return 'Allocation: ' . $oldName . ' → ' . $newName;
                         }
                         return ucfirst(str_replace('_', ' ', $field)) . ": {$old} → {$new}";
                     })->implode('<br>');

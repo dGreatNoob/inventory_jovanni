@@ -11,12 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('supply_profiles')) {
+            return;
+        }
+
         Schema::create('supply_profiles', function (Blueprint $table) {
             $table->id();
             $table->string('supply_sku');
             $table->string('supply_item_class');
             $table->foreignIdFor(\App\Models\ItemType::class)->constrained()->onDelete('cascade');
-            $table->foreignIdFor(\App\Models\Allocation::class)->constrained()->onDelete('cascade');
             $table->text('supply_description');
             $table->decimal('supply_qty', 10, 2);
             $table->string('supply_uom');

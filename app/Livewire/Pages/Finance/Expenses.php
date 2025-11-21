@@ -22,6 +22,18 @@ class Expenses extends Component
     public $showDeleteModal = false;
     public $expenseToDelete = null;
 
+    public $showCreatePanel = false;
+
+    public function showCreatePanel()
+    {
+        $this->showCreatePanel = true;
+    }
+
+    public function closeCreatePanel()
+    {
+        $this->showCreatePanel = false;
+    }
+
     protected $rules = [
         'reference_id' => 'nullable|string|max:255',
         'party' => 'nullable|string|max:255',

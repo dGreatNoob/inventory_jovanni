@@ -3,6 +3,7 @@
 
 <div class="pt-4">
     <div class="">
+        @can('agent create')
         <section class="mb-6 bg-white dark:bg-gray-800 shadow rounded-lg">
             <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
                 <h3 class="text-lg font-medium text-gray-900 dark:text-white">Create New Agent</h3>
@@ -56,6 +57,7 @@
                 </div>
             </form>
         </section>
+        @endcan
 
         @if (session()->has('message'))
             <div class="mb-4 p-4 text-sm text-green-700 bg-green-100 rounded-lg dark:bg-green-200 dark:text-green-800">
@@ -159,15 +161,23 @@
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center">
                                         <div class="flex items-center justify-center space-x-2">
+                                            @can('agent assign branch')
                                             <flux:button wire:click.prevent="toggleDeployment({{ $item->id }})" variant="outline" size="sm">
                                                 {{ $isDeployed ? 'Release' : 'Deploy' }}
                                             </flux:button>
+                                            @endcan
+                                            
+                                            @can('agent edit')
                                             <flux:button wire:click.prevent="edit({{ $item->id }})" variant="outline" size="sm">
                                                 Edit
                                             </flux:button>
+                                            @endcan
+
+                                            @can('agent delete')
                                             <flux:button wire:click.prevent="confirmDelete({{ $item->id }})" variant="outline" size="sm" class="text-red-600 hover:text-red-700">
                                                 Delete
                                             </flux:button>
+                                            @endcan
                                         </div>
                                     </td>
                                 </tr>

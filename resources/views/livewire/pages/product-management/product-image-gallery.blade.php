@@ -35,12 +35,14 @@
             </flux:button>
 
             <flux:modal.trigger name="upload-images">
+                @can('image create')
                 <flux:button variant="primary" class="whitespace-nowrap min-w-fit flex items-center">
                     <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                     </svg>
                     <span>Upload Images</span>
                 </flux:button>
+                @endcan
             </flux:modal.trigger>
         </div>
     </div>
@@ -228,10 +230,11 @@
                                 <flux:modal.trigger name="image-viewer">
                                     <div class="aspect-square bg-gray-100 dark:bg-gray-600 overflow-hidden cursor-pointer"
                                          wire:click="openProductViewer({{ $product->id }}, {{ $cover->id ?? 'null' }})">
-                                        @if($cover)
-                                            <img src="{{ $cover->url }}" 
+                                        @if($cover && $cover->filename)
+                                            <img src="{{ asset('storage/photos/' . $cover->filename) }}" 
                                                  alt="{{ $product->name }}"
-                                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200">
+                                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                                                 onerror="this.src='{{ asset('images/placeholder.png') }}'; this.onerror=null;">
                                         @else
                                             <div class="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
                                         @endif
@@ -287,10 +290,11 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="flex-shrink-0 h-16 w-16">
-                                                @if($cover)
+                                                @if($cover && $cover->filename)
                                                     <img class="h-16 w-16 rounded-lg object-cover" 
-                                                         src="{{ $cover->url }}" 
-                                                         alt="{{ $product->name }}">
+                                                         src="{{ asset('storage/photos/' . $cover->filename) }}" 
+                                                         alt="{{ $product->name }}"
+                                                         onerror="this.src='{{ asset('images/placeholder.png') }}'; this.onerror=null;">
                                                 @else
                                                     <div class="h-16 w-16 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-400">—</div>
                                                 @endif

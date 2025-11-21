@@ -235,6 +235,10 @@ class Index extends Component
 
     public function render()
     {
+        if (!auth()->user()->hasAnyPermission(['agent view'])) {
+            return view('livewire.pages.errors.403');
+        }
+
         $query = Agent::with('branchAssignments')
             ->where(function ($q) {
                 $q->where('name', 'like', '%'.$this->search.'%')

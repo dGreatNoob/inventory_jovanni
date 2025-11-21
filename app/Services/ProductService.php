@@ -4,14 +4,15 @@ namespace App\Services;
 
 use App\Models\Product;
 use App\Models\ProductInventory;
+use App\Models\ProductPriceHistory;
 use App\Models\InventoryMovement;
 use App\Models\Category;
 use App\Models\Supplier;
 use App\Models\ProductImage;
+use App\Models\ProductColor;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class ProductService
 {
@@ -52,15 +53,26 @@ class ProductService
     public function createProduct(array $data): Product
     {
         return DB::transaction(function () use ($data) {
-            // Auto-generate barcode if not provided
-            if (empty($data['barcode'])) {
-                $barcodeService = app(BarcodeService::class);
-                $data['barcode'] = $barcodeService->generateSequentialBarcode();
+            $data['product_number'] = $this->normalizeProductNumber($data['product_number'] ?? null);
+
+            $color = null;
+            if (!empty($data['product_color_id'])) {
+                $color = ProductColor::find($data['product_color_id']);
             }
-            
+
+            $productType = $data['product_type'] ?? 'regular';
+            $data['price_note'] = $this->generateInitialPriceNote($productType);
+
+            if (empty($data['barcode']) && !empty($data['product_number']) && $color && isset($data['price']) && is_numeric($data['price']) && (float) $data['price'] >= 0) {
+                $data['barcode'] = $this->composeBarcode($data['product_number'], $color->code, $data['price']);
+            }
+
             // Create the product
             $product = Product::create([
                 'entity_id' => $data['entity_id'] ?? 1,
+                'product_number' => $data['product_number'] ?? null,
+                'product_color_id' => $data['product_color_id'] ?? null,
+                'product_type' => $productType,
                 'sku' => $data['sku'],
                 'barcode' => $data['barcode'],
                 'name' => $data['name'],
@@ -70,8 +82,10 @@ class ProductService
                 'uom' => $data['uom'] ?? 'pcs',
                 'supplier_id' => $data['supplier_id'],
                 'supplier_code' => $data['supplier_code'] ?? null,
+                'soft_card' => $data['soft_card'] ?? null,
                 'price' => $data['price'],
-                'price_note' => $data['price_note'] ?? null,
+                'original_price' => $data['original_price'] ?? null,
+                'price_note' => $data['price_note'],
                 'cost' => $data['cost'],
                 'shelf_life_days' => $data['shelf_life_days'] ?? null,
                 'pict_name' => $data['pict_name'] ?? null,
@@ -85,6 +99,15 @@ class ProductService
                 $this->createInitialInventory($product, $data['initial_quantity']);
             }
 
+            ProductPriceHistory::create([
+                'product_id' => $product->id,
+                'old_price' => null,
+                'new_price' => $product->price,
+                'pricing_note' => $product->price_note,
+                'changed_by' => auth()->id() ?? 1,
+                'changed_at' => now(),
+            ]);
+
             return $product->load(['category', 'supplier', 'images', 'inventory']);
         });
     }
@@ -95,12 +118,76 @@ class ProductService
     public function updateProduct(Product $product, array $data): Product
     {
         return DB::transaction(function () use ($product, $data) {
-            $product->update(array_merge($data, [
+            $originalPrice = $product->price;
+            $originalNote = $product->price_note;
+
+            $data['product_number'] = $this->normalizeProductNumber($data['product_number'] ?? $product->product_number);
+
+            $color = null;
+            if (array_key_exists('product_color_id', $data)) {
+                $color = $data['product_color_id'] ? ProductColor::find($data['product_color_id']) : null;
+            } else {
+                $color = $product->color;
+            }
+
+            $updatePayload = array_merge($data, [
                 'updated_by' => auth()->id(),
-            ]));
+            ]);
+
+            if (array_key_exists('product_number', $data) || array_key_exists('product_color_id', $data) || array_key_exists('price', $data)) {
+                $updatedProductNumber = $data['product_number'] ?? $product->product_number;
+                $colorCode = $color?->code;
+                $price = $data['price'] ?? $product->price;
+
+                if ($updatedProductNumber && $colorCode && $price) {
+                    $composedBarcode = $this->composeBarcode($updatedProductNumber, $colorCode, $price);
+                    if ($composedBarcode) {
+                        $updatePayload['barcode'] = $composedBarcode;
+                    }
+                }
+            }
+
+            $priceChanged = false;
+            if (array_key_exists('price', $data)) {
+                $newPrice = $data['price'];
+                $priceChanged = $this->hasPriceChanged($originalPrice, $newPrice);
+
+                if ($priceChanged) {
+                    $productType = $data['product_type'] ?? null;
+                    $nextNote = $this->generateNextPriceNote($product, $productType);
+                    $updatePayload['price_note'] = $nextNote;
+                    $data['price_note'] = $nextNote;
+                }
+            }
+
+            $product->update($updatePayload);
+
+            if ($priceChanged) {
+                ProductPriceHistory::create([
+                    'product_id' => $product->id,
+                    'old_price' => $originalPrice,
+                    'new_price' => $data['price'],
+                    'pricing_note' => $data['price_note'] ?? $originalNote,
+                    'changed_by' => auth()->id() ?? 1,
+                    'changed_at' => now(),
+                ]);
+            }
 
             return $product->fresh(['category', 'supplier', 'images', 'inventory']);
         });
+    }
+
+    protected function hasPriceChanged($oldPrice, $newPrice): bool
+    {
+        if (is_null($oldPrice) && is_null($newPrice)) {
+            return false;
+        }
+
+        if (is_null($oldPrice) xor is_null($newPrice)) {
+            return true;
+        }
+
+        return round((float) $oldPrice, 2) !== round((float) $newPrice, 2);
     }
 
     /**
@@ -294,5 +381,126 @@ class ProductService
         return DB::transaction(function () use ($productIds) {
             return Product::whereIn('id', $productIds)->delete();
         });
+    }
+
+    public function getProductPriceHistory(int $productId, int $limit = 50): Collection
+    {
+            return ProductPriceHistory::with(['changedBy:id,name'])
+            ->where('product_id', $productId)
+            ->orderByDesc('changed_at')
+            ->limit($limit)
+            ->get();
+    }
+
+    protected function composeBarcode(?string $productNumber, ?string $colorCode, $price = null): ?string
+    {
+        if (!$productNumber || !$colorCode) {
+            return null;
+        }
+
+        $digitsProduct = substr(preg_replace('/\D/', '', $productNumber), 0, 6);
+        $digitsColor = substr(preg_replace('/\D/', '', $colorCode), 0, 4);
+
+        if ($digitsProduct === '' || $digitsColor === '') {
+            return null;
+        }
+
+        $normalizedProduct = str_pad($digitsProduct, 6, '0', STR_PAD_LEFT);
+        $normalizedColor = str_pad($digitsColor, 4, '0', STR_PAD_LEFT);
+
+        // Format price: remove decimal point and zero-pad to 6 digits
+        $priceDigits = '';
+        if ($price !== null && $price !== '' && is_numeric($price)) {
+            // Convert price to string, remove decimal point, and pad to 6 digits
+            $priceValue = (float) $price;
+            $priceInCents = (int) ($priceValue * 100);
+            // Ensure price doesn't exceed 999999.99 (99999999 cents = 8 digits, but we need 6)
+            // Take only last 6 digits if price is too large
+            $priceDigits = substr(str_pad((string) $priceInCents, 6, '0', STR_PAD_LEFT), -6);
+        } else {
+            // If price is missing, pad with zeros
+            $priceDigits = '000000';
+        }
+
+        return $normalizedProduct . $normalizedColor . $priceDigits;
+    }
+
+    protected function normalizeProductNumber(?string $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $digits = substr(preg_replace('/\D/', '', $value), 0, 6);
+
+        if ($digits === '') {
+            return null;
+        }
+
+        return str_pad($digits, 6, '0', STR_PAD_LEFT);
+    }
+
+    protected function generateInitialPriceNote(?string $productType): string
+    {
+        $prefix = $this->determinePricePrefix($productType, null);
+        return $prefix . '1';
+    }
+
+    protected function generateNextPriceNote(Product $product, ?string $productType): string
+    {
+        $prefix = $this->determinePricePrefix($productType, $product->price_note);
+
+        $latestHistory = ProductPriceHistory::where('product_id', $product->id)
+            ->where('pricing_note', 'like', $prefix . '%')
+            ->orderByDesc('changed_at')
+            ->orderByDesc('id')
+            ->first();
+
+        $referenceNote = $latestHistory?->pricing_note;
+
+        if (!$referenceNote && str_starts_with(strtoupper((string) $product->price_note), $prefix)) {
+            $referenceNote = $product->price_note;
+        }
+
+        $currentIndex = $this->extractTrailingIndex($referenceNote);
+
+        return $prefix . ($currentIndex + 1);
+    }
+
+    protected function determinePricePrefix(?string $productType, ?string $fallbackNote): string
+    {
+        $type = strtolower((string) $productType);
+
+        if ($type === 'sale') {
+            return 'SAL';
+        }
+
+        if ($type === 'regular') {
+            return 'REG';
+        }
+
+        $fallback = strtoupper((string) $fallbackNote);
+        if (str_starts_with($fallback, 'SAL')) {
+            return 'SAL';
+        }
+
+        if (str_starts_with($fallback, 'REG')) {
+            return 'REG';
+        }
+
+        return 'REG';
+    }
+
+    protected function extractTrailingIndex(?string $note): int
+    {
+        if (empty($note)) {
+            return 0;
+        }
+
+        if (preg_match('/(\d+)$/', $note, $matches)) {
+            return (int) $matches[1];
+        }
+
+        return 0;
     }
 }

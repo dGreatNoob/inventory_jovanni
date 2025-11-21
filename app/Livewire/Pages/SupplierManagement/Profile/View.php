@@ -25,82 +25,39 @@ class View extends Component
     // Edit form properties
     public $selectedItemId;
     public $edit_status;
-
-    // Modal handling methods
-    public function confirmDelete($id)
-    {
-        $this->deleteId = $id;
-        $this->showDeleteModal = true;
-    }
-
-    public function delete()
-    {
-        try {
-            $product = Product::findOrFail($this->deleteId);
-            
-            // Delete the product from both products and supplier products
-            if ($product) {
-                // Delete from main products
-                $product->delete();
-                
-                session()->flash('message', 'Product successfully deleted from the system.');
-                $this->showDeleteModal = false;
-                $this->reset('deleteId');
-                
-                // Refresh the counts and data
-                $this->loadSupplier();
-            }
-        } catch (\Exception $e) {
-            session()->flash('error', 'Error deleting product: ' . $e->getMessage());
-        }
-    }
-
-    public function cancel()
-    {
-        // Close any open modals and clear edit state safely.
-        $this->showDeleteModal = false;
-        $this->showEditModal = false;
-
-        // Clear validation errors
-        $this->resetValidation();
-
-        // Reset all form-related properties
-        $this->reset(['selectedItemId', 'edit_status', 'deleteId']);
-    }
-
-    public function edit($id)
-    {
-        $item = Product::findOrFail($id);
-        $this->selectedItemId = $id;
-        $this->edit_status = $item->disabled ? 'inactive' : 'active';
-        $this->showEditModal = true;
-    }
-
-    public function update()
-    {
-        $this->validate([
-            'edit_status' => 'required|in:active,inactive'
-        ]);
-
-        $product = Product::findOrFail($this->selectedItemId);
-        $product->update([
-            'disabled' => $this->edit_status === 'inactive'
-        ]);
-
-        $this->showEditModal = false;
-        session()->flash('message', 'Product updated successfully.');
-    }
+    public $purchaseOrders;
+    
+    // ✅ Dashboard metrics
+    public $totalOrders = 0;
+    public $totalSpent = 0;
+    public $activeProductCount = 0;
+    public $deliveryPerformance = 0;
+    public $deliveryPerformanceColor = 'gray';
 
     protected $queryString = [
         'search' => ['except' => ''],
     ];
 
+    /**
+     * Mount component and load supplier data
+     */
     public function mount($id)
     {
         $this->supplier_id = $id;
         $this->loadSupplier();
+        $this->loadDashboardMetrics();
+
+        // Load only THIS supplier's purchase orders
+        $this->purchaseOrders = PurchaseOrder::with(['productOrders', 'deliveries'])
+            ->where('supplier_id', $this->supplier_id)
+            ->latest()
+            ->take(10)
+            ->get();
     }
 
+    /**
+     * Load supplier information
+     */
     public function loadSupplier()
     {
         $supplier = Supplier::findOrFail($this->supplier_id);
@@ -120,6 +77,160 @@ class View extends Component
             ->toArray();
     }
 
+    /**
+     * ✅ Load dashboard metrics for supplier
+     */
+    public function loadDashboardMetrics()
+    {
+        // 1. Total Orders (Count of Purchase Orders for this supplier)
+        $this->totalOrders = PurchaseOrder::where('supplier_id', $this->supplier_id)->count();
+        
+        // 2. Total Spent (Sum of all PO total prices)
+        $this->totalSpent = PurchaseOrder::where('supplier_id', $this->supplier_id)
+            ->sum('total_price') ?? 0;
+        
+        // 3. Active Products (Products not disabled)
+        $this->activeProductCount = Product::where('supplier_id', $this->supplier_id)
+            ->where('disabled', false)
+            ->count();
+        
+        // 4. Delivery Performance (% of orders with complete delivery)
+        $this->calculateDeliveryPerformance();
+    }
+
+    /**
+     * ✅ Calculate delivery performance percentage
+     */
+    private function calculateDeliveryPerformance()
+    {
+        $purchaseOrders = PurchaseOrder::where('supplier_id', $this->supplier_id)
+            ->with('productOrders')
+            ->get();
+        
+        $totalPOs = $purchaseOrders->count();
+        
+        if ($totalPOs === 0) {
+            $this->deliveryPerformance = 0;
+            $this->deliveryPerformanceColor = 'gray';
+            return;
+        }
+        
+        $fullyDeliveredCount = 0;
+        
+        foreach ($purchaseOrders as $po) {
+            $allItemsDelivered = true;
+            
+            foreach ($po->productOrders as $productOrder) {
+                $expected = $productOrder->expected_qty ?? $productOrder->quantity;
+                $received = $productOrder->received_quantity ?? 0;
+                $destroyed = $productOrder->destroyed_qty ?? 0;
+                $totalDelivered = $received + $destroyed;
+                
+                // Check if this item is fully delivered
+                if ($totalDelivered < $expected) {
+                    $allItemsDelivered = false;
+                    break;
+                }
+            }
+            
+            if ($allItemsDelivered && $po->productOrders->count() > 0) {
+                $fullyDeliveredCount++;
+            }
+        }
+        
+        // Calculate percentage
+        $this->deliveryPerformance = ($fullyDeliveredCount / $totalPOs) * 100;
+        
+        // Set color based on performance
+        if ($this->deliveryPerformance >= 90) {
+            $this->deliveryPerformanceColor = 'green';
+        } elseif ($this->deliveryPerformance >= 70) {
+            $this->deliveryPerformanceColor = 'yellow';
+        } elseif ($this->deliveryPerformance >= 50) {
+            $this->deliveryPerformanceColor = 'orange';
+        } else {
+            $this->deliveryPerformanceColor = 'red';
+        }
+    }
+
+    /**
+     * Modal handling: Confirm delete
+     */
+    public function confirmDelete($id)
+    {
+        $this->deleteId = $id;
+        $this->showDeleteModal = true;
+    }
+
+    /**
+     * Delete product
+     */
+    public function delete()
+    {
+        try {
+            $product = Product::findOrFail($this->deleteId);
+            
+            if ($product) {
+                $product->delete();
+                
+                session()->flash('message', 'Product successfully deleted from the system.');
+                $this->showDeleteModal = false;
+                $this->reset('deleteId');
+                
+                // Refresh metrics after deletion
+                $this->loadDashboardMetrics();
+            }
+        } catch (\Exception $e) {
+            session()->flash('error', 'Error deleting product: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Cancel modal actions
+     */
+    public function cancel()
+    {
+        $this->showDeleteModal = false;
+        $this->showEditModal = false;
+        $this->resetValidation();
+        $this->reset(['selectedItemId', 'edit_status', 'deleteId']);
+    }
+
+    /**
+     * Edit product status
+     */
+    public function edit($id)
+    {
+        $item = Product::findOrFail($id);
+        $this->selectedItemId = $id;
+        $this->edit_status = $item->disabled ? 'inactive' : 'active';
+        $this->showEditModal = true;
+    }
+
+    /**
+     * Update product status
+     */
+    public function update()
+    {
+        $this->validate([
+            'edit_status' => 'required|in:active,inactive'
+        ]);
+
+        $product = Product::findOrFail($this->selectedItemId);
+        $product->update([
+            'disabled' => $this->edit_status === 'inactive'
+        ]);
+
+        $this->showEditModal = false;
+        session()->flash('message', 'Product updated successfully.');
+        
+        // Refresh active product count
+        $this->loadDashboardMetrics();
+    }
+
+    /**
+     * Render component
+     */
     public function render()
     {
         $search = trim($this->search);
@@ -136,14 +247,9 @@ class View extends Component
             ->latest()
             ->paginate($this->perPage);
 
-        $activeProductCount = Product::where('supplier_id', $this->supplier_id)
-            ->where('disabled', false)
-            ->count();
-
         return view('livewire.pages.supplier-management.profile.view', [
             'items' => $items,
             'supplier' => Supplier::find($this->supplier_id),
-            'activeProductCount' => $activeProductCount
         ]);
     }
 }

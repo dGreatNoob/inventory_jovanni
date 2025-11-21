@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('raw_mat_profiles')) {
+            return;
+        }
+
         Schema::create('raw_mat_profiles', function (Blueprint $table) {
             $table->id();
             $table->string('gsm');

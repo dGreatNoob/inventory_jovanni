@@ -15,6 +15,9 @@ class Product extends Model
 
     protected $fillable = [
         'entity_id',
+        'product_number',
+        'product_color_id',
+        'product_type',
         'sku',
         'barcode',
         'name',
@@ -24,7 +27,9 @@ class Product extends Model
         'uom',
         'supplier_id',
         'supplier_code',
+        'soft_card',
         'price',
+        'original_price',
         'price_note',
         'cost',
         'shelf_life_days',
@@ -38,7 +43,9 @@ class Product extends Model
         'specs' => 'array',
         'disabled' => 'boolean',
         'price' => 'decimal:2',
+        'original_price' => 'decimal:2',
         'cost' => 'decimal:2',
+        'product_color_id' => 'integer',
     ];
 
     // Relationships
@@ -50,6 +57,11 @@ class Product extends Model
     public function supplier(): BelongsTo
     {
         return $this->belongsTo(Supplier::class);
+    }
+
+    public function color(): BelongsTo
+    {
+        return $this->belongsTo(ProductColor::class, 'product_color_id');
     }
 
     public function images(): HasMany
@@ -65,6 +77,11 @@ class Product extends Model
     public function movements(): HasMany
     {
         return $this->hasMany(InventoryMovement::class);
+    }
+
+    public function priceHistories(): HasMany
+    {
+        return $this->hasMany(ProductPriceHistory::class)->orderByDesc('changed_at');
     }
 
     public function inventoryMovements(): HasMany
@@ -129,16 +146,29 @@ class Product extends Model
         return $this->pict_name;
     }
 
+    /**
+     * The main accessor for displaying total product quantity in grid/table.
+     * This sums up inventory records (ex: ProductInventory) for this product.
+     * Update your stock-in logic so it creates/updates ProductInventory records,
+     * not a products.quantity column.
+     */
     public function getTotalQuantityAttribute(): float
     {
-        return $this->inventory()->sum('quantity');
+        // If you use ProductInventory to track stock, sum its 'quantity'
+        return (float) $this->inventory()->sum('quantity');
     }
 
+    /**
+     * Helper accessor for available quantity (if tracked separately)
+     */
     public function getAvailableQuantityAttribute(): float
     {
-        return $this->inventory()->sum('available_quantity');
+        return (float) $this->inventory()->sum('available_quantity');
     }
 
+    /**
+     * Helper accessor for profit margin
+     */
     public function getProfitMarginAttribute(): float
     {
         if ($this->cost == 0) return 0;
@@ -148,5 +178,14 @@ class Product extends Model
     public function getStatusAttribute(): string
     {
         return $this->disabled ? 'inactive' : 'active';
+    }
+        public function batches()
+    {
+        return $this->hasMany(ProductBatch::class)->orderBy('received_date', 'desc');
+    }
+
+    public function activeBatches()
+    {
+        return $this->hasMany(ProductBatch::class)->where('current_qty', '>', 0);
     }
 }

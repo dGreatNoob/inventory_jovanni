@@ -1,8 +1,27 @@
-<x-slot:header>Promo Creation</x-slot:header>
-<x-slot:subheader>Create new promos</x-slot:subheader>
-
 <div class="pt-4">
     <div class="">
+        <!-- Header Section -->
+        <div class="mb-6">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div class="flex-1">
+                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Promo Creation</h1>
+                    <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Create and manage promotional campaigns</p>
+                </div>
+                <div class="flex flex-row items-center space-x-3">
+                    <flux:button 
+                        wire:click="$set('showCreatePanel', true)"
+                        variant="primary" 
+                        class="flex items-center gap-2 whitespace-nowrap min-w-fit"
+                    >
+                        <svg class="inline w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        <span>Create Promo</span>
+                    </flux:button>
+                </div>
+            </div>
+        </div>
+
         <section class="mb-6">
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
                 <!-- Total Promo -->
@@ -49,298 +68,378 @@
             </div>
         </section>
 
-        <!-- Create Promo Form -->
-        <x-collapsible-card title="Create promo" open="false" size="full">
-            <section class="mb-6">
-                <div class="px-4 py-5 sm:p-6">
-                    <form wire:submit.prevent="submit">
-                        <div class="grid gap-6">
+        <!-- Create Promo Slide-in Panel -->
+        <div
+            x-data="{ open: @entangle('showCreatePanel').live }"
+            x-cloak
+            x-on:keydown.escape.window="if (open) { open = false; $wire.closeCreatePanel(); }"
+        >
+            <template x-teleport="body">
+                <div
+                    x-show="open"
+                    x-transition.opacity
+                    class="fixed inset-0 z-50 flex"
+                >
+                    <div
+                        x-show="open"
+                        x-transition.opacity
+                        class="fixed inset-0 bg-neutral-900/30 dark:bg-neutral-900/50"
+                        @click="open = false; $wire.closeCreatePanel()"
+                    ></div>
 
-                            <!-- Row 1: Promo Name, Promo Code, Promo Type -->
-                            <div class="grid md:grid-cols-3 gap-6">
-                                <div>
-                                    <label for="promo_name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                                        Promo Name
-                                    </label>
-                                    <input type="text" id="promo_name" wire:model="promo_name"
-                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 
-                                            focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 
-                                            dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                        placeholder="Autumn Sale" required />
-                                    @error('promo_name') <p class="mt-1 text-sm text-red-500">{{ $message }}</p> @enderror
-                                </div>
+                    <section
+                        x-show="open"
+                        x-transition:enter="transform transition ease-in-out duration-300"
+                        x-transition:enter-start="translate-x-full"
+                        x-transition:enter-end="translate-x-0"
+                        x-transition:leave="transform transition ease-in-out duration-300"
+                        x-transition:leave-start="translate-x-0"
+                        x-transition:leave-end="translate-x-full"
+                        class="relative ml-auto flex h-full w-full max-w-4xl"
+                    >
+                        <div class="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500 dark:bg-indigo-400"></div>
 
-                                <div>
-                                    <label for="promo_code" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                                        Promo Code
-                                    </label>
-                                    <input type="text" id="promo_code" wire:model="promo_code"
-                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 
-                                            focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 
-                                            dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                        placeholder="PRM-001" required />
-                                    @error('promo_code') <p class="mt-1 text-sm text-red-500">{{ $message }}</p> @enderror
-                                </div>
-
-                                <div>
-                                    <label for="promo_type" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                                        Promo Type
-                                    </label>
-                                    <select id="promo_type" wire:model="promo_type"
-                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5 block w-full"
-                                        required>
-                                        <option value="" disabled selected>Select Promo Type</option>
-                                        @foreach($promo_type_options as $type)
-                                            <option value="{{ $type }}">{{ $type }}</option>
-                                        @endforeach
-                                    </select>
-                                    @error('promo_type')
-                                        <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
-                                    @enderror
-                                </div>
-                            </div>
-
-                            <!-- Row 2: Start Date, End Date -->
-                            <div class="grid md:grid-cols-2 gap-6">
-                                <div>
-                                    <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                                        Start Date
-                                    </label>
-                                    <input type="date" wire:model="startDate"
-                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 
-                                            focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 
-                                            dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
-                                    @error('startDate') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                                </div>
-
-                                <div>
-                                    <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">End Date</label>
-                                    <input type="date" wire:model="endDate"
-                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 
-                                            focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 
-                                            dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
-                                    @error('endDate') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                                </div>
-                            </div>
-
-                             <!-- Row 3: Branch, Product -->
-                            <div class="grid md:grid-cols-2 gap-6">
-
-                                {{-- Branch Selector --}}
-                                <div class="relative" wire:click.outside="$set('branchDropdown', false)">
-                                    <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                                        Branch
-                                    </label>
-                                    <div wire:click="$toggle('branchDropdown')" 
-                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5 cursor-pointer 
-                                                dark:bg-gray-700 dark:border-gray-600 dark:text-white flex justify-between items-center">
-                                        <span>
-                                            @if(empty($selected_branches))
-                                                Select Branch
-                                            @else
-                                                @foreach($branches as $branch)
-                                                    @if(in_array($branch->id, $selected_branches))
-                                                        <span class="inline-block mr-1 bg-blue-500 text-white px-2 py-0.5 rounded text-xs">
-                                                            {{ $branch->name }}
-                                                        </span>
-                                                    @endif
-                                                @endforeach
-                                            @endif
-                                        </span>
-                                        <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        <div class="ml-[0.25rem] flex h-full w-full flex-col bg-white shadow-xl dark:bg-zinc-900">
+                            <header class="flex items-start justify-between border-b border-gray-200 px-6 py-5 dark:border-zinc-700">
+                                <div class="flex items-start gap-3">
+                                    <div class="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-300">
+                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
                                         </svg>
                                     </div>
-
-                                    @if($branchDropdown)
-                                    <div class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto dark:bg-gray-700 dark:border-gray-600">
-                                        @foreach($branches as $branch)
-                                            <label class="flex items-center p-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
-                                                <input type="checkbox" value="{{ $branch->id }}" wire:model="selected_branches"
-                                                    class="form-checkbox h-4 w-4 text-blue-600 dark:text-blue-400">
-                                                <span class="ml-2 text-sm text-gray-900 dark:text-white">{{ $branch->name }}</span>
-                                            </label>
-                                        @endforeach
+                                    <div>
+                                        <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+                                            Create New Promo
+                                        </h2>
+                                        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                                            Fill in the promo information to create a new promotion.
+                                        </p>
                                     </div>
-                                    @endif
-                                    @error('selected_branches')
-                                        <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
-                                    @enderror
                                 </div>
 
-                                {{-- Product Selector --}}
-                                <div class="grid gap-6 @if($promo_type === 'Buy one Take one') md:grid-cols-2 @else md:grid-cols-1 @endif">
+                                <button
+                                    type="button"
+                                    class="rounded-full p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-gray-500 dark:hover:bg-zinc-800 dark:hover:text-gray-200"
+                                    @click="open = false; $wire.closeCreatePanel()"
+                                    aria-label="Close promo panel"
+                                >
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                </button>
+                            </header>
 
-                                {{-- First Product Dropdown --}}
-                                <div class="relative" wire:click.outside="$set('productDropdown', false)">
-                                    <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Product</label>
+                            <div class="flex-1 overflow-hidden">
+                                <form wire:submit.prevent="submit" class="flex h-full flex-col">
+                                    <div class="flex-1 overflow-y-auto px-6 py-6">
+                                        <div class="space-y-8">
+                                            <!-- Promo Details -->
+                                            <section class="space-y-4">
+                                                <div>
+                                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Promo Details</h3>
+                                                    <p class="text-sm text-gray-500 dark:text-gray-400">Basic information about the promotion.</p>
+                                                </div>
 
-                                    {{-- Dropdown Toggle --}}
-                                    <div wire:click="$toggle('productDropdown')"
-                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5 cursor-pointer 
-                                            dark:bg-gray-700 dark:border-gray-600 dark:text-white flex justify-between items-center flex-wrap gap-2 min-h-[42px]">
-                                        
-                                        <div class="flex flex-wrap gap-1 items-center">
-                                            {{-- Show pills when dropdown is closed --}}
-                                            @if(!$productDropdown)
-                                                @if(empty($selected_products))
-                                                    <span class="text-gray-400 dark:text-gray-300">Select Product</span>
-                                                @else
-                                                    @foreach($products as $product)
-                                                        @if(in_array($product->id, $selected_products))
-                                                            <span class="inline-flex items-center bg-gray-600 text-white text-xs font-medium px-2 py-0.5 rounded-full">
-                                                                {{ $product->name }}
-                                                                <span class="ml-1 text-gray-200 text-[11px]">₱{{ number_format($product->price, 0) }}</span>
-                                                            </span>
-                                                        @endif
-                                                    @endforeach
-                                                @endif
-                                            @else
-                                                <span class="text-gray-400 dark:text-gray-300">Select Product</span>
-                                            @endif
-                                        </div>
+                                                <div class="space-y-4">
+                                                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                                        <div>
+                                                            <label for="promo_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                                Promo Name
+                                                            </label>
+                                                            <input type="text" id="promo_name" wire:model="promo_name"
+                                                                class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                                placeholder="Autumn Sale" required />
+                                                            @error('promo_name') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                                        </div>
 
-                                        <svg class="w-4 h-4 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                        </svg>
-                                    </div>
-
-                                    {{-- Dropdown List --}}
-                                    @if($productDropdown)
-                                        <div class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto dark:bg-gray-700 dark:border-gray-600">
-                                            @foreach($products as $product)
-                                                <label class="flex items-center justify-between p-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 rounded-md">
-                                                    <div class="flex items-center space-x-2">
-                                                        <input type="checkbox"
-                                                            value="{{ $product->id }}"
-                                                            wire:model="selected_products"
-                                                            @if($promo_type === 'Buy one Take one' && count($selected_products) >= 1 && !in_array($product->id, $selected_products)) disabled @endif
-                                                            onclick="event.stopPropagation()"
-                                                            class="form-checkbox h-4 w-4 text-green-600 dark:text-green-400">
-                                                        <span class="text-sm text-gray-900 dark:text-white">
-                                                            {{ $product->name }}
-                                                        </span>
+                                                        <div>
+                                                            <label for="promo_code" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                                Promo Code
+                                                            </label>
+                                                            <input type="text" id="promo_code" wire:model="promo_code"
+                                                                class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                                placeholder="PRM-001" required />
+                                                            @error('promo_code') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                                        </div>
                                                     </div>
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500 text-white dark:bg-emerald-400 dark:text-gray-900 shadow-sm">
-                                                        ₱ {{ number_format($product->price, 0) }}
-                                                    </span>
-                                                </label>
-                                            @endforeach
-                                        </div>
-                                    @endif
 
-                                    @error('selected_products')
-                                        <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                {{-- Second Product Dropdown (only for Buy one Take one) --}}
-                                @if($promo_type === 'Buy one Take one')
-                                    <div class="relative" wire:click.outside="$set('secondProductDropdown', false)">
-                                        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Second Product</label>
-
-                                        {{-- Dropdown Toggle --}}
-                                        <div wire:click="$toggle('secondProductDropdown')"
-                                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5 cursor-pointer 
-                                                dark:bg-gray-700 dark:border-gray-600 dark:text-white flex justify-between items-center flex-wrap gap-2 min-h-[42px]">
-                                            
-                                            <div class="flex flex-wrap gap-1 items-center">
-                                                @if(!$secondProductDropdown)
-                                                    @if(empty($selected_second_products))
-                                                        <span class="text-gray-400 dark:text-gray-300">
-                                                            @if(empty($selected_products))
-                                                                Select first product first
-                                                            @else
-                                                                Select Second Product
-                                                            @endif
-                                                        </span>
-                                                    @else
-                                                        @foreach($products as $product)
-                                                            @if(in_array($product->id, $selected_second_products))
-                                                                <span class="inline-flex items-center bg-gray-600 text-white text-xs font-medium px-2 py-0.5 rounded-full">
-                                                                    {{ $product->name }}
-                                                                    <span class="ml-1 text-gray-200 text-[11px]">₱{{ number_format($product->price, 0) }}</span>
-                                                                </span>
-                                                            @endif
-                                                        @endforeach
-                                                    @endif
-                                                @else
-                                                    <span class="text-gray-400 dark:text-gray-300">
-                                                        @if(empty($selected_products))
-                                                            Select first product first
-                                                        @else
-                                                            Select Second Product
-                                                        @endif
-                                                    </span>
-                                                @endif
-                                            </div>
-
-                                            <svg class="w-4 h-4 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                            </svg>
-                                        </div>
-
-                                        {{-- Dropdown List --}}
-                                        @if($secondProductDropdown && !empty($selected_products))
-                                            <div class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto dark:bg-gray-700 dark:border-gray-600">
-                                                @foreach($products as $product)
-                                                    @if(!empty($selected_products) && $product->price <= $products->find($selected_products[0])->price && $product->id != $selected_products[0])
-                                                        <label class="flex items-center justify-between p-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 rounded-md">
-                                                            <div class="flex items-center space-x-2">
-                                                                <input type="checkbox"
-                                                                    value="{{ $product->id }}"
-                                                                    wire:model="selected_second_products"
-                                                                    onclick="event.stopPropagation()"
-                                                                    class="form-checkbox h-4 w-4 text-green-600 dark:text-green-400">
-                                                                <span class="text-sm text-gray-900 dark:text-white">{{ $product->name }}</span>
-                                                            </div>
-                                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500 text-white dark:bg-emerald-400 dark:text-gray-900 shadow-sm">
-                                                                ₱ {{ number_format($product->price, 0) }}
-                                                            </span>
+                                                    <div>
+                                                        <label for="promo_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                            Promo Type
                                                         </label>
+                                                        <select id="promo_type" wire:model="promo_type"
+                                                            class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                            required>
+                                                            <option value="" disabled selected>Select Promo Type</option>
+                                                            @foreach($promo_type_options as $type)
+                                                                <option value="{{ $type }}">{{ $type }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                        @error('promo_type')
+                                                            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                                        @enderror
+                                                    </div>
+                                                </div>
+                                            </section>
+
+                                            <!-- Date Range -->
+                                            <section class="space-y-4">
+                                                <div>
+                                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Date Range</h3>
+                                                    <p class="text-sm text-gray-500 dark:text-gray-400">Set the active period for the promotion.</p>
+                                                </div>
+
+                                                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                                    <div>
+                                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                            Start Date
+                                                        </label>
+                                                        <input type="date" wire:model="startDate"
+                                                            class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm" />
+                                                        @error('startDate') <span class="text-red-600 dark:text-red-400 text-sm">{{ $message }}</span> @enderror
+                                                    </div>
+
+                                                    <div>
+                                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Date</label>
+                                                        <input type="date" wire:model="endDate"
+                                                            class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm" />
+                                                        @error('endDate') <span class="text-red-600 dark:text-red-400 text-sm">{{ $message }}</span> @enderror
+                                                    </div>
+                                                </div>
+                                            </section>
+
+                                            <!-- Branch & Product Selection -->
+                                            <section class="space-y-4">
+                                                <div>
+                                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Batch & Product Selection</h3>
+                                                    <p class="text-sm text-gray-500 dark:text-gray-400">Choose where and what products are included in the promo.</p>
+                                                </div>
+
+                                                <!-- Branch Selector -->
+                                                <div>
+                                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                        Batch
+                                                    </label>
+                                                    <div class="relative" wire:click.outside="$set('branchDropdown', false)">
+                                                        <div wire:click="$toggle('branchDropdown')" 
+                                                            class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm cursor-pointer flex justify-between items-center">
+                                                            <span class="flex flex-wrap gap-1">
+                                                                @if(empty($selected_branches))
+                                                                    <span class="text-gray-400">Select Batch</span>
+                                                                @else
+                                                                    @foreach($branches as $branch)
+                                                                        @if(in_array($branch->id, $selected_branches))
+                                                                            <span class="inline-flex items-center bg-indigo-100 text-indigo-800 text-xs font-medium px-2 py-0.5 rounded-full dark:bg-indigo-900/30 dark:text-indigo-300">
+                                                                                {{ $branch->name }}
+                                                                            </span>
+                                                                        @endif
+                                                                    @endforeach
+                                                                @endif
+                                                            </span>
+                                                            <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                            </svg>
+                                                        </div>
+
+                                                        @if($branchDropdown)
+                                                        <div class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto dark:bg-gray-700 dark:border-gray-600">
+                                                            @foreach($branches as $branch)
+                                                                <label class="flex items-center p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600 last:border-b-0">
+                                                                    <input type="checkbox" value="{{ $branch->id }}" wire:model="selected_branches"
+                                                                        class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                                                    <span class="ml-3 text-sm text-gray-900 dark:text-white">{{ $branch->name }}</span>
+                                                                </label>
+                                                            @endforeach
+                                                        </div>
+                                                        @endif
+                                                        @error('selected_branches')
+                                                            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                                        @enderror
+                                                    </div>
+                                                </div>
+
+                                                <!-- Product Selection -->
+                                                <div class="grid gap-4 @if($promo_type === 'Buy one Take one') sm:grid-cols-2 @endif">
+                                                    <!-- First Product Dropdown -->
+                                                    <div>
+                                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Product</label>
+                                                        <div class="relative" wire:click.outside="$set('productDropdown', false)">
+                                                            <div wire:click="$toggle('productDropdown')"
+                                                                class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm cursor-pointer flex justify-between items-center">
+                                                                <div class="flex flex-wrap gap-1 items-center">
+                                                                    @if(!$productDropdown)
+                                                                        @if(empty($selected_products))
+                                                                            <span class="text-gray-400">Select Product</span>
+                                                                        @else
+                                                                            @foreach($products as $product)
+                                                                                @if(in_array($product->id, $selected_products))
+                                                                                    <span class="inline-flex items-center bg-gray-600 text-white text-xs font-medium px-2 py-0.5 rounded-full">
+                                                                                        {{ $product->name }}
+                                                                                        <span class="ml-1 text-gray-200 text-[11px]">₱{{ number_format($product->price, 0) }}</span>
+                                                                                    </span>
+                                                                                @endif
+                                                                            @endforeach
+                                                                        @endif
+                                                                    @else
+                                                                        <span class="text-gray-400">Select Product</span>
+                                                                    @endif
+                                                                </div>
+                                                                <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                                </svg>
+                                                            </div>
+
+                                                            @if($productDropdown)
+                                                                <div class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto dark:bg-gray-700 dark:border-gray-600">
+                                                                    @foreach($products as $product)
+                                                                        <label class="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600 last:border-b-0">
+                                                                            <div class="flex items-center space-x-3">
+                                                                                <input type="checkbox"
+                                                                                    value="{{ $product->id }}"
+                                                                                    wire:model="selected_products"
+                                                                                    @if($promo_type === 'Buy one Take one' && count($selected_products) >= 1 && !in_array($product->id, $selected_products)) disabled @endif
+                                                                                    onclick="event.stopPropagation()"
+                                                                                    class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                                                                <span class="text-sm text-gray-900 dark:text-white">
+                                                                                    {{ $product->name }}
+                                                                                </span>
+                                                                            </div>
+                                                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500 text-white dark:bg-emerald-400 dark:text-gray-900 shadow-sm">
+                                                                                ₱ {{ number_format($product->price, 0) }}
+                                                                            </span>
+                                                                        </label>
+                                                                    @endforeach
+                                                                </div>
+                                                            @endif
+
+                                                            @error('selected_products')
+                                                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                                            @enderror
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Second Product Dropdown (only for Buy one Take one) -->
+                                                    @if($promo_type === 'Buy one Take one')
+                                                        <div>
+                                                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Second Product</label>
+                                                            <div class="relative" wire:click.outside="$set('secondProductDropdown', false)">
+                                                                <div wire:click="$toggle('secondProductDropdown')"
+                                                                    class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm cursor-pointer flex justify-between items-center">
+                                                                    
+                                                                    <div class="flex flex-wrap gap-1 items-center">
+                                                                        @if(!$secondProductDropdown)
+                                                                            @if(empty($selected_second_products))
+                                                                                <span class="text-gray-400">
+                                                                                    @if(empty($selected_products))
+                                                                                        Select first product first
+                                                                                    @else
+                                                                                        Select Second Product
+                                                                                    @endif
+                                                                                </span>
+                                                                            @else
+                                                                                @foreach($products as $product)
+                                                                                    @if(in_array($product->id, $selected_second_products))
+                                                                                        <span class="inline-flex items-center bg-gray-600 text-white text-xs font-medium px-2 py-0.5 rounded-full">
+                                                                                            {{ $product->name }}
+                                                                                            <span class="ml-1 text-gray-200 text-[11px]">₱{{ number_format($product->price, 0) }}</span>
+                                                                                        </span>
+                                                                                    @endif
+                                                                                @endforeach
+                                                                            @endif
+                                                                        @else
+                                                                            <span class="text-gray-400">
+                                                                                @if(empty($selected_products))
+                                                                                    Select first product first
+                                                                                @else
+                                                                                    Select Second Product
+                                                                                @endif
+                                                                            </span>
+                                                                        @endif
+                                                                    </div>
+
+                                                                    <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                                    </svg>
+                                                                </div>
+
+                                                                @if($secondProductDropdown && !empty($selected_products))
+                                                                    <div class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto dark:bg-gray-700 dark:border-gray-600">
+                                                                        @foreach($products as $product)
+                                                                            @if(!empty($selected_products) && $product->price <= $products->find($selected_products[0])->price && $product->id != $selected_products[0])
+                                                                                <label class="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600 last:border-b-0">
+                                                                                    <div class="flex items-center space-x-3">
+                                                                                        <input type="checkbox"
+                                                                                            value="{{ $product->id }}"
+                                                                                            wire:model="selected_second_products"
+                                                                                            onclick="event.stopPropagation()"
+                                                                                            class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                                                                        <span class="text-sm text-gray-900 dark:text-white">{{ $product->name }}</span>
+                                                                                    </div>
+                                                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500 text-white dark:bg-emerald-400 dark:text-gray-900 shadow-sm">
+                                                                                        ₱ {{ number_format($product->price, 0) }}
+                                                                                    </span>
+                                                                                </label>
+                                                                            @endif
+                                                                        @endforeach
+                                                                    </div>
+                                                                @endif
+
+                                                                @error('selected_second_products')
+                                                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                                                @enderror
+                                                            </div>
+                                                        </div>
                                                     @endif
-                                                @endforeach
-                                            </div>
-                                        @endif
+                                                </div>
+                                            </section>
 
-                                        @error('selected_second_products')
-                                            <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
-                                        @enderror
+                                            <!-- Description -->
+                                            <section class="space-y-4">
+                                                <div>
+                                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Description</h3>
+                                                    <p class="text-sm text-gray-500 dark:text-gray-400">Additional details about the promotion.</p>
+                                                </div>
+
+                                                <div>
+                                                    <label for="promo_description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                        Description
+                                                    </label>
+                                                    <textarea id="promo_description" wire:model="promo_description"
+                                                        class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm resize-y"
+                                                        style="min-height: 80px;"
+                                                        placeholder="Promo for Halloween"></textarea>
+                                                    @error('promo_description')
+                                                        <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                                    @enderror
+                                                </div>
+                                            </section>
+                                        </div>
                                     </div>
-                                @endif
-                            </div>
-                            </div>
 
-                            <!-- Description -->
-                            <div>
-                                <label for="promo_description" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                                    Description
-                                </label>
-                                <textarea id="promo_description" wire:model="promo_description"
-                                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 
-                                        focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 
-                                        dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 
-                                        resize-y"
-                                    style="min-height: 50px; overflow: auto;"
-                                    placeholder="Promo for Halloween"></textarea>
-                                @error('promo_description')
-                                    <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
-                                @enderror
+                                    <div class="border-t border-gray-200 bg-white px-6 py-4 dark:border-zinc-700 dark:bg-zinc-900">
+                                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                            <div class="text-sm text-gray-500 dark:text-gray-400">
+                                                Review details carefully before creating a new promo.
+                                            </div>
+                                            <div class="flex items-center gap-3">
+                                                <flux:button type="button" wire:click="resetForm" variant="ghost">
+                                                    Reset
+                                                </flux:button>
+
+                                                <flux:button type="submit" variant="primary" wire:loading.attr="disabled">
+                                                    <span wire:loading.remove wire:target="submit">Create Promo</span>
+                                                    <span wire:loading wire:target="submit">Creating...</span>
+                                                </flux:button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
                             </div>
                         </div>
-
-                        <!-- Submit button -->
-                        <div class="flex justify-end mt-6">
-                            <flux:button type="submit" wire:loading.attr="disabled" wire:target="submit">
-                                <span wire:loading.remove wire:target="submit">Submit</span>
-                                <span wire:loading wire:target="submit">Saving...</span>
-                            </flux:button>
-                        </div>
-
-                    </form>
+                    </section>
                 </div>
-            </section>
-        </x-collapsible-card>
+            </template>
+        </div>
 
         <!-- Search -->
         <section class="mb-6">
@@ -442,7 +541,13 @@
 
                                     <!-- Action -->
                                     <td class="px-6 py-4 space-x-2">
-                                        <flux:button wire:click.prevent="view({{ $item->id }})" variant="outline" size="sm">View</flux:button>
+                                        <flux:button 
+                                        onclick="window.location='{{ route('promo.view', ['id' => $item->id]) }}'" 
+                                        variant="outline" 
+                                        size="sm"
+                                        type="button">
+                                        View
+                                    </flux:button>
                                         <flux:button wire:click.prevent="edit({{ $item->id }})" variant="outline" size="sm">Edit</flux:button>
                                         <flux:button wire:click.prevent="confirmDelete({{ $item->id }})" variant="outline" size="sm" class="text-red-600 hover:text-red-700">Delete</flux:button>
                                     </td>
@@ -661,63 +766,63 @@
                             </div>
 
                             {{-- Second Product Dropdown (only for Buy-One-Take-One) --}}
-@if($edit_type === 'Buy one Take one')
-    <div class="relative" wire:click.outside="$set('editSecondProductDropdown', false)">
-        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Second Product <span class="text-red-500">*</span></label>
-        <div wire:click="$toggle('editSecondProductDropdown')" 
-            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5 cursor-pointer flex justify-between items-center flex-wrap gap-2 min-h-[42px] 
-                   @error('edit_selected_second_products') border-red-500 @enderror">
-            <div class="flex flex-wrap gap-1 items-center">
-                @if(!$editSecondProductDropdown)
-                    @if(empty($edit_selected_second_products))
-                        <span class="text-gray-400 dark:text-gray-300">Select Second Product</span>
-                    @else
-                        @foreach($this->editSecondProducts as $product)
-                            @if(in_array($product->id, $edit_selected_second_products))
-                                <span class="inline-flex items-center bg-gray-600 text-white text-xs font-medium px-2 py-0.5 rounded-full">
-                                    {{ $product->name }}
-                                    <span class="ml-1 text-gray-200 text-[11px]">₱{{ number_format($product->price, 0) }}</span>
-                                </span>
-                            @endif
-                        @endforeach
-                    @endif
-                @else
-                    <span class="text-gray-400 dark:text-gray-300">Select Second Product</span>
-                @endif
-            </div>
-            <svg class="w-4 h-4 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-            </svg>
-        </div>
+                            @if($edit_type === 'Buy one Take one')
+                                <div class="relative" wire:click.outside="$set('editSecondProductDropdown', false)">
+                                    <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Second Product <span class="text-red-500">*</span></label>
+                                    <div wire:click="$toggle('editSecondProductDropdown')" 
+                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5 cursor-pointer flex justify-between items-center flex-wrap gap-2 min-h-[42px] 
+                                            @error('edit_selected_second_products') border-red-500 @enderror">
+                                        <div class="flex flex-wrap gap-1 items-center">
+                                            @if(!$editSecondProductDropdown)
+                                                @if(empty($edit_selected_second_products))
+                                                    <span class="text-gray-400 dark:text-gray-300">Select Second Product</span>
+                                                @else
+                                                    @foreach($this->editSecondProducts as $product)
+                                                        @if(in_array($product->id, $edit_selected_second_products))
+                                                            <span class="inline-flex items-center bg-gray-600 text-white text-xs font-medium px-2 py-0.5 rounded-full">
+                                                                {{ $product->name }}
+                                                                <span class="ml-1 text-gray-200 text-[11px]">₱{{ number_format($product->price, 0) }}</span>
+                                                            </span>
+                                                        @endif
+                                                    @endforeach
+                                                @endif
+                                            @else
+                                                <span class="text-gray-400 dark:text-gray-300">Select Second Product</span>
+                                            @endif
+                                        </div>
+                                        <svg class="w-4 h-4 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                        </svg>
+                                    </div>
 
-        @if($editSecondProductDropdown)
-            <div class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto dark:bg-gray-700 dark:border-gray-600">
-                @if($this->editSecondProducts->count() > 0)
-                    @foreach($this->editSecondProducts as $product)
-                        <label class="flex items-center justify-between p-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 rounded-md">
-                            <div class="flex items-center space-x-2">
-                                <input type="checkbox" value="{{ $product->id }}" 
-                                    wire:model="edit_selected_second_products" 
-                                    onclick="event.stopPropagation()"
-                                    @if(!in_array($product->id, $edit_selected_second_products) && count($edit_selected_second_products) >= 1) disabled @endif
-                                    class="form-checkbox h-4 w-4 text-green-600 dark:text-green-400">
-                                <span class="text-sm text-gray-900 dark:text-white">{{ $product->name }}</span>
-                            </div>
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500 text-white dark:bg-emerald-400 dark:text-gray-900 shadow-sm">
-                                ₱ {{ number_format($product->price, 0) }}
-                            </span>
-                        </label>
-                    @endforeach
-                @else
-                    <div class="p-4 text-center text-gray-500 dark:text-gray-400">
-                        No products available for selection
-                    </div>
-                @endif
-            </div>
-        @endif
-        @error('edit_selected_second_products') <p class="mt-1 text-sm text-red-500">{{ $message }}</p> @enderror
-    </div>
-@endif
+                                    @if($editSecondProductDropdown)
+                                        <div class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto dark:bg-gray-700 dark:border-gray-600">
+                                            @if($this->editSecondProducts->count() > 0)
+                                                @foreach($this->editSecondProducts as $product)
+                                                    <label class="flex items-center justify-between p-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 rounded-md">
+                                                        <div class="flex items-center space-x-2">
+                                                            <input type="checkbox" value="{{ $product->id }}" 
+                                                                wire:model="edit_selected_second_products" 
+                                                                onclick="event.stopPropagation()"
+                                                                @if(!in_array($product->id, $edit_selected_second_products) && count($edit_selected_second_products) >= 1) disabled @endif
+                                                                class="form-checkbox h-4 w-4 text-green-600 dark:text-green-400">
+                                                            <span class="text-sm text-gray-900 dark:text-white">{{ $product->name }}</span>
+                                                        </div>
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500 text-white dark:bg-emerald-400 dark:text-gray-900 shadow-sm">
+                                                            ₱ {{ number_format($product->price, 0) }}
+                                                        </span>
+                                                    </label>
+                                                @endforeach
+                                            @else
+                                                <div class="p-4 text-center text-gray-500 dark:text-gray-400">
+                                                    No products available for selection
+                                                </div>
+                                            @endif
+                                        </div>
+                                    @endif
+                                    @error('edit_selected_second_products') <p class="mt-1 text-sm text-red-500">{{ $message }}</p> @enderror
+                                </div>
+                            @endif
 
                             {{-- Description --}}
                             <div>
@@ -752,7 +857,6 @@
                 x-cloak
                 class="fixed top-0 left-0 right-0 z-50 w-full p-4 overflow-x-hidden overflow-y-auto 
                         md:inset-0 h-[calc(100%-1rem)] max-h-full flex items-center justify-center bg-black/50">
-
                 <div class="relative w-full max-w-3xl max-h-full">
                     <div class="relative bg-white rounded-lg shadow-xl dark:bg-gray-700">
 
@@ -891,7 +995,6 @@
                                                 @empty
                                                     <span class="text-gray-400 text-sm">-</span>
                                                 @endforelse
-                                            </div>
                                         </div>
                                     @endif
                                 </div>

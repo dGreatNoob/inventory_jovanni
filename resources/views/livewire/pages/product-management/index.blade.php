@@ -3,10 +3,11 @@
     <div class="mb-6">
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div class="flex-1">
-                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Product Management</h1>
+                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Product Masterlist</h1>
                 <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Manage your product catalog, inventory, and suppliers</p>
             </div>
             <div class="flex flex-row items-center space-x-3">
+                @can('product export')
                 <flux:button 
                     wire:click="exportProducts" 
                     variant="outline"
@@ -17,16 +18,21 @@
                     </svg>
                     <span>Export</span>
                 </flux:button>
+                @endcan
 
 
-                <flux:modal.trigger name="create-edit-product">
-                    <flux:button variant="primary" class="flex items-center gap-2 whitespace-nowrap min-w-fit">
+                @can('product create')
+                    <flux:button 
+                        wire:click="createProduct"
+                        variant="primary" 
+                        class="flex items-center gap-2 whitespace-nowrap min-w-fit"
+                    >
                         <svg class="inline w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                         </svg>
                         <span>Add Product</span>
                     </flux:button>
-                </flux:modal.trigger>
+                @endcan
 
             </div>
         </div>
@@ -135,14 +141,14 @@
                     </button>
                     <button wire:click="toggleViewMode"
                             class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:focus:ring-gray-400">
-                        @if($viewMode === 'grid')
+                        @if($viewMode === 'table')
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
                             </svg>
                             Table View
                         @else
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
                             </svg>
                             Grid View
                         @endif
@@ -161,13 +167,7 @@
                                     class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 sm:text-sm">
                                 <option value="">All Categories</option>
                                 @foreach($categories as $category)
-                                    @if($category->parent_id)
-                                        <option value="{{ $category->id }}">
-                                            {{ $category->parent ? $category->parent->name . ' › ' . $category->name : $category->name }}
-                                        </option>
-                                    @else
-                                        <option value="{{ $category->id }}">{{ $category->name }}</option>
-                                    @endif
+                                    <option value="{{ $category->id }}">{{ $category->name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -249,10 +249,10 @@
 
     <!-- Products List -->
     <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
-        @if($viewMode === 'grid')
-            @include('livewire.pages.product-management.partials.products-grid')
-        @else
+        @if($viewMode === 'table')
             @include('livewire.pages.product-management.partials.products-table')
+        @else
+            @include('livewire.pages.product-management.partials.products-grid')
         @endif
     </div>
 
@@ -261,4 +261,5 @@
     @include('livewire.pages.product-management.modals.delete-product')
     @include('livewire.pages.product-management.modals.bulk-actions')
     @include('livewire.pages.product-management.modals.product-details')
+    @include('livewire.pages.product-management.modals.price-history')
 </div>

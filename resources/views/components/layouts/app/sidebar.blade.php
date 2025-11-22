@@ -189,6 +189,7 @@
                         'finance.receivables',
                         'finance.payables',
                         'finance.expenses',
+                        'finance.payments',
                         'finance.currency-conversion',
                     ];
                     $hasFinanceRoutes = collect($financeRoutes)->some(fn ($name) => Route::has($name));
@@ -209,6 +210,11 @@
                         @if (Route::has('finance.expenses'))
                             <flux:navlist.item icon="banknotes" href="{{ route('finance.expenses') }}"
                                 :current="request()->routeIs('finance.expenses')" wire:navigate>{{ __('Expenses') }}
+                            </flux:navlist.item>
+                        @endif
+                        @if (Route::has('finance.payments'))
+                            <flux:navlist.item icon="credit-card" href="{{ route('finance.payments') }}"
+                                :current="request()->routeIs('finance.payments')" wire:navigate>{{ __('Payments') }}
                             </flux:navlist.item>
                         @endif
                         @if (Route::has('finance.currency-conversion'))

@@ -4,6 +4,8 @@ namespace App\Livewire\Pages\Finance;
 
 use Livewire\Component;
 use App\Models\Finance;
+use App\Models\PurchaseOrder; // <-- Add model
+use App\Models\Supplier;      // <-- Optional: for supplier name
 
 class Payables extends Component
 {
@@ -11,6 +13,7 @@ class Payables extends Component
     public $reference_id;
     public $supplier;
     public $purchase_order;
+    public $purchase_order_id;    // <-- Add PO id property
     public $party;
     public $date;
     public $due_date;
@@ -26,6 +29,8 @@ class Payables extends Component
     public $showEditModal = false;
     public $showDeleteModal = false;
     public $payableToDelete = null;
+
+    public $purchaseOrders = [];  // <-- Add dropdown PO list
 
     protected $rules = [
         'type' => 'required|string|max:255',
@@ -45,6 +50,7 @@ class Payables extends Component
     public function mount()
     {
         $this->generateReferenceId();
+        $this->purchaseOrders = PurchaseOrder::orderBy('po_num')->get(); // <-- Populate POs for dropdown
     }
 
     private function generateReferenceId()
@@ -68,6 +74,32 @@ class Payables extends Component
         $this->reference_id = $prefix . $nextNumber;
     }
 
+    // <-- Hook: When PO selection changes, autofill PO number/cost/supplier
+    public function updatedPurchaseOrderId($value)
+    {
+        if ($value) {
+            $po = PurchaseOrder::with('supplier')->find($value);
+            
+            if ($po) {
+                // Populate the fields
+                $this->purchase_order = $po->po_num;
+                $this->supplier = $po->supplier->name ?? '';
+                $this->amount = $po->total_price;
+                $this->balance = $po->total_price; // Set balance equal to amount initially
+                
+                // Use your existing reference ID generation method
+                $this->generateReferenceId();
+            }
+        } else {
+            // Reset fields when no PO is selected
+            $this->purchase_order = '';
+            $this->supplier = '';
+            $this->amount = '';
+            $this->balance = '';
+            $this->generateReferenceId();
+        }
+    }
+
     public function save()
     {
         $this->balance = $this->amount; // On create, balance = amount
@@ -88,7 +120,7 @@ class Payables extends Component
             'remarks' => $this->remarks,
         ]);
         session()->flash('success', 'Payable saved successfully!');
-        $this->reset(['reference_id', 'supplier', 'purchase_order', 'party', 'date', 'due_date', 'amount', 'balance', 'payment_method', 'status', 'remarks']);
+        $this->reset(['reference_id', 'supplier', 'purchase_order', 'purchase_order_id', 'party', 'date', 'due_date', 'amount', 'balance', 'payment_method', 'status', 'remarks']);
         $this->generateReferenceId();
     }
 
@@ -108,6 +140,11 @@ class Payables extends Component
         $this->payment_method = $payable->payment_method;
         $this->status = $payable->status;
         $this->remarks = $payable->remarks;
+
+        // Try to set PO select when editing by matching PO num
+        $po = PurchaseOrder::where('po_num', $payable->purchase_order)->first();
+        $this->purchase_order_id = $po ? $po->id : null;
+
         $this->showEditModal = true;
     }
 
@@ -144,7 +181,7 @@ class Payables extends Component
     {
         $this->editingPayableId = null;
         $this->showEditModal = false;
-        $this->reset(['type', 'reference_id', 'supplier', 'purchase_order', 'party', 'date', 'due_date', 'amount', 'balance', 'payment_method', 'status', 'remarks']);
+        $this->reset(['type', 'reference_id', 'supplier', 'purchase_order', 'purchase_order_id', 'party', 'date', 'due_date', 'amount', 'balance', 'payment_method', 'status', 'remarks']);
     }
 
     public function confirmDelete($id)
@@ -198,6 +235,7 @@ class Payables extends Component
 
         return view('livewire.pages.finance.payables', [
             'payables' => $payables,
+            'purchaseOrders' => $this->purchaseOrders // <-- Pass PO list to view
         ]);
     }
-} 
+}

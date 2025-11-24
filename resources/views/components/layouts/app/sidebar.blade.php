@@ -123,7 +123,7 @@
                     </flux:navlist.item>
                 </flux:navlist.group> --}}
 
-                {{-- <flux:navlist.group expandable :expanded="request()->routeIs('finance.*')" :heading="__('Finance')"
+                <flux:navlist.group expandable :expanded="request()->routeIs('finance.*')" :heading="__('Finance')"
                     class="lg:grid">
                     <flux:navlist.item icon="banknotes" href="{{ route('finance.receivables') }}"
                         :current="request()->routeIs('finance.receivables')" wire:navigate>{{ __('Receivables') }}
@@ -136,7 +136,7 @@
                     </flux:navlist.item>
                     <!-- <flux:navlist.item icon="banknotes" href="{{ route('finance.currency-conversion') }}"  wire:navigate>{{ __('Currency Conversion') }}
                     </flux:navlist.item> -->
-                </flux:navlist.group> --}}
+                </flux:navlist.group>
 
                 {{--<flux:navlist.group expandable :expanded="request()->routeIs('shipment.*')"
                     :heading="__('Shipment Management')" class="lg:grid">

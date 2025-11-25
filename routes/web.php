@@ -166,6 +166,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/receivables', \App\Livewire\Pages\Finance\Receivables::class)->name('receivables');
         Route::get('/payables', \App\Livewire\Pages\Finance\Payables::class)->name('payables');
         Route::get('/expenses', \App\Livewire\Pages\Finance\Expenses::class)->name('expenses');
+        Route::get('/payments', \App\Livewire\Pages\Finance\Payments::class)->name('payments');
         Route::get('/currency-conversion', \App\Livewire\Pages\Finance\CurrencyConversion::class)->name('currency-conversion');
     });
 

@@ -65,6 +65,7 @@ use App\Livewire\Pages\Branch\BranchInventory;
 
 use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\PurchaseOrderQRController;
+use App\Http\Controllers\ReceiptController;
 
 
 // Add missing PO Management imports
@@ -116,8 +117,6 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/purchase-order/view-item/{poId?}', POManagementPurchaseOrderViewItem::class)->name('purchaseorder.viewItem');
         Route::get('/deliveries', PODeliveries::class)->name('deliveries');
     });
-    Route::get('/po-management/purchaseorder/{Id}/qr', [PurchaseOrderQRController::class, 'show'])
-        ->name('pomanagement.purchaseorder.qr');
     Route::get('/po-management/purchaseorder/{Id}/qr', [PurchaseOrderQRController::class, 'show'])
         ->name('pomanagement.purchaseorder.qr');
     Route::get('/suppliermanagement/profile', SupplierProfile::class)

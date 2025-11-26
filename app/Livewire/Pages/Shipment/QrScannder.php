@@ -5,6 +5,9 @@ namespace App\Livewire\Pages\Shipment;
 use App\Models\Shipment;
 use Livewire\Component;
 use Livewire\Attributes\On;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class QrScannder extends Component
 {
@@ -78,12 +81,12 @@ class QrScannder extends Component
         if ($Shipment) {
 
             //Check for valid status - allow multiple valid statuses
-            $validStatuses = ['approved'];
+            $validStatuses = ['approved', 'in_transit'];
             if (!in_array($Shipment->shipping_status, $validStatuses)) {
                 $this->foundShipment = null;
                 $this->foundSupplyProfile = null;
                 $this->showResult = true;
-                $this->message = "Shipment found, but status is '{$Shipment->shipping_status}'. Only Shipments with status 'Approved' can be processed.";
+                $this->message = "Shipment found, but status is '{$Shipment->shipping_status}'. Only Shipments with status 'Approved' or 'In Transit' can be processed.";
                 $this->messageType = 'error';
                 return;
             }
@@ -115,7 +118,7 @@ class QrScannder extends Component
             // Automatically advance to step 2
             $this->currentStep = 1;
 
-            \Log::info("Advanced to step 1. Final state - scannedShipmentNumber: {$this->scannedShipmentNumber}");
+            Log::info("Advanced to step 1. Final state - scannedShipmentNumber: {$this->scannedShipmentNumber}");
 
             return;
         }
@@ -143,6 +146,10 @@ class QrScannder extends Component
 
     public function goToStep3()
     {
+        // Set shipment status to 'in_transit' after completing review (step 2)
+        if ($this->foundShipment) {
+            $this->foundShipment->update(['shipping_status' => 'in_transit']);
+        }
         $this->currentStep = 2;
     }
 
@@ -194,7 +201,7 @@ class QrScannder extends Component
                     // Custom Spatie activity log
                     if ($qtyChange > 0) {
                         activity('Shipment Review')
-                            ->causedBy(auth()->user())
+                            ->causedBy(Auth::user())
                             ->performedOn($supplyProfile)
                             ->withProperties([
                                 'sku' => $supplyProfile->supply_sku,
@@ -207,14 +214,14 @@ class QrScannder extends Component
                     $branchId = $this->foundShipment->branchAllocation->branch_id;
                     $productId = $item->product_id;
 
-                    $pivot = \DB::table('branch_product')->where([
+                    $pivot = DB::table('branch_product')->where([
                         ['branch_id', '=', $branchId],
                         ['product_id', '=', $productId],
                     ])->first();
 
                     $newStock = ($pivot ? $pivot->stock : 0) + $qtyChange;
 
-                    \DB::table('branch_product')->updateOrInsert(
+                    DB::table('branch_product')->updateOrInsert(
                         ['branch_id' => $branchId, 'product_id' => $productId],
                         ['stock' => $newStock]
                     );
@@ -239,7 +246,7 @@ class QrScannder extends Component
                 if ($status !== 'good') $allGood = false;
             }
 
-            $poStatus = 'processing';
+            $poStatus = 'completed';
             if ($hasDestroyed) $poStatus = 'damaged';
             elseif ($hasIncomplete) $poStatus = 'incomplete';
 
@@ -317,7 +324,7 @@ class QrScannder extends Component
                 $this->foundShipment = $shipmentResults;
                 $this->initializeStep2Data();
             } else {
-                \Log::error("No Shipment found for scanned code: {$this->scannedCode}");
+                Log::error("No Shipment found for scanned code: {$this->scannedCode}");
             }
         }
     }
@@ -326,7 +333,7 @@ class QrScannder extends Component
     {          
         // If we have a scanned code but the displayed PO doesn't match, fix it
         if ($this->scannedCode && $this->foundShipment && $this->foundShipment->shipping_plan_num !== $this->scannedCode) {
-            \Log::info("Shipment mismatch detected. Displayed: {$this->foundShipment->shipping_plan_num}, Scanned: {$this->scannedCode}");
+            Log::info("Shipment mismatch detected. Displayed: {$this->foundShipment->shipping_plan_num}, Scanned: {$this->scannedCode}");
             $this->fixScannedShipment();
         }
     }

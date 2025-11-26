@@ -58,8 +58,12 @@
                                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Status</label>
                                             <span class="inline-block px-2 py-1 text-xs font-semibold rounded-full
                                                 @if ($getShipmentDetails->shipping_status === 'pending') bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300
-                                                @elseif($getShipmentDetails->shipping_status === 'approved') bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300
+                                                @elseif($getShipmentDetails->shipping_status === 'approved') bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300
+                                                @elseif($getShipmentDetails->shipping_status === 'in_transit') bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300
+                                                @elseif($getShipmentDetails->shipping_status === 'completed') bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300
                                                 @elseif($getShipmentDetails->shipping_status === 'cancelled') bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300
+                                                @elseif($getShipmentDetails->shipping_status === 'damaged') bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300
+                                                @elseif($getShipmentDetails->shipping_status === 'incomplete') bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300
                                                 @else bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300 @endif">
                                                 {{ str_replace('_', ' ', ucfirst($getShipmentDetails->shipping_status)) }}
                                             </span>
@@ -348,7 +352,7 @@
                                         <option value="approved">Approved</option>
                                         <option value="failed">Failed</option>
                                         <option value="returned">Returned</option>
-                                        <option value="processing">Processing</option>
+                                        <option value="completed">Completed</option>
                                         <option value="pending">Pending</option>
                                         <option value="in_transit">In Transit</option>
                                         <option value="incomplete">Incomplete</option>
@@ -392,10 +396,14 @@
                                                 <span
                                                     class="px-2 py-1 rounded-full text-white text-xs font-semibold
                                                     @if ($data->shipping_status === 'pending') bg-yellow-500
-                                                    @elseif ($data->shipping_status === 'processing') bg-green-600
+                                                    @elseif ($data->shipping_status === 'approved') bg-blue-500
+                                                    @elseif ($data->shipping_status === 'in_transit') bg-orange-500
+                                                    @elseif ($data->shipping_status === 'completed') bg-green-600
                                                     @elseif ($data->shipping_status === 'cancelled') bg-red-600
+                                                    @elseif ($data->shipping_status === 'damaged') bg-red-600
+                                                    @elseif ($data->shipping_status === 'incomplete') bg-yellow-500
                                                     @else bg-gray-500 @endif">
-                                                    {{ ucfirst($data->shipping_status) }}
+                                                    {{ ucfirst(str_replace('_', ' ', $data->shipping_status)) }}
                                                 </span>
                                             </td>
                                             <td class="px-6 py-4">

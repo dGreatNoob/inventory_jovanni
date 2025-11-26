@@ -328,15 +328,15 @@ document.addEventListener('DOMContentLoaded', function() {
                                     </div>
 
                                     <div>
-                                        <label for="transaction_date" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
-                                            Delivery Date *
+                                        <label for="remarks" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                                            Remarks (Optional)
                                         </label>
-                                        <input type="date"
-                                            id="transaction_date"
-                                            wire:model="transaction_date"
+                                        <textarea id="remarks"
+                                            wire:model="remarks"
+                                            rows="2"
                                             class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white"
-                                            required>
-                                        @error('transaction_date')
+                                            placeholder="e.g., 'Dispatched by Mark', 'For VisMin route'"></textarea>
+                                        @error('remarks')
                                             <span class="text-red-500 text-sm">{{ $message }}</span>
                                         @enderror
                                     </div>
@@ -351,20 +351,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                             <option value="draft">Draft</option>
                                         </select>
                                     </div>
-                                </div>
-
-                                <div>
-                                    <label for="remarks" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
-                                        Remarks (Optional)
-                                    </label>
-                                    <textarea id="remarks"
-                                            wire:model="remarks"
-                                            rows="2"
-                                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white"
-                                            placeholder="e.g., 'Dispatched by Mark', 'For VisMin route'"></textarea>
-                                    @error('remarks')
-                                        <span class="text-red-500 text-sm">{{ $message }}</span>
-                                    @enderror
                                 </div>
 
                                 @if($isEditing)
@@ -750,14 +736,10 @@ document.addEventListener('DOMContentLoaded', function() {
                                 @if($currentBatch)
                                     <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6">
                                         <h4 class="font-medium mb-3">Batch Summary</h4>
-                                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                                             <div>
                                                 <span class="text-gray-600 dark:text-gray-400">Reference:</span>
                                                 <div class="font-medium">{{ $currentBatch->ref_no }}</div>
-                                            </div>
-                                            <div>
-                                                <span class="text-gray-600 dark:text-gray-400">Delivery Date:</span>
-                                                <div class="font-medium">{{ \Carbon\Carbon::parse($currentBatch->transaction_date)->format('M d, Y') }}</div>
                                             </div>
                                             <div>
                                                 <span class="text-gray-600 dark:text-gray-400">Branches:</span>

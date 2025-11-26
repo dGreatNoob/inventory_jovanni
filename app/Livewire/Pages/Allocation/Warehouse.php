@@ -50,7 +50,6 @@ class Warehouse extends Component
     public $dateTo = '';
 
     // Create batch fields
-    public $transaction_date;
     public $remarks;
     public $ref_no;
     public $status = 'draft';
@@ -86,7 +85,6 @@ class Warehouse extends Component
     public function mount()
     {
         // Set defaults
-        $this->transaction_date = now()->format('Y-m-d');
         $this->status = 'draft';
         
         // Generate reference number
@@ -540,7 +538,6 @@ class Warehouse extends Component
         $this->currentBatch = $batch;
         $this->batch_number = $batch->batch_number ?? '';
         $this->ref_no = $batch->ref_no;
-        $this->transaction_date = $batch->transaction_date;
         $this->status = $batch->status;
         $this->remarks = $batch->remarks;
         
@@ -762,7 +759,6 @@ class Warehouse extends Component
     {
         $this->currentStep = 1;
         $this->batch_number = '';
-        $this->transaction_date = '';
         $this->remarks = '';
         $this->ref_no = '';
         $this->status = 'draft';
@@ -1163,7 +1159,6 @@ class Warehouse extends Component
         $this->currentStep = 1; // Start at step 1
         
         // Reset form fields to defaults
-        $this->transaction_date = now()->format('Y-m-d');
         $this->status = 'draft';
         $this->ref_no = $this->generateRefNo();
         $this->batch_number = '';
@@ -1199,7 +1194,6 @@ class Warehouse extends Component
         $this->reset([
             'batch_number',
             'ref_no',
-            'transaction_date',
             'remarks',
             'status',
             'currentBatch',
@@ -1213,9 +1207,8 @@ class Warehouse extends Component
             'scanFeedback',
             'lastScannedBarcode'
         ]);
-        
+
         // Reset to defaults
-        $this->transaction_date = now()->format('Y-m-d');
         $this->status = 'draft';
         $this->ref_no = 'WT-' . now()->format('Ymd') . '-' . str_pad(
             BatchAllocation::whereDate('created_at', today())->count() + 1,
@@ -1234,7 +1227,6 @@ class Warehouse extends Component
     {
         // Validation rules
         $rules = [
-            'transaction_date' => 'required|date',
             'remarks' => 'nullable|string|max:1000',
             'batch_number' => 'required|string|exists:branches,batch',
         ];
@@ -1267,7 +1259,6 @@ class Warehouse extends Component
             $batch = BatchAllocation::create([
                 'ref_no' => $this->ref_no,
                 'batch_number' => $this->batch_number,
-                'transaction_date' => $this->transaction_date,
                 'remarks' => $this->remarks,
                 'status' => $this->status,
                 'workflow_step' => 1, // Start at step 1
@@ -1313,7 +1304,6 @@ class Warehouse extends Component
     {
         $this->currentBatch->update([
             'batch_number' => $this->batch_number,
-            'transaction_date' => $this->transaction_date,
             'remarks' => $this->remarks,
             'status' => $this->status,
         ]);
@@ -1665,7 +1655,6 @@ class Warehouse extends Component
             'DR#' => $batch->ref_no,
             'STORE CODE' => '',
             'STORE NAME' => '',
-            'EXP. DELIVERY DATE' => \Carbon\Carbon::parse($batch->transaction_date)->format('m/d/y'),
             'DP' => '',
             'SD' => '',
             'CL' => '',
@@ -1691,7 +1680,6 @@ class Warehouse extends Component
                     'DR#' => $batch->ref_no,
                     'STORE CODE' => $storeCode,
                     'STORE NAME' => $storeName,
-                    'EXP. DELIVERY DATE' => \Carbon\Carbon::parse($batch->transaction_date)->format('m/d/y'),
                     'DP' => '04', // Default values
                     'SD' => '10',
                     'CL' => '72007',
@@ -1705,12 +1693,11 @@ class Warehouse extends Component
         }
 
         // Add summary rows
-        $csvData[] = ['', '', '', '', '', '', '', '', '']; // Empty row
+        $csvData[] = ['', '', '', '', '', '', '', '']; // Empty row
         $csvData[] = [
             'DR#' => '',
             'STORE CODE' => '',
             'STORE NAME' => '',
-            'EXP. DELIVERY DATE' => '',
             'DP' => '',
             'SD' => '',
             'CL' => '',
@@ -1721,7 +1708,6 @@ class Warehouse extends Component
             'DR#' => '',
             'STORE CODE' => '',
             'STORE NAME' => '',
-            'EXP. DELIVERY DATE' => '',
             'DP' => '',
             'SD' => '',
             'CL' => '',

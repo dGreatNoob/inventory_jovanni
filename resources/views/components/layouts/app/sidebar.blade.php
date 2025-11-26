@@ -177,9 +177,9 @@
                     <flux:navlist.item icon="building-storefront" href="{{ route('branch.profile') }}"
                         :current="request()->routeIs('branch.profile')" wire:navigate>{{ __('Branch management') }}
                     </flux:navlist.item>
-                    <flux:navlist.item icon="banknotes" href="javascript:void(0);"
+                    <!-- <flux:navlist.item icon="banknotes" href="javascript:void(0);"
                         :current="request()->routeIs('customer.rebate')" wire:navigate>{{ __('Rebate Criteria') }}
-                    </flux:navlist.item>
+                    </flux:navlist.item> -->
                 </flux:navlist.group>
                 @endif
 
@@ -190,7 +190,7 @@
                         'finance.payables',
                         'finance.expenses',
                         'finance.payments',
-                        'finance.currency-conversion',
+                        // 'finance.currency-conversion',
                     ];
                     $hasFinanceRoutes = collect($financeRoutes)->some(fn ($name) => Route::has($name));
                 @endphp
@@ -217,10 +217,10 @@
                                 :current="request()->routeIs('finance.payments')" wire:navigate>{{ __('Payments') }}
                             </flux:navlist.item>
                         @endif
-                        @if (Route::has('finance.currency-conversion'))
+                        <!-- @if (Route::has('finance.currency-conversion'))
                             <flux:navlist.item icon="banknotes" href="{{ route('finance.currency-conversion') }}"  wire:navigate>{{ __('Currency Conversion') }}
                             </flux:navlist.item>
-                        @endif
+                        @endif -->
                     </flux:navlist.group>
                 @endif
 

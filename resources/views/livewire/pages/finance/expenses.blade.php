@@ -35,6 +35,7 @@
             x-data="{ open: @entangle('showCreatePanel').live }"
             x-cloak
             x-on:keydown.escape.window="if (open) { open = false; $wire.closeCreatePanel(); }"
+            x-on:file-reset.window="if (window.filePreviewComponent) { window.filePreviewComponent.preview = null; }"
         >
             <template x-teleport="body">
                 <div
@@ -113,13 +114,12 @@
                                                                 wire:model="category"
                                                                 class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-green-500 focus:outline-none focus:ring-green-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
                                                             >
-                                                                <option value="" disabled selected>Select Expense Category</option>
-                                                                <option value="transport">Transport</option>
-                                                                <option value="utilities">Utilities</option>
-                                                                <option value="office_supplies">Office Supplies</option>
-                                                                <option value="meals">Meals & Entertainment</option>
-                                                                <option value="equipment">Equipment</option>
-                                                                <option value="other">Other</option>
+                                                                @if(empty($category))
+                                                                    <option value="" disabled>Select Expense Category</option>
+                                                                @endif
+                                                                @foreach($this->categories as $key => $label)
+                                                                    <option value="{{ $key }}">{{ $label }}</option>
+                                                                @endforeach
                                                             </select>
                                                             @error('category') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                                         </div>
@@ -163,13 +163,12 @@
                                                                 wire:model="payment_method"
                                                                 class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-green-500 focus:outline-none focus:ring-green-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
                                                             >
-                                                                <option value="" disabled selected>Select Payment Method</option>
-                                                                <option value="cash">Cash</option>
-                                                                <option value="bank transfer">Bank Transfer</option>
-                                                                <option value="credit card">Credit Card</option>
-                                                                <option value="debit card">Debit Card</option>
-                                                                <option value="digital wallet">Digital Wallet</option>
-                                                                <option value="check">Check</option>
+                                                                @if(empty($payment_method))
+                                                                    <option value="" disabled>Select Payment Method</option>
+                                                                @endif
+                                                                @foreach($this->paymentMethods as $key => $label)
+                                                                    <option value="{{ $key }}">{{ $label }}</option>
+                                                                @endforeach
                                                             </select>
                                                             @error('payment_method') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                                         </div>
@@ -251,7 +250,35 @@
                                                     @error('remarks') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                                 </div>
 
-                                                <div>
+                                                <div 
+                                                    x-data="{ 
+                                                        preview: null,
+                                                        isImage(file) {
+                                                            return file && file.type && file.type.startsWith('image/');
+                                                        },
+                                                        handleFileChange(event) {
+                                                            const file = event.target.files[0];
+                                                            if (file && this.isImage(file)) {
+                                                                const reader = new FileReader();
+                                                                reader.onload = (e) => {
+                                                                    this.preview = e.target.result;
+                                                                };
+                                                                reader.readAsDataURL(file);
+                                                            } else {
+                                                                this.preview = null;
+                                                            }
+                                                        },
+                                                        init() {
+                                                            window.filePreviewComponent = this;
+                                                            // Clear preview when Livewire resets the file
+                                                            this.$watch('$wire.file', (value) => {
+                                                                if (!value) {
+                                                                    this.preview = null;
+                                                                }
+                                                            });
+                                                        }
+                                                    }"
+                                                >
                                                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Receipt Attachment</h3>
                                                     <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Upload receipt or supporting document (optional).</p>
                                                     
@@ -273,29 +300,62 @@
                                                                 type="file" 
                                                                 class="hidden" 
                                                                 wire:model="file"
+                                                                accept="image/*,.pdf"
+                                                                x-on:change="handleFileChange($event)"
                                                             />
                                                         </label>
                                                     </div>
                                                     
-                                                    <!-- File preview and remove button -->
-                                                    @if ($file)
-                                                        <div class="mt-3 flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                                                            <div class="flex items-center space-x-3">
-                                                                <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                                                </svg>
-                                                                <span class="text-sm text-green-800 dark:text-green-300">{{ $file->getClientOriginalName() }}</span>
+                                                    <!-- Image Preview -->
+                                                    <div x-show="preview" x-transition class="mt-4">
+                                                        <div class="relative bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
+                                                            <div class="flex items-center justify-between mb-3">
+                                                                <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300">Image Preview</h4>
+                                                                <button 
+                                                                    type="button" 
+                                                                    x-on:click="preview = null; $wire.set('file', null)"
+                                                                    class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                                                                >
+                                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                                    </svg>
+                                                                </button>
                                                             </div>
-                                                            <button 
-                                                                type="button" 
-                                                                wire:click="$set('file', null)"
-                                                                class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
-                                                            >
-                                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                                                </svg>
-                                                            </button>
+                                                            <div class="flex justify-center">
+                                                                <img 
+                                                                    :src="preview" 
+                                                                    alt="Receipt preview" 
+                                                                    class="max-w-full max-h-64 rounded-lg shadow-md object-contain"
+                                                                />
+                                                            </div>
                                                         </div>
+                                                    </div>
+                                                    
+                                                    <!-- File preview and remove button (for non-image files) -->
+                                                    @if ($file)
+                                                        @php
+                                                            $isImageFile = $file && in_array(strtolower($file->getClientOriginalExtension()), ['jpg', 'jpeg', 'png', 'gif', 'webp']);
+                                                        @endphp
+                                                        @if (!$isImageFile)
+                                                            <div class="mt-3 flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                                                                <div class="flex items-center space-x-3">
+                                                                    <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                                    </svg>
+                                                                    <span class="text-sm text-green-800 dark:text-green-300">{{ $file->getClientOriginalName() }}</span>
+                                                                </div>
+                                                                <button 
+                                                                    type="button" 
+                                                                    wire:click="$set('file', null)"
+                                                                    x-on:click="preview = null"
+                                                                    class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                                                                >
+                                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                                    </svg>
+                                                                </button>
+                                                            </div>
+                                                        @endif
                                                     @endif
                                                     
                                                     @error('file') 
@@ -484,12 +544,9 @@
                             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                         >
                             <option value="">All Categories</option>
-                            <option value="transport">Transport</option>
-                            <option value="utilities">Utilities</option>
-                            <option value="office_supplies">Office Supplies</option>
-                            <option value="meals">Meals</option>
-                            <option value="equipment">Equipment</option>
-                            <option value="other">Other</option>
+                            @foreach($this->categories as $key => $label)
+                                <option value="{{ $key }}">{{ $label }}</option>
+                            @endforeach
                         </select>
 
                         <input 
@@ -504,13 +561,16 @@
                             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                         >
 
-                        <flux:button 
+                        <button 
+                            type="button"
                             wire:click="resetFilters" 
-                            variant="outline" 
-                            size="sm"
+                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 px-2.5 py-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors flex items-center gap-2"
                         >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
                             Reset Filters
-                        </flux:button>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -554,24 +614,18 @@
                                     </td>
                                     <td class="px-6 py-4">
                                         @php
-                                            $badgeColors = [
-                                                'transport' => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
-                                                'utilities' => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
-                                                'office_supplies' => 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
-                                                'meals' => 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300',
-                                                'equipment' => 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300',
-                                                'other' => 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300',
-                                            ];
+                                            $badgeColors = $this->categoryBadgeColors;
                                             $color = $badgeColors[$expense->category] ?? $badgeColors['other'];
+                                            $categoryLabel = $this->categories[$expense->category] ?? ucfirst(str_replace('_', ' ', $expense->category));
                                         @endphp
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $color }}">
-                                            {{ ucfirst(str_replace('_', ' ', $expense->category)) }}
+                                            {{ $categoryLabel }}
                                         </span>
                                     </td>
                                     <td class="px-6 py-4">
                                         <div class="flex flex-col space-y-1">
                                             <span class="font-medium text-gray-900 dark:text-white">
-                                                {{ $expense->payment_method }} Payment
+                                                {{ ($this->paymentMethods[$expense->payment_method] ?? ucwords($expense->payment_method)) }} Payment
                                             </span>
                                             @if($expense->remarks)
                                                 <span class="text-xs text-gray-500 dark:text-gray-400">{{ Str::limit($expense->remarks, 50) }}</span>
@@ -597,37 +651,41 @@
                                             {{ ucfirst($expense->status) }}
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4 space-x-2">
-    <!-- View Receipt Button (only show if receipt exists) -->
-    @if($expense->file_path)
-        <flux:button 
-            wire:click="viewReceipt({{ $expense->id }})" 
-            variant="outline" 
-            size="sm"
-            class="text-blue-600 hover:text-blue-700"
-        >
-            View Receipt
-        </flux:button>
-    @endif
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center space-x-2">
+                                            <!-- View Receipt Button (always show) -->
+                                            <flux:button 
+                                                type="button"
+                                                wire:click="viewReceipt({{ $expense->id }})" 
+                                                variant="outline" 
+                                                size="sm"
+                                                class="text-blue-600 hover:text-blue-700"
+                                            >
+                                                Receipt
+                                            </flux:button>
 
-    <!-- Keep your existing Edit and Delete buttons -->
-    <flux:button 
-        wire:click="edit({{ $expense->id }})" 
-        variant="outline" 
-        size="sm"
-    >
-        Edit
-    </flux:button>
+                                            <!-- Edit button -->
+                                            <flux:button 
+                                                type="button"
+                                                wire:click="edit({{ $expense->id }})" 
+                                                variant="outline" 
+                                                size="sm"
+                                            >
+                                                Edit
+                                            </flux:button>
 
-    <flux:button 
-        wire:click="confirmDelete({{ $expense->id }})" 
-        variant="outline" 
-        size="sm" 
-        class="text-red-600 hover:text-red-700"
-    >
-        Delete
-    </flux:button>
-</td>
+                                            <!-- Delete button -->
+                                            <flux:button 
+                                                type="button"
+                                                wire:click="confirmDelete({{ $expense->id }})" 
+                                                variant="outline" 
+                                                size="sm" 
+                                                class="text-red-600 hover:text-red-700"
+                                            >
+                                                Delete
+                                            </flux:button>
+                                        </div>
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>
@@ -666,29 +724,39 @@
         </section>
 
         <!-- Receipt View Modal -->
-        <div x-data="{ open: @entangle('showReceiptModal') }" x-cloak>
+        <div 
+            x-data="{ open: @entangle('showReceiptModal').live }" 
+            x-cloak
+            x-on:keydown.escape.window="if (open) { open = false; $wire.closeReceiptModal(); }"
+        >
             <template x-teleport="body">
-                <div x-show="open" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-75">
-                    <div x-show="open" x-transition class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+                <div 
+                    x-show="open" 
+                    x-transition.opacity 
+                    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-900/30 dark:bg-neutral-900/50"
+                    @click.self="open = false; $wire.closeReceiptModal()"
+                >
+                    <div 
+                        x-show="open" 
+                        x-transition 
+                        class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden mx-4 sm:mx-0"
+                        @click.stop
+                    >
                         <!-- Modal Header -->
-                        <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
                             <div>
                                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
                                     Receipt - {{ $currentReceipt['expense']['reference_id'] ?? '' }}
                                 </h3>
-                                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                                    {{ $currentReceipt['expense']['party'] ?? '' }} - 
-                                    ₱{{ number_format($currentReceipt['expense']['amount'] ?? 0, 2) }}
-                                </p>
                             </div>
-                            <div class="flex items-center space-x-3">
+                            <div class="flex items-center space-x-2 sm:space-x-3">
                                 @if($currentReceipt)
                                     <button type="button" wire:click="downloadReceipt({{ $currentReceipt['expense']['id'] ?? '' }})"
-                                            class="flex items-center space-x-2 px-3 py-2 text-sm text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/30 transition-colors">
+                                            class="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-2 text-xs sm:text-sm text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/30 transition-colors">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                         </svg>
-                                        <span>Download</span>
+                                        <span class="hidden sm:inline">Download</span>
                                     </button>
                                 @endif
                                 <button type="button" x-on:click="open = false; $wire.closeReceiptModal()"
@@ -701,97 +769,260 @@
                         </div>
 
                         <!-- Modal Content -->
-                        <div class="p-6 max-h-[calc(90vh-120px)] overflow-y-auto">
+                        <div class="p-4 sm:p-6 lg:p-8 max-h-[calc(90vh-120px)] overflow-y-auto">
                             @if($currentReceipt)
                                 @php
-                                    $extension = strtolower($currentReceipt['file_extension']);
-                                    $isImage = in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp']);
-                                    $isPdf = $extension === 'pdf';
+                                    $hasFile = !empty($currentReceipt['file_extension']) && !empty($currentReceipt['file_url']);
+                                    $extension = $hasFile ? strtolower($currentReceipt['file_extension']) : null;
+                                    $isImage = $hasFile && in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp']);
+                                    $isPdf = $hasFile && $extension === 'pdf';
+                                    
+                                    // Improved Status colors
+                                    $statusColors = [
+                                        'paid' => 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
+                                        'pending' => 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 border-amber-200 dark:border-amber-800', 
+                                        'cancelled' => 'bg-rose-50 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300 border-rose-200 dark:border-rose-800',
+                                        'default' => 'bg-slate-50 text-slate-700 dark:bg-slate-900/30 dark:text-slate-300 border-slate-200 dark:border-slate-800'
+                                    ];
+                                    $statusClass = $statusColors[$currentReceipt['expense']['status']] ?? $statusColors['default'];
                                 @endphp
 
-                                @if($isImage)
-                                    <!-- Image Preview -->
-                                    <div class="flex justify-center">
-                                        <img src="{{ $currentReceipt['file_url'] }}" 
-                                            alt="Receipt for {{ $currentReceipt['expense']['reference_id'] }}"
-                                            class="max-w-full max-h-[70vh] rounded-lg shadow-lg">
-                                    </div>
-                                @elseif($isPdf)
-                                    <!-- PDF Preview -->
-                                    <div class="flex flex-col items-center">
-                                        <div class="w-full h-96 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center mb-4">
-                                            <iframe src="{{ $currentReceipt['file_url'] }}" 
-                                                    class="w-full h-full rounded-lg"
-                                                    frameborder="0">
-                                            </iframe>
+                                <!-- Header -->
+                                <div class="bg-slate-700 dark:bg-slate-800 rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 text-white shadow-xl">
+                                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                        <div class="flex items-center space-x-3 sm:space-x-4">
+                                            <div class="bg-white/15 p-2 sm:p-3 rounded-xl">
+                                                <svg class="w-5 h-5 sm:w-7 sm:h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <h2 class="text-xl sm:text-2xl font-bold">Receipt Preview</h2>
+                                                <p class="text-slate-300 text-xs sm:text-sm mt-1 break-words">
+                                                    @if($hasFile && $currentReceipt['file_name'])
+                                                        {{ $currentReceipt['file_name'] }}
+                                                    @else
+                                                        No file attached
+                                                    @endif
+                                                </p>
+                                            </div>
                                         </div>
-                                        <p class="text-sm text-gray-500 dark:text-gray-400">
-                                            PDF document - <a href="{{ $currentReceipt['file_url'] }}" 
-                                                            target="_blank" 
-                                                            class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
-                                                            Open in new tab
-                                                        </a>
-                                        </p>
-                                    </div>
-                                @else
-                                    <!-- Other file types -->
-                                    <div class="text-center py-12">
-                                        <svg class="w-16 h-16 mx-auto text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                        </svg>
-                                        <h4 class="mt-4 text-lg font-medium text-gray-900 dark:text-white">
-                                            {{ $currentReceipt['file_name'] }}
-                                        </h4>
-                                        <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                                            This file type cannot be previewed. Please download the file to view it.
-                                        </p>
-                                        <button type="button" wire:click="downloadReceipt({{ $currentReceipt['expense']['id'] }})"
-                                                class="mt-4 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
-                                            Download File
-                                        </button>
-                                    </div>
-                                @endif
-
-                                <!-- Receipt Details -->
-                                <div class="mt-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                                    <h4 class="font-medium text-gray-900 dark:text-white mb-3">Expense Details</h4>
-                                    <div class="grid grid-cols-2 gap-4 text-sm">
-                                        <div>
-                                            <span class="text-gray-500 dark:text-gray-400">Reference ID:</span>
-                                            <p class="font-medium text-gray-900 dark:text-white">{{ $currentReceipt['expense']['reference_id'] }}</p>
-                                        </div>
-                                        <div>
-                                            <span class="text-gray-500 dark:text-gray-400">Amount:</span>
-                                            <p class="font-medium text-red-600 dark:text-red-400">₱{{ number_format($currentReceipt['expense']['amount'], 2) }}</p>
-                                        </div>
-                                        <div>
-                                            <span class="text-gray-500 dark:text-gray-400">Paid To:</span>
-                                            <p class="font-medium text-gray-900 dark:text-white">{{ $currentReceipt['expense']['party'] }}</p>
-                                        </div>
-                                        <div>
-                                            <span class="text-gray-500 dark:text-gray-400">Date:</span>
-                                            <p class="font-medium text-gray-900 dark:text-white">{{ \Carbon\Carbon::parse($currentReceipt['expense']['date'])->format('M j, Y') }}</p>
-                                        </div>
-                                        <div>
-                                            <span class="text-gray-500 dark:text-gray-400">Category:</span>
-                                            <p class="font-medium text-gray-900 dark:text-white">
-                                                {{ ucfirst(str_replace('_', ' ', $currentReceipt['expense']['category'])) }}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <span class="text-gray-500 dark:text-gray-400">Status:</span>
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                                                {{ $currentReceipt['expense']['status'] === 'paid' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300' : 
-                                                ($currentReceipt['expense']['status'] === 'pending' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300' : 
-                                                'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300') }}">
+                                        <div class="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                                            @if($hasFile && $extension)
+                                                <span class="bg-white/20 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium">
+                                                    {{ strtoupper($extension) }} File
+                                                </span>
+                                            @endif
+                                            <span class="{{ $statusClass }} border px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium">
                                                 {{ ucfirst($currentReceipt['expense']['status']) }}
                                             </span>
                                         </div>
                                     </div>
                                 </div>
+
+                                <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+                                    <!-- File Preview Section -->
+                                    <div class="xl:col-span-2">
+                                        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                                            <div class="p-4 sm:p-6 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+                                                <h3 class="text-lg font-semibold text-slate-800 dark:text-white flex items-center gap-2">
+                                                    <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                                    </svg>
+                                                    Document Preview
+                                                </h3>
+                                            </div>
+                                            
+                                            <div class="p-4 sm:p-6">
+                                                @if(!$hasFile)
+                                                    <!-- No File Attached -->
+                                                    <div class="text-center py-12">
+                                                        <div class="bg-slate-100 dark:bg-slate-800/50 w-24 h-24 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                                                            <svg class="w-12 h-12 text-slate-500 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                            </svg>
+                                                        </div>
+                                                        <h4 class="text-xl font-bold text-slate-800 dark:text-white mb-3">
+                                                            No Receipt File Attached
+                                                        </h4>
+                                                        <p class="text-slate-600 dark:text-slate-400 mb-8 max-w-md mx-auto leading-relaxed">
+                                                            This expense does not have a receipt file attached. You can edit the expense to upload a receipt.
+                                                        </p>
+                                                        <button type="button" wire:click="edit({{ $currentReceipt['expense']['id'] }})"
+                                                                class="inline-flex items-center gap-3 px-8 py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                                                                @click="open = false; $wire.closeReceiptModal()">
+                                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                                            </svg>
+                                                            Edit Expense to Upload Receipt
+                                                        </button>
+                                                    </div>
+                                                @elseif($isImage)
+                                                    <!-- Enhanced Image Preview -->
+                                                    <div class="flex justify-center items-center">
+                                                        <div class="rounded-2xl p-2 sm:p-4 lg:p-6 w-full">
+                                                            <div class="flex justify-center items-center min-h-[200px] sm:min-h-[300px] lg:min-h-[400px]">
+                                                                <img src="{{ $currentReceipt['file_url'] }}" 
+                                                                    alt="Receipt for {{ $currentReceipt['expense']['reference_id'] }}"
+                                                                    class="max-w-full max-h-[50vh] sm:max-h-[60vh] lg:max-h-[70vh] rounded-xl shadow-2xl object-contain"
+                                                                    onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'300\'%3E%3Crect fill=\'%23f3f4f6\' width=\'400\' height=\'300\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\' fill=\'%239ca3af\' font-family=\'sans-serif\' font-size=\'18\'%3EImage not found%3C/text%3E%3C/svg%3E';"
+                                                                    loading="lazy">
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                @elseif($isPdf)
+                                                    <!-- PDF Preview -->
+                                                    <div class="space-y-6">
+                                                        <div class="bg-slate-800 rounded-xl p-8 text-center border-2 border-slate-700">
+                                                            <div class="w-16 h-16 bg-red-500 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                                                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                                </svg>
+                                                            </div>
+                                                            <h4 class="text-white font-semibold text-lg mb-2">PDF Document Ready</h4>
+                                                            <p class="text-slate-300 text-sm">Click below to view the full document</p>
+                                                        </div>
+                                                        
+                                                        <div class="flex gap-3 justify-center">
+                                                            <a href="{{ $currentReceipt['file_url'] }}" 
+                                                            target="_blank" 
+                                                            class="flex items-center gap-3 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+                                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                                                </svg>
+                                                                Open in New Tab
+                                                            </a>
+                                                            <button type="button" wire:click="downloadReceipt({{ $currentReceipt['expense']['id'] }})" class="flex items-center gap-3 px-6 py-3 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 rounded-xl font-medium transition-all duration-300">
+                                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                                                </svg>
+                                                                Download
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                @else
+                                                    <!-- Unsupported File -->
+                                                    <div class="text-center py-12">
+                                                        <div class="bg-slate-100 dark:bg-slate-800/50 w-24 h-24 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                                                            <svg class="w-12 h-12 text-slate-500 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                            </svg>
+                                                        </div>
+                                                        <h4 class="text-xl font-bold text-slate-800 dark:text-white mb-3">
+                                                            {{ $currentReceipt['file_name'] }}
+                                                        </h4>
+                                                        <p class="text-slate-600 dark:text-slate-400 mb-8 max-w-md mx-auto leading-relaxed">
+                                                            This file format cannot be previewed in the browser. Download the file to access its contents.
+                                                        </p>
+                                                        <button type="button" wire:click="downloadReceipt({{ $currentReceipt['expense']['id'] }})"
+                                                                class="inline-flex items-center gap-3 px-8 py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+                                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                                            </svg>
+                                                            Download File
+                                                        </button>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Sidebar -->
+                                    <div class="space-y-4 sm:space-y-6">
+                                        <!-- Amount Card -->
+                                        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                                            <div class="p-4 sm:p-6 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+                                                <h3 class="text-lg font-semibold text-slate-800 dark:text-white flex items-center gap-2">
+                                                    <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                    </svg>
+                                                    Amount
+                                                </h3>
+                                            </div>
+                                            
+                                            <div class="p-4 sm:p-6">
+                                                <div class="space-y-1">
+                                                    <label class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Total Amount</label>
+                                                    <p class="text-2xl sm:text-3xl font-bold text-red-600 dark:text-red-400">₱{{ number_format($currentReceipt['expense']['amount'], 2) }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Expense Details -->
+                                        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                                            <div class="p-4 sm:p-6 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+                                                <h3 class="text-lg font-semibold text-slate-800 dark:text-white flex items-center gap-2">
+                                                    <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                                                    </svg>
+                                                    Expense Details
+                                                </h3>
+                                            </div>
+                                            
+                                            <div class="p-4 sm:p-6 space-y-4 sm:space-y-6">
+                                                <div class="space-y-1">
+                                                    <label class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Reference ID</label>
+                                                    <p class="text-lg font-semibold text-slate-800 dark:text-white font-mono">{{ $currentReceipt['expense']['reference_id'] }}</p>
+                                                </div>
+                                                
+                                                <div class="space-y-1">
+                                                    <label class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Paid To</label>
+                                                    <p class="text-lg font-semibold text-slate-800 dark:text-white">{{ $currentReceipt['expense']['party'] }}</p>
+                                                </div>
+                                                
+                                                <div class="space-y-1">
+                                                    <label class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Category</label>
+                                                    <div class="flex items-center gap-2">
+                                                        @php
+                                                            $badgeColors = $this->categoryBadgeColors;
+                                                            $categoryColor = $badgeColors[$currentReceipt['expense']['category']] ?? $badgeColors['other'];
+                                                            $categoryLabel = $this->categories[$currentReceipt['expense']['category']] ?? ucfirst(str_replace('_', ' ', $currentReceipt['expense']['category']));
+                                                        @endphp
+                                                        <span class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium {{ $categoryColor }}">
+                                                            {{ $categoryLabel }}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="space-y-1">
+                                                    <label class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide">Transaction Date</label>
+                                                    <div class="flex items-center gap-2 text-slate-800 dark:text-slate-200">
+                                                        <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                                        </svg>
+                                                        <span class="font-medium">{{ \Carbon\Carbon::parse($currentReceipt['expense']['date'])->format('F j, Y') }}</span>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="pt-4 border-t border-slate-200 dark:border-slate-700">
+                                                    <label class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-2 block">Status</label>
+                                                    <div class="{{ $statusClass }} border px-4 py-3 rounded-xl font-semibold text-center">
+                                                        {{ ucfirst($currentReceipt['expense']['status']) }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             @else
-                                <div class="text-center py-12">
-                                    <p class="text-gray-500 dark:text-gray-400">No receipt available.</p>
+                                <!-- Empty State -->
+                                <div class="text-center py-20">
+                                    <div class="bg-slate-100 dark:bg-slate-800/50 w-32 h-32 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-2xl">
+                                        <svg class="w-16 h-16 text-slate-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                    </div>
+                                    <h3 class="text-2xl font-bold text-slate-800 dark:text-white mb-4">No Receipt Available</h3>
+                                    <p class="text-slate-600 dark:text-slate-400 max-w-md mx-auto text-lg mb-8 leading-relaxed">
+                                        There is no receipt information to display at this time.
+                                    </p>
+                                    <button class="inline-flex items-center gap-3 px-8 py-3.5 bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                        </svg>
+                                        Upload New Receipt
+                                    </button>
                                 </div>
                             @endif
                         </div>

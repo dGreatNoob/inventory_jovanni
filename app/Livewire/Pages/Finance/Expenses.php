@@ -62,6 +62,8 @@ class Expenses extends Component
     public function mount()
     {
         $this->date = now()->format('Y-m-d');
+        $this->category = '';
+        $this->payment_method = '';
         $this->generateReferenceId();
     }
 
@@ -89,6 +91,8 @@ class Expenses extends Component
         $this->reset(['party', 'date', 'category', 'amount', 'payment_method', 'remarks', 'file']);
         $this->status = 'pending';
         $this->date = now()->format('Y-m-d');
+        $this->category = '';
+        $this->payment_method = '';
         $this->generateReferenceId();
     }
 
@@ -197,17 +201,28 @@ class Expenses extends Component
     {
         $expense = Finance::findOrFail($expenseId);
         
-        if (!$expense->file_path || !Storage::disk('public')->exists($expense->file_path)) {
-            session()->flash('error', 'Receipt file not found.');
-            return;
-        }
+        // Check if file exists
+        $hasFile = $expense->file_path && Storage::disk('public')->exists($expense->file_path);
         
-        $this->currentReceipt = [
-            'expense' => $expense,
-            'file_url' => Storage::disk('public')->url($expense->file_path),
-            'file_name' => basename($expense->file_path),
-            'file_extension' => pathinfo($expense->file_path, PATHINFO_EXTENSION),
-        ];
+        if ($hasFile) {
+            // Generate URL - use asset() for more reliable public file URLs
+            $fileUrl = asset('storage/' . $expense->file_path);
+            
+            $this->currentReceipt = [
+                'expense' => $expense,
+                'file_url' => $fileUrl,
+                'file_name' => basename($expense->file_path),
+                'file_extension' => pathinfo($expense->file_path, PATHINFO_EXTENSION),
+            ];
+        } else {
+            // No file attached, but still show the modal with expense details
+            $this->currentReceipt = [
+                'expense' => $expense,
+                'file_url' => null,
+                'file_name' => null,
+                'file_extension' => null,
+            ];
+        }
         
         $this->showReceiptModal = true;
     }
@@ -223,17 +238,59 @@ class Expenses extends Component
         $expense = Finance::findOrFail($expenseId);
         
         if (!$expense->file_path || !Storage::disk('public')->exists($expense->file_path)) {
-            session()->flash('error', 'Receipt file not found.');
+            session()->flash('error', 'Receipt file not found. No file is attached to this expense.');
             return;
         }
         
-        return Storage::disk('public')->download($expense->file_path);
+        // Get the file extension from the original file
+        $extension = pathinfo($expense->file_path, PATHINFO_EXTENSION);
+        
+        // Create custom filename using reference_id
+        $customFilename = $expense->reference_id . '.' . $extension;
+        
+        return Storage::disk('public')->download($expense->file_path, $customFilename);
     }
 
     public function resetFilters()
     {
         $this->reset(['search', 'categoryFilter', 'startDate', 'endDate']);
         $this->resetPage();
+    }
+
+    public function getCategoriesProperty()
+    {
+        return [
+            'transport' => 'Transport',
+            'utilities' => 'Utilities',
+            'office_supplies' => 'Office Supplies',
+            'meals' => 'Meals & Entertainment',
+            'equipment' => 'Equipment',
+            'other' => 'Other',
+        ];
+    }
+
+    public function getCategoryBadgeColorsProperty()
+    {
+        return [
+            'transport' => 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
+            'utilities' => 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+            'office_supplies' => 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
+            'meals' => 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300',
+            'equipment' => 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300',
+            'other' => 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300',
+        ];
+    }
+
+    public function getPaymentMethodsProperty()
+    {
+        return [
+            'cash' => 'Cash',
+            'bank transfer' => 'Bank Transfer',
+            'credit card' => 'Credit Card',
+            'debit card' => 'Debit Card',
+            'digital wallet' => 'Digital Wallet',
+            'check' => 'Check',
+        ];
     }
 
     public function getStatsProperty()

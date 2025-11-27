@@ -26,6 +26,7 @@ class Finance extends Model
         'payment_method',
         'status',
         'remarks',
+        'file_path',
         'branch_id',
         'agent_id',
     ];

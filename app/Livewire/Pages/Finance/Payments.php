@@ -38,16 +38,14 @@ class Payments extends Component
 
     protected $rules = [
         'payment_ref' => 'required|string|max:255',
-        'amount' => 'required|numeric|min:0',
+        'amount' => 'required|numeric|min:0.01',
         'payment_date' => 'required|date',
-        'payment_method' => 'required|string|max:255',
+        'payment_method' => 'nullable|string|max:255',
         'finance_id' => 'required|exists:finances,id',
-        'status' => 'required|string',
         'remarks' => 'nullable|string',
     ];
 
     protected $messages = [
-        'amount.max' => 'Payment amount cannot exceed the balance due.',
         'finance_id.required' => 'Please select a payable or receivable record.',
     ];
 
@@ -56,6 +54,7 @@ class Payments extends Component
         $this->generatePaymentRef();
         $this->loadAvailableFinances();
         $this->payment_date = now()->format('Y-m-d');
+        $this->payment_method = 'Cash';
     }
 
     private function generatePaymentRef()
@@ -98,11 +97,6 @@ class Payments extends Component
         if ($value) {
             $finance = Finance::find($value);
             $this->selectedFinanceBalance = $finance ? $finance->balance : 0;
-            
-            // Set default amount to balance
-            if (!$this->editingPaymentId) {
-                $this->amount = $this->selectedFinanceBalance;
-            }
         } else {
             $this->selectedFinanceBalance = 0;
         }
@@ -112,14 +106,8 @@ class Payments extends Component
     {
         $this->validate();
 
-        // Additional validation: amount should not exceed balance
-        $finance = Finance::find($this->finance_id);
-        if ($this->amount > $finance->balance) {
-            $this->addError('amount', 'Payment amount cannot exceed the balance due of ' . number_format($finance->balance, 2));
-            return;
-        }
-
         // Determine status based on amount vs balance
+        $finance = Finance::find($this->finance_id);
         $this->status = $this->calculatePaymentStatus($finance, $this->amount);
 
         Payment::create([
@@ -161,15 +149,9 @@ class Payments extends Component
 
         $payment = Payment::findOrFail($this->editingPaymentId);
         $finance = Finance::find($this->finance_id);
-        
+
         // Restore original balance
         $finance->balance += $payment->amount;
-        
-        // Additional validation: amount should not exceed restored balance
-        if ($this->amount > $finance->balance) {
-            $this->addError('amount', 'Payment amount cannot exceed the balance due of ' . number_format($finance->balance, 2));
-            return;
-        }
 
         // Determine status
         $this->status = $this->calculatePaymentStatus($finance, $this->amount);

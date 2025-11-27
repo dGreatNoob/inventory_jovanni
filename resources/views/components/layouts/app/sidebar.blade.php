@@ -547,7 +547,7 @@
                 @endrole --}}
 
                 {{-- Warehouse Staff --}}
-                @php
+                <!-- @php
                     $warehouseRoutes = [
                         'warehousestaff.stockin',
                         'warehousestaff.stockout',
@@ -570,7 +570,7 @@
                         <flux:navlist.item icon="banknotes" href="javascript:void(0);"  wire:navigate>{{ __('Returns') }}
                         </flux:navlist.item>
                     </flux:navlist.group>
-                @endif
+                @endif -->
 
                 {{-- Reports --}}
                 {{-- <flux:navlist.group expandable :expanded="request()->routeIs('reports.*')" :heading="__('Reports')"

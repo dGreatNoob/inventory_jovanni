@@ -22,8 +22,8 @@
     </div>
 
     <div class="">
-        <x-collapsible-card title="Record Payment" open="false" size="full">
-            <form wire:submit.prevent="save" x-show="open" x-transition>
+        <x-collapsible-card title="Record Payment" open="true" size="full">
+            <form wire:submit.prevent="save">
                 <div class="grid gap-6 mb-6 md:grid-cols-2">
                     <div>
                         <x-input type="text" wire:model.defer="payment_ref" name="payment_ref" label="Payment Reference" placeholder="Enter payment reference" readonly class="bg-gray-100 cursor-not-allowed"/>
@@ -38,9 +38,6 @@
                             @endforeach
                         </select>
                         @error('finance_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                        @if($selectedFinanceBalance > 0)
-                            <p class="mt-1 text-sm text-blue-600 dark:text-blue-400">Balance Due: {{ number_format($selectedFinanceBalance, 2) }}</p>
-                        @endif
                     </div>
                     <div>
                         <x-input type="number" step="0.01" wire:model.defer="amount" name="amount" label="Payment Amount" placeholder="Enter payment amount" />
@@ -233,9 +230,6 @@
                                         @endforeach
                                     </select>
                                     @error('finance_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                                    @if($selectedFinanceBalance > 0)
-                                        <p class="mt-1 text-sm text-blue-600 dark:text-blue-400">Balance Due: {{ number_format($selectedFinanceBalance, 2) }}</p>
-                                    @endif
                                 </div>
                                 <div>
                                     <x-input type="number" step="0.01" wire:model.defer="amount" name="amount" label="Payment Amount" placeholder="Enter payment amount" />

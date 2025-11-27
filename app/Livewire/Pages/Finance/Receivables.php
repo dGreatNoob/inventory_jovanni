@@ -139,6 +139,7 @@ class Receivables extends Component
             'agent_id' => $assignedAgentId,
             'date' => now()->toDateString(),
             'amount' => $this->amount_due,
+            'balance' => $this->amount_due,
             'due_date' => $this->due_date,
             'payment_method' => 'N/A', // Not used in new functionality
             'status' => $this->payment_status,
@@ -187,6 +188,7 @@ class Receivables extends Component
             'branch_id' => $this->branch_id,
             'agent_id' => $assignedAgentId,
             'amount' => $this->amount_due,
+            'balance' => $this->amount_due,
             'due_date' => $this->due_date,
             'payment_method' => 'N/A', // Not used in new functionality
             'status' => $this->payment_status,
@@ -240,7 +242,19 @@ class Receivables extends Component
     public function updateReceivableStatus($id)
     {
         $receivable = Finance::findOrFail($id);
-        $receivable->status = $this->statusUpdates[$id];
+        $newStatus = $this->statusUpdates[$id];
+        $receivable->status = $newStatus;
+
+        // Adjust balance based on status
+        if ($newStatus === 'paid') {
+            $receivable->balance = 0;
+        } elseif ($newStatus === 'pending') {
+            $receivable->balance = $receivable->amount;
+        } elseif ($newStatus === 'cancelled') {
+            $receivable->balance = 0;
+        }
+        // For overdue, keep current balance
+
         $receivable->save();
         session()->flash('success', 'Status updated successfully!');
     }

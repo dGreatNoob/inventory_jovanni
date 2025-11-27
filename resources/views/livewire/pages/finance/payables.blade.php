@@ -22,15 +22,15 @@
     </div>
     
     <div class="">
-       <x-collapsible-card title="Add Payable" open="false" size="full">
-            <form wire:submit.prevent="save" x-show="open" x-transition>
+       <x-collapsible-card title="Add Payable" open="true" size="full">
+            <form wire:submit.prevent="save">
                 <div class="grid gap-6 mb-6 md:grid-cols-2">
                     <div>
                         <x-input type="text" wire:model="reference_id" name="reference_id" label="Invoice Number" placeholder="Enter invoice number" readonly class="bg-gray-100 cursor-not-allowed"/>
                         @error('reference_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
                     <div>
-                        <x-input type="text" wire:model="supplier" name="supplier" label="Supplier" placeholder="Supplier Name" readonly class="bg-gray-100 cursor-not-allowed" />
+                        <x-input type="text" wire:model="supplier" name="supplier" label="Supplier" placeholder="Supplier Name" />
                         @error('supplier') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
                     <div>
@@ -43,7 +43,7 @@
                         @error('purchase_order_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
                     <div>
-                        <x-input type="text" wire:model="purchase_order" name="purchase_order" label="PO Number" placeholder="PO Number" readonly class="bg-gray-100 cursor-not-allowed" />
+                        <x-input type="text" wire:model="purchase_order" name="purchase_order" label="PO Number" placeholder="PO Number" />
                         @error('purchase_order') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
                     <div>
@@ -59,7 +59,7 @@
                         @error('due_date') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
                     <div>
-                        <x-input type="number" step="0.01" wire:model="amount" name="amount" label="Amount" placeholder="Enter amount" readonly class="bg-gray-100 cursor-not-allowed" />
+                        <x-input type="number" step="0.01" wire:model="amount" name="amount" label="Amount" placeholder="Enter amount" />
                         @error('amount') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
                     <div>

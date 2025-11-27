@@ -6,6 +6,8 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\Promo;
 use App\Models\Product;
+use App\Models\BatchAllocation;
+use Illuminate\Support\Facades\DB;
 
 class PromoView extends Component
 {
@@ -72,6 +74,65 @@ class PromoView extends Component
     {
         $this->viewingProduct = Product::find($productId);
         $this->dispatch('open-modal', name: 'product-details');
+    }
+
+    /**
+     * Get stock on hand for a product in the branches associated with this promo
+     */
+    public function getProductStockInBranches($productId)
+    {
+        // Get batch allocation IDs from promo
+        $batchAllocationIds = json_decode($this->promo->branch, true) ?? [];
+        if (empty($batchAllocationIds)) {
+            return 0;
+        }
+
+        // Get all branch IDs from the batch allocations
+        $branchIds = DB::table('branch_allocations')
+            ->whereIn('batch_allocation_id', $batchAllocationIds)
+            ->pluck('branch_id')
+            ->unique()
+            ->toArray();
+
+        if (empty($branchIds)) {
+            return 0;
+        }
+
+        // Get stock from branch_product pivot table for this product in those branches
+        $totalStock = DB::table('branch_product')
+            ->where('product_id', $productId)
+            ->whereIn('branch_id', $branchIds)
+            ->sum('stock');
+
+        return (float) $totalStock;
+    }
+
+    /**
+     * Get stock status for a product in the branches associated with this promo
+     */
+    public function getProductStockStatusInBranches($productId)
+    {
+        $stock = $this->getProductStockInBranches($productId);
+        
+        if ($stock <= 0) {
+            return [
+                'status' => 'out_of_stock',
+                'label' => 'Out of Stock',
+                'color' => 'red'
+            ];
+        } elseif ($stock <= 10) { // Low stock threshold
+            return [
+                'status' => 'low_stock',
+                'label' => 'Low Stock',
+                'color' => 'yellow'
+            ];
+        } else {
+            return [
+                'status' => 'in_stock',
+                'label' => 'In Stock',
+                'color' => 'green'
+            ];
+        }
     }
 
     public function goBack()

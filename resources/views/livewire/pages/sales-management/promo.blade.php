@@ -5,7 +5,7 @@
             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div class="flex-1">
                     <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Promo Creation</h1>
-                    <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Create and manage promotional campaigns</p>
+                    <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Create and manage promotions</p>
                 </div>
                 <div class="flex flex-row items-center space-x-3">
                     <flux:button 
@@ -23,7 +23,7 @@
         </div>
 
         <section class="mb-6">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 <!-- Total Promo -->
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
                     <div class="p-5">
@@ -59,6 +59,27 @@
                                     <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Active Promos</dt>
                                     <dd class="text-lg font-medium text-gray-900 dark:text-white">
                                         {{ $activePromos }}
+                                    </dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upcoming Promo -->
+                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
+                    <div class="p-5">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0">
+                                <svg class="h-6 w-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <div class="ml-5 w-0 flex-1">
+                                <dl>
+                                    <dt class="text-sm font-medium text-gray-500 dark:text-gray-400 truncate">Upcoming Promos</dt>
+                                    <dd class="text-lg font-medium text-gray-900 dark:text-white">
+                                        {{ $upcomingPromos }}
                                     </dd>
                                 </dl>
                             </div>
@@ -215,7 +236,7 @@
                                                     <p class="text-sm text-gray-500 dark:text-gray-400">Choose where and what products are included in the promo.</p>
                                                 </div>
 
-                                                <!-- Branch Selector -->
+                                                <!-- Batch Allocation Selector -->
                                                 <div>
     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
         Batch
@@ -227,10 +248,14 @@
                 @if(empty($selected_batches))
                     <span class="text-gray-400">Select Batch</span>
                 @else
-                    @foreach($branches as $branch)
-                        @if(in_array($branch->id, $selected_batches))
-                            <span class="inline-flex items-center bg-indigo-100 text-indigo-800 text-xs font-medium px-2 py-0.5 rounded-full dark:bg-indigo-900/30 dark:text-indigo-300">
-                                {{ $branch->name }} (Batch: {{ $branch->batch ?? 'N/A' }})
+                    @foreach($batchAllocations as $batchAllocation)
+                        @if(in_array($batchAllocation->id, $selected_batches))
+                            <span class="inline-flex items-center gap-1.5 bg-indigo-100 text-indigo-800 text-xs font-medium px-2.5 py-1 rounded-full dark:bg-indigo-900/30 dark:text-indigo-300">
+                                <span class="font-semibold">{{ $batchAllocation->ref_no }}</span>
+                                @if($batchAllocation->batch_number)
+                                    <span class="text-gray-500 dark:text-gray-400">•</span>
+                                    <span class="text-gray-700 dark:text-gray-300 font-normal">Batch: {{ $batchAllocation->batch_number }}</span>
+                                @endif
                             </span>
                         @endif
                     @endforeach
@@ -243,16 +268,20 @@
 
         @if($batchDropdown)
         <div class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto dark:bg-gray-700 dark:border-gray-600">
-            @foreach($branches as $branch)
+            @foreach($batchAllocations as $batchAllocation)
                 <label class="flex items-center p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600 last:border-b-0">
-                    <input type="checkbox" value="{{ $branch->id }}" wire:model="selected_batches"
-                        class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                    <span class="ml-3 text-sm text-gray-900 dark:text-white">
-                        {{ $branch->name }} 
-                        @if($branch->batch)
-                            <span class="text-gray-500 text-xs">(Batch: {{ $branch->batch }})</span>
+                    <input type="checkbox" value="{{ $batchAllocation->id }}" wire:model="selected_batches"
+                        class="form-checkbox h-4 w-4 accent-blue-600 text-blue-600 focus:ring-blue-500 border-gray-300 rounded dark:accent-blue-400 dark:text-blue-400">
+                    <div class="ml-3 flex-1">
+                        <div class="text-sm font-medium text-gray-900 dark:text-white">
+                            {{ $batchAllocation->ref_no }}
+                        </div>
+                        @if($batchAllocation->batch_number)
+                            <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                Batch Number: <span class="font-semibold text-gray-700 dark:text-gray-300">{{ $batchAllocation->batch_number }}</span>
+                            </div>
                         @endif
-                    </span>
+                    </div>
                 </label>
             @endforeach
         </div>
@@ -264,7 +293,7 @@
 </div>
 
                                                 <!-- Product Selection -->
-                                                <div class="grid gap-4 @if($promo_type === 'Buy one Take one') sm:grid-cols-2 @endif">
+                                                <div class="grid gap-4">
                                                     <!-- First Product Dropdown -->
                                                     <div>
                                                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Product</label>
@@ -274,9 +303,15 @@
                                                                 <div class="flex flex-wrap gap-1 items-center">
                                                                     @if(!$productDropdown)
                                                                         @if(empty($selected_products))
-                                                                            <span class="text-gray-400">Select Product</span>
+                                                                            <span class="text-gray-400">
+                                                                                @if(empty($selected_batches))
+                                                                                    Select batch allocation first
+                                                                                @else
+                                                                                    Select Product
+                                                                                @endif
+                                                                            </span>
                                                                         @else
-                                                                            @foreach($products as $product)
+                                                                            @foreach($this->availableProductsForBatches as $product)
                                                                                 @if(in_array($product->id, $selected_products))
                                                                                     <span class="inline-flex items-center bg-gray-600 text-white text-xs font-medium px-2 py-0.5 rounded-full">
                                                                                         {{ $product->name }}
@@ -286,7 +321,13 @@
                                                                             @endforeach
                                                                         @endif
                                                                     @else
-                                                                        <span class="text-gray-400">Select Product</span>
+                                                                        <span class="text-gray-400">
+                                                                            @if(empty($selected_batches))
+                                                                                Select batch allocation first
+                                                                            @else
+                                                                                Select Product
+                                                                            @endif
+                                                                        </span>
                                                                     @endif
                                                                 </div>
                                                                 <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -294,26 +335,35 @@
                                                                 </svg>
                                                             </div>
 
-                                                            @if($productDropdown)
+                                                            @if($productDropdown && !empty($selected_batches))
                                                                 <div class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto dark:bg-gray-700 dark:border-gray-600">
-                                                                    @foreach($products as $product)
-                                                                        <label class="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600 last:border-b-0">
-                                                                            <div class="flex items-center space-x-3">
-                                                                                <input type="checkbox"
-                                                                                    value="{{ $product->id }}"
-                                                                                    wire:model="selected_products"
-                                                                                    @if($promo_type === 'Buy one Take one' && count($selected_products) >= 1 && !in_array($product->id, $selected_products)) disabled @endif
-                                                                                    onclick="event.stopPropagation()"
-                                                                                    class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                                                                                <span class="text-sm text-gray-900 dark:text-white">
-                                                                                    {{ $product->name }}
+                                                                    @if($this->availableProductsForBatches->count() > 0)
+                                                                        @foreach($this->availableProductsForBatches as $product)
+                                                                            <label class="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600 last:border-b-0 {{ $product->isDisabled ?? false ? 'opacity-50 cursor-not-allowed' : '' }}">
+                                                                                <div class="flex items-center space-x-3">
+                                                                                    <input type="checkbox"
+                                                                                        value="{{ $product->id }}"
+                                                                                        wire:model="selected_products"
+                                                                                        @if($product->isDisabled ?? false) disabled @endif
+                                                                                        onclick="event.stopPropagation()"
+                                                                                        class="form-checkbox h-4 w-4 accent-green-600 text-green-600 focus:ring-green-500 border-gray-300 rounded dark:accent-green-400 dark:text-green-400 {{ $product->isDisabled ?? false ? 'cursor-not-allowed' : '' }}">
+                                                                                    <span class="text-sm text-gray-900 dark:text-white {{ $product->isDisabled ?? false ? 'line-through' : '' }}">
+                                                                                        {{ $product->name }}
+                                                                                        @if($product->isDisabled ?? false)
+                                                                                            <span class="ml-2 text-xs text-red-500">(Already in promo)</span>
+                                                                                        @endif
+                                                                                    </span>
+                                                                                </div>
+                                                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500 text-white dark:bg-emerald-400 dark:text-gray-900 shadow-sm">
+                                                                                    ₱ {{ number_format($product->price, 0) }}
                                                                                 </span>
-                                                                            </div>
-                                                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500 text-white dark:bg-emerald-400 dark:text-gray-900 shadow-sm">
-                                                                                ₱ {{ number_format($product->price, 0) }}
-                                                                            </span>
-                                                                        </label>
-                                                                    @endforeach
+                                                                            </label>
+                                                                        @endforeach
+                                                                    @else
+                                                                        <div class="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
+                                                                            No products available in selected batch allocations
+                                                                        </div>
+                                                                    @endif
                                                                 </div>
                                                             @endif
 
@@ -322,79 +372,6 @@
                                                             @enderror
                                                         </div>
                                                     </div>
-
-                                                    <!-- Second Product Dropdown (only for Buy one Take one) -->
-                                                    @if($promo_type === 'Buy one Take one')
-                                                        <div>
-                                                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Second Product</label>
-                                                            <div class="relative" wire:click.outside="$set('secondProductDropdown', false)">
-                                                                <div wire:click="$toggle('secondProductDropdown')"
-                                                                    class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm cursor-pointer flex justify-between items-center">
-                                                                    
-                                                                    <div class="flex flex-wrap gap-1 items-center">
-                                                                        @if(!$secondProductDropdown)
-                                                                            @if(empty($selected_second_products))
-                                                                                <span class="text-gray-400">
-                                                                                    @if(empty($selected_products))
-                                                                                        Select first product first
-                                                                                    @else
-                                                                                        Select Second Product
-                                                                                    @endif
-                                                                                </span>
-                                                                            @else
-                                                                                @foreach($products as $product)
-                                                                                    @if(in_array($product->id, $selected_second_products))
-                                                                                        <span class="inline-flex items-center bg-gray-600 text-white text-xs font-medium px-2 py-0.5 rounded-full">
-                                                                                            {{ $product->name }}
-                                                                                            <span class="ml-1 text-gray-200 text-[11px]">₱{{ number_format($product->price, 0) }}</span>
-                                                                                        </span>
-                                                                                    @endif
-                                                                                @endforeach
-                                                                            @endif
-                                                                        @else
-                                                                            <span class="text-gray-400">
-                                                                                @if(empty($selected_products))
-                                                                                    Select first product first
-                                                                                @else
-                                                                                    Select Second Product
-                                                                                @endif
-                                                                            </span>
-                                                                        @endif
-                                                                    </div>
-
-                                                                    <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                                                    </svg>
-                                                                </div>
-
-                                                                @if($secondProductDropdown && !empty($selected_products))
-                                                                    <div class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto dark:bg-gray-700 dark:border-gray-600">
-                                                                        @foreach($products as $product)
-                                                                            @if(!empty($selected_products) && $product->price <= $products->find($selected_products[0])->price && $product->id != $selected_products[0])
-                                                                                <label class="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600 last:border-b-0">
-                                                                                    <div class="flex items-center space-x-3">
-                                                                                        <input type="checkbox"
-                                                                                            value="{{ $product->id }}"
-                                                                                            wire:model="selected_second_products"
-                                                                                            onclick="event.stopPropagation()"
-                                                                                            class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                                                                                        <span class="text-sm text-gray-900 dark:text-white">{{ $product->name }}</span>
-                                                                                    </div>
-                                                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500 text-white dark:bg-emerald-400 dark:text-gray-900 shadow-sm">
-                                                                                        ₱ {{ number_format($product->price, 0) }}
-                                                                                    </span>
-                                                                                </label>
-                                                                            @endif
-                                                                        @endforeach
-                                                                    </div>
-                                                                @endif
-
-                                                                @error('selected_second_products')
-                                                                    <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-                                                                @enderror
-                                                            </div>
-                                                        </div>
-                                                    @endif
                                                 </div>
                                             </section>
 
@@ -446,25 +423,73 @@
             </template>
         </div>
 
-        <!-- Search -->
+        <!-- Filters and Search -->
         <section class="mb-6">
             <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
-                <!-- Search Bar -->
-                <div class="flex items-center justify-between p-4 pr-10">
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between p-4 gap-4">
+                    <!-- Search -->
                     <div class="flex space-x-6">
                         <div class="relative">
                             <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                <svg aria-hidden="true" class="w-5 h-5 text-gray-500 dark:text-gray-400"
-                                    fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                    <path fill-rule="evenodd"
-                                    d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                                    clip-rule="evenodd" />
+                                <svg aria-hidden="true" class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path>
                                 </svg>
                             </div>
-                            <input type="text" wire:model.live.debounce.500ms="search"
-                            class="block w-64 p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                            placeholder="Search Promo...">
+                            <input 
+                                type="text" 
+                                wire:model.live="search"
+                                class="block w-64 p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" 
+                                placeholder="Search promos..."
+                            >
                         </div>
+                    </div>
+
+                    <!-- Filters -->
+                    <div class="flex flex-wrap gap-3">
+                        <select 
+                            wire:model.live="typeFilter"
+                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        >
+                            <option value="">All Types</option>
+                            @foreach($promo_type_options as $type)
+                                <option value="{{ $type }}">{{ $type }}</option>
+                            @endforeach
+                        </select>
+
+                        <select 
+                            wire:model.live="statusFilter"
+                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        >
+                            <option value="">All Status</option>
+                            <option value="active">Active</option>
+                            <option value="upcoming">Upcoming</option>
+                            <option value="expired">Expired</option>
+                        </select>
+
+                        <input 
+                            type="date" 
+                            wire:model.live="filterStartDate"
+                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                            placeholder="Start Date"
+                        >
+
+                        <input 
+                            type="date" 
+                            wire:model.live="filterEndDate"
+                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                            placeholder="End Date"
+                        >
+
+                        <button 
+                            type="button"
+                            wire:click="resetFilters" 
+                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 px-2.5 py-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors flex items-center gap-2"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                            Reset Filters
+                        </button>
                     </div>
                 </div>
                 <!-- Data Table -->
@@ -474,7 +499,7 @@
                             <tr>
                                 <th class="px-6 py-3">Promo</th>
                                 <th class="px-6 py-3">Type</th>
-                                <th class="px-6 py-3">Branch</th>
+                                <th class="px-6 py-3">Batch Allocation</th>
                                 <th class="px-6 py-3">Date Range</th>
                                 <th class="px-6 py-3">Status</th>
                                 <th class="px-6 py-3">Action</th>
@@ -500,12 +525,12 @@
                                     <!-- Type -->
                                     <td class="px-6 py-4">{{ $item->type ?? '-' }}</td>
 
-                                    <!-- Branch -->
+                                    <!-- Batch Allocation -->
                                     <td class="px-6 py-4">
                                         @if(!empty($item->branch_names))
-                                            @foreach($item->branch_names as $branchName)
+                                            @foreach($item->branch_names as $refNo)
                                                 <span class="inline-block mr-1 bg-blue-500 text-white px-2 py-0.5 rounded text-xs">
-                                                    {{ $branchName }}
+                                                    {{ $refNo }}
                                                 </span>
                                             @endforeach
                                         @else
@@ -687,21 +712,21 @@
                     </div>
                 </div>
 
-                {{-- Batch Dropdown --}}
+                {{-- Batch Allocation Dropdown --}}
                 <div class="relative" wire:click.outside="$set('editBatchDropdown', false)">
-                    <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Batch</label>
+                    <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Batch Allocation</label>
                     <div wire:click="$toggle('editBatchDropdown')"
                         class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5 cursor-pointer flex justify-between items-center flex-wrap gap-2 min-h-[42px]">
                         <div class="flex flex-wrap gap-1 items-center">
                             @if(empty($edit_selected_batches))
-                                <span class="text-gray-400 dark:text-gray-300">Select Batch</span>
+                                <span class="text-gray-400 dark:text-gray-300">Select Batch Allocation</span>
                             @else
-                                @foreach($branches as $branch)
-                                    @if(in_array($branch->id, $edit_selected_batches))
+                                @foreach($batchAllocations as $batchAllocation)
+                                    @if(in_array($batchAllocation->id, $edit_selected_batches))
                                         <span class="inline-flex items-center bg-blue-500 text-white px-2 py-0.5 rounded text-xs">
-                                            {{ $branch->name }}
-                                            @if($branch->batch)
-                                                <span class="ml-1 text-xs">({{ $branch->batch }})</span>
+                                            {{ $batchAllocation->ref_no }}
+                                            @if($batchAllocation->batch_number)
+                                                <span class="ml-1 text-xs">({{ $batchAllocation->batch_number }})</span>
                                             @endif
                                         </span>
                                     @endif
@@ -715,15 +740,19 @@
 
                     @if($editBatchDropdown)
                         <div class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto dark:bg-gray-700 dark:border-gray-600">
-                            @foreach($branches as $branch)
+                            @foreach($batchAllocations as $batchAllocation)
                                 <label class="flex items-center p-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
-                                    <input type="checkbox" value="{{ $branch->id }}" wire:model="edit_selected_batches" class="form-checkbox h-4 w-4 text-blue-600 dark:text-blue-400">
-                                    <span class="ml-2 text-sm text-gray-900 dark:text-white">
-                                        {{ $branch->name }}
-                                        @if($branch->batch)
-                                            <span class="text-gray-500 text-xs ml-1">({{ $branch->batch }})</span>
+                                    <input type="checkbox" value="{{ $batchAllocation->id }}" wire:model="edit_selected_batches" class="form-checkbox h-4 w-4 text-blue-600 dark:text-blue-400">
+                                    <div class="ml-2 flex-1">
+                                        <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                            {{ $batchAllocation->ref_no }}
+                                        </div>
+                                        @if($batchAllocation->batch_number)
+                                            <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                                Batch Number: <span class="font-semibold text-gray-700 dark:text-gray-300">{{ $batchAllocation->batch_number }}</span>
+                                            </div>
                                         @endif
-                                    </span>
+                                    </div>
                                 </label>
                             @endforeach
                         </div>
@@ -739,9 +768,15 @@
                         <div class="flex flex-wrap gap-1 items-center">
                             @if(!$editProductDropdown)
                                 @if(empty($edit_selected_products))
-                                    <span class="text-gray-400 dark:text-gray-300">Select Product</span>
+                                    <span class="text-gray-400 dark:text-gray-300">
+                                        @if(empty($edit_selected_batches))
+                                            Select batch allocation first
+                                        @else
+                                            Select Product
+                                        @endif
+                                    </span>
                                 @else
-                                    @foreach($products as $product)
+                                    @foreach($this->availableProductsForEditBatches as $product)
                                         @if(in_array($product->id, $edit_selected_products))
                                             <span class="inline-flex items-center bg-gray-600 text-white text-xs font-medium px-2 py-0.5 rounded-full">
                                                 {{ $product->name }}
@@ -751,7 +786,13 @@
                                     @endforeach
                                 @endif
                             @else
-                                <span class="text-gray-400 dark:text-gray-300">Select Product</span>
+                                <span class="text-gray-400 dark:text-gray-300">
+                                    @if(empty($edit_selected_batches))
+                                        Select batch allocation first
+                                    @else
+                                        Select Product
+                                    @endif
+                                </span>
                             @endif
                         </div>
                         <svg class="w-4 h-4 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -759,86 +800,39 @@
                         </svg>
                     </div>
 
-                    @if($editProductDropdown)
+                    @if($editProductDropdown && !empty($edit_selected_batches))
                         <div class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto dark:bg-gray-700 dark:border-gray-600">
-                            @foreach($products as $product)
-                                <label class="flex items-center justify-between p-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 rounded-md">
-                                    <div class="flex items-center space-x-2">
-                                        <input type="checkbox" value="{{ $product->id }}"
-                                            wire:model="edit_selected_products"
-                                            onclick="event.stopPropagation()"
-                                            @if($edit_type === 'Buy one Take one' && !in_array($product->id, $edit_selected_products) && count($edit_selected_products) >= 1) disabled @endif
-                                            class="form-checkbox h-4 w-4 text-green-600 dark:text-green-400">
-                                        <span class="text-sm text-gray-900 dark:text-white">{{ $product->name }}</span>
-                                    </div>
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500 text-white dark:bg-emerald-400 dark:text-gray-900 shadow-sm">
-                                        ₱ {{ number_format($product->price, 0) }}
-                                    </span>
-                                </label>
-                            @endforeach
+                            @if($this->availableProductsForEditBatches->count() > 0)
+                                @foreach($this->availableProductsForEditBatches as $product)
+                                    <label class="flex items-center justify-between p-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 rounded-md {{ $product->isDisabled ?? false ? 'opacity-50 cursor-not-allowed' : '' }}">
+                                        <div class="flex items-center space-x-2">
+                                            <input type="checkbox" value="{{ $product->id }}"
+                                                wire:model="edit_selected_products"
+                                                @if($product->isDisabled ?? false) disabled @endif
+                                                onclick="event.stopPropagation()"
+                                                class="form-checkbox h-4 w-4 text-green-600 dark:text-green-400 {{ $product->isDisabled ?? false ? 'cursor-not-allowed' : '' }}">
+                                            <span class="text-sm text-gray-900 dark:text-white {{ $product->isDisabled ?? false ? 'line-through' : '' }}">
+                                                {{ $product->name }}
+                                                @if($product->isDisabled ?? false)
+                                                    <span class="ml-2 text-xs text-red-500">(Already in promo)</span>
+                                                @endif
+                                            </span>
+                                        </div>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500 text-white dark:bg-emerald-400 dark:text-gray-900 shadow-sm">
+                                            ₱ {{ number_format($product->price, 0) }}
+                                        </span>
+                                    </label>
+                                @endforeach
+                            @else
+                                <div class="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
+                                    No products available in selected batch allocations
+                                </div>
+                            @endif
                         </div>
                     @endif
                     @error('edit_selected_products') <p class="mt-1 text-sm text-red-500">{{ $message }}</p> @enderror
                 </div>
 
-                {{-- Second Product Dropdown (only for Buy-One-Take-One) --}}
-                @if($edit_type === 'Buy one Take one')
-                    <div class="relative" wire:click.outside="$set('editSecondProductDropdown', false)">
-                        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Second Product <span class="text-red-500">*</span></label>
-                        <div wire:click="$toggle('editSecondProductDropdown')" 
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5 cursor-pointer flex justify-between items-center flex-wrap gap-2 min-h-[42px] 
-                                @error('edit_selected_second_products') border-red-500 @enderror">
-                            <div class="flex flex-wrap gap-1 items-center">
-                                @if(!$editSecondProductDropdown)
-                                    @if(empty($edit_selected_second_products))
-                                        <span class="text-gray-400 dark:text-gray-300">Select Second Product</span>
-                                    @else
-                                        @foreach($this->editSecondProducts as $product)
-                                            @if(in_array($product->id, $edit_selected_second_products))
-                                                <span class="inline-flex items-center bg-gray-600 text-white text-xs font-medium px-2 py-0.5 rounded-full">
-                                                    {{ $product->name }}
-                                                    <span class="ml-1 text-gray-200 text-[11px]">₱{{ number_format($product->price, 0) }}</span>
-                                                </span>
-                                            @endif
-                                        @endforeach
-                                    @endif
-                                @else
-                                    <span class="text-gray-400 dark:text-gray-300">Select Second Product</span>
-                                @endif
-                            </div>
-                            <svg class="w-4 h-4 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                            </svg>
-                        </div>
-
-                        @if($editSecondProductDropdown)
-                            <div class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto dark:bg-gray-700 dark:border-gray-600">
-                                @if($this->editSecondProducts->count() > 0)
-                                    @foreach($this->editSecondProducts as $product)
-                                        <label class="flex items-center justify-between p-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 rounded-md">
-                                            <div class="flex items-center space-x-2">
-                                                <input type="checkbox" value="{{ $product->id }}" 
-                                                    wire:model="edit_selected_second_products" 
-                                                    onclick="event.stopPropagation()"
-                                                    @if(!in_array($product->id, $edit_selected_second_products) && count($edit_selected_second_products) >= 1) disabled @endif
-                                                    class="form-checkbox h-4 w-4 text-green-600 dark:text-green-400">
-                                                <span class="text-sm text-gray-900 dark:text-white">{{ $product->name }}</span>
-                                            </div>
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500 text-white dark:bg-emerald-400 dark:text-gray-900 shadow-sm">
-                                                ₱ {{ number_format($product->price, 0) }}
-                                            </span>
-                                        </label>
-                                    @endforeach
-                                @else
-                                    <div class="p-4 text-center text-gray-500 dark:text-gray-400">
-                                        No products available for selection
-                                    </div>
-                                @endif
-                            </div>
-                        @endif
-                        @error('edit_selected_second_products') <p class="mt-1 text-sm text-red-500">{{ $message }}</p> @enderror
-                    </div>
-                @endif
 
                 {{-- Description --}}
                 <div>
@@ -955,25 +949,32 @@
                                 </div>
                             </div>
 
-                            <!-- Branches & Products Section -->
+                            <!-- Batch Allocations & Products Section -->
                             <div class="space-y-4">
                                 <h4 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
                                     <span class="w-1.5 h-5 bg-blue-500 rounded-full mr-2"></span>
-                                    Branches & Products
+                                    Batch Allocations & Products
                                 </h4>
                                 
                                 <div class="grid md:grid-cols-3 gap-6 ml-2">
                                     <div>
-                                        <h4 class="text-sm font-medium text-gray-500 dark:text-gray-300 mb-3">Branches</h4>
+                                        <h4 class="text-sm font-medium text-gray-500 dark:text-gray-300 mb-3">Batch Allocations</h4>
                                         <div class="flex flex-wrap gap-2">
-                                            @forelse($branches as $branch)
-                                                @if(in_array($branch->id, $view_selected_branches ?? []))
-                                                    <span class="inline-flex items-center bg-blue-100 text-blue-800 px-3 py-1.5 rounded-full text-xs font-medium dark:bg-blue-900/30 dark:text-blue-300">
-                                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                                            <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
-                                                        </svg>
-                                                        {{ $branch->name }}
-                                                    </span>
+                                            @forelse($batchAllocations as $batchAllocation)
+                                                @if(in_array($batchAllocation->id, $view_selected_batches ?? []))
+                                                    <div class="inline-flex flex-col gap-1 bg-blue-100 text-blue-800 px-3 py-2 rounded-lg text-xs font-medium dark:bg-blue-900/30 dark:text-blue-300">
+                                                        <div class="flex items-center gap-1.5">
+                                                            <svg class="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                                                                <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
+                                                            </svg>
+                                                            <span class="font-semibold">{{ $batchAllocation->ref_no }}</span>
+                                                        </div>
+                                                        @if($batchAllocation->batch_number)
+                                                            <div class="text-[10px] text-blue-600 dark:text-blue-400 font-normal pl-4.5">
+                                                                Batch: <span class="font-semibold">{{ $batchAllocation->batch_number }}</span>
+                                                            </div>
+                                                        @endif
+                                                    </div>
                                                 @endif
                                             @empty
                                                 <span class="text-gray-400 text-sm">-</span>
@@ -997,22 +998,6 @@
                                         </div>
                                     </div>
 
-                                    @if($view_type === 'Buy one Take one')
-                                        <div>
-                                            <h4 class="text-sm font-medium text-gray-500 dark:text-gray-300 mb-3">Second Product</h4>
-                                            <div class="flex flex-wrap gap-2">
-                                                @forelse($products as $product)
-                                                    @if(in_array($product->id, $view_selected_second_products ?? []))
-                                                        <span class="inline-flex items-center bg-emerald-100 text-emerald-800 text-xs font-medium px-3 py-1.5 rounded-full dark:bg-emerald-900/30 dark:text-emerald-300">
-                                                            {{ $product->name }}
-                                                            <span class="ml-1 text-emerald-600 dark:text-emerald-400 text-[11px] font-medium">₱{{ number_format($product->price, 0) }}</span>
-                                                        </span>
-                                                    @endif
-                                                @empty
-                                                    <span class="text-gray-400 text-sm">-</span>
-                                                @endforelse
-                                        </div>
-                                    @endif
                                 </div>
                             </div>
 

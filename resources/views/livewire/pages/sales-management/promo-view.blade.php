@@ -204,8 +204,6 @@
                         <thead class="text-sm text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                             <tr>
                                 <th class="px-6 py-3">Product</th>
-                                <th class="px-6 py-3">Price</th>
-                                <th class="px-6 py-3">Status</th>
                                 <th class="px-6 py-3">Action</th>
                             </tr>
                         </thead>
@@ -245,18 +243,6 @@
                                         </div>
                                     </td>
 
-                                    <!-- Price -->
-                                    <td class="px-6 py-4">
-                                        <span class="font-semibold text-gray-900 dark:text-white">₱{{ number_format($product->price, 0) }}</span>
-                                    </td>
-
-                                    <!-- Status -->
-                                    <td class="px-6 py-4">
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300">
-                                            Active
-                                        </span>
-                                    </td>
-
                                     <!-- Action -->
                                     <td class="px-6 py-4 space-x-2">
                                         <flux:modal.trigger name="product-details">
@@ -272,7 +258,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="4" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">No products found.</td>
+                                    <td colspan="2" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">No products found.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -367,14 +353,9 @@
                                     <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">Cost</p>
                                     <p class="text-2xl font-semibold text-gray-900 dark:text-white">₱{{ number_format($viewingProduct->cost, 2) }}</p>
                                 </div>
-                                @php
-                                    $margin = $viewingProduct->price - $viewingProduct->cost;
-                                    $marginPercent = $viewingProduct->price > 0 ? ($margin / $viewingProduct->price) * 100 : 0;
-                                @endphp
                                 <div class="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-                                    <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">Margin</p>
-                                    <p class="text-2xl font-semibold text-gray-900 dark:text-white">₱{{ number_format($margin, 2) }}</p>
-                                    <p class="text-xs text-emerald-600 dark:text-emerald-400 mt-1">({{ number_format($marginPercent, 1) }}%)</p>
+                                    <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">Promo Type</p>
+                                    <p class="text-2xl font-semibold text-gray-900 dark:text-white">{{ $type }}</p>
                                 </div>
                             </div>
 
@@ -405,10 +386,18 @@
                                         Inventory
                                     </h4>
                                     <dl class="space-y-2 text-sm">
-                                        <div class="flex justify-between gap-4"><dt class="text-gray-500 dark:text-gray-400">Stock On Hand</dt><dd class="text-gray-900 dark:text-white text-right">{{ number_format($viewingProduct->total_quantity) }} {{ $viewingProduct->uom }}</dd></div>
+                                        <div class="flex justify-between gap-4"><dt class="text-gray-500 dark:text-gray-400">Stock On Hand</dt><dd class="text-gray-900 dark:text-white text-right">{{ number_format($this->getProductStockInBranches($viewingProduct->id)) }} {{ $viewingProduct->uom }}</dd></div>
                                         <div class="flex justify-between gap-4"><dt class="text-gray-500 dark:text-gray-400">Status</dt><dd>
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $viewingProduct->disabled ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-200' }}">
-                                                {{ $viewingProduct->disabled ? 'Disabled' : 'Available' }}
+                                            @php
+                                                $stockStatus = $this->getProductStockStatusInBranches($viewingProduct->id);
+                                                $colorClasses = [
+                                                    'red' => 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200',
+                                                    'yellow' => 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-200',
+                                                    'green' => 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-200'
+                                                ];
+                                            @endphp
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $colorClasses[$stockStatus['color']] ?? $colorClasses['green'] }}">
+                                                {{ $stockStatus['label'] }}
                                             </span>
                                         </dd></div>
                                     </dl>

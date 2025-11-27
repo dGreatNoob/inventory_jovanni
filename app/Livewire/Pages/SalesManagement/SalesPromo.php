@@ -7,6 +7,8 @@ use Livewire\WithPagination;
 use App\Models\Promo;
 use App\Models\Branch;
 use App\Models\Product;
+use App\Models\BatchAllocation;
+use App\Models\BranchAllocationItem;
 use Carbon\Carbon;
 
 class SalesPromo extends Component
@@ -15,7 +17,7 @@ class SalesPromo extends Component
 
     // Form fields
     public $promo_name, $promo_code, $promo_description, $startDate, $endDate;
-    public $selected_batches = [], $selected_products = [], $selected_second_products = [];
+    public $selected_batches = [], $selected_products = [];
 
     // Promo type
     public $promo_type = '';
@@ -23,9 +25,10 @@ class SalesPromo extends Component
 
     // Lists
     public $branches = [], $products = [];
+    public $batchAllocations = [];
 
     // Dropdowns
-    public $batchDropdown = false, $productDropdown = false, $secondProductDropdown = false, $showSecondProductDropdown = false;
+    public $batchDropdown = false, $productDropdown = false;
 
     // Delete modal
     public $showDeleteModal = false;
@@ -34,34 +37,67 @@ class SalesPromo extends Component
     // Edit modal fields
     public $showEditModal = false;
     public $edit_id, $edit_name, $edit_code, $edit_description, $edit_startDate, $edit_endDate, $edit_type;
-    public $edit_selected_batches = [], $edit_selected_products = [], $edit_selected_second_products = [];
-    public $editBatchDropdown = false, $editProductDropdown = false, $editSecondProductDropdown = false;
+    public $edit_selected_batches = [], $edit_selected_products = [];
+    public $editBatchDropdown = false, $editProductDropdown = false;
 
     // View modal fields
     public $showViewModal = false;
     public $view_name, $view_code, $view_type, $view_startDate, $view_endDate, $view_description;
-    public $view_selected_batches = [], $view_selected_products = [], $view_selected_second_products = [];
+    public $view_selected_batches = [], $view_selected_products = [];
     public $showCreatePanel = false;
 
     // Search & pagination
     public $search = '';
     public $perPage = 10;
+    
+    // Filters
+    public $typeFilter = '';
+    public $statusFilter = '';
+    public $filterStartDate = '';
+    public $filterEndDate = '';
 
-    // Load branches and products
+    // Load batch allocations and products
     public function mount()
     {
+        $this->batchAllocations = BatchAllocation::with(['branchAllocations.items.product'])
+            ->orderBy('ref_no', 'desc')
+            ->get();
         $this->branches = Branch::orderBy('name')->get();
         $this->products = Product::orderBy('name')->get();
+        
+        // Reset form fields when component mounts
+        $this->resetForm();
     }
 
     public function showCreatePanel()
     {
+        // Reset form before opening panel
+        $this->resetForm();
         $this->showCreatePanel = true;
     }
 
     public function closeCreatePanel()
     {
         $this->showCreatePanel = false;
+        // Reset form when panel closes
+        $this->resetForm();
+    }
+
+    public function resetForm()
+    {
+        $this->reset([
+            'promo_name',
+            'promo_code',
+            'promo_description',
+            'startDate',
+            'endDate',
+            'selected_batches',
+            'selected_products',
+            'promo_type',
+            'batchDropdown',
+            'productDropdown',
+        ]);
+        $this->resetValidation();
     }
 
     // Validation rules for create form
@@ -74,16 +110,11 @@ class SalesPromo extends Component
             'startDate' => 'required|date',
             'endDate' => 'required|date|after_or_equal:startDate',
             'selected_batches' => 'required|array|min:1',
-            'selected_batches.*' => 'exists:branches,id',
+            'selected_batches.*' => 'exists:batch_allocations,id',
             'selected_products' => 'required|array|min:1',
             'selected_products.*' => 'exists:products,id',
             'promo_type' => 'required|string|in:' . implode(',', $this->promo_type_options),
         ];
-
-        if ($this->promo_type === 'Buy one Take one') {
-            $rules['selected_second_products'] = 'required|array|min:1|max:1';
-            $rules['selected_second_products.*'] = 'exists:products,id';
-        }
 
         return $rules;
     }
@@ -98,16 +129,11 @@ class SalesPromo extends Component
             'edit_startDate' => 'required|date',
             'edit_endDate' => 'required|date|after_or_equal:edit_startDate',
             'edit_selected_batches' => 'required|array|min:1',
-            'edit_selected_batches.*' => 'exists:branches,id',
+            'edit_selected_batches.*' => 'exists:batch_allocations,id',
             'edit_selected_products' => 'required|array|min:1',
             'edit_selected_products.*' => 'exists:products,id',
             'edit_type' => 'required|string|in:' . implode(',', $this->promo_type_options),
         ];
-
-        if ($this->edit_type === 'Buy one Take one') {
-            $rules['edit_selected_second_products'] = 'required|array|min:1|max:1';
-            $rules['edit_selected_second_products.*'] = 'exists:products,id';
-        }
 
         return $rules;
     }
@@ -116,14 +142,8 @@ class SalesPromo extends Component
     protected $messages = [
         'selected_batches.required' => 'Please select at least one batch.',
         'selected_products.required' => 'Please select at least one product.',
-        'selected_second_products.required' => 'For Buy One Take One promotions, you must select a second product.',
-        'selected_second_products.min' => 'Please select one second product.',
-        'selected_second_products.max' => 'You can only select one second product for Buy One Take One.',
         'edit_selected_batches.required' => 'Please select at least one batch.',
         'edit_selected_products.required' => 'Please select at least one product.',
-        'edit_selected_second_products.required' => 'For Buy One Take One promotions, you must select a second product.',
-        'edit_selected_second_products.min' => 'Please select one second product.',
-        'edit_selected_second_products.max' => 'You can only select one second product for Buy One Take One.',
     ];
 
     // Create Promo with overlap validation
@@ -145,7 +165,7 @@ class SalesPromo extends Component
             'endDate' => $this->endDate,
             'branch' => json_encode($this->selected_batches), // Still storing branch IDs but calling it batches in UI
             'product' => json_encode($this->selected_products),
-            'second_product' => $this->promo_type === 'Buy one Take one' ? json_encode($this->selected_second_products) : null,
+            'second_product' => null,
             'type' => $this->promo_type,
         ]);
 
@@ -160,10 +180,11 @@ class SalesPromo extends Component
             'endDate',
             'selected_batches',
             'selected_products',
-            'selected_second_products',
             'promo_type',
-            'showSecondProductDropdown',
         ]);
+
+        // Close the create panel
+        $this->closeCreatePanel();
     }
 
     // View Promo
@@ -178,7 +199,6 @@ class SalesPromo extends Component
         $this->view_endDate = $promo->endDate ? $promo->endDate->format('M d, Y') : '-';
         $this->view_selected_batches = json_decode($promo->branch, true) ?? [];
         $this->view_selected_products = json_decode($promo->product, true) ?? [];
-        $this->view_selected_second_products = json_decode($promo->second_product ?? '[]', true);
         $this->view_description = $promo->description;
 
         $this->showViewModal = true;
@@ -198,7 +218,6 @@ class SalesPromo extends Component
         $this->edit_type = $promo->type;
         $this->edit_selected_batches = json_decode($promo->branch, true) ?? [];
         $this->edit_selected_products = json_decode($promo->product, true) ?? [];
-        $this->edit_selected_second_products = json_decode($promo->second_product ?? '[]', true);
 
         $this->showEditModal = true;
     }
@@ -210,12 +229,6 @@ class SalesPromo extends Component
         $this->validate($this->editRules());
 
         $promo = Promo::findOrFail($this->edit_id);
-
-        // Additional validation for Buy One Take One
-        if ($this->edit_type === 'Buy one Take one' && empty($this->edit_selected_second_products)) {
-            $this->addError('edit_selected_second_products', 'For Buy One Take One promotions, you must select a second product.');
-            return;
-        }
 
         // Check for overlapping promos (excluding current promo)
         $overlapError = $this->checkForOverlappingPromos($this->edit_id);
@@ -232,7 +245,7 @@ class SalesPromo extends Component
             'type' => $this->edit_type,
             'branch' => json_encode($this->edit_selected_batches),
             'product' => json_encode($this->edit_selected_products),
-            'second_product' => $this->edit_type === 'Buy one Take one' ? json_encode($this->edit_selected_second_products) : null,
+            'second_product' => null,
         ]);
 
         $this->showEditModal = false;
@@ -251,7 +264,6 @@ class SalesPromo extends Component
         $endDate = $isEdit ? $this->edit_endDate : $this->endDate;
         $batches = $isEdit ? $this->edit_selected_batches : $this->selected_batches;
         $products = $isEdit ? $this->edit_selected_products : $this->selected_products;
-        $secondProducts = $isEdit ? $this->edit_selected_second_products : $this->selected_second_products;
 
         // Convert dates to Carbon for proper comparison
         $newStart = Carbon::parse($startDate);
@@ -292,18 +304,6 @@ class SalesPromo extends Component
                             ]);
                         }
                     }
-
-                    // Check second products
-                    foreach ($secondProducts as $productId) {
-                        if (in_array($productId, $existingMainProducts) || in_array($productId, $existingSecondProducts)) {
-                            $conflictingPromos->push([
-                                'promo' => $existingPromo,
-                                'product_id' => $productId,
-                                'batch_ids' => $batchOverlap,
-                                'type' => 'second'
-                            ]);
-                        }
-                    }
                 }
             }
         }
@@ -317,23 +317,62 @@ class SalesPromo extends Component
                 $productName = $this->products->firstWhere('id', $productId)->name ?? 'Unknown Product';
                 $promoNames = $conflicts->pluck('promo.name')->unique()->implode(', ');
                 
-                // Get batch names for the conflict
+                // Get batch allocation ref_nos for the conflict
                 $batchIds = $conflicts->flatMap->batch_ids->unique();
-                $batchNames = $this->branches->whereIn('id', $batchIds)->pluck('name')->implode(', ');
+                $batchRefNos = $this->batchAllocations->whereIn('id', $batchIds)->pluck('ref_no')->implode(', ');
                 
-                $errorMessage = "Product '{$productName}' is already in promotion(s): {$promoNames} for batch(es): {$batchNames} during the selected dates.";
+                $errorMessage = "Product '{$productName}' is already in promotion(s): {$promoNames} for batch allocation(s): {$batchRefNos} during the selected dates.";
                 
                 // Determine which field to show error on
-                $isSecondProduct = $conflicts->first()['type'] === 'second';
-                $field = $isEdit 
-                    ? ($isSecondProduct ? 'edit_selected_second_products' : 'edit_selected_products')
-                    : ($isSecondProduct ? 'selected_second_products' : 'selected_products');
+                $field = $isEdit ? 'edit_selected_products' : 'selected_products';
                 
                 session()->flash('error', $errorMessage);
                 $this->addError($field, $errorMessage);
             }
             
             return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if a product is disabled for selected batches due to overlap
+     */
+    private function isProductDisabledForBatches($productId, $batchIds, $startDate, $endDate, $excludePromoId = null)
+    {
+        if (empty($batchIds) || empty($startDate) || empty($endDate)) {
+            return false;
+        }
+
+        $newStart = Carbon::parse($startDate);
+        $newEnd = Carbon::parse($endDate);
+
+        // Get all promos that might conflict
+        $allPromos = Promo::when($excludePromoId, function($query) use ($excludePromoId) {
+            $query->where('id', '!=', $excludePromoId);
+        })->get();
+
+        foreach ($allPromos as $existingPromo) {
+            $existingStart = Carbon::parse($existingPromo->startDate);
+            $existingEnd = Carbon::parse($existingPromo->endDate);
+
+            // Check if dates overlap
+            $datesOverlap = ($newStart <= $existingEnd) && ($newEnd >= $existingStart);
+            
+            if ($datesOverlap) {
+                // Get batches and products from existing promo
+                $existingBatches = $this->safeJsonDecode($existingPromo->branch);
+                $existingProducts = $this->safeJsonDecode($existingPromo->product);
+                $existingSecondProducts = $this->safeJsonDecode($existingPromo->second_product);
+
+                // Check if batch and product combination overlaps
+                $batchOverlap = array_intersect($batchIds, $existingBatches);
+                
+                if (!empty($batchOverlap) && (in_array($productId, $existingProducts) || in_array($productId, $existingSecondProducts))) {
+                    return true; // Product is disabled due to conflict
+                }
+            }
         }
 
         return false;
@@ -356,67 +395,35 @@ class SalesPromo extends Component
         }
     }
 
-    // Handle first product selection for "Buy one Take one"
+    // Handle product selection - validate for overlaps
     public function updatedSelectedProducts()
     {
-        if ($this->promo_type === 'Buy one Take one') {
-            // If no products selected, clear second products and return
-            if (empty($this->selected_products)) {
-                $this->selected_second_products = [];
-                return;
+        // Remove any disabled products that were selected
+        if (!empty($this->selected_products) && !empty($this->selected_batches) && $this->startDate && $this->endDate) {
+            $validProducts = [];
+            foreach ($this->selected_products as $productId) {
+                if (!$this->isProductDisabledForBatches($productId, $this->selected_batches, $this->startDate, $this->endDate)) {
+                    $validProducts[] = $productId;
+                }
             }
-            
-            // Limit to only one product for Buy one Take one
-            if (count($this->selected_products) > 1) {
-                $last = end($this->selected_products);
-                $this->selected_products = [$last];
-            }
-
-            // Filter second products based on first product's price
-            $firstPrice = $this->products->firstWhere('id', $this->selected_products[0])->price ?? 0;
-
-            $this->selected_second_products = array_filter($this->selected_second_products, function ($id) use ($firstPrice) {
-                $product = $this->products->firstWhere('id', $id);
-                return $product && $product->price <= $firstPrice;
-            });
+            $this->selected_products = $validProducts;
         }
     }
 
     public function updatedEditSelectedProducts($value)
     {
-        if ($this->edit_type === 'Buy one Take one') {
-            // If no products selected, clear second products and return
-            if (empty($this->edit_selected_products)) {
-                $this->edit_selected_second_products = [];
-                return;
+        // Remove any disabled products that were selected
+        if (!empty($this->edit_selected_products) && !empty($this->edit_selected_batches) && $this->edit_startDate && $this->edit_endDate) {
+            $validProducts = [];
+            foreach ($this->edit_selected_products as $productId) {
+                if (!$this->isProductDisabledForBatches($productId, $this->edit_selected_batches, $this->edit_startDate, $this->edit_endDate, $this->edit_id)) {
+                    $validProducts[] = $productId;
+                }
             }
-            
-            // Limit to only one product for Buy one Take one
-            if (count($this->edit_selected_products) > 1) {
-                $last = end($this->edit_selected_products);
-                $this->edit_selected_products = [$last];
-            }
-
-            $this->edit_selected_second_products = [];
+            $this->edit_selected_products = $validProducts;
         }
         
         $this->validateOnly('edit_selected_products', $this->editRules());
-    }
-
-    public function updatedEditSelectedSecondProducts($value)
-    {
-        $this->validateOnly('edit_selected_second_products', $this->editRules());
-    }
-
-    public function updatedEditType($value)
-    {
-        // Reset second products when type changes
-        if ($value !== 'Buy one Take one') {
-            $this->edit_selected_second_products = [];
-        }
-        
-        // Validate immediately when type changes
-        $this->validateOnly('edit_selected_second_products', $this->editRules());
     }
 
     // Close modals
@@ -427,7 +434,7 @@ class SalesPromo extends Component
         $this->reset([
             'edit_id', 'edit_name', 'edit_code', 'edit_description', 
             'edit_startDate', 'edit_endDate', 'edit_type',
-            'edit_selected_batches', 'edit_selected_products', 'edit_selected_second_products'
+            'edit_selected_batches', 'edit_selected_products'
         ]);
     }
 
@@ -466,34 +473,95 @@ class SalesPromo extends Component
     // Update promo type
     public function updatedPromoType($value)
     {
-        if ($value === 'Buy one Take one') {
-            $this->showSecondProductDropdown = true;
-        } else {
-            $this->showSecondProductDropdown = false;
-            $this->selected_second_products = [];
-            $this->secondProductDropdown = false;
-        }
+        // No special handling needed
     }
 
-    // Computed property for edit second products
-    public function getEditSecondProductsProperty()
+    // Computed property to get products for selected batch allocations
+    public function getAvailableProductsForBatchesProperty()
     {
-        if (empty($this->edit_selected_products)) {
+        if (empty($this->selected_batches)) {
             return collect();
         }
 
-        $firstProductId = $this->edit_selected_products[0];
-        $firstProduct = $this->products->firstWhere('id', $firstProductId);
+        // Get all product IDs from branch allocation items in selected batch allocations
+        $productIds = BranchAllocationItem::whereHas('branchAllocation', function ($query) {
+            $query->whereIn('batch_allocation_id', $this->selected_batches);
+        })->pluck('product_id')->unique();
+
+        $products = Product::whereIn('id', $productIds)->orderBy('name')->get();
         
-        if (!$firstProduct) {
+        // Filter out products that would cause overlap conflicts
+        return $products->map(function ($product) {
+            $product->isDisabled = $this->isProductDisabledForBatches($product->id, $this->selected_batches, $this->startDate, $this->endDate);
+            return $product;
+        });
+    }
+
+    // Computed property for edit products based on selected batch allocations
+    public function getAvailableProductsForEditBatchesProperty()
+    {
+        if (empty($this->edit_selected_batches)) {
             return collect();
         }
 
-        $firstPrice = $firstProduct->price;
+        // Get all product IDs from branch allocation items in selected batch allocations
+        $productIds = BranchAllocationItem::whereHas('branchAllocation', function ($query) {
+            $query->whereIn('batch_allocation_id', $this->edit_selected_batches);
+        })->pluck('product_id')->unique();
 
-        return $this->products->filter(function ($product) use ($firstProductId, $firstPrice) {
-            return $product->id != $firstProductId && $product->price <= $firstPrice;
+        $products = Product::whereIn('id', $productIds)->orderBy('name')->get();
+        
+        // Filter out products that would cause overlap conflicts
+        return $products->map(function ($product) {
+            $product->isDisabled = $this->isProductDisabledForBatches($product->id, $this->edit_selected_batches, $this->edit_startDate, $this->edit_endDate, $this->edit_id);
+            return $product;
         });
+    }
+
+
+    // When batch allocations change, reset products and validate
+    public function updatedSelectedBatches()
+    {
+        // Clear selected products when batch allocations change
+        $this->selected_products = [];
+    }
+
+    // When dates change, validate selected products
+    public function updatedStartDate()
+    {
+        $this->updatedSelectedProducts();
+    }
+
+    public function updatedEndDate()
+    {
+        $this->updatedSelectedProducts();
+    }
+
+    // When edit batch allocations change, reset products
+    public function updatedEditSelectedBatches()
+    {
+        // Clear selected products when batch allocations change
+        $this->edit_selected_products = [];
+    }
+
+    // When edit dates change, validate selected products
+    public function updatedEditStartDate()
+    {
+        $this->updatedEditSelectedProducts(null);
+    }
+
+    public function updatedEditEndDate()
+    {
+        $this->updatedEditSelectedProducts(null);
+    }
+
+    public function resetFilters()
+    {
+        $this->search = '';
+        $this->typeFilter = '';
+        $this->statusFilter = '';
+        $this->filterStartDate = '';
+        $this->filterEndDate = '';
     }
 
     // Render
@@ -503,6 +571,26 @@ class SalesPromo extends Component
             $query->where('name', 'like', '%' . $this->search . '%')
                 ->orWhere('code', 'like', '%' . $this->search . '%');
         })
+        ->when($this->typeFilter, function ($query) {
+            $query->where('type', $this->typeFilter);
+        })
+        ->when($this->filterStartDate, function ($query) {
+            $query->where('startDate', '>=', $this->filterStartDate);
+        })
+        ->when($this->filterEndDate, function ($query) {
+            $query->where('endDate', '<=', $this->filterEndDate);
+        })
+        ->when($this->statusFilter, function ($query) {
+            $now = now();
+            if ($this->statusFilter === 'active') {
+                $query->where('startDate', '<=', $now)
+                      ->where('endDate', '>=', $now);
+            } elseif ($this->statusFilter === 'upcoming') {
+                $query->where('startDate', '>', $now);
+            } elseif ($this->statusFilter === 'expired') {
+                $query->where('endDate', '<', $now);
+            }
+        })
         ->orderBy('created_at', 'desc')
         ->paginate($this->perPage);
 
@@ -510,8 +598,12 @@ class SalesPromo extends Component
             'items' => $items,
             'branches' => $this->branches,
             'products' => $this->products,
+            'batchAllocations' => $this->batchAllocations,
             'totalPromos' => Promo::count(),
-            'activePromos' => Promo::where('endDate', '>=', now())->count(),
+            'activePromos' => Promo::where('startDate', '<=', now())
+                ->where('endDate', '>=', now())
+                ->count(),
+            'upcomingPromos' => Promo::where('startDate', '>', now())->count(),
         ]);
     }
 }

@@ -29,12 +29,22 @@ class Promo extends Model
         'second_product' => 'array', // <-- add this
     ];
 
-    // ✅ Get Branch Names
+    // ✅ Get Batch Allocation Ref Nos
     public function getBranchNamesAttribute()
     {
-        $branchIds = json_decode($this->branch, true) ?? [];
-        if (!is_array($branchIds)) $branchIds = [];
-        return \App\Models\Branch::whereIn('id', $branchIds)->pluck('name')->toArray();
+        // For backward compatibility, this still returns branch names if stored as branch IDs
+        // But now it primarily returns batch allocation ref_nos
+        $batchAllocationIds = json_decode($this->branch, true) ?? [];
+        if (!is_array($batchAllocationIds)) $batchAllocationIds = [];
+        
+        // Check if these are batch allocation IDs (new format) or branch IDs (old format)
+        $batchAllocations = \App\Models\BatchAllocation::whereIn('id', $batchAllocationIds)->get();
+        if ($batchAllocations->count() > 0) {
+            return $batchAllocations->pluck('ref_no')->toArray();
+        }
+        
+        // Fallback to branch names for old data
+        return \App\Models\Branch::whereIn('id', $batchAllocationIds)->pluck('name')->toArray();
     }
 
     // ✅ Get Product Names

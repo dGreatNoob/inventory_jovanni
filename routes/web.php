@@ -52,6 +52,11 @@ use App\Livewire\Pages\SalesManagement\Index as SalesManagementIndex;
 use App\Livewire\Pages\SalesManagement\SalesReturn as SalesManagementSalesReturn;
 use App\Livewire\Pages\SalesManagement\View as Viewsalesorder;
 use App\Livewire\Pages\SalesManagement\ViewSalesReturn;
+use App\Livewire\Pages\SalesManagement\SalesPromo as SalesManagementPromo;
+use App\Livewire\Pages\SalesManagement\PromoView;
+
+
+
 use App\Livewire\SalesPrice\Index as SalesPriceIndex;
 use App\Livewire\Pages\Shipment\Index as createShipmentIndex;
 use App\Livewire\Pages\Shipment\View as createShipmentView;
@@ -75,6 +80,7 @@ use App\Livewire\Pages\POManagement\PurchaseOrder\Edit as POManagementPurchaseOr
 use App\Livewire\Pages\POManagement\PurchaseOrder\Show as POManagementPurchaseOrderShow;
 use App\Livewire\Pages\POManagement\PurchaseOrder\ViewItem as POManagementPurchaseOrderViewItem;
 use App\Livewire\Pages\POManagement\PurchaseOrder\PODeliveries;
+
 
 
 Route::redirect('', '/login')->name('home');
@@ -117,6 +123,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/purchase-order/view-item/{poId?}', POManagementPurchaseOrderViewItem::class)->name('purchaseorder.viewItem');
         Route::get('/deliveries', PODeliveries::class)->name('deliveries');
     });
+    Route::get('/po-management/purchaseorder/{Id}/qr', [PurchaseOrderQRController::class, 'show'])
+        ->name('pomanagement.purchaseorder.qr');
     Route::get('/po-management/purchaseorder/{Id}/qr', [PurchaseOrderQRController::class, 'show'])
         ->name('pomanagement.purchaseorder.qr');
     Route::get('/suppliermanagement/profile', SupplierProfile::class)
@@ -200,6 +208,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/sales-order/{salesOrderId}', Viewsalesorder::class)->name('salesorder.view');
     Route::get('/sales-return', SalesManagementSalesReturn::class)->name('salesorder.return');
     Route::get('/sales-return/{salesreturnId}', ViewSalesReturn::class)->name('salesreturn.view');
+    Route::get('/sales-promo', SalesManagementPromo::class)->name('sales.promo');
+    Route::get('/promo/view/{id}', \App\Livewire\Pages\SalesManagement\PromoView::class)->name('promo.view');
     Route::get('/sales-price', SalesPriceIndex::class)->name('sales-price.index');
 
     // Allocation Management

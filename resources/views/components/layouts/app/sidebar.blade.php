@@ -117,6 +117,13 @@
                         </flux:navlist.item>
 
                         <flux:navlist.item 
+                        icon="gift" 
+                        href="{{ route('sales.promo') }}"
+                        :current="request()->routeIs('sales.promo')" 
+                        wire:navigate>{{ __('Promo Creation') }}
+                        </flux:navlist.item>
+
+                        <flux:navlist.item 
                             icon="chart-bar" 
                             href="{{ route('product-management.dashboard') }}" 
                             :current="request()->routeIs('product-management.dashboard')" 
@@ -540,7 +547,7 @@
                 @endrole --}}
 
                 {{-- Warehouse Staff --}}
-                {{-- @php
+                @php
                     $warehouseRoutes = [
                         'warehousestaff.stockin',
                         'warehousestaff.stockout',
@@ -563,7 +570,7 @@
                         <flux:navlist.item icon="banknotes" href="javascript:void(0);"  wire:navigate>{{ __('Returns') }}
                         </flux:navlist.item>
                     </flux:navlist.group>
-                @endif --}}
+                @endif
 
                 {{-- Reports --}}
                 {{-- <flux:navlist.group expandable :expanded="request()->routeIs('reports.*')" :heading="__('Reports')"

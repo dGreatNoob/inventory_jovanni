@@ -1,7 +1,273 @@
-<x-slot:header>Supplier Management</x-slot:header>
-<x-slot:subheader>Profile</x-slot:subheader>
 <div class="pt-4">
     <div class="">
+        <!-- Header Section -->
+        <div class="mb-6">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div class="flex-1">
+                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Supplier Management</h1>
+                    <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Manage and track supplier profiles and relationships</p>
+                </div>
+                <div class="flex flex-row items-center space-x-3">
+                    @can('supplier create')
+                    <flux:button 
+                        wire:click="$set('showCreatePanel', true)"
+                        variant="primary" 
+                        class="flex items-center gap-2 whitespace-nowrap min-w-fit"
+                        type="button"
+                    >
+                        <svg class="inline w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        <span>Add Supplier</span>
+                    </flux:button>
+                    @endcan
+                </div>
+            </div>
+        </div>
+
+        <!-- Flash Message -->
+        @if (session()->has('message'))
+            <div class="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded dark:bg-green-900 dark:border-green-600 dark:text-green-300">
+                {{ session('message') }}
+            </div>
+        @endif
+
+        <!-- Add/Edit Supplier Slide-in Panel -->
+        <div
+            x-data="{ open: @entangle('showCreatePanel').live }"
+            x-cloak
+            x-on:keydown.escape.window="if (open) { open = false; $wire.closeCreatePanel(); }"
+        >
+            <template x-teleport="body">
+                <div
+                    x-show="open"
+                    x-transition.opacity
+                    class="fixed inset-0 z-50 flex"
+                >
+                    <div
+                        x-show="open"
+                        x-transition.opacity
+                        class="fixed inset-0 bg-neutral-900/30 dark:bg-neutral-900/50"
+                        @click="open = false; $wire.closeCreatePanel()"
+                    ></div>
+
+                    <section
+                        x-show="open"
+                        x-transition:enter="transform transition ease-in-out duration-300"
+                        x-transition:enter-start="translate-x-full"
+                        x-transition:enter-end="translate-x-0"
+                        x-transition:leave="transform transition ease-in-out duration-300"
+                        x-transition:leave-start="translate-x-0"
+                        x-transition:leave-end="translate-x-full"
+                        class="relative ml-auto flex h-full w-full max-w-4xl"
+                    >
+                        <div class="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500 dark:bg-indigo-400"></div>
+
+                        <div class="ml-[0.25rem] flex h-full w-full flex-col bg-white shadow-xl dark:bg-zinc-900">
+                            <header class="flex items-start justify-between border-b border-gray-200 px-6 py-5 dark:border-zinc-700">
+                                <div class="flex items-start gap-3">
+                                    <div class="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-300">
+                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Zm-1.5 8a4 4 0 0 0-4 4 2 2 0 0 0 2 2h7a2 2 0 0 0 2-2 4 4 0 0 0-4-4h-3Zm6.82-3.096a5.51 5.51 0 0 0-2.797-6.293 3.5 3.5 0 1 1 2.796 6.292ZM19.5 18h.5a2 2 0 0 0 2-2 4 4 0 0 0-4-4h-1.1a5.503 5.503 0 0 1-.471.762A5.998 5.998 0 0 1 19.5 18Z"/>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+                                            Add New Supplier
+                                        </h2>
+                                        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                                            Create a new supplier profile.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    class="rounded-full p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-gray-500 dark:hover:bg-zinc-800 dark:hover:text-gray-200"
+                                    @click="open = false; $wire.closeCreatePanel()"
+                                    aria-label="Close supplier panel"
+                                >
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                </button>
+                            </header>
+
+                            <div class="flex-1 overflow-hidden">
+                                <form wire:submit.prevent="submit" class="flex h-full flex-col">
+                                    <div class="flex-1 overflow-y-auto px-6 py-6">
+                                        <div class="space-y-8">
+                                            <!-- Supplier Details -->
+                                            <section class="space-y-4">
+                                                <div>
+                                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Supplier Details</h3>
+                                                    <p class="text-sm text-gray-500 dark:text-gray-400">Basic information about the supplier.</p>
+                                                </div>
+
+                                                <div class="space-y-4">
+                                                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                                        <div>
+                                                            <label for="supplier_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                                Supplier Name
+                                                            </label>
+                                                            <input 
+                                                                type="text" 
+                                                                id="supplier_name" 
+                                                                wire:model="supplier_name"
+                                                                class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                                placeholder="Jovanni Bags Manufacturer Co." 
+                                                                required 
+                                                            />
+                                                            @error('supplier_name') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                                        </div>
+
+                                                        <div>
+                                                            <label for="supplier_code" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                                Supplier Code
+                                                            </label>
+                                                            <input 
+                                                                type="text" 
+                                                                id="supplier_code" 
+                                                                wire:model="supplier_code"
+                                                                class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                                placeholder="SUP-001" 
+                                                                required 
+                                                            />
+                                                            @error('supplier_code') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                                        </div>
+                                                    </div>
+
+                                                    <div>
+                                                        <label for="supplier_address" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                            Address
+                                                        </label>
+                                                        <input 
+                                                            type="text" 
+                                                            id="supplier_address" 
+                                                            wire:model="supplier_address"
+                                                            class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                            placeholder="P24 lawaan st. bayugan city" 
+                                                            required 
+                                                        />
+                                                        @error('supplier_address') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                                    </div>
+                                                </div>
+                                            </section>
+
+                                            <!-- Contact Information -->
+                                            <section class="space-y-4">
+                                                <div>
+                                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Contact Information</h3>
+                                                    <p class="text-sm text-gray-500 dark:text-gray-400">Primary contact details for the supplier.</p>
+                                                </div>
+
+                                                <div class="space-y-4">
+                                                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                                        <div>
+                                                            <label for="contact_person" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                                Contact Person
+                                                            </label>
+                                                            <input 
+                                                                type="text" 
+                                                                id="contact_person" 
+                                                                wire:model="contact_person"
+                                                                class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                                placeholder="John Doe" 
+                                                                required 
+                                                            />
+                                                            @error('contact_person') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                                        </div>
+
+                                                        <div>
+                                                            <label for="contact_num" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                                Contact Number
+                                                            </label>
+                                                            <input 
+                                                                type="tel" 
+                                                                id="contact_num" 
+                                                                wire:model="contact_num"
+                                                                class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                                placeholder="012345678910" 
+                                                                required 
+                                                            />
+                                                            @error('contact_num') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                                        </div>
+                                                    </div>
+
+                                                    <div>
+                                                        <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                            Email
+                                                        </label>
+                                                        <input 
+                                                            type="email" 
+                                                            id="email" 
+                                                            wire:model="email"
+                                                            class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                            placeholder="JovanniBags@gmail.com" 
+                                                            required 
+                                                        />
+                                                        @error('email') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                                    </div>
+                                                </div>
+                                            </section>
+
+                                            <!-- Additional Information -->
+                                            <section class="space-y-4">
+                                                <div>
+                                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Additional Information</h3>
+                                                    <p class="text-sm text-gray-500 dark:text-gray-400">Optional details about the supplier.</p>
+                                                </div>
+
+                                                <div>
+                                                    <label for="tin_num" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                        TIN Number
+                                                    </label>
+                                                    <input 
+                                                        type="text" 
+                                                        id="tin_num" 
+                                                        wire:model="tin_num"
+                                                        class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                        placeholder="123-456-789-000" 
+                                                    />
+                                                    @error('tin_num') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                                </div>
+                                            </section>
+                                        </div>
+                                    </div>
+
+                                    <div class="border-t border-gray-200 bg-white px-6 py-4 dark:border-zinc-700 dark:bg-zinc-900">
+                                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                            <div class="text-sm text-gray-500 dark:text-gray-400">
+                                                Review details before creating the supplier profile.
+                                            </div>
+                                            <div class="flex items-center gap-3">
+                                                <flux:button 
+                                                    type="button" 
+                                                    variant="ghost"
+                                                    wire:click="resetForm"
+                                                >
+                                                    Reset
+                                                </flux:button>
+
+                                                <flux:button 
+                                                    type="submit" 
+                                                    variant="primary"
+                                                    wire:loading.attr="disabled"
+                                                >
+                                                    <span wire:loading.remove>Create Supplier</span>
+                                                    <span wire:loading>Saving...</span>
+                                                </flux:button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </template>
+        </div>
+
         <section class="mb-6">
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 
@@ -83,148 +349,67 @@
             </div>
         </section>
 
-        <!-- Profiling -->
-        @can('supplier create')
+        <!-- Filters and Search -->
         <section class="mb-6">
-                <div class="px-4 py-5 sm:p-6">
-            <form wire:submit.prevent="submit">
-                <div class="grid gap-6 mb-6 md:grid-cols-2">
-                    <!-- Supplier Name -->
-                    <div>
-                        <label for="supplier_name"
-                            class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Supplier Name</label>
-                        <input type="text" id="supplier_name" wire:model="supplier_name"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 
-                                focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 
-                                dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                            placeholder="Jovanni Bags Manufacturer Co." required />
-                        @error('supplier_name')
-                            <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
-                        @enderror
+            <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between p-4 gap-4">
+                    <!-- Search -->
+                    <div class="flex space-x-6">
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                <svg aria-hidden="true" class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path>
+                                </svg>
+                            </div>
+                            <input 
+                                type="text" 
+                                wire:model.live.debounce.500ms="search"
+                                class="block w-64 p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" 
+                                placeholder="Search suppliers..."
+                            >
+                        </div>
                     </div>
 
-                    <div>
-                        <label for="supplier_code"
-                            class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Supplier Code</label>
-                        <input type="text" id="supplier_code" wire:model="supplier_code"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 
-                                focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 
-                                dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                            placeholder="SUP-001" required />
-                        @error('supplier_code')
-                            <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
-                        @enderror
+                    <!-- Filters -->
+                    <div class="flex flex-wrap gap-3">
+                        <select 
+                            wire:model.live="statusFilter"
+                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        >
+                            <option value="">All Status</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                            <option value="pending">Pending</option>
+                        </select>
+
+                        <select 
+                            wire:model.live="categoryFilter"
+                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        >
+                            <option value="">All Categories</option>
+                            @foreach($categories as $id => $name)
+                                <option value="{{ $id }}">{{ $name }}</option>
+                            @endforeach
+                        </select>
+
+                        <button 
+                            type="button"
+                            wire:click="resetFilters" 
+                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 px-2.5 py-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors flex items-center gap-2"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                            Reset Filters
+                        </button>
                     </div>
-
-                    <div>
-                        <label for="supplier_address"
-                            class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Address</label>
-                        <input type="text" id="supplier_address" wire:model="supplier_address"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 
-                                focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 
-                                dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                            placeholder="P24 lawaan st. bayugan city" required />
-                        @error('supplier_address')
-                            <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <div>
-                        <label for="contact_person"
-                            class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Contact Person</label>
-                        <input type="text" id="contact_person" wire:model="contact_person"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 
-                                focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 
-                                dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                            placeholder="John Doe" required />
-                        @error('contact_person')
-                            <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <div>
-                        <label for="contact_num"
-                            class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Contact Number</label>
-                        <input type="tel" id="contact_num" wire:model="contact_num"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 
-                                focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 
-                                dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                            placeholder="012345678910" required />
-                        @error('contact_num')
-                            <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <div>
-                        <label for="email" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Email</label>
-                        <input type="text" id="email" wire:model="email"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 
-                                focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 
-                                dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                            placeholder="JovanniBags@gmail.com" required />
-                        @error('email')
-                            <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <div>
-                        <label for="tin_num" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">TIN Number</label>
-                        <input type="text" id="tin_num" wire:model="tin_num"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 
-                                focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 
-                                dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                            placeholder="123-456-789-000" />
-                        @error('tin_num')
-                            <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <!-- Spacing -->
-                    <div class="md:col-span-2 h-6"></div>
-
-
-                    <!-- For tags -->
-                    
                 </div>
-
-                <div class="flex justify-end">
-                    <flux:button type="submit" wire:loading.attr="disabled">
-                        <span wire:loading.remove>Submit</span>
-                        <span wire:loading>Saving...</span>
-                    </flux:button>
-                </div>
-
-            </form>
-                </div>
-        </section>
-        @endcan
-
-        @if (session()->has('message'))
-            <div class="mb-4 p-4 text-sm text-green-700 bg-green-100 rounded-lg dark:bg-green-200 dark:text-green-800">
-                {{ session('message') }}
             </div>
-        @endif
+        </section>
 
         <!-- DataTables Section -->
         <section class="mb-6">
             <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
-                <div class="flex items-center justify-between p-4 pr-10">
-                    <div class="flex space-x-6">
-                        <div class="relative">
-                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                <svg aria-hidden="true" class="w-5 h-5 text-gray-500 dark:text-gray-400"
-                                    fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                    <path fill-rule="evenodd"
-                                        d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                                        clip-rule="evenodd" />
-                                </svg>
-                            </div>
-                            <input type="text" wire:model.live.debounce.500ms="search"
-                                class="block w-64 p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                placeholder="Search Supplier...">
-                        </div>
-                    </div>
-                </div>
 
                 <!-- Data Table -->
                 <div class="overflow-x-auto">
@@ -442,133 +627,298 @@
             </div>
         </section>
 
-        <!-- Action Button -->
-        <section>
-            <div x-data="{ show: @entangle('showEditModal').live }" x-show="show" x-cloak
-                class="fixed top-0 left-0 right-0 z-50 w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] max-h-full flex items-center justify-center">
-                <div class="relative w-full max-w-2xl max-h-full">
-                    <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
-                        <div class="flex items-start justify-between p-4 border-b rounded-t dark:border-gray-600">
-                            <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Edit Supplier</h3>
-                            <button type="button" wire:click="cancel"
-                                    class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ml-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
-                                <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
-                                    fill="none" viewBox="0 0 14 14">
-                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                                        stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
-                                </svg>
-                                <span class="sr-only">Close modal</span>
-                            </button>
+        <!-- Edit Supplier Slide-in Panel -->
+        <div
+            x-data="{ open: @entangle('showEditModal').live }"
+            x-cloak
+            x-on:keydown.escape.window="if (open) { open = false; $wire.cancel(); }"
+        >
+            <template x-teleport="body">
+                <div
+                    x-show="open"
+                    x-transition.opacity
+                    class="fixed inset-0 z-50 flex"
+                >
+                    <div
+                        x-show="open"
+                        x-transition.opacity
+                        class="fixed inset-0 bg-neutral-900/30 dark:bg-neutral-900/50"
+                        @click="open = false; $wire.cancel()"
+                    ></div>
+
+                    <section
+                        x-show="open"
+                        x-transition:enter="transform transition ease-in-out duration-300"
+                        x-transition:enter-start="translate-x-full"
+                        x-transition:enter-end="translate-x-0"
+                        x-transition:leave="transform transition ease-in-out duration-300"
+                        x-transition:leave-start="translate-x-0"
+                        x-transition:leave-end="translate-x-full"
+                        class="relative ml-auto flex h-full w-full max-w-4xl"
+                    >
+                        <div class="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500 dark:bg-indigo-400"></div>
+
+                        <div class="ml-[0.25rem] flex h-full w-full flex-col bg-white shadow-xl dark:bg-zinc-900">
+                            <header class="flex items-start justify-between border-b border-gray-200 px-6 py-5 dark:border-zinc-700">
+                                <div class="flex items-start gap-3">
+                                    <div class="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-300">
+                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+                                            Edit Supplier
+                                        </h2>
+                                        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                                            Update supplier profile information.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    class="rounded-full p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-gray-500 dark:hover:bg-zinc-800 dark:hover:text-gray-200"
+                                    @click="open = false; $wire.cancel()"
+                                    aria-label="Close edit panel"
+                                >
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                </button>
+                            </header>
+
+                            <div class="flex-1 overflow-hidden">
+                                <form wire:submit.prevent="update" class="flex h-full flex-col">
+                                    <div class="flex-1 overflow-y-auto px-6 py-6">
+                                        <div class="space-y-8">
+                                            <!-- Supplier Details -->
+                                            <section class="space-y-4">
+                                                <div>
+                                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Supplier Details</h3>
+                                                    <p class="text-sm text-gray-500 dark:text-gray-400">Basic information about the supplier.</p>
+                                                </div>
+
+                                                <div class="space-y-4">
+                                                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                                        <div>
+                                                            <label for="edit_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                                Supplier Name
+                                                            </label>
+                                                            <input 
+                                                                type="text" 
+                                                                id="edit_name" 
+                                                                wire:model="edit_name"
+                                                                class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                                placeholder="Enter supplier name" 
+                                                                required 
+                                                            />
+                                                            @error('edit_name') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                                        </div>
+
+                                                        <div>
+                                                            <label for="edit_code" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                                Supplier Code
+                                                            </label>
+                                                            <input 
+                                                                type="text" 
+                                                                id="edit_code" 
+                                                                wire:model="edit_code"
+                                                                class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                                placeholder="Enter supplier code" 
+                                                                required 
+                                                            />
+                                                            @error('edit_code') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                                        </div>
+                                                    </div>
+
+                                                    <div>
+                                                        <label for="edit_address" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                            Address
+                                                        </label>
+                                                        <input 
+                                                            type="text" 
+                                                            id="edit_address" 
+                                                            wire:model="edit_address"
+                                                            class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                            placeholder="Enter address" 
+                                                            required 
+                                                        />
+                                                        @error('edit_address') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                                    </div>
+                                                </div>
+                                            </section>
+
+                                            <!-- Contact Information -->
+                                            <section class="space-y-4">
+                                                <div>
+                                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Contact Information</h3>
+                                                    <p class="text-sm text-gray-500 dark:text-gray-400">Primary contact details for the supplier.</p>
+                                                </div>
+
+                                                <div class="space-y-4">
+                                                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                                        <div>
+                                                            <label for="edit_contact_person" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                                Contact Person
+                                                            </label>
+                                                            <input 
+                                                                type="text" 
+                                                                id="edit_contact_person" 
+                                                                wire:model="edit_contact_person"
+                                                                class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                                placeholder="Enter contact person" 
+                                                                required 
+                                                            />
+                                                            @error('edit_contact_person') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                                        </div>
+
+                                                        <div>
+                                                            <label for="edit_contact_num" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                                Contact Number
+                                                            </label>
+                                                            <input 
+                                                                type="tel" 
+                                                                id="edit_contact_num" 
+                                                                wire:model="edit_contact_num"
+                                                                class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                                placeholder="Enter contact number" 
+                                                                required 
+                                                            />
+                                                            @error('edit_contact_num') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                                        </div>
+                                                    </div>
+
+                                                    <div>
+                                                        <label for="edit_email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                            Email
+                                                        </label>
+                                                        <input 
+                                                            type="email" 
+                                                            id="edit_email" 
+                                                            wire:model="edit_email"
+                                                            class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                            placeholder="Enter supplier email" 
+                                                            required 
+                                                        />
+                                                        @error('edit_email') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                                    </div>
+                                                </div>
+                                            </section>
+
+                                            <!-- Additional Information -->
+                                            <section class="space-y-4">
+                                                <div>
+                                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Additional Information</h3>
+                                                    <p class="text-sm text-gray-500 dark:text-gray-400">Optional details and status.</p>
+                                                </div>
+
+                                                <div class="space-y-4">
+                                                    <div>
+                                                        <label for="edit_tin_num" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                            TIN Number
+                                                        </label>
+                                                        <input 
+                                                            type="text" 
+                                                            id="edit_tin_num" 
+                                                            wire:model="edit_tin_num"
+                                                            class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                            placeholder="123-456-789-000" 
+                                                        />
+                                                        @error('edit_tin_num') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                                    </div>
+
+                                                    <div>
+                                                        <label for="edit_status" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                            Status
+                                                        </label>
+                                                        <select 
+                                                            id="edit_status" 
+                                                            wire:model="edit_status"
+                                                            class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                            required
+                                                        >
+                                                            <option value="">Select status</option>
+                                                            <option value="active">Active</option>
+                                                            <option value="inactive">Inactive</option>
+                                                            <option value="pending">Pending</option>
+                                                        </select>
+                                                        @error('edit_status') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                                    </div>
+                                                </div>
+                                            </section>
+                                        </div>
+                                    </div>
+
+                                    <div class="border-t border-gray-200 bg-white px-6 py-4 dark:border-zinc-700 dark:bg-zinc-900">
+                                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                            <div class="text-sm text-gray-500 dark:text-gray-400">
+                                                Review changes before updating the supplier profile.
+                                            </div>
+                                            <div class="flex items-center gap-3">
+                                                <flux:button 
+                                                    type="button" 
+                                                    variant="ghost"
+                                                    wire:click="cancel"
+                                                >
+                                                    Cancel
+                                                </flux:button>
+
+                                                <flux:button 
+                                                    type="submit" 
+                                                    variant="primary"
+                                                    wire:loading.attr="disabled"
+                                                >
+                                                    <span wire:loading.remove>Update Supplier</span>
+                                                    <span wire:loading>Saving...</span>
+                                                </flux:button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
+                    </section>
+                </div>
+            </template>
+        </div>
 
-                        <div class="p-6 space-y-6">
-                            <div class="grid gap-6 mb-6 md:grid-cols-2">
-                            <div>
-                                <label for="edit_name" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Name</label>
-                                <input type="text" wire:model="edit_name" id="edit_name"
-                                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
-                                            focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5
-                                            dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white 
-                                            dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                    placeholder="Enter supplier name" required />
-                                @error('edit_name') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                            </div>
-
-                            <div>
-                                <label for="edit_code" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Supplier Code</label>
-                                <input type="text" wire:model="edit_code" id="edit_code"
-                                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
-                                            focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5
-                                            dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white 
-                                            dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                    placeholder="Enter supplier code" required />
-                                @error('edit_code') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                            </div>
-
-                            <div>
-                                <label for="edit_address" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Address</label>
-                                <input type="text" wire:model="edit_address" id="edit_address"
-                                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
-                                            focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5
-                                            dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white 
-                                            dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                    placeholder="Enter address" required />
-                                @error('edit_address') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                            </div>
-
-                            <div>
-                                <label for="edit_contact_person" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Contact Person</label>
-                                <input type="text" wire:model="edit_contact_person" id="edit_contact_person"
-                                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
-                                            focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5
-                                            dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white 
-                                            dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                    placeholder="Enter contact person" required />
-                                @error('edit_contact_person') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                            </div>
-
-                            <div>
-                                <label for="edit_contact_num" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Contact Number</label>
-                                <input type="text" wire:model="edit_contact_num" id="edit_contact_num"
-                                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
-                                            focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5
-                                            dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white 
-                                            dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                    placeholder="Enter contact number" required />
-                                @error('edit_contact_num') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                            </div>
-
-                            <div class="mb-4">
-                                <label for="edit_email" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Email</label>
-                                <input type="email" id="edit_email" wire:model.defer="edit_email"
-                                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
-                                        focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5
-                                        dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
-                                    placeholder="Enter supplier email">
-                                @error('edit_email') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                            </div>
-
-                            <div class="mb-4">
-                                <label for="edit_tin_num" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">TIN Number</label>
-                                <input type="text" id="edit_tin_num" wire:model.defer="edit_tin_num"
-                                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
-                                        focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5
-                                        dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white"
-                                    placeholder="Enter TIN number">
-                                @error('edit_tin_num') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                            </div>
-
-                            <div class="md:col-span-2 h-6"></div>
-                            
-                            <div>
-                                <label for="edit_status" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Status</label>
-                                <select wire:model="edit_status" id="edit_status" 
-                                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg 
-                                        focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5
-                                        dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white 
-                                        dark:focus:ring-blue-500 dark:focus:border-blue-500" required>
-                                    <option value="">Select status</option>
-                                    <option value="active">Active</option>
-                                    <option value="inactive">Inactive</option>
-                                    <option value="pending">Pending</option>
-                                </select>
-                                @error('edit_status') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                            </div>
-
-                        </div>
-                        </div>
-
-                        <div class="flex items-center p-6 space-x-2 border-t border-gray-200 rounded-b dark:border-gray-600">
-                            <flux:button wire:click="update">
-                                Save changes
-                            </flux:button>
-                            <flux:button wire:click="cancel" variant="outline">
+        <!-- Delete Confirmation Modal -->
+        <div
+            x-data="{ open: @entangle('showDeleteModal').live }"
+            x-cloak
+        >
+            <template x-teleport="body">
+                <div
+                    x-show="open"
+                    x-transition.opacity
+                    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50"
+                >
+                    <div
+                        x-show="open"
+                        x-transition
+                        class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6"
+                    >
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Confirm Deletion</h3>
+                        <p class="text-gray-600 dark:text-gray-400 mb-4">Are you sure you want to delete this supplier profile? This action cannot be undone.</p>
+                        <div class="flex justify-end space-x-3">
+                            <flux:button 
+                                variant="ghost" 
+                                wire:click="cancel"
+                            >
                                 Cancel
+                            </flux:button>
+                            <flux:button 
+                                variant="danger" 
+                                wire:click="delete"
+                            >
+                                Delete Supplier
                             </flux:button>
                         </div>
                     </div>
                 </div>
-            </div>
+            </template>
+        </div>
 
             @if($showDeleteModal)
                 <div class="fixed top-0 left-0 right-0 z-50 w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] max-h-full flex items-center justify-center">

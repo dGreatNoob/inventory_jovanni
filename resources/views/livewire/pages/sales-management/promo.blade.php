@@ -640,225 +640,338 @@
                 </div>
             @endif
 
-        <section>
-            <!-- Edit Promo Modal -->
-            <!-- Edit Promo Modal -->
-<div x-data="{ show: @entangle('showEditModal').live }" x-show="show" x-cloak
-    class="fixed top-0 left-0 right-0 z-50 w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] max-h-full flex items-center justify-center">
-    <div class="relative w-full max-w-2xl max-h-full">
-        <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
+        <!-- Edit Promo Slide-in Panel -->
+        <div
+            x-data="{ open: @entangle('showEditModal').live }"
+            x-cloak
+            x-on:keydown.escape.window="if (open) { open = false; $wire.cancelEdit(); }"
+        >
+            <template x-teleport="body">
+                <div
+                    x-show="open"
+                    x-transition.opacity
+                    class="fixed inset-0 z-50 flex"
+                >
+                    <div
+                        x-show="open"
+                        x-transition.opacity
+                        class="fixed inset-0 bg-neutral-900/30 dark:bg-neutral-900/50"
+                        @click="open = false; $wire.cancelEdit()"
+                    ></div>
 
-            {{-- Modal Header --}}
-            <div class="flex items-start justify-between p-4 border-b rounded-t dark:border-gray-600">
-                <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Edit Promo</h3>
-                <button type="button" wire:click="cancelEdit"
-                        class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ml-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
-                    <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
-                        fill="none" viewBox="0 0 14 14">
-                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                            stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
-                    </svg>
-                    <span class="sr-only">Close modal</span>
-                </button>
-            </div>
+                    <section
+                        x-show="open"
+                        x-transition:enter="transform transition ease-in-out duration-300"
+                        x-transition:enter-start="translate-x-full"
+                        x-transition:enter-end="translate-x-0"
+                        x-transition:leave="transform transition ease-in-out duration-300"
+                        x-transition:leave-start="translate-x-0"
+                        x-transition:leave-end="translate-x-full"
+                        class="relative ml-auto flex h-full w-full max-w-4xl"
+                    >
+                        <div class="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500 dark:bg-indigo-400"></div>
 
-            {{-- Modal Body --}}
-            <div class="p-6 space-y-6">
-
-                {{-- Promo Name & Code --}}
-                <div class="grid gap-6 md:grid-cols-2">
-                    <div>
-                        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Promo Name</label>
-                        <input type="text" wire:model="edit_name"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5 block w-full dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                        @error('edit_name') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div>
-                        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Promo Code</label>
-                        <input type="text" wire:model="edit_code"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5 block w-full dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                        @error('edit_code') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                    </div>
-                </div>
-
-                {{-- Promo Type --}}
-                <div>
-                    <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Promo Type</label>
-                    <select wire:model="edit_type"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5 block w-full dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                        <option value="">Select Promo Type</option>
-                        @foreach($promo_type_options as $type)
-                            <option value="{{ $type }}">{{ $type }}</option>
-                        @endforeach
-                    </select>
-                    @error('edit_type') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                </div>
-
-                {{-- Start & End Dates --}}
-                <div class="grid gap-6 md:grid-cols-2">
-                    <div>
-                        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Start Date</label>
-                        <input type="date" wire:model="edit_startDate"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5 block w-full dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                        @error('edit_startDate') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div>
-                        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">End Date</label>
-                        <input type="date" wire:model="edit_endDate"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5 block w-full dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                        @error('edit_endDate') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                    </div>
-                </div>
-
-                {{-- Batch Allocation Dropdown --}}
-                <div class="relative" wire:click.outside="$set('editBatchDropdown', false)">
-                    <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Batch Allocation</label>
-                    <div wire:click="$toggle('editBatchDropdown')"
-                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5 cursor-pointer flex justify-between items-center flex-wrap gap-2 min-h-[42px]">
-                        <div class="flex flex-wrap gap-1 items-center">
-                            @if(empty($edit_selected_batches))
-                                <span class="text-gray-400 dark:text-gray-300">Select Batch Allocation</span>
-                            @else
-                                @foreach($batchAllocations as $batchAllocation)
-                                    @if(in_array($batchAllocation->id, $edit_selected_batches))
-                                        <span class="inline-flex items-center bg-blue-500 text-white px-2 py-0.5 rounded text-xs">
-                                            {{ $batchAllocation->ref_no }}
-                                            @if($batchAllocation->batch_number)
-                                                <span class="ml-1 text-xs">({{ $batchAllocation->batch_number }})</span>
-                                            @endif
-                                        </span>
-                                    @endif
-                                @endforeach
-                            @endif
-                        </div>
-                        <svg class="w-4 h-4 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                        </svg>
-                    </div>
-
-                    @if($editBatchDropdown)
-                        <div class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto dark:bg-gray-700 dark:border-gray-600">
-                            @foreach($batchAllocations as $batchAllocation)
-                                <label class="flex items-center p-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600">
-                                    <input type="checkbox" value="{{ $batchAllocation->id }}" wire:model="edit_selected_batches" class="form-checkbox h-4 w-4 text-blue-600 dark:text-blue-400">
-                                    <div class="ml-2 flex-1">
-                                        <div class="text-sm font-medium text-gray-900 dark:text-white">
-                                            {{ $batchAllocation->ref_no }}
-                                        </div>
-                                        @if($batchAllocation->batch_number)
-                                            <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                                                Batch Number: <span class="font-semibold text-gray-700 dark:text-gray-300">{{ $batchAllocation->batch_number }}</span>
-                                            </div>
-                                        @endif
+                        <div class="ml-[0.25rem] flex h-full w-full flex-col bg-white shadow-xl dark:bg-zinc-900">
+                            <header class="flex items-start justify-between border-b border-gray-200 px-6 py-5 dark:border-zinc-700">
+                                <div class="flex items-start gap-3">
+                                    <div class="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-300">
+                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                        </svg>
                                     </div>
-                                </label>
-                            @endforeach
-                        </div>
-                    @endif
-                    @error('edit_selected_batches') <p class="mt-1 text-sm text-red-500">{{ $message }}</p> @enderror
-                </div>
-
-                {{-- First Product Dropdown --}}
-                <div class="relative" wire:click.outside="$set('editProductDropdown', false)">
-                    <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Product <span class="text-red-500">*</span></label>
-                    <div wire:click="$toggle('editProductDropdown')" 
-                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5 cursor-pointer flex justify-between items-center flex-wrap gap-2 min-h-[42px]">
-                        <div class="flex flex-wrap gap-1 items-center">
-                            @if(!$editProductDropdown)
-                                @if(empty($edit_selected_products))
-                                    <span class="text-gray-400 dark:text-gray-300">
-                                        @if(empty($edit_selected_batches))
-                                            Select batch allocation first
-                                        @else
-                                            Select Product
-                                        @endif
-                                    </span>
-                                @else
-                                    @foreach($this->availableProductsForEditBatches as $product)
-                                        @if(in_array($product->id, $edit_selected_products))
-                                            <span class="inline-flex items-center bg-gray-600 text-white text-xs font-medium px-2 py-0.5 rounded-full">
-                                                {{ $product->name }}
-                                                <span class="ml-1 text-gray-200 text-[11px]">₱{{ number_format($product->price, 0) }}</span>
-                                            </span>
-                                        @endif
-                                    @endforeach
-                                @endif
-                            @else
-                                <span class="text-gray-400 dark:text-gray-300">
-                                    @if(empty($edit_selected_batches))
-                                        Select batch allocation first
-                                    @else
-                                        Select Product
-                                    @endif
-                                </span>
-                            @endif
-                        </div>
-                        <svg class="w-4 h-4 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                        </svg>
-                    </div>
-
-                    @if($editProductDropdown && !empty($edit_selected_batches))
-                        <div class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto dark:bg-gray-700 dark:border-gray-600">
-                            @if($this->availableProductsForEditBatches->count() > 0)
-                                @foreach($this->availableProductsForEditBatches as $product)
-                                    <label class="flex items-center justify-between p-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 rounded-md {{ $product->isDisabled ?? false ? 'opacity-50 cursor-not-allowed' : '' }}">
-                                        <div class="flex items-center space-x-2">
-                                            <input type="checkbox" value="{{ $product->id }}"
-                                                wire:model="edit_selected_products"
-                                                @if($product->isDisabled ?? false) disabled @endif
-                                                onclick="event.stopPropagation()"
-                                                class="form-checkbox h-4 w-4 text-green-600 dark:text-green-400 {{ $product->isDisabled ?? false ? 'cursor-not-allowed' : '' }}">
-                                            <span class="text-sm text-gray-900 dark:text-white {{ $product->isDisabled ?? false ? 'line-through' : '' }}">
-                                                {{ $product->name }}
-                                                @if($product->isDisabled ?? false)
-                                                    <span class="ml-2 text-xs text-red-500">(Already in promo)</span>
-                                                @endif
-                                            </span>
-                                        </div>
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500 text-white dark:bg-emerald-400 dark:text-gray-900 shadow-sm">
-                                            ₱ {{ number_format($product->price, 0) }}
-                                        </span>
-                                    </label>
-                                @endforeach
-                            @else
-                                <div class="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
-                                    No products available in selected batch allocations
+                                    <div>
+                                        <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+                                            Edit Promo
+                                        </h2>
+                                        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                                            Update the promotion information.
+                                        </p>
+                                    </div>
                                 </div>
-                            @endif
+
+                                <button
+                                    type="button"
+                                    class="rounded-full p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-gray-500 dark:hover:bg-zinc-800 dark:hover:text-gray-200"
+                                    @click="open = false; $wire.cancelEdit()"
+                                    aria-label="Close edit promo panel"
+                                >
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                </button>
+                            </header>
+
+                            <div class="flex-1 overflow-hidden">
+                                <form wire:submit.prevent="update" class="flex h-full flex-col">
+                                    <div class="flex-1 overflow-y-auto px-6 py-6">
+                                        <div class="space-y-8">
+                                            <!-- Promo Details -->
+                                            <section class="space-y-4">
+                                                <div>
+                                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Promo Details</h3>
+                                                    <p class="text-sm text-gray-500 dark:text-gray-400">Basic information about the promotion.</p>
+                                                </div>
+
+                                                <div class="space-y-4">
+                                                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                                        <div>
+                                                            <label for="edit_name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                                Promo Name
+                                                            </label>
+                                                            <input type="text" id="edit_name" wire:model="edit_name"
+                                                                class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                                placeholder="Autumn Sale" required />
+                                                            @error('edit_name') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                                        </div>
+
+                                                        <div>
+                                                            <label for="edit_code" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                                Promo Code
+                                                            </label>
+                                                            <input type="text" id="edit_code" wire:model="edit_code"
+                                                                class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                                placeholder="PRM-001" />
+                                                            @error('edit_code') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                                        </div>
+                                                    </div>
+
+                                                    <div>
+                                                        <label for="edit_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                            Promo Type
+                                                        </label>
+                                                        <select id="edit_type" wire:model="edit_type"
+                                                            class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                            required>
+                                                            <option value="" disabled>Select Promo Type</option>
+                                                            @foreach($promo_type_options as $type)
+                                                                <option value="{{ $type }}">{{ $type }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                        @error('edit_type')
+                                                            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                                        @enderror
+                                                    </div>
+                                                </div>
+                                            </section>
+
+                                            <!-- Date Range -->
+                                            <section class="space-y-4">
+                                                <div>
+                                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Date Range</h3>
+                                                    <p class="text-sm text-gray-500 dark:text-gray-400">Set the active period for the promotion.</p>
+                                                </div>
+
+                                                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                                    <div>
+                                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                            Start Date
+                                                        </label>
+                                                        <input type="date" wire:model="edit_startDate"
+                                                            class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm" />
+                                                        @error('edit_startDate') <span class="text-red-600 dark:text-red-400 text-sm">{{ $message }}</span> @enderror
+                                                    </div>
+
+                                                    <div>
+                                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Date</label>
+                                                        <input type="date" wire:model="edit_endDate"
+                                                            class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm" />
+                                                        @error('edit_endDate') <span class="text-red-600 dark:text-red-400 text-sm">{{ $message }}</span> @enderror
+                                                    </div>
+                                                </div>
+                                            </section>
+
+                                            <!-- Branch & Product Selection -->
+                                            <section class="space-y-4">
+                                                <div>
+                                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Batch & Product Selection</h3>
+                                                    <p class="text-sm text-gray-500 dark:text-gray-400">Choose where and what products are included in the promo.</p>
+                                                </div>
+
+                                                <!-- Batch Allocation Selector -->
+                                                <div>
+                                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                                        Batch
+                                                    </label>
+                                                    <div class="relative" wire:click.outside="$set('editBatchDropdown', false)">
+                                                        <div wire:click="$toggle('editBatchDropdown')" 
+                                                            class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm cursor-pointer flex justify-between items-center">
+                                                            <span class="flex flex-wrap gap-1">
+                                                                @if(empty($edit_selected_batches))
+                                                                    <span class="text-gray-400">Select Batch</span>
+                                                                @else
+                                                                    @foreach($batchAllocations as $batchAllocation)
+                                                                        @if(in_array($batchAllocation->id, $edit_selected_batches))
+                                                                            <span class="inline-flex items-center gap-1.5 bg-indigo-100 text-indigo-800 text-xs font-medium px-2.5 py-1 rounded-full dark:bg-indigo-900/30 dark:text-indigo-300">
+                                                                                <span class="font-semibold">{{ $batchAllocation->ref_no }}</span>
+                                                                                @if($batchAllocation->batch_number)
+                                                                                    <span class="text-gray-500 dark:text-gray-400">•</span>
+                                                                                    <span class="text-gray-700 dark:text-gray-300 font-normal">Batch: {{ $batchAllocation->batch_number }}</span>
+                                                                                @endif
+                                                                            </span>
+                                                                        @endif
+                                                                    @endforeach
+                                                                @endif
+                                                            </span>
+                                                            <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                            </svg>
+                                                        </div>
+
+                                                        @if($editBatchDropdown)
+                                                        <div class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto dark:bg-gray-700 dark:border-gray-600">
+                                                            @foreach($batchAllocations as $batchAllocation)
+                                                                <label class="flex items-center p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600 last:border-b-0">
+                                                                    <input type="checkbox" value="{{ $batchAllocation->id }}" wire:model="edit_selected_batches"
+                                                                        class="form-checkbox h-4 w-4 accent-blue-600 text-blue-600 focus:ring-blue-500 border-gray-300 rounded dark:accent-blue-400 dark:text-blue-400">
+                                                                    <div class="ml-3 flex-1">
+                                                                        <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                                                            {{ $batchAllocation->ref_no }}
+                                                                        </div>
+                                                                        @if($batchAllocation->batch_number)
+                                                                            <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                                                                Batch Number: <span class="font-semibold text-gray-700 dark:text-gray-300">{{ $batchAllocation->batch_number }}</span>
+                                                                            </div>
+                                                                        @endif
+                                                                    </div>
+                                                                </label>
+                                                            @endforeach
+                                                        </div>
+                                                        @endif
+                                                        @error('edit_selected_batches')
+                                                            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                                        @enderror
+                                                    </div>
+                                                </div>
+
+                                                <!-- Product Selection -->
+                                                <div class="grid gap-4">
+                                                    <div>
+                                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Product</label>
+                                                        <div class="relative" wire:click.outside="$set('editProductDropdown', false)">
+                                                            <div wire:click="$toggle('editProductDropdown')"
+                                                                class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm cursor-pointer flex justify-between items-center">
+                                                                <div class="flex flex-wrap gap-1 items-center">
+                                                                    @if(!$editProductDropdown)
+                                                                        @if(empty($edit_selected_products))
+                                                                            <span class="text-gray-400">
+                                                                                @if(empty($edit_selected_batches))
+                                                                                    Select batch allocation first
+                                                                                @else
+                                                                                    Select Product
+                                                                                @endif
+                                                                            </span>
+                                                                        @else
+                                                                            @foreach($this->availableProductsForEditBatches as $product)
+                                                                                @if(in_array($product->id, $edit_selected_products))
+                                                                                    <span class="inline-flex items-center bg-gray-600 text-white text-xs font-medium px-2 py-0.5 rounded-full">
+                                                                                        {{ $product->name }}
+                                                                                        <span class="ml-1 text-gray-200 text-[11px]">₱{{ number_format($product->price, 0) }}</span>
+                                                                                    </span>
+                                                                                @endif
+                                                                            @endforeach
+                                                                        @endif
+                                                                    @else
+                                                                        <span class="text-gray-400">
+                                                                            @if(empty($edit_selected_batches))
+                                                                                Select batch allocation first
+                                                                            @else
+                                                                                Select Product
+                                                                            @endif
+                                                                        </span>
+                                                                    @endif
+                                                                </div>
+                                                                <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                                </svg>
+                                                            </div>
+
+                                                            @if($editProductDropdown && !empty($edit_selected_batches))
+                                                                <div class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto dark:bg-gray-700 dark:border-gray-600">
+                                                                    @if($this->availableProductsForEditBatches->count() > 0)
+                                                                        @foreach($this->availableProductsForEditBatches as $product)
+                                                                            <label class="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600 last:border-b-0 {{ $product->isDisabled ?? false ? 'opacity-50 cursor-not-allowed' : '' }}">
+                                                                                <div class="flex items-center space-x-3">
+                                                                                    <input type="checkbox"
+                                                                                        value="{{ $product->id }}"
+                                                                                        wire:model="edit_selected_products"
+                                                                                        @if($product->isDisabled ?? false) disabled @endif
+                                                                                        onclick="event.stopPropagation()"
+                                                                                        class="form-checkbox h-4 w-4 accent-green-600 text-green-600 focus:ring-green-500 border-gray-300 rounded dark:accent-green-400 dark:text-green-400 {{ $product->isDisabled ?? false ? 'cursor-not-allowed' : '' }}">
+                                                                                    <span class="text-sm text-gray-900 dark:text-white {{ $product->isDisabled ?? false ? 'line-through' : '' }}">
+                                                                                        {{ $product->name }}
+                                                                                        @if($product->isDisabled ?? false)
+                                                                                            <span class="ml-2 text-xs text-red-500">(Already in promo)</span>
+                                                                                        @endif
+                                                                                    </span>
+                                                                                </div>
+                                                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500 text-white dark:bg-emerald-400 dark:text-gray-900 shadow-sm">
+                                                                                    ₱ {{ number_format($product->price, 0) }}
+                                                                                </span>
+                                                                            </label>
+                                                                        @endforeach
+                                                                    @else
+                                                                        <div class="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
+                                                                            No products available in selected batch allocations
+                                                                        </div>
+                                                                    @endif
+                                                                </div>
+                                                            @endif
+
+                                                            @error('edit_selected_products')
+                                                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                                            @enderror
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </section>
+
+                                            <!-- Description -->
+                                            <section class="space-y-4">
+                                                <div>
+                                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Description</h3>
+                                                    <p class="text-sm text-gray-500 dark:text-gray-400">Additional details about the promotion.</p>
+                                                </div>
+
+                                                <div>
+                                                    <label for="edit_description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                        Description
+                                                    </label>
+                                                    <textarea id="edit_description" wire:model="edit_description"
+                                                        class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm resize-y"
+                                                        style="min-height: 80px;"
+                                                        placeholder="Promo for Halloween"></textarea>
+                                                    @error('edit_description')
+                                                        <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                                                    @enderror
+                                                </div>
+                                            </section>
+                                        </div>
+                                    </div>
+
+                                    <div class="border-t border-gray-200 bg-white px-6 py-4 dark:border-zinc-700 dark:bg-zinc-900">
+                                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                            <div class="text-sm text-gray-500 dark:text-gray-400">
+                                                Review changes carefully before updating the promo.
+                                            </div>
+                                            <div class="flex items-center gap-3">
+                                                <flux:button type="button" wire:click="cancelEdit" variant="ghost">
+                                                    Cancel
+                                                </flux:button>
+
+                                                <flux:button type="submit" variant="primary" wire:loading.attr="disabled">
+                                                    <span wire:loading.remove wire:target="update">Save Changes</span>
+                                                    <span wire:loading wire:target="update">Saving...</span>
+                                                </flux:button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
-                    @endif
-                    @error('edit_selected_products') <p class="mt-1 text-sm text-red-500">{{ $message }}</p> @enderror
+                    </section>
                 </div>
-
-
-                {{-- Description --}}
-                <div>
-                    <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Description</label>
-                    <textarea wire:model="edit_description"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-2.5 block w-full dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                            rows="3"></textarea>
-                    @error('edit_description') <p class="mt-1 text-sm text-red-500">{{ $message }}</p> @enderror
-                </div>
-
-            </div>
-
-            {{-- Modal Footer --}}
-            <div class="flex items-center p-6 space-x-2 border-t border-gray-200 rounded-b dark:border-gray-600">
-                <flux:button wire:click="update">
-                    Save changes
-                </flux:button>
-                <flux:button wire:click="cancelEdit" variant="outline">
-                    Cancel
-                </flux:button>
-            </div>
-
+            </template>
         </div>
-    </div>
-</div>
-        </section>
 
         <!-- View Modal -->
         <section>

@@ -133,7 +133,7 @@
                         </flux:navlist.item>
                     </flux:navlist.group>
                 @endif
-
+                
                 {{-- User Management --}}
                 @if(Auth::user()->hasAnyPermission([
                     'user view',

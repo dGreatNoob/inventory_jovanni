@@ -63,6 +63,7 @@ use App\Livewire\Pages\Shipment\View as createShipmentView;
 use App\Livewire\Pages\Shipment\QrScannder as ShipmentQrScannder;
 use App\Models\Branch;
 use App\Livewire\Pages\Branch\BranchInventory;
+use App\Livewire\Pages\Branch\SalesTracker;
 
 
 
@@ -145,6 +146,9 @@ Route::middleware(['auth'])->group(function () {
     
     Route::get('/branch-inventory', BranchInventory::class)
         ->name('branch.inventory');
+
+    Route::get('/branch-sales-tracker', SalesTracker::class)
+        ->name('branch.salesTrack');
 
 
     Route::get('/RequestSlip/{request_slip_id}', View::class)

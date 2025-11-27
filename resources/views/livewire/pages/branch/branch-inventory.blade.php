@@ -32,14 +32,17 @@
                                     {{ $branch->name }}
                                 </td>
                                 @foreach($products as $product)
-                                    <td class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-center bg-white dark:bg-gray-800">
+                                    <td class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-left bg-white dark:bg-gray-800">
                                         @php
                                             // Show stock from mapping or relationship
                                             $stock = $branchProductStocks[$branch->id][$product->id] ?? 0;
                                         @endphp
-                                        <span class="inline-block px-3 py-2 rounded font-semibold bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
-                                            {{ $stock }}
-                                        </span>
+                                        <div class="flex items-center justify-between">
+                                            <span class="flex-1 text-center font-semibold text-gray-900 dark:text-white">{{ $stock }}</span>
+                                            <button wire:click="openModal({{ $branch->id }}, {{ $product->id }})" class="px-2 py-1 text-xs bg-blue-500 hover:bg-blue-600 text-white rounded ml-2" title="View Shipment Details">
+                                                Details
+                                            </button>
+                                        </div>
                                     </td>
                                 @endforeach
                             </tr>
@@ -51,5 +54,51 @@
                 <p class="text-gray-500 dark:text-gray-400">No branches or products available.</p>
             @endif
         </div>
-    </div>    
+    </div>
+
+    <!-- Modal for batch details -->
+    @if($showModal)
+        <div class="fixed inset-0 flex items-center justify-center z-50" wire:click="closeModal">
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-lg max-w-lg w-full mx-4 max-h-96 overflow-y-auto" @click.stop>
+                <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Batch Details</h3>
+                @php
+                    $batches = collect($branchProductBatches[$selectedBranchId][$selectedProductId] ?? []);
+                    $totalBatches = $batches->count();
+                    $totalPages = ceil($totalBatches / $perPage);
+                    $paginatedBatches = $batches->forPage($currentPage, $perPage);
+                @endphp
+                <div class="space-y-2">
+                    @if($totalBatches > 0)
+                        @foreach($paginatedBatches as $batch)
+                            <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded text-sm">
+                                <div class="font-medium text-gray-900 dark:text-white">{{ $batch['reference'] }}</div>
+                                <div class="text-gray-600 dark:text-gray-400">Date: {{ $batch['date'] }}</div>
+                                <div class="text-gray-600 dark:text-gray-400">Quantity: {{ $batch['quantity'] }}</div>
+                            </div>
+                        @endforeach
+                    @else
+                        <p class="text-gray-600 dark:text-gray-400 text-center">No shipment details available for this product in this branch.</p>
+                    @endif
+                </div>
+                @if($totalPages > 1)
+                    <div class="flex justify-between items-center mt-4">
+                        <button wire:click="prevPage" @if($currentPage <= 1) disabled @endif class="px-3 py-1 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded {{ $currentPage <= 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-300 dark:hover:bg-gray-500' }}">
+                            Previous
+                        </button>
+                        <span class="text-sm text-gray-600 dark:text-gray-400">
+                            Page {{ $currentPage }} of {{ $totalPages }}
+                        </span>
+                        <button wire:click="nextPage" @if($currentPage >= $totalPages) disabled @endif class="px-3 py-1 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded {{ $currentPage >= $totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-300 dark:hover:bg-gray-500' }}">
+                            Next
+                        </button>
+                    </div>
+                @endif
+                <div class="mt-6 flex justify-end">
+                    <button wire:click="closeModal" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded font-medium">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>

@@ -62,12 +62,16 @@ use App\Livewire\Pages\Shipment\Index as createShipmentIndex;
 use App\Livewire\Pages\Shipment\View as createShipmentView;
 use App\Livewire\Pages\Shipment\QrScannder as ShipmentQrScannder;
 use App\Models\Branch;
+use App\Livewire\Pages\Branch\BranchInventory;
+
 
 
 
 
 use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\PurchaseOrderQRController;
+use App\Http\Controllers\ReceiptController;
+
 
 // Add missing PO Management imports
 use App\Livewire\Pages\POManagement\PurchaseOrder\Index as POManagementPurchaseOrder;
@@ -76,6 +80,7 @@ use App\Livewire\Pages\POManagement\PurchaseOrder\Edit as POManagementPurchaseOr
 use App\Livewire\Pages\POManagement\PurchaseOrder\Show as POManagementPurchaseOrderShow;
 use App\Livewire\Pages\POManagement\PurchaseOrder\ViewItem as POManagementPurchaseOrderViewItem;
 use App\Livewire\Pages\POManagement\PurchaseOrder\PODeliveries;
+
 
 
 Route::redirect('', '/login')->name('home');
@@ -137,6 +142,9 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/Branchmanagement/profile', BranchProfile::class)
         ->name('branch.profile');
+    
+    Route::get('/branch-inventory', BranchInventory::class)
+        ->name('branch.inventory');
 
 
     Route::get('/RequestSlip/{request_slip_id}', View::class)
@@ -166,6 +174,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/receivables', \App\Livewire\Pages\Finance\Receivables::class)->name('receivables');
         Route::get('/payables', \App\Livewire\Pages\Finance\Payables::class)->name('payables');
         Route::get('/expenses', \App\Livewire\Pages\Finance\Expenses::class)->name('expenses');
+        Route::get('/payments', \App\Livewire\Pages\Finance\Payments::class)->name('payments');
         Route::get('/currency-conversion', \App\Livewire\Pages\Finance\CurrencyConversion::class)->name('currency-conversion');
     });
 
@@ -179,6 +188,11 @@ Route::middleware(['auth'])->group(function () {
         $salesOrder = \App\Models\SalesOrder::with(['customers', 'agents', 'items.product'])->where('sales_order_number', $sales_order_number)->firstOrFail();
         return view('livewire.pages.qrcode.salesorderprint', compact('salesOrder'));
     })->name('sales-orders.print');
+
+    Route::get('/shipment/print/{shipping_plan_num}', function ($shipping_plan_num) {
+        $shipment = \App\Models\Shipment::with(['salesOrder.items.product'])->where('shipping_plan_num', $shipping_plan_num)->firstOrFail();
+        return view('livewire.pages.qrcode.shipmentprint', compact('shipment'));
+    })->name('shipments.print');
 
     // VDR Print Route
     Route::get('/allocation/vdr/print/{batchId}', [\App\Http\Controllers\VDRPrintController::class, 'printVDR'])->name('allocation.vdr.print');
@@ -202,7 +216,18 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('allocation')->name('allocation.')->group(function () {
         Route::get('/warehouse', Warehouse::class)->name('warehouse');
         Route::get('/sales', Sales::class)->name('sales');
+        
     });
+
+
+    Route::get('/receipts/{receipt}/show', [ReceiptController::class, 'show'])->name('receipts.show');
+    Route::get('/receipts/{receipt}/confirm', [ReceiptController::class, 'confirm'])->name('receipts.confirm');
+    Route::get('/receipts/{receipt}/preview', [ReceiptController::class, 'preview'])->name('receipts.preview');
+    Route::get('/receipts/{receipt}/items/{item}/edit', [ReceiptController::class, 'editItem'])->name('receipts.editItem');
+    Route::get('/receipts/{receipt}/items/{item}/mark-sold', [ReceiptController::class, 'markSold'])->name('receipts.markSold');
+    Route::get('/receipts/{receipt}/export-pdf', [ReceiptController::class, 'exportPDF'])->name('receipts.exportPDF');
+    Route::get('/receipts/{receipt}/export-excel', [ReceiptController::class, 'exportExcel'])->name('receipts.exportExcel');
+
 
     // Product Management
     Route::prefix('product-management')->name('product-management.')->group(function () {

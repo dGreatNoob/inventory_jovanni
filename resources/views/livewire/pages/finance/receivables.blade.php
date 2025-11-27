@@ -25,63 +25,38 @@
             <form wire:submit.prevent="save" x-show="open" x-transition>
                 <div class="grid gap-6 mb-6 md:grid-cols-2">
                     <div>
-                        <x-input type="text" wire:model.defer="reference_id" name="reference_id" label="Invoice Number" placeholder="Enter invoice number" readonly class="bg-gray-100 cursor-not-allowed"/>
+                        <x-input type="text" wire:model.defer="reference_id" name="reference_id" label="Reference No" placeholder="Enter reference number" />
                         @error('reference_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
                     <div>
-                    <x-select wire:model.defer="customer" name="customer" label="Customer">
-                            <option value="">Select Customer</option>
-                            <option value="Customer 1">Customer 1</option>
-                            <option value="Customer 2">Customer 2</option>
-                            <option value="Customer 3">Customer 3</option>
-                            <option value="Customer 4">Customer 4</option>
-                            <option value="Customer 5">Customer 5</option>
-                            <option value="Customer 6">Customer 6</option>
-                            <option value="Customer 7">Customer 7</option>
+                        <x-select wire:model.live="branch_id" name="branch_id" label="Branch">
+                            <option value="">Select Branch</option>
+                            @foreach(\App\Models\Branch::all() as $branch)
+                                @php
+                                    $agents = $branch->currentAgents;
+                                    $agentText = $agents->count() > 0 ? ' - ' . $agents->pluck('name')->join(', ') : ' - No agents assigned';
+                                @endphp
+                                <option value="{{ $branch->id }}">{{ $branch->name }}{{ $agentText }}</option>
+                            @endforeach
                         </x-select>
-                        @error('customer') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                        @error('branch_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
                     <div>
-                    <x-select wire:model.defer="sales_order" name="sales_order" label="Sales Order">
-                            <option value="">Select Sales Order</option>
-                            <option value="SO-001">SO-001</option>
-                            <option value="SO-002">SO-002</option>
-                            <option value="SO-003">SO-003</option>
-                            <option value="SO-004">SO-004</option>
-                            <option value="SO-005">SO-005</option>
-                            <option value="SO-006">SO-006</option>
-                            <option value="SO-007">SO-007</option>
-                        </x-select>
-                        @error('sales_order') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                    </div>
-                    <div>
-                        <x-input type="text" wire:model.defer="party" name="party" label="Description" placeholder="Enter description" />
-                        @error('party') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                    </div>
-                    <div>
-                        <x-input type="number" step="0.01" wire:model.defer="amount" name="amount" label="Amount" placeholder="Enter amount" />
-                        @error('amount') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                    </div>
-                    <div>
-                        <x-input type="date" wire:model.defer="date" name="date" label="Invoice Date" />
-                        @error('date') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                        <x-input type="number" step="0.01" wire:model.defer="amount_due" name="amount_due" label="Amount Due" placeholder="Enter amount due" />
+                        @error('amount_due') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
                     <div>
                         <x-input type="date" wire:model.defer="due_date" name="due_date" label="Due Date" />
                         @error('due_date') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
                     <div>
-                        <x-select wire:model.defer="payment_method" name="payment_method" label="Payment Method">
-                            <option value="">Select payment method</option>
-                            <option value="Cash">Cash</option>
-                            <option value="Bank Transfer">Bank Transfer</option>
-                            <option value="Credit Card">Credit Card</option>
-                            <option value="Check">Check</option>
-                            <option value="GCash">GCash</option>
-                            <option value="Maya">Maya</option>
-                            <option value="Others">Others</option>
+                        <x-select wire:model.defer="payment_status" name="payment_status" label="Payment Status">
+                            <option value="pending">Pending</option>
+                            <option value="paid">Paid</option>
+                            <option value="overdue">Overdue</option>
+                            <option value="cancelled">Cancelled</option>
                         </x-select>
-                        @error('payment_method') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                        @error('payment_status') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
                     <div class="md:col-span-2">
                         <x-input type="textarea" wire:model.defer="remarks" name="remarks" label="Remarks" placeholder="Enter remarks" />
@@ -112,6 +87,37 @@
                     <div class="relative">
                         <x-input type="text" wire:model.live="search" name="search" label="Search" placeholder="Search receivables..." />
                     </div>
+                    <div class="relative">
+                        <x-select wire:model.live="filter_status" name="filter_status" label="Status">
+                            <option value="">All Status</option>
+                            <option value="pending">Pending</option>
+                            <option value="paid">Paid</option>
+                            <option value="overdue">Overdue</option>
+                            <option value="cancelled">Cancelled</option>
+                        </x-select>
+                    </div>
+                    <div class="relative">
+                        <x-input type="date" wire:model.live="filter_due_date_from" name="filter_due_date_from" label="Due Date From" />
+                    </div>
+                    <div class="relative">
+                        <x-input type="date" wire:model.live="filter_due_date_to" name="filter_due_date_to" label="Due Date To" />
+                    </div>
+                    <div class="relative">
+                        <x-select wire:model.live="filter_branch" name="filter_branch" label="Branch">
+                            <option value="">All Branches</option>
+                            @foreach(\App\Models\Branch::all() as $branch)
+                                <option value="{{ $branch->id }}">{{ $branch->name }}</option>
+                            @endforeach
+                        </x-select>
+                    </div>
+                    <div class="relative">
+                        <x-select wire:model.live="filter_agent" name="filter_agent" label="Agent">
+                            <option value="">All Agents</option>
+                            @foreach(\App\Models\Agent::all() as $agent)
+                                <option value="{{ $agent->id }}">{{ $agent->name }}</option>
+                            @endforeach
+                        </x-select>
+                    </div>
                 </div>
             </div>
 
@@ -119,15 +125,13 @@
                 <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
                     <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                         <tr>
-                            <th class="px-2 py-2 whitespace-nowrap">Invoice Number</th>
-                            <th class="px-2 py-2 whitespace-nowrap">Customer</th>
-                            <th class="px-2 py-2 whitespace-nowrap">Sales Order</th>
-                            <th class="px-2 py-2 whitespace-nowrap">Description</th>
-                            <th class="px-2 py-2 whitespace-nowrap">Amount</th>
-                            <th class="px-2 py-2 whitespace-nowrap">Invoice Date</th>
+                            <th class="px-2 py-2 whitespace-nowrap">Reference No</th>
+                            <th class="px-2 py-2 whitespace-nowrap">Branch</th>
+                            <th class="px-2 py-2 whitespace-nowrap">Agent</th>
+                            <th class="px-2 py-2 whitespace-nowrap">Amount Due</th>
                             <th class="px-2 py-2 whitespace-nowrap">Due Date</th>
-                            <th class="px-2 py-2 whitespace-nowrap">Payment Method</th>
-                            <th class="px-2 py-2 whitespace-nowrap">Status</th>
+                            <th class="px-2 py-2 whitespace-nowrap">Payment Status</th>
+                            <th class="px-2 py-2 whitespace-nowrap">Remarks</th>
                             <th class="px-2 py-2 whitespace-nowrap">Actions</th>
                         </tr>
                     </thead>
@@ -135,16 +139,14 @@
                         @forelse($receivables as $receivable)
                         <tr class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700 border-gray-200 text-xs">
                             <td class="px-2 py-2 whitespace-nowrap">{{ $receivable->reference_id }}</td>
-                            <td class="px-2 py-2 whitespace-nowrap">{{ $receivable->customer }}</td>
-                            <td class="px-2 py-2 whitespace-nowrap">{{ $receivable->sales_order }}</td>
-                            <td class="px-2 py-2 whitespace-nowrap">{{ $receivable->party }}</td>
+                            <td class="px-2 py-2 whitespace-nowrap">{{ $receivable->branch?->name ?? '-' }}</td>
+                            <td class="px-2 py-2 whitespace-nowrap">{{ $receivable->agent?->name ?? '-' }}</td>
                             <td class="px-2 py-2 whitespace-nowrap">{{ number_format($receivable->amount, 2) }}</td>
-                            <td class="px-2 py-2 whitespace-nowrap">{{ $receivable->date }}</td>
-                            <td class="px-2 py-2 whitespace-nowrap">{{ $receivable->due_date }}</td>
-                            <td class="px-2 py-2 whitespace-nowrap">{{ $receivable->payment_method }}</td>
+                            <td class="px-2 py-2 whitespace-nowrap">{{ $receivable->due_date ? \Carbon\Carbon::parse($receivable->due_date)->format('M d, Y') : '-' }}</td>
                             <td class="px-2 py-2 whitespace-nowrap">
                                 @php
-                                    $statusColor = match($receivable->status) {
+                                    $currentStatus = $statusUpdates[$receivable->id] ?? $receivable->status;
+                                    $statusColor = match($currentStatus) {
                                         'pending' => 'bg-yellow-100 text-yellow-800',
                                         'paid' => 'bg-green-100 text-green-800',
                                         'cancelled' => 'bg-red-100 text-red-800',
@@ -152,10 +154,14 @@
                                         default => 'bg-gray-100 text-gray-800',
                                     };
                                 @endphp
-                                <span class="px-2 py-1 rounded text-xs font-semibold {{ $statusColor }}">
-                                    {{ ucfirst($receivable->status) }}
-                                </span>
+                                <select wire:model.live="statusUpdates.{{$receivable->id}}" wire:change="updateReceivableStatus({{$receivable->id}})" class="px-2 py-1 rounded text-xs font-semibold border-0 {{ $statusColor }}">
+                                    <option value="pending">Pending</option>
+                                    <option value="paid">Paid</option>
+                                    <option value="overdue">Overdue</option>
+                                    <option value="cancelled">Cancelled</option>
+                                </select>
                             </td>
+                            <td class="px-2 py-2 whitespace-nowrap">{{ Str::limit($receivable->remarks, 30) }}</td>
                             <td class="px-2 py-2 whitespace-nowrap">
                                 <div class="flex space-x-2">
                                     <x-button type="button" wire:click="edit({{ $receivable->id }})" variant="warning" size="sm">Edit</x-button>
@@ -165,7 +171,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="10" class="px-2 py-2 text-center text-gray-500 whitespace-nowrap">No receivables found.</td>
+                            <td colspan="8" class="px-2 py-2 text-center text-gray-500 whitespace-nowrap">No receivables found.</td>
                         </tr>
                         @endforelse
                     </tbody>
@@ -208,72 +214,29 @@
                         <div class="p-6 space-y-6">
                             <div class="grid gap-6 mb-6 md:grid-cols-2">
                                 <div>
-                                    <x-input type="text" wire:model.defer="reference_id" name="reference_id" label="Invoice Number" readonly class="bg-gray-100 cursor-not-allowed" />
+                                    <x-input type="text" wire:model.defer="reference_id" name="reference_id" label="Reference No" placeholder="Enter reference number" />
                                     @error('reference_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                 </div>
                                 <div>
-                                    <x-select wire:model.defer="customer" name="customer" label="Customer">
-                                        <option value="">Select Customer</option>
-                                        <option value="Customer 1">Customer 1</option>
-                                        <option value="Customer 2">Customer 2</option>
-                                        <option value="Customer 3">Customer 3</option>
-                                        <option value="Customer 4">Customer 4</option>
-                                        <option value="Customer 5">Customer 5</option>
-                                        <option value="Customer 6">Customer 6</option>
-                                        <option value="Customer 7">Customer 7</option>
+                                    <x-select wire:model.live="branch_id" name="branch_id" label="Branch">
+                                        <option value="">Select Branch</option>
+                                        @foreach(\App\Models\Branch::all() as $branch)
+                                            @php
+                                                $agents = $branch->currentAgents;
+                                                $agentText = $agents->count() > 0 ? ' - ' . $agents->pluck('name')->join(', ') : ' - No agents assigned';
+                                            @endphp
+                                            <option value="{{ $branch->id }}">{{ $branch->name }}{{ $agentText }}</option>
+                                        @endforeach
                                     </x-select>
-                                    @error('customer') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                    @error('branch_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                 </div>
                                 <div>
-                                    <x-select wire:model.defer="sales_order" name="sales_order" label="Sales Order">
-                                        <option value="">Select Sales Order</option>
-                                        <option value="SO-001">SO-001</option>
-                                        <option value="SO-002">SO-002</option>
-                                        <option value="SO-003">SO-003</option>
-                                        <option value="SO-004">SO-004</option>
-                                        <option value="SO-005">SO-005</option>
-                                        <option value="SO-006">SO-006</option>
-                                        <option value="SO-007">SO-007</option>
-                                    </x-select>
-                                    @error('sales_order') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                                </div>
-                                <div>
-                                    <x-input type="text" wire:model.defer="party" name="party" label="Description" placeholder="Enter description" />
-                                    @error('party') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                                </div>
-                                <div>
-                                    <x-input type="number" step="0.01" wire:model.defer="amount" name="amount" label="Amount" placeholder="Enter amount" />
-                                    @error('amount') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                                </div>
-                                <div>
-                                    <x-input type="date" wire:model.defer="date" name="date" label="Invoice Date" />
-                                    @error('date') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                    <x-input type="number" step="0.01" wire:model.defer="amount_due" name="amount_due" label="Amount Due" placeholder="Enter amount due" />
+                                    @error('amount_due') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                 </div>
                                 <div>
                                     <x-input type="date" wire:model.defer="due_date" name="due_date" label="Due Date" />
                                     @error('due_date') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                                </div>
-                                <div>
-                                    <x-select wire:model.defer="payment_method" name="payment_method" label="Payment Method">
-                                        <option value="">Select payment method</option>
-                                        <option value="Cash">Cash</option>
-                                        <option value="Bank Transfer">Bank Transfer</option>
-                                        <option value="Credit Card">Credit Card</option>
-                                        <option value="Check">Check</option>
-                                        <option value="GCash">GCash</option>
-                                        <option value="Maya">Maya</option>
-                                        <option value="Others">Others</option>
-                                    </x-select>
-                                    @error('payment_method') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                                </div>
-                                <div>
-                                    <x-select wire:model.defer="status" name="status" label="Status">
-                                        <option value="pending">Pending</option>
-                                        <option value="paid">Paid</option>
-                                        <option value="cancelled">Cancelled</option>
-                                        <option value="overdue">Overdue</option>
-                                    </x-select>
-                                    @error('status') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                 </div>
                                 <div class="md:col-span-2">
                                     <x-input type="textarea" wire:model.defer="remarks" name="remarks" label="Remarks" placeholder="Enter remarks" />

@@ -3,6 +3,8 @@
 
 <div class="pt-4">
     <div class="space-y-6">
+        <!-- Tabs Navigation -->
+        @include('livewire.pages.branch.branch-management-tabs')
         <!-- Create New Branch Form -->
          @can ('branch create')
         <section class="bg-white dark:bg-gray-800 shadow rounded-lg mb-8">

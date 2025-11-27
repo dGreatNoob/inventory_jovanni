@@ -166,6 +166,12 @@ class Product extends Model
         return (float) $this->inventory()->sum('available_quantity');
     }
 
+
+    public function getInitialQuantityAttribute()
+    {
+        return $this->inventory()->orderBy('created_at', 'asc')->value('quantity');
+    }
+
     /**
      * Helper accessor for profit margin
      */
@@ -187,5 +193,11 @@ class Product extends Model
     public function activeBatches()
     {
         return $this->hasMany(ProductBatch::class)->where('current_qty', '>', 0);
+    }
+
+    public function branches()
+    {
+        return $this->belongsToMany(Branch::class, 'branch_product')
+                    ->withPivot('stock');
     }
 }

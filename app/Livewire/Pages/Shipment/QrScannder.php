@@ -25,24 +25,42 @@ class QrScannder extends Component
     public $receivingStatus = 'good';
     public $receivingRemarks = '';
     public $currentStep = 0;
-    
+
     // Step 2 properties
     public $itemStatuses = [];
     public $itemRemarks = [];
     public $generalRemarks = '';
-    
+
     // Store the scanned PO number
     public $scannedShipmentNumber = '';
 
+    // Manual input
+    public $manualShipmentRef = '';
+
     #[On('qrScanned')]
     public function handleQrScanned($code)
-    {    
+    {
         $this->message = "QR Scanned: {$code}";
         $this->messageType = 'info';
-        
+
         $this->scannedCode = $code;
-                
+
         $this->processScannedCode($code);
+    }
+
+    public function processManualInput()
+    {
+        if (empty($this->manualShipmentRef)) {
+            $this->message = "Please enter a shipment reference number";
+            $this->messageType = 'error';
+            return;
+        }
+
+        $this->message = "Processing manual input: {$this->manualShipmentRef}";
+        $this->messageType = 'info';
+
+        $this->scannedCode = $this->manualShipmentRef;
+        $this->processScannedCode($this->manualShipmentRef);
     }
 
     public function processScannedCode($code)
@@ -52,52 +70,62 @@ class QrScannder extends Component
         $this->foundSupplyProfile = null;
         $this->scannedShipmentNumber = '';
         
-        // First, try to find a purchase order with this PO number
-        $Shipment = Shipment::with('salesOrder.items.product')
+        // First, try to find a shipment with this reference number
+        $Shipment = Shipment::with('branchAllocation.items.product')
             ->where('shipping_plan_num', $code)
-            ->first();        
+            ->first();
 
-        if ($Shipment) {          
-            
+        if ($Shipment) {
+
             //Check for valid status - allow multiple valid statuses
             $validStatuses = ['approved'];
-            if (!in_array($Shipment->shipping_status, $validStatuses)) {               
+            if (!in_array($Shipment->shipping_status, $validStatuses)) {
                 $this->foundShipment = null;
                 $this->foundSupplyProfile = null;
                 $this->showResult = true;
-                $this->message = "Shipment found, but status is '{$Shipment->shipping_status}'. Only Shipments with status 'Approved' can be processed for processing.";
+                $this->message = "Shipment found, but status is '{$Shipment->shipping_status}'. Only Shipments with status 'Approved' can be processed.";
                 $this->messageType = 'error';
                 return;
             }
-            
+
+            // Check if shipment has associated branch allocation with items
+            if (!$Shipment->branchAllocation || $Shipment->branchAllocation->items->isEmpty()) {
+                $this->foundShipment = null;
+                $this->foundSupplyProfile = null;
+                $this->showResult = true;
+                $this->message = "Shipment found, but it has no associated allocated items to review.";
+                $this->messageType = 'error';
+                return;
+            }
+
             // Store the scanned Shipping Plan number FIRST
             $this->scannedShipmentNumber = $code;
-                       
-            // Then set the found purchase order
+
+            // Then set the found shipment
             $this->foundShipment = $Shipment;
-                     
+
             $this->foundSupplyProfile = null;
             $this->showResult = true;
             $this->message = "Shipment found: {$Shipment->shipping_plan_num}";
             $this->messageType = 'success';
-            
+
             // Initialize step 2 data
             $this->initializeStep2Data();
-            
+
             // Automatically advance to step 2
             $this->currentStep = 1;
-            
+
             \Log::info("Advanced to step 1. Final state - scannedShipmentNumber: {$this->scannedShipmentNumber}");
-            
+
             return;
-        }       
+        }
     }
 
     public function initializeStep2Data()
     {
-        if (!$this->foundShipment) return;     
-        // Initialize status and remarks for each supply order
-        foreach ($this->foundShipment->salesOrder->items as $item) {
+        if (!$this->foundShipment || !$this->foundShipment->branchAllocation) return;
+        // Initialize status and remarks for each branch allocation item
+        foreach ($this->foundShipment->branchAllocation->items as $item) {
             $this->itemStatuses[$item->id] = 'good';
             $this->itemRemarks[$item->id] = '';
         }
@@ -126,9 +154,15 @@ class QrScannder extends Component
     public function submitStockInReport()
     {
         try {
+            if (!$this->foundShipment->branchAllocation) {
+                $this->message = "Cannot submit report: Shipment has no associated branch allocation.";
+                $this->messageType = 'error';
+                return;
+            }
+
             // Validate that all items have statuses
             $missingStatuses = [];
-            foreach ($this->foundShipment->salesOrder->items as $item) {
+            foreach ($this->foundShipment->branchAllocation->items as $item) {
                 if (!isset($this->itemStatuses[$item->id]) || empty($this->itemStatuses[$item->id])) {
                     $missingStatuses[] = $item->product->supply_description;
                 }
@@ -140,8 +174,8 @@ class QrScannder extends Component
                 return;
             }
 
-            // Process each supply order based on its status
-            foreach ($this->foundShipment->salesOrder->items as $item) {
+            // Process each branch allocation item based on its status
+            foreach ($this->foundShipment->branchAllocation->items as $item) {
                 $itemCondition = $this->itemStatuses[$item->id];
                 $remarks = $this->itemRemarks[$item->id] ?? '';
 
@@ -155,7 +189,7 @@ class QrScannder extends Component
                 if ($itemCondition === 'good') {
                     $supplyProfile = $item->product;
                     $oldQty = $supplyProfile->supply_qty;
-                    $qtyChange = $item->order_qty;                  
+                    $qtyChange = $item->quantity;
 
                     // Custom Spatie activity log
                     if ($qtyChange > 0) {
@@ -165,9 +199,31 @@ class QrScannder extends Component
                             ->withProperties([
                                 'sku' => $supplyProfile->supply_sku,
                                 'Shipping Plan #' => $this->foundShipment->shipping_plan_num,
-                                'Order Quantity' => $qtyChange, 
+                                'Allocated Quantity' => $qtyChange,
                             ])
                             ->log('Shipment Review' . $this->foundShipment->shipping_plan_num);
+                    }
+                    // Update branch inventory matrix in the branch_product pivot
+                    $branchId = $this->foundShipment->branchAllocation->branch_id;
+                    $productId = $item->product_id;
+
+                    $pivot = \DB::table('branch_product')->where([
+                        ['branch_id', '=', $branchId],
+                        ['product_id', '=', $productId],
+                    ])->first();
+
+                    $newStock = ($pivot ? $pivot->stock : 0) + $qtyChange;
+
+                    \DB::table('branch_product')->updateOrInsert(
+                        ['branch_id' => $branchId, 'product_id' => $productId],
+                        ['stock' => $newStock]
+                    );
+
+                    // Now deduct from initial_quantity via the oldest ProductInventory record:
+                    $initialInventory = $supplyProfile->inventory()->orderBy('created_at', 'asc')->first();
+                    if ($initialInventory && $initialInventory->quantity >= $qtyChange) {
+                        $initialInventory->quantity -= $qtyChange;
+                        $initialInventory->save();
                     }
                 }
             }
@@ -190,9 +246,9 @@ class QrScannder extends Component
             $this->foundShipment->update([
                 'shipping_status' => $poStatus,
                 'review_remarks' => $this->generalRemarks,
-            ]);          
+            ]);
 
-            $this->message = "Shipment report submitted successfully for Shippping Plan Number: {$this->foundShipment->shipping_plan_num}";
+            $this->message = "Shipment report submitted successfully for Shipping Plan Number: {$this->foundShipment->shipping_plan_num}";
             $this->messageType = 'success';
 
             // Advance to step 4 (completion)
@@ -209,53 +265,54 @@ class QrScannder extends Component
         $this->currentStep = 0;
         $this->reset(
             [
-                'scannedCode', 
-                'foundShipment', 
-                'foundSupplyProfile', 
-                'showResult', 
-                'message', 
-                'messageType', 
-                'itemStatuses', 
-                'itemRemarks', 
-                'generalRemarks', 
-                'scannedShipmentNumber'
+                'scannedCode',
+                'foundShipment',
+                'foundSupplyProfile',
+                'showResult',
+                'message',
+                'messageType',
+                'itemStatuses',
+                'itemRemarks',
+                'generalRemarks',
+                'scannedShipmentNumber',
+                'manualShipmentRef'
             ]
         );
     }
 
     public function testStep2()
-    {  
+    {
         if ($this->scannedShipmentNumber) {
-            $shipmentResults = Shipment::with(['salesOrder.items.product'])
+            $shipmentResults = Shipment::with(['branchAllocation.items.product'])
                 ->where('shipping_plan_num', $this->scannedShipmentNumber)
                 ->first();
-            
-            if ($shipmentResults) {               
+
+            if ($shipmentResults) {
                 $this->foundShipment = $shipmentResults;
                 $this->currentStep = 1;
                 $this->initializeStep2Data();
                 return;
             }
         }
-        
-        // Fallback: if no scanned PO number, get the first PO for testing
-        $testPO = Shipment::with(['salesOrder.items.product'])->first();
-        if ($testPO) {           
-            $this->foundShipment = $testPO;
+
+        // Fallback: if no scanned shipment number, get the first shipment for testing
+        $testShipment = Shipment::with(['branchAllocation.items.product'])->first();
+        if ($testShipment) {
+            $this->foundShipment = $testShipment;
             $this->currentStep = 1;
             $this->initializeStep2Data();
         }
-    }  
+    }
 
     public function fixScannedShipment()
-    {          
+    {
         if ($this->scannedCode) {
-            // Force reload the PO based on scanned code
-            $shipmentResults = Shipment::with(['salesOrder.items.product'])
+            // Force reload the shipment based on scanned code
+            $shipmentResults = Shipment::with(['branchAllocation.items.product'])
                 ->where('shipping_plan_num', $this->scannedCode)
                 ->first();
-            
-            if ($shipmentResults) {               
+
+            if ($shipmentResults) {
                 $this->scannedShipmentNumber = $this->scannedCode;
                 $this->foundShipment = $shipmentResults;
                 $this->initializeStep2Data();

@@ -124,10 +124,7 @@ class SalesOrder extends Model
             ->orWhere('shipping_method', 'like', "%{$search}%");
     }
 
-    public function salesReturns()
-    {        
-        return $this->hasMany(SalesReturn::class, 'sales_order_id');
-    }
+    // salesReturns() relationship removed - SalesReturn module has been removed
 
     public function customers()
     {
@@ -146,7 +143,7 @@ class SalesOrder extends Model
 
     public function product()
     {
-        return $this->belongsTo(SupplyProfile::class, 'product_id');
+        return $this->belongsTo(Product::class, 'product_id');
     }
 
     public function items()
@@ -154,10 +151,7 @@ class SalesOrder extends Model
         return $this->hasMany(SalesOrderItem::class, 'sales_order_id');
     }
 
-    public function branchItems()
-    {
-        return $this->hasMany(SalesOrderBranchItem::class);
-    }
+    // branchItems() relationship removed - SalesOrderBranchItem module has been removed
 
     public function shipments()
     {

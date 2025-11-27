@@ -5,8 +5,6 @@ use App\Livewire\Settings\Appearance;
 use App\Livewire\Settings\Password;
 use App\Livewire\Settings\Profile;
 use Illuminate\Support\Facades\Route;
-use App\Livewire\Pages\Requisition\RequestSlip\Index as RequestSlip;
-use App\Livewire\Pages\Requisition\RequestSlip\View;
 use App\Livewire\Pages\Bodegero\StockIn\Index as BodegeroStockIn;
 use App\Livewire\Pages\Bodegero\StockIn\View as StockInView;
 use App\Livewire\Pages\Bodegero\StockIn\Receive as StockInReceive;
@@ -15,14 +13,6 @@ use App\Livewire\Pages\Warehousestaff\StockIn\Index as StockIn;
 
 
 
-use App\Livewire\Pages\PaperRollWarehouse\Inventory\Index as PRWInventory;
-use App\Livewire\Pages\PaperRollWarehouse\Inventory\Create as PRWInventoryCreate;
-use App\Livewire\Pages\PaperRollWarehouse\PurchaseOrder\Index as PRWPurchaseOrder;
-use App\Livewire\Pages\PaperRollWarehouse\PurchaseOrder\Create as PRWPurchaseOrderCreate;
-use App\Livewire\Pages\PaperRollWarehouse\PurchaseOrder\Edit as PRWPurchaseOrderEdit;
-use App\Livewire\Pages\PaperRollWarehouse\PurchaseOrder\Show as PRWPurchaseOrderShow;
-use App\Livewire\Pages\PaperRollWarehouse\Profile\Index as PRWProfile;
-use App\Livewire\Pages\PaperRollWarehouse\PurchaseOrder\ViewItem as PRWPurchaseOrderViewItem;
 
 use App\Livewire\Pages\SupplierManagement\Profile\Index as SupplierProfile;
 use App\Livewire\Pages\SupplierManagement\Profile\View as SupplierProfileView;
@@ -49,15 +39,12 @@ use App\Livewire\ActivityLogs;
 use App\Livewire\UserLogs;
 
 use App\Livewire\Pages\SalesManagement\Index as SalesManagementIndex;
-use App\Livewire\Pages\SalesManagement\SalesReturn as SalesManagementSalesReturn;
 use App\Livewire\Pages\SalesManagement\View as Viewsalesorder;
-use App\Livewire\Pages\SalesManagement\ViewSalesReturn;
 use App\Livewire\Pages\SalesManagement\SalesPromo as SalesManagementPromo;
 use App\Livewire\Pages\SalesManagement\PromoView;
 
 
 
-use App\Livewire\SalesPrice\Index as SalesPriceIndex;
 use App\Livewire\Pages\Shipment\Index as createShipmentIndex;
 use App\Livewire\Pages\Shipment\View as createShipmentView;
 use App\Livewire\Pages\Shipment\QrScannder as ShipmentQrScannder;
@@ -90,9 +77,6 @@ Route::middleware(['auth'])->group(function () {
     Route::view('dashboard', 'dashboard')
         ->name('dashboard');
 
-    Route::get('/RequestSlip', RequestSlip::class)
-        ->name('requisition.requestslip');
-    
     Route::get('/Shipment', createShipmentIndex::class)
         ->name('shipment.index');   
         
@@ -105,15 +89,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/reports/financial-summary', \App\Livewire\Pages\Reports\ProfitLoss::class)
         ->name('reports.financial-summary');
 
-    Route::prefix('prw')->name('prw.')->group(function () {
-        Route::get('/inventory', PRWInventory::class)->name('inventory');
-        Route::get('/purchase-order', PRWPurchaseOrder::class)->name('purchaseorder');
-        Route::get('/purchase-order/create', PRWPurchaseOrderCreate::class)->name('purchaseorder.create');
-        Route::get('/purchase-order/edit/{Id}', PRWPurchaseOrderEdit::class)->name('purchaseorder.edit');
-        Route::get('/purchase-order/show/{Id}', PRWPurchaseOrderShow::class)->name('purchaseorder.show');
-        Route::get('/profile', PRWProfile::class)->name('profile');
-        Route::get('/purchase-order/view-item/{poId?}', PRWPurchaseOrderViewItem::class)->name('purchaseorder.viewItem');
-    });
 
 
     Route::prefix('po-management')->name('pomanagement.')->group(function () {
@@ -151,8 +126,6 @@ Route::middleware(['auth'])->group(function () {
         ->name('branch.salesTrack');
 
 
-    Route::get('/RequestSlip/{request_slip_id}', View::class)
-        ->name('requisition.requestslip.view');
 
     //Route::get('/warehouseguy/stockin', BodegeroStockIn::class)
         //->name('bodegero.stockin');
@@ -210,11 +183,8 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/sales-order', SalesManagementIndex::class)->name('salesorder.index');
     Route::get('/sales-order/{salesOrderId}', Viewsalesorder::class)->name('salesorder.view');
-    Route::get('/sales-return', SalesManagementSalesReturn::class)->name('salesorder.return');
-    Route::get('/sales-return/{salesreturnId}', ViewSalesReturn::class)->name('salesreturn.view');
     Route::get('/sales-promo', SalesManagementPromo::class)->name('sales.promo');
     Route::get('/promo/view/{id}', \App\Livewire\Pages\SalesManagement\PromoView::class)->name('promo.view');
-    Route::get('/sales-price', SalesPriceIndex::class)->name('sales-price.index');
 
     // Allocation Management
     Route::prefix('allocation')->name('allocation.')->group(function () {
@@ -334,8 +304,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/reports/customer-analysis', \App\Livewire\Pages\Reports\CustomerAnalysis::class)
         ->name('reports.customer-analysis');
         
-    Route::get('/reports/sales-returns', \App\Livewire\Pages\Reports\SalesReturns::class)
-        ->name('reports.sales-returns');
         
     Route::get('/reports/purchase-returns', \App\Livewire\Pages\Reports\PurchaseReturns::class)
         ->name('reports.purchase-returns');

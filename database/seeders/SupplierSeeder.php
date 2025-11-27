@@ -101,10 +101,14 @@ class SupplierSeeder extends Seeder
         ];
 
         foreach ($suppliers as $supplierData) {
-            Supplier::create([
-                'entity_id' => 1,
-                ...$supplierData
-            ]);
+            // Use name as unique identifier since code might be nullable
+            Supplier::updateOrCreate(
+                ['name' => $supplierData['name']],
+                [
+                    'entity_id' => 1,
+                    ...$supplierData
+                ]
+            );
         }
     }
 }

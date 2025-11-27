@@ -36,10 +36,8 @@ class SupplyBatch extends Model
     ];
 
     // Relationships
-    public function supplyProfile(): BelongsTo
-    {
-        return $this->belongsTo(SupplyProfile::class);
-    }
+    // supplyProfile() relationship removed - SupplyProfile module has been removed
+    // Use Product model instead if needed
 
     public function supplyOrder(): BelongsTo
     {
@@ -70,10 +68,8 @@ class SupplyBatch extends Model
                     ->where('status', 'active');
     }
 
-    public function scopeBySupplyProfile(Builder $query, int $supplyProfileId): Builder
-    {
-        return $query->where('supply_profile_id', $supplyProfileId);
-    }
+    // scopeBySupplyProfile() removed - SupplyProfile module has been removed
+    // Use product_id instead if needed
 
     // FIFO ordering (First In, First Out) - earliest expiration first
     public function scopeFifo(Builder $query): Builder
@@ -140,44 +136,14 @@ class SupplyBatch extends Model
         return $this->save();
     }
 
-    // Generate a new batch number for a supply profile
-    public static function generateBatchNumber(int $supplyProfileId): string
-    {
-        $supply = SupplyProfile::find($supplyProfileId);
-        $prefix = $supply ? strtoupper(substr($supply->supply_sku, 0, 3)) : 'SUP';
-        $date = Carbon::now()->format('Ymd');
-        
-        // Find the next sequential number for today
-        $todayBatches = self::where('supply_profile_id', $supplyProfileId)
-                           ->where('batch_number', 'like', "{$prefix}{$date}%")
-                           ->count();
-                           
-        $sequence = str_pad($todayBatches + 1, 3, '0', STR_PAD_LEFT);
-        
-        return "{$prefix}{$date}{$sequence}";
-    }
-
-    // Get the oldest available batch for FIFO deduction
-    public static function getOldestAvailableBatch(int $supplyProfileId, float $requiredQty = null): ?self
-    {
-        $query = self::active()
-                    ->bySupplyProfile($supplyProfileId)
-                    ->fifo();
-                    
-        if ($requiredQty) {
-            $query->where('current_qty', '>=', $requiredQty);
-        }
-        
-        return $query->first();
-    }
-
-    // Get all batches for FIFO deduction
-    public static function getBatchesForFifoDeduction(int $supplyProfileId, float $totalQtyNeeded): array
-    {
-        $batches = self::active()
-                      ->bySupplyProfile($supplyProfileId) 
-                      ->fifo()
-                      ->get();
+    // generateBatchNumber() removed - SupplyProfile module has been removed
+    // Use Product model instead if needed
+    
+    // getOldestAvailableBatch() removed - SupplyProfile module has been removed
+    // Use Product model instead if needed
+    
+    // getBatchesForFifoDeduction() removed - SupplyProfile module has been removed
+    // Use Product model instead if needed
 
         $selectedBatches = [];
         $remainingQty = $totalQtyNeeded;

@@ -41,7 +41,7 @@ class View extends Component
         $this->salesOrderId = $salesOrderId;
         $this->salesOrderResult = SalesOrder::findOrFail($salesOrderId);
         $this->company_results  = \App\Models\Customer::all()->pluck('name', 'id');
-        $this->product_results  = \App\Models\SupplyProfile::all()->pluck('supply_description', 'id');
+        $this->product_results  = \App\Models\Product::all()->pluck('name', 'id');
         $this->shippingMethodDropDown = SalesOrder::shippingMethodDropDown();
         $this->paymentMethodDropdown  = SalesOrder::paymentMethodDropdown();
         $this->paymentTermsDropdown   = SalesOrder::paymentTermsDropdown();

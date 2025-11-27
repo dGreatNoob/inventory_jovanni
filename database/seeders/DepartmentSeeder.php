@@ -24,7 +24,10 @@ class DepartmentSeeder extends Seeder
         ];
 
         foreach ($departments as $department) {
-            \App\Models\Department::create($department);
+            \App\Models\Department::updateOrCreate(
+                ['name' => $department['name']],
+                $department
+            );
         }
     }
 }

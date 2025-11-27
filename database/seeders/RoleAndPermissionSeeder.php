@@ -124,46 +124,59 @@ class RoleAndPermissionSeeder extends Seeder
 
         // Create and assign roles to users with correct department IDs
         $adminDept = Department::where('name', 'Admin Department')->firstOrFail();
-        $super_admin = User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'admin@admin.com',
-            'email_verified_at' => now(),
-            'password' => bcrypt('admin123!'),
-
-            'department_id' => $adminDept->id,
-
-        ]);
-        $super_admin->assignRole(RolesEnum::SUPERADMIN->value);
-
+        $super_admin = User::firstOrCreate(
+            ['email' => 'admin@admin.com'],
+            [
+                'name' => 'Test User',
+                'email_verified_at' => now(),
+                'password' => bcrypt('admin123!'),
+                'department_id' => $adminDept->id,
+            ]
+        );
+        if (!$super_admin->hasRole(RolesEnum::SUPERADMIN->value)) {
+            $super_admin->assignRole(RolesEnum::SUPERADMIN->value);
+        }
 
         $purchaseDept = Department::where('name', 'Purchase Department')->firstOrFail();
-        $purchaser = User::factory()->create([
-            'name' => 'Mrs. Purchaser',
-            'email' => 'purchaser@spc.com',
-            'email_verified_at' => now(),
-            'password' => bcrypt('admin123!'),
-            'department_id' => $purchaseDept->id,
-        ]);
-        $purchaser->assignRole(RolesEnum::PURCHASER->value);
+        $purchaser = User::firstOrCreate(
+            ['email' => 'purchaser@spc.com'],
+            [
+                'name' => 'Mrs. Purchaser',
+                'email_verified_at' => now(),
+                'password' => bcrypt('admin123!'),
+                'department_id' => $purchaseDept->id,
+            ]
+        );
+        if (!$purchaser->hasRole(RolesEnum::PURCHASER->value)) {
+            $purchaser->assignRole(RolesEnum::PURCHASER->value);
+        }
 
         $rawmatDept = Department::where('name', 'Raw Materials Department')->firstOrFail();
-        $rawmat = User::factory()->create([
-            'name' => 'Mr. Rawmat',
-            'email' => 'rawmat@spc.com',
-            'email_verified_at' => now(),
-            'password' => bcrypt('admin123!'),
-            'department_id' => $rawmatDept->id,
-        ]);
-        $rawmat->assignRole(RolesEnum::RAWMAT->value);
+        $rawmat = User::firstOrCreate(
+            ['email' => 'rawmat@spc.com'],
+            [
+                'name' => 'Mr. Rawmat',
+                'email_verified_at' => now(),
+                'password' => bcrypt('admin123!'),
+                'department_id' => $rawmatDept->id,
+            ]
+        );
+        if (!$rawmat->hasRole(RolesEnum::RAWMAT->value)) {
+            $rawmat->assignRole(RolesEnum::RAWMAT->value);
+        }
 
         $supplyDept = Department::where('name', 'Supply Department')->firstOrFail();
-        $supply = User::factory()->create([
-            'name' => 'Mr. Supply',
-            'email' => 'supply@spc.com',
-            'email_verified_at' => now(),
-            'password' => bcrypt('admin123!'),
-            'department_id' => $supplyDept->id,
-        ]);
-        $supply->assignRole(RolesEnum::SUPPLY->value);
+        $supply = User::firstOrCreate(
+            ['email' => 'supply@spc.com'],
+            [
+                'name' => 'Mr. Supply',
+                'email_verified_at' => now(),
+                'password' => bcrypt('admin123!'),
+                'department_id' => $supplyDept->id,
+            ]
+        );
+        if (!$supply->hasRole(RolesEnum::SUPPLY->value)) {
+            $supply->assignRole(RolesEnum::SUPPLY->value);
+        }
     }
 }

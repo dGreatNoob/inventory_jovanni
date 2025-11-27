@@ -1,0 +1,157 @@
+[
+    {
+        "table": "raw_mat_profiles",
+        "model_exists": false,
+        "model_path": null,
+        "codebase_references": 4,
+        "database_exists": true,
+        "record_count": 0,
+        "has_foreign_keys": false,
+        "referenced_by": [
+            "raw_mat_orders"
+        ]
+    },
+    {
+        "table": "raw_mat_orders",
+        "model_exists": false,
+        "model_path": null,
+        "codebase_references": 3,
+        "database_exists": true,
+        "record_count": 0,
+        "has_foreign_keys": true,
+        "referenced_by": [
+            "raw_mat_invs"
+        ]
+    },
+    {
+        "table": "raw_mat_invs",
+        "model_exists": false,
+        "model_path": null,
+        "codebase_references": 3,
+        "database_exists": true,
+        "record_count": 0,
+        "has_foreign_keys": true,
+        "referenced_by": []
+    },
+    {
+        "table": "request_slips",
+        "model_exists": false,
+        "model_path": null,
+        "codebase_references": 6,
+        "database_exists": true,
+        "record_count": 0,
+        "has_foreign_keys": true,
+        "referenced_by": []
+    },
+    {
+        "table": "sales_returns",
+        "model_exists": false,
+        "model_path": null,
+        "codebase_references": 3,
+        "database_exists": true,
+        "record_count": 0,
+        "has_foreign_keys": true,
+        "referenced_by": [
+            "sales_return_items"
+        ]
+    },
+    {
+        "table": "sales_return_items",
+        "model_exists": false,
+        "model_path": null,
+        "codebase_references": 4,
+        "database_exists": true,
+        "record_count": 0,
+        "has_foreign_keys": true,
+        "referenced_by": []
+    },
+    {
+        "table": "sales_order_branch_items",
+        "model_exists": false,
+        "model_path": null,
+        "codebase_references": 5,
+        "database_exists": true,
+        "record_count": 0,
+        "has_foreign_keys": true,
+        "referenced_by": []
+    },
+    {
+        "table": "sales_prices",
+        "model_exists": false,
+        "model_path": null,
+        "codebase_references": 5,
+        "database_exists": true,
+        "record_count": 0,
+        "has_foreign_keys": false,
+        "referenced_by": []
+    },
+    {
+        "table": "supply_profiles",
+        "model_exists": false,
+        "model_path": null,
+        "codebase_references": 13,
+        "database_exists": true,
+        "record_count": 15,
+        "has_foreign_keys": true,
+        "referenced_by": [
+            "purchase_order_items",
+            "sales_return_items",
+            "supply_batches",
+            "supply_orders"
+        ]
+    },
+    {
+        "table": "supply_orders",
+        "model_exists": false,
+        "model_path": null,
+        "codebase_references": 9,
+        "database_exists": true,
+        "record_count": 0,
+        "has_foreign_keys": true,
+        "referenced_by": [
+            "supply_batches"
+        ]
+    },
+    {
+        "table": "supply_batches",
+        "model_exists": false,
+        "model_path": null,
+        "codebase_references": 4,
+        "database_exists": true,
+        "record_count": 0,
+        "has_foreign_keys": true,
+        "referenced_by": []
+    },
+    {
+        "table": "notifications",
+        "model_exists": false,
+        "model_path": null,
+        "codebase_references": 9,
+        "database_exists": true,
+        "record_count": 0,
+        "has_foreign_keys": false,
+        "referenced_by": []
+    },
+    {
+        "table": "item_types",
+        "model_exists": false,
+        "model_path": null,
+        "codebase_references": 3,
+        "database_exists": true,
+        "record_count": 5,
+        "has_foreign_keys": false,
+        "referenced_by": [
+            "supply_profiles"
+        ]
+    },
+    {
+        "table": "purchase_order_items",
+        "model_exists": false,
+        "model_path": null,
+        "codebase_references": 7,
+        "database_exists": true,
+        "record_count": 9,
+        "has_foreign_keys": true,
+        "referenced_by": []
+    }
+]

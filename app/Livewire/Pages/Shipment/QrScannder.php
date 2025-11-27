@@ -14,7 +14,7 @@ class QrScannder extends Component
     public $scannedCode = '';
     public $foundShipment = null;
 
-    public $foundSupplyProfile = null;
+    public $foundProduct = null;
     public $showResult = false;
 
     public $stockInQuantity = '';
@@ -70,7 +70,7 @@ class QrScannder extends Component
     { 
         // Clear any previous state
         $this->foundShipment = null;
-        $this->foundSupplyProfile = null;
+        $this->foundProduct = null;
         $this->scannedShipmentNumber = '';
         
         // First, try to find a shipment with this reference number
@@ -84,7 +84,7 @@ class QrScannder extends Component
             $validStatuses = ['approved', 'in_transit'];
             if (!in_array($Shipment->shipping_status, $validStatuses)) {
                 $this->foundShipment = null;
-                $this->foundSupplyProfile = null;
+                $this->foundProduct = null;
                 $this->showResult = true;
                 $this->message = "Shipment found, but status is '{$Shipment->shipping_status}'. Only Shipments with status 'Approved' or 'In Transit' can be processed.";
                 $this->messageType = 'error';
@@ -94,7 +94,7 @@ class QrScannder extends Component
             // Check if shipment has associated branch allocation with items
             if (!$Shipment->branchAllocation || $Shipment->branchAllocation->items->isEmpty()) {
                 $this->foundShipment = null;
-                $this->foundSupplyProfile = null;
+                $this->foundProduct = null;
                 $this->showResult = true;
                 $this->message = "Shipment found, but it has no associated allocated items to review.";
                 $this->messageType = 'error';
@@ -107,7 +107,7 @@ class QrScannder extends Component
             // Then set the found shipment
             $this->foundShipment = $Shipment;
 
-            $this->foundSupplyProfile = null;
+            $this->foundProduct = null;
             $this->showResult = true;
             $this->message = "Shipment found: {$Shipment->shipping_plan_num}";
             $this->messageType = 'success';
@@ -192,19 +192,18 @@ class QrScannder extends Component
                     'receiving_remarks' => $remarks,
                 ]);
 
-                // Update supply profile quantity for good items
+                // Update product inventory for good items
                 if ($itemCondition === 'good') {
-                    $supplyProfile = $item->product;
-                    $oldQty = $supplyProfile->supply_qty;
+                    $product = $item->product;
                     $qtyChange = $item->quantity;
 
                     // Custom Spatie activity log
                     if ($qtyChange > 0) {
                         activity('Shipment Review')
                             ->causedBy(Auth::user())
-                            ->performedOn($supplyProfile)
+                            ->performedOn($product)
                             ->withProperties([
-                                'sku' => $supplyProfile->supply_sku,
+                                'sku' => $product->sku,
                                 'Shipping Plan #' => $this->foundShipment->shipping_plan_num,
                                 'Allocated Quantity' => $qtyChange,
                             ])
@@ -227,9 +226,9 @@ class QrScannder extends Component
                     );
 
                     // Now deduct from initial_quantity via the oldest ProductInventory record:
-                    $initialInventory = $supplyProfile->inventory()->orderBy('created_at', 'asc')->first();
-                    if ($initialInventory && $initialInventory->quantity >= $qtyChange) {
-                        $initialInventory->quantity -= $qtyChange;
+                    $initialInventory = $product->inventory()->orderBy('created_at', 'asc')->first();
+                    if ($initialInventory && $initialInventory->available_quantity >= $qtyChange) {
+                        $initialInventory->available_quantity -= $qtyChange;
                         $initialInventory->save();
                     }
                 }
@@ -274,7 +273,7 @@ class QrScannder extends Component
             [
                 'scannedCode',
                 'foundShipment',
-                'foundSupplyProfile',
+                'foundProduct',
                 'showResult',
                 'message',
                 'messageType',
@@ -360,7 +359,7 @@ class QrScannder extends Component
             [
                 'scannedCode', 
                 'foundShipment', 
-                'foundSupplyProfile', 
+                'foundProduct', 
                 'showResult', 
                 'message', 
                 'messageType'

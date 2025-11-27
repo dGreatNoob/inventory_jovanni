@@ -32,8 +32,6 @@ class SupplyOrder extends Model
         return $this->belongsTo(PurchaseOrder::class);
     }
 
-    public function supplyProfile(): BelongsTo
-    {
-        return $this->belongsTo(SupplyProfile::class);
-    }
+    // supplyProfile() relationship removed - SupplyProfile module has been removed
+    // Use Product model instead if needed
 }

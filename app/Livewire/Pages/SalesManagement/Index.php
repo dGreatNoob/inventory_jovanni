@@ -3,12 +3,10 @@ namespace App\Livewire\Pages\SalesManagement;
 
 use Livewire\Component;
 use App\Models\SalesOrder;
-use App\Models\SupplyProfile;
 use App\Models\SupplyBatch;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Layout;
 use Livewire\WithPagination;
-use App\Models\SalesReturn;
 use App\Models\SalesOrderItem;
 use Illuminate\Support\Str;
 
@@ -567,54 +565,23 @@ class Index extends Component
             }
 
             // when editing sales order quantity
-            if($this->editValue){
-                // compute all returned quantity in sales return items
-                $getSalesReturns = SalesReturn::with('items')->where('sales_order_id', $this->editValue)->get();
-
-                $sum = 0;
-                if ($getSalesReturns->isNotEmpty()) {
-                    foreach ($getSalesReturns as $salesReturn) {
-                        $sum += $salesReturn->items->sum('quantity');
-                    }
-                }
-
-                if($value < $sum ){
-                    // dapat malaki pa ang value ng salesorder quantity compare sa sales return quantity
-                    return $fail("The quantity cannot be less than the total returned quantity of {$sum}.");
-                }
-            }
+            // Sales return validation removed - sales returns module has been removed
         }
 
     }
 
     private function createBranchItems($salesOrder)
     {
-        foreach ($this->customerSelected as $branchId) {
-            foreach ($this->items as $item) {
-                if (!empty($item['product_id'])) {
-                    $product = \App\Models\Product::find($item['product_id']);
-                    if ($product) {
-                        \App\Models\SalesOrderBranchItem::create([
-                            'sales_order_id' => $salesOrder->id,
-                            'branch_id' => $branchId,
-                            'product_id' => $item['product_id'],
-                            'unit_price' => $item['unit_price'],
-                            'quantity' => $item['quantity'],
-                            'subtotal' => $item['quantity'] * $item['unit_price'],
-                        ]);
-                    }
-                }
-            }
-        }
+        // Function disabled - SalesOrderBranchItem module has been removed
+        // Branch items functionality is no longer available
+        return;
     }
 
     private function updateBranchItems($salesOrder)
     {
-        // Delete existing branch items
-        $salesOrder->branchItems()->delete();
-
-        // Create new branch items
-        $this->createBranchItems($salesOrder);
+        // Function disabled - SalesOrderBranchItem module has been removed
+        // Branch items functionality is no longer available
+        return;
     }
 
     public function resetForms()

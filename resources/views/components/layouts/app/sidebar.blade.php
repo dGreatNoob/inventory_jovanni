@@ -20,7 +20,7 @@
         </a>
 
         <flux:navlist variant="outline">
-            <flux:navlist.group :heading="__('')" class="grid">
+            <flux:navlist.group class="grid">
                 {{-- Dashboard --}}
                 <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')"
                     wire:navigate>{{ __('Dashboard') }}
@@ -85,9 +85,9 @@
                 ]))
                     <flux:navlist.group 
                         expandable 
-                        :expanded="request()->routeIs('product-management.*')" 
+                        :expanded="request()->routeIs('product-management.*') || request()->routeIs('sales.promo')" 
                         :heading="__('Product Management')" 
-                        class="lg:grid text-left"
+                        class="lg:grid"
                     >
                         <flux:navlist.item 
                             icon="cube" 
@@ -133,7 +133,7 @@
                         </flux:navlist.item>
                     </flux:navlist.group>
                 @endif
-                
+
                 {{-- User Management --}}
                 @if(Auth::user()->hasAnyPermission([
                     'user view',
@@ -165,7 +165,7 @@
                     expandable
                     :expanded="request()->routeIs('allocation.*')"
                     :heading="__('Allocation')"
-                    class="lg:grid text-left"
+                    class="lg:grid"
                 >
                     <flux:navlist.item
                             icon="building-storefront"
@@ -198,7 +198,7 @@
                     'agent assign branch',
                     'agent transfer branch'
                 ]))
-                <flux:navlist.group expandable :expanded="request()->routeIs('customer.*', 'branch.*', 'agent.*')"
+                <flux:navlist.group expandable :expanded="request()->routeIs('customer.*') || request()->routeIs('branch.*') || request()->routeIs('agent.*')"
                     :heading="__('Operational Management')" class="lg:grid">
                     <flux:navlist.item icon="users" href="{{ route('agent.profile') }}"
                         :current="request()->routeIs('agent.profile')" wire:navigate>{{ __('Agent management') }}
@@ -298,8 +298,6 @@
                                 :current="request()->routeIs('warehousestaff.stockout')" wire:navigate>{{ __('Stock Out') }}
                             </flux:navlist.item>
                         @endif
-                        <!-- <flux:navlist.item icon="banknotes" href="javascript:void(0);"  wire:navigate>{{ __('Returns') }}
-                        </flux:navlist.item> -->
                     </flux:navlist.group>
                 @endif
 
@@ -546,31 +544,6 @@
                     @endif
                 @endrole --}}
 
-                {{-- Warehouse Staff --}}
-                <!-- @php
-                    $warehouseRoutes = [
-                        'warehousestaff.stockin',
-                        'warehousestaff.stockout',
-                    ];
-                    $hasWarehouseRoutes = collect($warehouseRoutes)->some(fn ($name) => Route::has($name));
-                @endphp
-                @if ($hasWarehouseRoutes)
-                    <flux:navlist.group expandable :expanded="request()->routeIs('warehousestaff.*')"
-                        :heading="__('Warehouse Staff')" class="lg:grid">
-                        @if (Route::has('warehousestaff.stockin'))
-                            <flux:navlist.item icon="qr-code" href="{{ route('warehousestaff.stockin') }}"
-                                :current="request()->routeIs('warehousestaff.stockin')" wire:navigate>{{ __('Stock In') }}
-                            </flux:navlist.item>
-                        @endif
-                        @if (Route::has('warehousestaff.stockout'))
-                            <flux:navlist.item icon="qr-code" href="{{ route('warehousestaff.stockout') }}"
-                                :current="request()->routeIs('warehousestaff.stockout')" wire:navigate>{{ __('Stock Out') }}
-                            </flux:navlist.item>
-                        @endif
-                        <flux:navlist.item icon="banknotes" href="javascript:void(0);"  wire:navigate>{{ __('Returns') }}
-                        </flux:navlist.item>
-                    </flux:navlist.group>
-                @endif -->
 
                 {{-- Reports --}}
                 {{-- <flux:navlist.group expandable :expanded="request()->routeIs('reports.*')" :heading="__('Reports')"

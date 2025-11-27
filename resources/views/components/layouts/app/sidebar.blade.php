@@ -53,6 +53,28 @@
                     </flux:navlist.group>
                 @endif
 
+                {{-- Purchase Order Management --}}
+                 @if(Auth::user()->hasAnyPermission([
+                    'po view',          
+                    'po create',        
+                    'po edit',          
+                    'po delete',        
+                    'po approve',      
+                    'po receive',       
+                    'po report view'    
+                ]))
+                <flux:navlist.group expandable :expanded="request()->routeIs('pomanagement.*')" :heading="__('PO Management')" class="lg:grid">
+                    <flux:navlist.item icon="inbox-stack" href="{{ route('pomanagement.purchaseorder') }}"
+                        :current="request()->routeIs('pomanagement.purchaseorder')" wire:navigate>
+                        {{ __('Purchase Order') }}
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="truck" href="{{ route('pomanagement.deliveries') }}"
+                        :current="request()->routeIs('pomanagement.deliveries')" wire:navigate>
+                        {{ __('Deliveries') }}
+                    </flux:navlist.item>
+                </flux:navlist.group>
+                @endif
+
                 {{-- Product Management --}}
                 @if(Auth::user()->hasAnyPermission([
                     'product view', 
@@ -245,6 +267,32 @@
                                 :current="request()->routeIs('shipment.qrscanner')" wire:navigate>{{ __('QR Scanner') }}
                             </flux:navlist.item>
                         @endif
+                    </flux:navlist.group>
+                @endif
+
+                {{-- Warehouse Staff --}}
+                @php
+                    $warehouseRoutes = [
+                        'warehousestaff.stockin',
+                        'warehousestaff.stockout',
+                    ];
+                    $hasWarehouseRoutes = collect($warehouseRoutes)->some(fn ($name) => Route::has($name));
+                @endphp
+                @if ($hasWarehouseRoutes)
+                    <flux:navlist.group expandable :expanded="request()->routeIs('warehousestaff.*')"
+                        :heading="__('Warehouse Staff')" class="lg:grid">
+                        @if (Route::has('warehousestaff.stockin'))
+                            <flux:navlist.item icon="qr-code" href="{{ route('warehousestaff.stockin') }}"
+                                :current="request()->routeIs('warehousestaff.stockin')" wire:navigate>{{ __('Stock In') }}
+                            </flux:navlist.item>
+                        @endif
+                        @if (Route::has('warehousestaff.stockout'))
+                            <flux:navlist.item icon="qr-code" href="{{ route('warehousestaff.stockout') }}"
+                                :current="request()->routeIs('warehousestaff.stockout')" wire:navigate>{{ __('Stock Out') }}
+                            </flux:navlist.item>
+                        @endif
+                        <!-- <flux:navlist.item icon="banknotes" href="javascript:void(0);"  wire:navigate>{{ __('Returns') }}
+                        </flux:navlist.item> -->
                     </flux:navlist.group>
                 @endif
 

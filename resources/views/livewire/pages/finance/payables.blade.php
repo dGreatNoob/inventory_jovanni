@@ -20,58 +20,50 @@
             </div>
         </div>
     </div>
+    
     <div class="">
-        <x-collapsible-card title="Add Payable" open="false" size="full">
+       <x-collapsible-card title="Add Payable" open="false" size="full">
             <form wire:submit.prevent="save" x-show="open" x-transition>
                 <div class="grid gap-6 mb-6 md:grid-cols-2">
                     <div>
-                        <x-input type="text" wire:model.defer="reference_id" name="reference_id" label="Invoice Number" placeholder="Enter invoice number" readonly class="bg-gray-100 cursor-not-allowed"/>
+                        <x-input type="text" wire:model="reference_id" name="reference_id" label="Invoice Number" placeholder="Enter invoice number" readonly class="bg-gray-100 cursor-not-allowed"/>
                         @error('reference_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
                     <div>
-                    <x-select wire:model.defer="supplier" name="supplier" label="Supplier">
-                            <option value="">Select Supplier</option>
-                            <option value="Supplier 1">Supplier 1</option>
-                            <option value="Supplier 2">Supplier 2</option>
-                            <option value="Supplier 3">Supplier 3</option>
-                            <option value="Supplier 4">Supplier 4</option>
-                            <option value="Supplier 5">Supplier 5</option>
-                            <option value="Supplier 6">Supplier 6</option>
-                            <option value="Supplier 7">Supplier 7</option>
-                        </x-select>
+                        <x-input type="text" wire:model="supplier" name="supplier" label="Supplier" placeholder="Supplier Name" readonly class="bg-gray-100 cursor-not-allowed" />
                         @error('supplier') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
                     <div>
-                    <x-select wire:model.defer="purchase_order" name="purchase_oder" label="Purchase Order">
+                        <x-select wire:model.live="purchase_order_id" name="purchase_order_id" label="Purchase Order">
                             <option value="">Select Purchase Order</option>
-                            <option value="PO #1">PO #1</option>
-                            <option value="PO #2">PO #2</option>
-                            <option value="PO #3">PO #3</option>
-                            <option value="PO #4">PO #4</option>
-                            <option value="PO #5">PO #5</option>
-                            <option value="PO #6">PO #6</option>
-                            <option value="PO #7">PO #7</option>
+                            @foreach($purchaseOrders as $po)
+                                <option value="{{ $po->id }}">{{ $po->po_num }}</option>
+                            @endforeach
                         </x-select>
+                        @error('purchase_order_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                    </div>
+                    <div>
+                        <x-input type="text" wire:model="purchase_order" name="purchase_order" label="PO Number" placeholder="PO Number" readonly class="bg-gray-100 cursor-not-allowed" />
                         @error('purchase_order') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
                     <div>
-                        <x-input type="text" wire:model.defer="party" name="party" label="Description" placeholder="Enter Description" />
+                        <x-input type="text" wire:model="party" name="party" label="Description" placeholder="Enter Description" />
                         @error('party') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
                     <div>
-                        <x-input type="date" wire:model.defer="date" name="date" label="Date" />
+                        <x-input type="date" wire:model="date" name="date" label="Date" />
                         @error('date') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
                     <div>
-                        <x-input type="date" wire:model.defer="due_date" name="due_date" label="Due Date" />
+                        <x-input type="date" wire:model="due_date" name="due_date" label="Due Date" />
                         @error('due_date') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
                     <div>
-                        <x-input type="number" step="0.01" wire:model.defer="amount" name="amount" label="Amount" placeholder="Enter amount" />
+                        <x-input type="number" step="0.01" wire:model="amount" name="amount" label="Amount" placeholder="Enter amount" readonly class="bg-gray-100 cursor-not-allowed" />
                         @error('amount') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
                     <div>
-                        <x-select wire:model.defer="payment_method" name="payment_method" label="Payment Method">
+                        <x-select wire:model="payment_method" name="payment_method" label="Payment Method">
                             <option value="">Select payment method</option>
                             <option value="Cash">Cash</option>
                             <option value="Bank Transfer">Bank Transfer</option>
@@ -84,7 +76,7 @@
                         @error('payment_method') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
                     <div class="md:col-span-2">
-                        <x-input type="textarea" wire:model.defer="remarks" name="remarks" label="Remarks" placeholder="Enter remarks" />
+                        <x-input type="textarea" wire:model="remarks" name="remarks" label="Remarks" placeholder="Enter remarks" />
                         @error('remarks') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
                 </div>
@@ -151,6 +143,7 @@
                                         'paid' => 'bg-green-100 text-green-800',
                                         'cancelled' => 'bg-red-100 text-red-800',
                                         'partial' => 'bg-blue-100 text-blue-800',
+                                        'overdue' => 'bg-red-100 text-red-800',
                                         default => 'bg-gray-100 text-gray-800',
                                     };
                                 @endphp
@@ -192,6 +185,7 @@
             </div>
         </x-collapsible-card>
 
+        <!-- Edit Modal -->
         <div x-data="{ show: @entangle('showEditModal') }" x-show="show" x-cloak class="fixed top-0 left-0 right-0 z-50 w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] max-h-full flex items-center justify-center">
             <div class="relative w-full max-w-2xl max-h-full">
                 <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
@@ -210,69 +204,70 @@
                         <div class="p-6 space-y-6">
                             <div class="grid gap-6 mb-6 md:grid-cols-2">
                                 <div>
-                                    <x-input type="text" wire:model.defer="reference_id" name="reference_id" label="Invoice Number" placeholder="Enter Invoice Number" />
+                                    <x-input type="text" wire:model="reference_id" name="reference_id" label="Invoice Number" placeholder="Enter Invoice Number" />
                                     @error('reference_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                 </div>
                                 <div>
-                                    <x-select wire:model.defer="supplier" name="supplier" label="Supplier">
-                                        <option value="">Select Supplier</option>
-                                        <option value="Supplier 1">Supplier 1</option>
-                                        <option value="Supplier 2">Supplier 2</option>
-                                        <option value="Supplier 3">Supplier 3</option>
-                                        <option value="Supplier 4">Supplier 4</option>
-                                        <option value="Supplier 5">Supplier 5</option>
-                                        <option value="Supplier 6">Supplier 6</option>
-                                        <option value="Supplier 7">Supplier 7</option>
-                                    </x-select>
+                                    <x-input type="text" wire:model="supplier" name="supplier" label="Supplier" placeholder="Enter supplier" />
                                     @error('supplier') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                 </div>
                                 <div>
-                                    <x-select wire:model.defer="purchase_order" name="purchase_order" label="Purchase Order">
+                                    <x-select wire:model="purchase_order_id" name="purchase_order_id" label="Purchase Order">
                                         <option value="">Select Purchase Order</option>
-                                        <option value="PO #1">PO #1</option>
-                                        <option value="PO #2">PO #2</option>
-                                        <option value="PO #3">PO #3</option>
-                                        <option value="PO #4">PO #4</option>
-                                        <option value="PO #5">PO #5</option>
-                                        <option value="PO #6">PO #6</option>
-                                        <option value="PO #7">PO #7</option>
+                                        @foreach($purchaseOrders as $po)
+                                            <option value="{{ $po->id }}">{{ $po->po_num }}</option>
+                                        @endforeach
                                     </x-select>
-                                    @error('purchase_order') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                    @error('purchase_order_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                 </div>
                                 <div>
-                                    <x-input type="text" wire:model.defer="party" name="party" label="Party" placeholder="Enter party" />
+                                    <x-input type="text" wire:model="party" name="party" label="Description" placeholder="Enter description" />
                                     @error('party') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                 </div>
                                 <div>
-                                    <x-input type="date" wire:model.defer="date" name="date" label="Date" />
+                                    <x-input type="date" wire:model="date" name="date" label="Date" />
                                     @error('date') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                 </div>
                                 <div>
-                                    <x-input type="date" wire:model.defer="due_date" name="due_date" label="Due Date" />
+                                    <x-input type="date" wire:model="due_date" name="due_date" label="Due Date" />
                                     @error('due_date') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                 </div>
                                 <div>
-                                    <x-input type="number" step="0.01" wire:model.defer="amount" name="amount" label="Amount" placeholder="Enter amount" />
+                                    <x-input type="number" step="0.01" wire:model="amount" name="amount" label="Amount" placeholder="Enter amount" />
                                     @error('amount') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                 </div>
                                 <div>
-                                    <x-input type="number" step="0.01" wire:model.defer="balance" name="balance" label="Balance" placeholder="Enter balance" />
+                                    <x-input type="number" step="0.01" wire:model="balance" name="balance" label="Balance" placeholder="Enter balance" />
                                     @error('balance') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                 </div>
                                 <div>
                                     @if($balance == 0)
                                         <x-input type="text" name="status" label="Status" value="Paid" readonly class="bg-gray-100 cursor-not-allowed" />
                                     @else
-                                        <x-select wire:model.defer="status" name="status" label="Status">
+                                        <x-select wire:model="status" name="status" label="Status">
                                             <option value="pending" @if($balance == $amount) selected @endif>Pending</option>
                                             <option value="partial" @if($balance < $amount && $balance > 0) selected @endif>Partial</option>
                                             <option value="cancelled" @if($status == 'cancelled') selected @endif>Cancelled</option>
+                                            <option value="overdue" @if($status == 'overdue') selected @endif>Overdue</option>
                                         </x-select>
                                     @endif
                                     @error('status') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                 </div>
+                                <div>
+                                    <x-select wire:model="payment_method" name="payment_method" label="Payment Method">
+                                        <option value="">Select payment method</option>
+                                        <option value="Cash">Cash</option>
+                                        <option value="Bank Transfer">Bank Transfer</option>
+                                        <option value="Credit Card">Credit Card</option>
+                                        <option value="Check">Check</option>
+                                        <option value="GCash">GCash</option>
+                                        <option value="Maya">Maya</option>
+                                        <option value="Others">Others</option>
+                                    </x-select>
+                                    @error('payment_method') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                </div>
                                 <div class="md:col-span-2">
-                                    <x-input type="textarea" wire:model.defer="remarks" name="remarks" label="Remarks" placeholder="Enter remarks" />
+                                    <x-input type="textarea" wire:model="remarks" name="remarks" label="Remarks" placeholder="Enter remarks" />
                                     @error('remarks') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                 </div>
                             </div>
@@ -286,6 +281,7 @@
             </div>
         </div>
 
+        <!-- Delete Confirmation Modal -->
         <div x-data="{ show: @entangle('showDeleteModal') }" x-show="show" x-cloak class="fixed top-0 left-0 right-0 z-50 w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] max-h-full flex items-center justify-center">
             <div class="relative w-full max-w-md max-h-full">
                 <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
@@ -309,4 +305,4 @@
             </div>
         </div>
     </div>
-</div> 
+</div>

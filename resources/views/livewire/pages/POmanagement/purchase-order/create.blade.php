@@ -151,7 +151,7 @@
                                                     </div>
                                                 </div>
                                                 <div class="text-right ml-4">
-                                                    <div class="font-semibold text-gray-900 dark:text-white">₱{{ number_format($product->price, 2) }}</div>
+                                                    <div class="font-semibold text-gray-900 dark:text-white">₱{{ number_format($product->cost, 2) }}</div>
                                                 </div>
                                             </div>
                                         </div>

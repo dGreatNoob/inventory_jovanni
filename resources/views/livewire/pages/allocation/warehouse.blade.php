@@ -1142,13 +1142,13 @@ document.addEventListener('DOMContentLoaded', function() {
                         <!-- Actions -->
                         <td class="px-4 py-2 text-sm">
                             <div class="flex items-center justify-center space-x-2" style="min-width: 150px; min-height:42px;">
-                                <button 
+                                <button
                                     wire:click="editRecord({{ $record->id }})"
                                     class="px-3 py-1 text-xs font-medium text-white rounded bg-blue-600 hover:bg-blue-700">
                                     Edit
                                 </button>
-                                <button 
-                                    wire:click="deleteRecord({{ $record->id }})"
+                                <button
+                                    wire:click="removeBatch({{ $record->id }})"
                                     class="px-3 py-1 text-xs font-medium text-white bg-red-600 rounded hover:bg-red-700">
                                     Delete
                                 </button>

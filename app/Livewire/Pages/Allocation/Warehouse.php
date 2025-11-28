@@ -1538,11 +1538,6 @@ class Warehouse extends Component
 
     public function removeBatch(BatchAllocation $batch)
     {
-        if ($batch->status !== 'draft') {
-            session()->flash('error', 'Cannot delete non-draft batch.');
-            return;
-        }
-
         $batch->delete();
         session()->flash('message', 'Batch deleted successfully.');
         $this->loadBatchAllocations();

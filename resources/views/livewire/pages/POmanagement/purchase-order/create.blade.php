@@ -75,12 +75,11 @@
                             <h5 class="text-lg font-bold text-gray-900 dark:text-white">List of Products to Order</h5>
                         </div>
                         <div class="flex space-x-3 items-center">
-                            <button 
-                                type="button" 
-                                wire:click="openModal" 
-                                @if(empty($supplier_id)) disabled @endif
-                                class="inline-flex items-center px-5 py-2.5 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 disabled:opacity-50 disabled:cursor-not-allowed"
-                                title="{{ empty($supplier_id) ? 'Please select a supplier first' : 'Add Product' }}"
+                            <button
+                                type="button"
+                                wire:click="openModal"
+                                class="inline-flex items-center px-5 py-2.5 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+                                title="Add Product"
                             >
                                 <svg class="w-3.5 h-3.5 me-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 18">
                                     <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 1v16M1 9h16" />

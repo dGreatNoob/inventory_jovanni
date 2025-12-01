@@ -86,7 +86,7 @@
                                             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                                 <div>
                                                     <flux:input
-                                                        wire:model="form.product_number"
+                                                        wire:model.live="form.product_number"
                                                         label="Product ID"
                                                         required
                                                         placeholder="6-digit Product ID"
@@ -254,37 +254,17 @@
                                                 </div>
                                             </div>
 
-                                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                                <div>
-                                                    <flux:input
-                                                        wire:model="form.sku"
-                                                        label="SKU"
-                                                        required
-                                                        placeholder="Enter SKU"
-                                                        class="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                                    />
-                                                    @error('form.sku') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
-                                                </div>
-
-                                                <div class="flex flex-col">
-                                                    <flux:input
-                                                        wire:model="form.barcode"
-                                                        label="Barcode"
-                                                        placeholder="Auto-generated from Product ID + Color + Price"
-                                                        class="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                                        inputmode="numeric"
-                                                        pattern="\\d{16}"
-                                                        maxlength="16"
-                                                        readonly
-                                                    />
-                                                    @error('form.barcode') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
-                                                    <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                                        <svg class="mr-1 inline h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
-                                                        </svg>
-                                                        16-digit format: first 6 = Product ID, next 4 = Color ID, last 6 = Selling Price (e.g., 2500.00 → 250000).
-                                                    </p>
-                                                </div>
+                                            <div>
+                                                <flux:input
+                                                    wire:model="form.sku"
+                                                    label="SKU"
+                                                    placeholder="Enter SKU (optional)"
+                                                    class="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                                />
+                                                @error('form.sku') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                                    Optional: Enter a unique SKU identifier for this product.
+                                                </p>
                                             </div>
 
                                             <div>
@@ -296,143 +276,6 @@
                                                 />
                                             </div>
                                             @error('form.remarks') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
-                                        </div>
-                                    </section>
-
-                                    <!-- Inventory -->
-                                    <section class="space-y-4">
-                                        <div>
-                                            <flux:heading size="md" class="text-gray-900 dark:text-white">Inventory</flux:heading>
-                                            <p class="text-sm text-gray-500 dark:text-gray-400">Track quantities and handling information.</p>
-                                        </div>
-
-                                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                            <div>
-                                                <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Unit of Measure</label>
-                                                <select
-                                                    wire:model="form.uom"
-                                                class="block h-11 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
-                                                >
-                                                    <option value="pcs">Pieces</option>
-                                                    <option value="kg">Kilograms</option>
-                                                    <option value="lbs">Pounds</option>
-                                                    <option value="g">Grams</option>
-                                                    <option value="oz">Ounces</option>
-                                                    <option value="l">Liters</option>
-                                                    <option value="ml">Milliliters</option>
-                                                    <option value="m">Meters</option>
-                                                    <option value="cm">Centimeters</option>
-                                                    <option value="ft">Feet</option>
-                                                    <option value="in">Inches</option>
-                                                </select>
-                                                @error('form.uom') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
-                                            </div>
-
-                                            <div>
-                                                <flux:input
-                                                    wire:model="form.shelf_life_days"
-                                                    label="Shelf Life (Days)"
-                                                    type="number"
-                                                    placeholder="Enter shelf life"
-                                                    class="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                                />
-                                                @error('form.shelf_life_days') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
-                                            </div>
-                                        </div>
-
-                                        <flux:input
-                                            wire:model="form.initial_quantity"
-                                            label="Initial Quantity"
-                                            type="number"
-                                            step="0.01"
-                                            placeholder="Enter initial quantity"
-                                            class="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                        />
-                                        @error('form.initial_quantity') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
-                                    </section>
-
-                                    <!-- Categorization -->
-                                    <section class="space-y-4">
-                                        <div>
-                                            <flux:heading size="md" class="text-gray-900 dark:text-white">Categorization</flux:heading>
-                                            <p class="text-sm text-gray-500 dark:text-gray-400">Organize the product within your catalog tree.</p>
-                                        </div>
-
-                                        <div>
-                                            <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                                Category <span class="text-red-500">*</span>
-                                            </label>
-                                            <select
-                                                wire:model="form.category_id"
-                                                class="block h-11 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
-                                            >
-                                                <option value="">Select Category</option>
-                                                @foreach($this->categories as $category)
-                                                    <option value="{{ $category->id }}">{{ $category->name }}</option>
-                                                @endforeach
-                                            </select>
-                                            @error('form.category_id') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
-                                        </div>
-                                    </section>
-
-                                    <!-- Supplier -->
-                                    <section class="space-y-4">
-                                        <div>
-                                            <flux:heading size="md" class="text-gray-900 dark:text-white">Supplier</flux:heading>
-                                            <p class="text-sm text-gray-500 dark:text-gray-400">Link the product to its sourcing partner.</p>
-                                        </div>
-
-                                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                            <div>
-                                                <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Supplier</label>
-                                                <select
-                                                    wire:model.live="form.supplier_id"
-                                                    class="block h-11 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
-                                                >
-                                                    <option value="">Select Supplier</option>
-                                                    @foreach($suppliers as $supplier)
-                                                        <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
-                                                    @endforeach
-                                                </select>
-                                                @error('form.supplier_id') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
-                                            </div>
-
-                                            <div>
-                                                <flux:input
-                                                    wire:model="form.supplier_code"
-                                                    label="Supplier Code"
-                                                    placeholder="Auto-filled from supplier"
-                                                    readonly
-                                                    class="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                                />
-                                                @error('form.supplier_code') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
-                                            </div>
-                                        </div>
-
-                                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                            <div>
-                                                <flux:input
-                                                    wire:model="form.soft_card"
-                                                    label="Soft Card (Optional)"
-                                                    placeholder="Enter cloth code from supplier"
-                                                    class="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                                />
-                                                @error('form.soft_card') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
-                                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Cloth code of the product by the supplier (optional)</p>
-                                            </div>
-
-                                            <div>
-                                                <flux:input
-                                                    wire:model="form.cost"
-                                                    label="Cost"
-                                                    type="number"
-                                                    step="0.01"
-                                                    required
-                                                    placeholder="0.00"
-                                                    class="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                                />
-                                                @error('form.cost') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
-                                            </div>
                                         </div>
                                     </section>
 
@@ -495,7 +338,7 @@
                                                 <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Selling Price</label>
                                                 <div class="flex items-center gap-2">
                                                     <flux:input
-                                                        wire:model="form.price"
+                                                        wire:model.live="form.price"
                                                         type="number"
                                                         step="0.01"
                                                         required
@@ -530,6 +373,165 @@
                                             @endif
                                             </div>
                                         </div>
+
+                                        <div class="mt-4">
+                                            <flux:input
+                                                wire:model="form.barcode"
+                                                label="Barcode"
+                                                placeholder="Auto-generated from Product ID + Color + Price"
+                                                class="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                                inputmode="numeric"
+                                                pattern="\\d{16}"
+                                                maxlength="16"
+                                                readonly
+                                            />
+                                            @error('form.barcode') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                                <svg class="mr-1 inline h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                                                </svg>
+                                                16-digit format: first 6 = Product ID, next 4 = Color ID, last 6 = Selling Price (e.g., 2500.00 → 250000).
+                                            </p>
+                                        </div>
+                                    </section>
+
+                                    <!-- Categorization -->
+                                    <section class="space-y-4">
+                                        <div>
+                                            <flux:heading size="md" class="text-gray-900 dark:text-white">Categorization</flux:heading>
+                                            <p class="text-sm text-gray-500 dark:text-gray-400">Organize the product within your catalog tree.</p>
+                                        </div>
+
+                                        <div>
+                                            <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                Category <span class="text-red-500">*</span>
+                                            </label>
+                                            <select
+                                                wire:model="form.category_id"
+                                                class="block h-11 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                            >
+                                                <option value="">Select Category</option>
+                                                @foreach($this->categories as $category)
+                                                    <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                                @endforeach
+                                            </select>
+                                            @error('form.category_id') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                        </div>
+                                    </section>
+
+                                    <!-- Supplier -->
+                                    <section class="space-y-4">
+                                        <div>
+                                            <flux:heading size="md" class="text-gray-900 dark:text-white">Supplier</flux:heading>
+                                            <p class="text-sm text-gray-500 dark:text-gray-400">Link the product to its sourcing partner.</p>
+                                        </div>
+
+                                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                            <div>
+                                                <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Supplier</label>
+                                                <select
+                                                    wire:model.live="form.supplier_id"
+                                                    class="block h-11 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                >
+                                                    <option value="">Select Supplier</option>
+                                                    @foreach($suppliers as $supplier)
+                                                        <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                                @error('form.supplier_id') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                            </div>
+
+                                            <div>
+                                                <flux:input
+                                                    wire:model="form.supplier_code"
+                                                    label="Supplier SKU"
+                                                    placeholder="Enter supplier's SKU/barcode for this product"
+                                                    class="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                                />
+                                                @error('form.supplier_code') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                                    Enter the supplier's product identifier (SKU or barcode), not the supplier's company code.
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                            <div>
+                                                <flux:input
+                                                    wire:model="form.soft_card"
+                                                    label="Soft Card (Optional)"
+                                                    placeholder="Enter cloth code from supplier"
+                                                    class="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                                />
+                                                @error('form.soft_card') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Cloth code of the product by the supplier (optional)</p>
+                                            </div>
+
+                                            <div>
+                                                <flux:input
+                                                    wire:model="form.cost"
+                                                    label="Cost"
+                                                    type="number"
+                                                    step="0.01"
+                                                    required
+                                                    placeholder="0.00"
+                                                    class="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                                />
+                                                @error('form.cost') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                            </div>
+                                        </div>
+                                    </section>
+
+                                    <!-- Inventory -->
+                                    <section class="space-y-4">
+                                        <div>
+                                            <flux:heading size="md" class="text-gray-900 dark:text-white">Inventory</flux:heading>
+                                            <p class="text-sm text-gray-500 dark:text-gray-400">Track quantities and handling information.</p>
+                                        </div>
+
+                                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                            <div>
+                                                <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Unit of Measure</label>
+                                                <select
+                                                    wire:model="form.uom"
+                                                class="block h-11 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                >
+                                                    <option value="pcs">Pieces</option>
+                                                    <option value="kg">Kilograms</option>
+                                                    <option value="lbs">Pounds</option>
+                                                    <option value="g">Grams</option>
+                                                    <option value="oz">Ounces</option>
+                                                    <option value="l">Liters</option>
+                                                    <option value="ml">Milliliters</option>
+                                                    <option value="m">Meters</option>
+                                                    <option value="cm">Centimeters</option>
+                                                    <option value="ft">Feet</option>
+                                                    <option value="in">Inches</option>
+                                                </select>
+                                                @error('form.uom') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                            </div>
+
+                                            <div>
+                                                <flux:input
+                                                    wire:model="form.shelf_life_days"
+                                                    label="Shelf Life (Days)"
+                                                    type="number"
+                                                    placeholder="Enter shelf life"
+                                                    class="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                                />
+                                                @error('form.shelf_life_days') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                            </div>
+                                        </div>
+
+                                        <flux:input
+                                            wire:model="form.initial_quantity"
+                                            label="Initial Quantity"
+                                            type="number"
+                                            step="0.01"
+                                            placeholder="Enter initial quantity"
+                                            class="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                        />
+                                        @error('form.initial_quantity') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                                     </section>
 
                                     <!-- Status -->

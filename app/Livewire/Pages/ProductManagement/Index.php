@@ -209,7 +209,10 @@ class Index extends Component
         }
 
         $supplier = Supplier::find($supplierId);
-        $this->form['supplier_code'] = $supplier?->code ?? '';
+
+        // Don't auto-fill supplier_code - it should be the supplier's SKU/barcode for this product
+        // Clear it when supplier changes so user can enter the correct value
+        $this->form['supplier_code'] = '';
 
         // Auto-assign Red Tag rule if supplier indicates red tag capability
         if (data_get($supplier, 'is_red_tag', false)) {
@@ -639,7 +642,7 @@ class Index extends Component
             $this->validate([
                 'form.name' => 'required|string|max:255',
                 'form.product_number' => 'required|regex:/^\d{6}$/|unique:products,product_number' . ($this->editingProduct ? ',' . $this->editingProduct->id : ''),
-                'form.sku' => 'required|string|max:255|unique:products,sku' . ($this->editingProduct ? ',' . $this->editingProduct->id : ''),
+                'form.sku' => 'nullable|string|max:255|unique:products,sku' . ($this->editingProduct ? ',' . $this->editingProduct->id : ''),
                 'form.barcode' => ['required','regex:/^\d{16}$/','unique:products,barcode' . ($this->editingProduct ? ',' . $this->editingProduct->id : '')],
                 'form.category_id' => 'required|exists:categories,id',
                 'form.supplier_id' => 'required|exists:suppliers,id',

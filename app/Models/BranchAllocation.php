@@ -27,4 +27,9 @@ class BranchAllocation extends Model
     {
         return $this->hasMany(BranchAllocationItem::class);
     }
+
+    public function shipments()
+    {
+        return $this->hasMany(Shipment::class, 'branch_allocation_id');
+    }
 }

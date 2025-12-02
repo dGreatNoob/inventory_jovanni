@@ -219,7 +219,7 @@
                     </div>
                 </div>
 
-                <div class="detail-card">
+                <!-- <div class="detail-card">
                     <h3>Customer Information</h3>
                     <div class="detail-row">
                         <span class="detail-label">Name:</span>
@@ -233,7 +233,7 @@
                         <span class="detail-label">Address:</span>
                         <span class="detail-value">{{ $shipment->customer_address ?? 'N/A' }}</span>
                     </div>
-                </div>
+                </div> -->
             </div>
 
             @if($shipment->salesOrder && $shipment->salesOrder->items->count() > 0)

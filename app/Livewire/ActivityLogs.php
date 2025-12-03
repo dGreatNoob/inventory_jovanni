@@ -59,13 +59,13 @@ class ActivityLogs extends Component
         $allSubjectTypes = Activity::select('subject_type')->distinct()->pluck('subject_type');
         $subjectTypes = $allSubjectTypes->map(function($type) {
             $base = class_basename($type);
-            return $base === 'SupplyProfile' ? 'ProductProfile' : $base;
+            return $base;
         })->unique()->values();
 
         // Map selected base name back to full class name for filtering
         $selectedFullSubjectType = $allSubjectTypes->first(function($type) {
             $base = class_basename($type);
-            $selected = $this->subjectType === 'ProductProfile' ? 'SupplyProfile' : $this->subjectType;
+            $selected = $this->subjectType;
             return $base === $selected;
         });
         if ($this->subjectType && $selectedFullSubjectType) {

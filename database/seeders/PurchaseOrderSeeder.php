@@ -7,7 +7,7 @@ use App\Models\PurchaseOrderItem;
 use App\Models\Supplier;
 use App\Models\Department;
 use App\Models\User;
-use App\Models\SupplyProfile;
+use App\Models\Product;
 use App\Enums\PurchaseOrderStatus;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
@@ -23,7 +23,7 @@ class PurchaseOrderSeeder extends Seeder
         $suppliers = Supplier::take(5)->get();
         $departments = Department::take(3)->get();
         $users = User::take(5)->get();
-        $products = SupplyProfile::take(10)->get();
+        $products = Product::take(10)->get();
 
         if ($suppliers->isEmpty() || $departments->isEmpty() || $users->isEmpty()) {
             $this->command?->warn('Suppliers, Departments, or Users not found. Please seed them first.');
@@ -31,7 +31,7 @@ class PurchaseOrderSeeder extends Seeder
         }
 
         if ($products->isEmpty()) {
-            $this->command?->warn('SupplyProfiles not found. Purchase orders will be created without items. Please seed SupplyProfiles first for complete data.');
+            $this->command?->warn('Products not found. Purchase orders will be created without items. Please seed Products first for complete data.');
         }
 
         // Helper function to safely get random item

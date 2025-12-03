@@ -26,13 +26,9 @@ class RoleAndPermissionSeeder extends Seeder
         // ✅ Step 2: Define roles and their permissions
         $roles = [
             RolesEnum::PURCHASER->value => [
-                PermissionEnum::CREATE_SUPPLY_PURCHASE_ORDER,
-                PermissionEnum::APPROVE_SUPPLY_PURCHASE_ORDER,
-                PermissionEnum::VIEW_SUPPLY_PURCHASE_ORDER,
-
-                PermissionEnum::CREATE_RAWMAT_PURCHASE_ORDER,
-                PermissionEnum::APPROVE_RAWMAT_PURCHASE_ORDER,
-                PermissionEnum::VIEW_RAWMAT_PURCHASE_ORDER,
+                PermissionEnum::CREATE_PURCHASE_ORDER,
+                PermissionEnum::APPROVE_PURCHASE_ORDER,
+                PermissionEnum::VIEW_PURCHASE_ORDER,
 
                 PermissionEnum::CREATE_REQUEST_SLIP,
                 PermissionEnum::APPROVE_REQUEST_SLIP,
@@ -40,15 +36,6 @@ class RoleAndPermissionSeeder extends Seeder
                 PermissionEnum::DELETE_REQUEST_SLIP,
             ],
 
-            RolesEnum::RAWMAT->value => [
-                PermissionEnum::CREATE_REQUEST_SLIP,
-                PermissionEnum::VIEW_REQUEST_SLIP,
-            ],
-
-            RolesEnum::SUPPLY->value => [
-                PermissionEnum::CREATE_REQUEST_SLIP,
-                PermissionEnum::VIEW_REQUEST_SLIP,
-            ],
 
             RolesEnum::PRODUCTMANAGEMENT->value => [
                 PermissionEnum::PRODUCT_VIEW,          // View product list and details
@@ -151,32 +138,6 @@ class RoleAndPermissionSeeder extends Seeder
             $purchaser->assignRole(RolesEnum::PURCHASER->value);
         }
 
-        $rawmatDept = Department::where('name', 'Raw Materials Department')->firstOrFail();
-        $rawmat = User::firstOrCreate(
-            ['email' => 'rawmat@spc.com'],
-            [
-                'name' => 'Mr. Rawmat',
-                'email_verified_at' => now(),
-                'password' => bcrypt('admin123!'),
-                'department_id' => $rawmatDept->id,
-            ]
-        );
-        if (!$rawmat->hasRole(RolesEnum::RAWMAT->value)) {
-            $rawmat->assignRole(RolesEnum::RAWMAT->value);
-        }
-
-        $supplyDept = Department::where('name', 'Supply Department')->firstOrFail();
-        $supply = User::firstOrCreate(
-            ['email' => 'supply@spc.com'],
-            [
-                'name' => 'Mr. Supply',
-                'email_verified_at' => now(),
-                'password' => bcrypt('admin123!'),
-                'department_id' => $supplyDept->id,
-            ]
-        );
-        if (!$supply->hasRole(RolesEnum::SUPPLY->value)) {
-            $supply->assignRole(RolesEnum::SUPPLY->value);
-        }
+        // Raw material and supply user creation removed - those roles no longer exist
     }
 }

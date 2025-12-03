@@ -19,7 +19,6 @@ class QrScannder extends Component
 
     public $stockInQuantity = '';
 
-    public $selectedSupplyOrder = null;
 
     public $showStockOutModal = false;
 

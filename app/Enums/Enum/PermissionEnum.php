@@ -5,13 +5,9 @@ namespace App\Enums\Enum;
 enum PermissionEnum: string
 {
     // 🛒 Purchase-related
-    case CREATE_SUPPLY_PURCHASE_ORDER = 'create supply purchase order';
-    case APPROVE_SUPPLY_PURCHASE_ORDER = 'approve supply purchase order';
-    case VIEW_SUPPLY_PURCHASE_ORDER = 'view supply purchase order';
-
-    case CREATE_RAWMAT_PURCHASE_ORDER = 'create rawmat purchase order';
-    case APPROVE_RAWMAT_PURCHASE_ORDER = 'approve rawmat purchase order';
-    case VIEW_RAWMAT_PURCHASE_ORDER = 'view rawmat purchase order';
+    case CREATE_PURCHASE_ORDER = 'create purchase order';
+    case APPROVE_PURCHASE_ORDER = 'approve purchase order';
+    case VIEW_PURCHASE_ORDER = 'view purchase order';
 
     // 📄 Request Slip-related
     case VIEW_REQUEST_SLIP = 'view request slip';

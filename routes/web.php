@@ -5,10 +5,6 @@ use App\Livewire\Settings\Appearance;
 use App\Livewire\Settings\Password;
 use App\Livewire\Settings\Profile;
 use Illuminate\Support\Facades\Route;
-use App\Livewire\Pages\Bodegero\StockIn\Index as BodegeroStockIn;
-use App\Livewire\Pages\Bodegero\StockIn\View as StockInView;
-use App\Livewire\Pages\Bodegero\StockIn\Receive as StockInReceive;
-use App\Livewire\Pages\Bodegero\StockOut\Index as StockOut;
 use App\Livewire\Pages\Warehousestaff\StockIn\Index as StockIn;
 
 
@@ -130,8 +126,8 @@ Route::middleware(['auth'])->group(function () {
 
     //Route::get('/warehouseguy/stockin', BodegeroStockIn::class)
         //->name('bodegero.stockin');
-    Route::get('/warehouseguy/stockout', StockOut::class)
-        ->name('bodegero.stockout');
+    // Route::get('/warehouseguy/stockout', StockOut::class)
+        // ->name('bodegero.stockout');
     // Route::get('/Bodegero/StockIn/View/{purchaseOrder}', StockInView::class)
     // ->name('bodegero.stockin.view');
     // Route::get('/Bodegero/StockIn/Receive/{purchaseOrder}', StockInReceive::class)
@@ -158,7 +154,7 @@ Route::middleware(['auth'])->group(function () {
 
     //QR CODE PRINTING
     Route::get('/purchase-order/print/{po_num}', function ($po_num) {
-        $purchaseOrder = \App\Models\PurchaseOrder::with(['supplier', 'department', 'supplyOrders.supplyProfile'])->where('po_num', $po_num)->firstOrFail();
+        $purchaseOrder = \App\Models\PurchaseOrder::with(['supplier', 'department', 'items.product'])->where('po_num', $po_num)->firstOrFail();
         return view('livewire.pages.qrcode.purchaseorderprint', compact('purchaseOrder'));
     })->name('purchase-orders.print');
 

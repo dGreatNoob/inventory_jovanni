@@ -30,7 +30,7 @@ return new class extends Migration
         Schema::table('sales_return_items', function (Blueprint $table) {           
              $table->foreign('product_id')
                 ->references('id')    // referenced column
-                ->on('supply_profiles')      // referenced table
+                ->on('products')      // referenced table
                 ->onDelete('cascade'); // cascade delete
      
         }); 

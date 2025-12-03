@@ -16,17 +16,13 @@ class Shipment extends Model
         'sales_order_id',
         'batch_allocation_id',
         'branch_allocation_id',
-        'customer_name',
-        'customer_address',
         'delivery_method',
         'carrier_name',
         'vehicle_plate_number',
         'shipping_priority',
         'special_handling_notes',
         'shipping_status',
-        'scheduled_ship_date',
-        'customer_email',
-        'customer_phone'
+        'scheduled_ship_date'
     ];
 
     public static function deliveryMethodDropDown(){
@@ -49,13 +45,11 @@ class Shipment extends Model
     }
 
     public function scopeSearch($query, $search)
-    {      
-        return $query->where('shipping_plan_num', 'like', "%{$search}%")            
-            ->orWhere('customer_name', 'like', "%{$search}%")
-            ->orWhere('customer_address', 'like', "%{$search}%")
-            ->orWhere('delivery_method', 'like', "%{$search}%")            
+    {
+        return $query->where('shipping_plan_num', 'like', "%{$search}%")
+            ->orWhere('delivery_method', 'like', "%{$search}%")
             ->orWhere('vehicle_plate_number', 'like', "%{$search}%")
-            ->orWhere('shipping_priority', 'like', "%{$search}%")          
+            ->orWhere('shipping_priority', 'like', "%{$search}%")
             ->orWhere('carrier_name', 'like', "%{$search}%");
     }
 
@@ -130,22 +124,18 @@ class Shipment extends Model
                     $Username = $approver_id->name;
                 }    
                 
-                $fields =  [                 
+                $fields =  [
                     'shipping_status' => $this->shipping_status ?? 'Pending',
                     'scheduled_ship_date'=> $this->scheduled_ship_date ?? 'N/A',
-                    'customer_id' => $customerName ?? 'N/A',                
+                    'customer_id' => $customerName ?? 'N/A',
                     'shipping_plan_num' => $this->shipping_plan_num ?? 'N/A',
-                    'customer_name'=> $this->customer_name ?? 'N/A',
-                    'customer_phone'=> $this->customer_phone ?? 'N/A',
-                    'customer_email'=> $this->customer_email ?? 'N/A',
-                    'customer_address' => $this->customer_address ?? 'N/A',
                     'delivery_method'=> $this->delivery_method ?? 'N/A',
                     'carrier_name'=> $this->carrier_name ?? 'N/A',
-                    'vehicle_plate_number'=> $this->vehicle_plate_number ?? 'N/A', 
+                    'vehicle_plate_number'=> $this->vehicle_plate_number ?? 'N/A',
                     'shipping_priority'=> $this->shipping_priority ?? 'N/A',
-                    'special_handling_notes'=> $this->special_handling_notes ?? 'N/A', 
+                    'special_handling_notes'=> $this->special_handling_notes ?? 'N/A',
                     'approver_id'=> $Username ?? 'N/A',
-                    'updated_at' => $this->updated_at ?? 'N/A',                  
+                    'updated_at' => $this->updated_at ?? 'N/A',
                 ];
                        
                  return collect($fields)

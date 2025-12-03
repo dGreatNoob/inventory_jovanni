@@ -59,6 +59,7 @@ use App\Livewire\Pages\Branch\SalesTracker;
 use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\PurchaseOrderQRController;
 use App\Http\Controllers\ReceiptController;
+use App\Http\Controllers\DeliveryReceiptController;
 
 
 // Add missing PO Management imports
@@ -180,6 +181,10 @@ Route::middleware(['auth'])->group(function () {
     // Receipt PDF and Excel Export Routes
     Route::get('/allocation/receipt/pdf/{receiptId}', [\App\Http\Controllers\ReceiptController::class, 'exportPDF'])->name('allocation.receipt.pdf');
     Route::get('/allocation/receipt/excel/{receiptId}', [\App\Http\Controllers\ReceiptController::class, 'exportExcel'])->name('allocation.receipt.excel');
+
+    // Delivery Receipt Routes
+    Route::get('/allocation/delivery-receipt/generate/{branchAllocationId}', [\App\Http\Controllers\DeliveryReceiptController::class, 'generateDeliveryReceipt'])->name('allocation.delivery-receipt.generate');
+    Route::get('/allocation/delivery-receipt/preview/{branchAllocationId}', [\App\Http\Controllers\DeliveryReceiptController::class, 'previewDeliveryReceipt'])->name('allocation.delivery-receipt.preview');
 
     Route::get('/sales-order', SalesManagementIndex::class)->name('salesorder.index');
     Route::get('/sales-order/{salesOrderId}', Viewsalesorder::class)->name('salesorder.view');

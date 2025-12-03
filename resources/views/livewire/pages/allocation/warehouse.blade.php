@@ -36,8 +36,16 @@ window.addEventListener('open-vdr-print', (event) => {
 // VDR Excel Download Handler
 window.addEventListener('open-excel-download', (event) => {
     const { url } = event.detail;
-    
+
     // Open the Excel export URL which will trigger a download
+    window.open(url, '_blank');
+});
+
+// Delivery Receipt Download Handler
+window.addEventListener('download-delivery-receipt', (event) => {
+    const { url, filename } = event.detail;
+
+    // Open the delivery receipt URL which will trigger a download
     window.open(url, '_blank');
 });
 
@@ -74,8 +82,16 @@ document.addEventListener('DOMContentLoaded', function() {
     // VDR Excel Download
     window.Livewire.on('open-excel-download', (data) => {
         const { url } = data[0];
-        
+
         // Open the Excel export URL which will trigger a download
+        window.open(url, '_blank');
+    });
+
+    // Delivery Receipt Download
+    window.Livewire.on('download-delivery-receipt', (data) => {
+        const { url, filename } = data[0];
+
+        // Open the delivery receipt URL which will trigger a download
         window.open(url, '_blank');
     });
 });
@@ -294,24 +310,26 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label for="batch_number" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
-                                            Batch Number *
+                                            Batch Numbers *
                                         </label>
-                                        <select id="batch_number"
-                                                wire:model.live="batch_number"
-                                                @if($isEditing) disabled @endif
-                                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white disabled:bg-gray-200 dark:disabled:bg-gray-700 disabled:cursor-not-allowed"
-                                                required>
-                                            <option value="">Select a batch number</option>
+                                        <div class="border border-gray-300 rounded-md shadow-sm p-2 max-h-48 overflow-y-auto dark:bg-gray-600 dark:border-gray-500">
                                             @foreach($availableBatchNumbers as $batchNum)
-                                                <option value="{{ $batchNum }}">{{ $batchNum }}</option>
+                                                <label class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-500 cursor-pointer">
+                                                    <input type="checkbox"
+                                                           wire:model.live="selectedBatchNumbers"
+                                                           value="{{ $batchNum }}"
+                                                           class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                                           @if($isEditing) disabled @endif>
+                                                    <span class="ml-2 text-sm text-gray-900 dark:text-white">{{ $batchNum }}</span>
+                                                </label>
                                             @endforeach
-                                        </select>
+                                        </div>
                                         @if($isEditing)
                                             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                                Batch number cannot be changed when editing
+                                                Batch numbers cannot be changed when editing
                                             </p>
                                         @endif
-                                        @error('batch_number')
+                                        @error('selectedBatchNumbers')
                                             <span class="text-red-500 text-sm">{{ $message }}</span>
                                         @enderror
                                     </div>
@@ -403,9 +421,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     <!-- STEP 2: DISPLAY BRANCHES -->
                     @if($currentStep === 2)
                         <div>
-                            <h4 class="text-md font-medium mb-4">Step 2: Branches from Batch: {{ $batch_number }}</h4>
+                            <h4 class="text-md font-medium mb-4">Step 2: Branches from Batches: {{ implode(', ', $selectedBatchNumbers) }}</h4>
                             <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                                All branches from the selected batch have been automatically added to this allocation.
+                                All branches from the selected batches have been automatically added to this allocation.
                             </p>
                             
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-64 overflow-y-auto mb-6">
@@ -454,32 +472,89 @@ document.addEventListener('DOMContentLoaded', function() {
                                 Select products to allocate and enter quantities for each product and branch combination.
                             </p>
 
-                            <!-- Product Selection -->
+                            <!-- Product Filtering Controls -->
                             <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6">
+                                <h5 class="font-medium mb-3">Filter Products</h5>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                    <!-- Category Filter -->
+                                    <div>
+                                        <label for="category-filter" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                                            Category
+                                        </label>
+                                        <select id="category-filter"
+                                                wire:model.live="selectedCategoryId"
+                                                wire:change="filterProducts"
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                                            <option value="">All Categories</option>
+                                            @foreach($availableCategories as $category)
+                                                <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <!-- Product Filter -->
+                                    <div>
+                                        <label for="product-filter" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                                            Product
+                                        </label>
+                                        <select id="product-filter"
+                                                wire:model.live="selectedProductFilterId"
+                                                wire:change="filterProducts"
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                                            <option value="">All Products</option>
+                                            @foreach($availableProducts as $product)
+                                                <option value="{{ $product->id }}">{{ $product->remarks }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <!-- Show All Button -->
+                                    <!-- <div class="flex items-end">
+                                        <button wire:click="showAllProducts"
+                                                class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                            Show All Products
+                                        </button>
+                                    </div> -->
+                                </div>
+
+                                <!-- Filtered Product Selection -->
                                 <h5 class="font-medium mb-3">Select Products for Allocation</h5>
                                 <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
                                     Choose which products you want to allocate to branches. Only selected products will appear in the allocation matrix below.
                                 </p>
 
                                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-60 overflow-y-auto">
-                                    @if($this->availableProductsForBatch->count() > 0)
-                                        @foreach($this->availableProductsForBatch as $product)
-                                            <label class="flex items-center p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer">
-                                                <input type="checkbox"
-                                                       wire:model.live="selectedProductIdsForAllocation"
-                                                       value="{{ $product->id }}"
-                                                       class="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded">
-                                                <div class="ml-3 flex-1">
-                                                    <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $product->name }}</div>
-                                                    <div class="text-xs text-gray-500 dark:text-gray-400">
-                                                        ₱{{ number_format($product->price ?? $product->selling_price ?? 0, decimals: 2) }} |
-                                                        Stock: {{ intval($product->initial_quantity) ?? 0 }}
+                                    @if($selectedCategoryId || $selectedProductFilterId || $showAllProducts)
+                                        @if(($showAllProducts ? $availableProducts : $filteredProducts)->count() > 0)
+                                            @foreach($showAllProducts ? $availableProducts : $filteredProducts as $product)
+                                                <label class="flex items-center p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer">
+                                                    <input type="checkbox"
+                                                           wire:model.live="selectedProductIdsForAllocation"
+                                                           value="{{ $product->id }}"
+                                                           class="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded">
+                                                    <div class="ml-3 flex-1">
+                                                        <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $product->name }} {{ $product->color->name }} ({{ $product->color->shortcut }})</div>
+                                                        <div class="text-xs text-gray-500 dark:text-gray-400">
+                                                            ₱{{ number_format($product->price ?? $product->selling_price ?? 0, decimals: 2) }} |
+                                                            Stock: {{ intval($product->initial_quantity) ?? 0 }}
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </label>
-                                        @endforeach
+                                                </label>
+                                            @endforeach
+                                        @else
+                                            <p class="text-gray-500 dark:text-gray-400 col-span-full">No products match the selected filters.</p>
+                                        @endif
                                     @else
-                                        <p class="text-gray-500 dark:text-gray-400 col-span-full">No products available.</p>
+                                        <div class="col-span-full bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                                            <div class="flex items-center justify-center">
+                                                <svg class="h-5 w-5 text-yellow-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                                </svg>
+                                                <span class="text-sm text-yellow-700 dark:text-yellow-300">
+                                                    Please use the filtering controls above to find and select products.
+                                                </span>
+                                            </div>
+                                        </div>
                                     @endif
                                 </div>
 
@@ -497,50 +572,74 @@ document.addEventListener('DOMContentLoaded', function() {
                                     Enter quantities for each product and branch combination. Leave blank or 0 for no allocation.
                                 </p>
 
-                                @if($currentBatch && !empty($selectedProductIdsForAllocation))
-                                    <div class="overflow-x-auto">
-                                        <table class="min-w-full bg-white dark:bg-gray-800 border-collapse border border-gray-300 dark:border-gray-600">
-                                            <thead>
-                                                <tr>
-                                                    <th class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase bg-gray-50 dark:bg-gray-700">Branch</th>
-                                                    @foreach($this->availableProductsForBatch->whereIn('id', $selectedProductIdsForAllocation) as $product)
-                                                        <th class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase min-w-[120px] bg-gray-50 dark:bg-gray-700">
-                                                            {{ $product->name }}<br>
-                                                            <span class="text-xs text-gray-400">₱{{ number_format($product->price ?? $product->selling_price ?? 0, 2) }}</span><br>
-                                                            <span class="text-xs text-gray-400">Stock: {{ intval($product->initial_quantity) }}</span>
-                                                        </th>
-                                                    @endforeach
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                @foreach($currentBatch->branchAllocations as $branchAllocation)
+                                @if($currentBatch && !empty($selectedProductIdsForAllocation) && ($selectedCategoryId || $selectedProductFilterId))
+                                    @php
+                                        // Filter products based on selected filters
+                                        $filteredProductsForMatrix = $this->availableProductsForBatch->whereIn('id', $selectedProductIdsForAllocation);
+
+                                        // Apply category filter if selected
+                                        if($selectedCategoryId) {
+                                            $filteredProductsForMatrix = $filteredProductsForMatrix->where('category_id', $selectedCategoryId);
+                                        }
+
+                                        // Apply product filter if selected
+                                        if($selectedProductFilterId) {
+                                            $filteredProductsForMatrix = $filteredProductsForMatrix->where('id', $selectedProductFilterId);
+                                        }
+                                    @endphp
+
+                                    @if($filteredProductsForMatrix->count() > 0)
+                                        <div class="overflow-x-auto">
+                                            <table class="min-w-full bg-white dark:bg-gray-800 border-collapse border border-gray-300 dark:border-gray-600">
+                                                <thead>
                                                     <tr>
-                                                        <td class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700">
-                                                            {{ $branchAllocation->branch->name }}
-                                                        </td>
-                                                        @foreach($this->availableProductsForBatch->whereIn('id', $selectedProductIdsForAllocation) as $product)
-                                                            <td class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-center bg-white dark:bg-gray-800">
-                                                                <input type="number"
-                                                                       wire:model="matrixQuantities.{{ $branchAllocation->id }}.{{ $product->id }}"
-                                                                       min="0"
-                                                                       placeholder="0"
-                                                                       class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white text-center">
-                                                            </td>
+                                                        <th class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase bg-gray-50 dark:bg-gray-700">Branch</th>
+                                                        @foreach($filteredProductsForMatrix as $product)
+                                                            <th class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase min-w-[120px] bg-gray-50 dark:bg-gray-700">
+                                                                {{ $product->name }} {{ $product->color->name }} ({{ $product->color->shortcut }})<br>
+                                                                @if($product->color)
+                                                                    <!-- <span class="text-xs text-gray-400">
+                                                                        {{ $product->color->code }} - {{ $product->color->name }} ({{ $product->color->shortcut }})
+                                                                    </span><br> -->
+                                                                @endif
+                                                                <span class="text-xs text-gray-400">₱{{ number_format($product->price ?? $product->selling_price ?? 0, 2) }}</span><br>
+                                                                <span class="text-xs text-gray-400">Stock: {{ intval($product->initial_quantity) }}</span>
+                                                            </th>
                                                         @endforeach
                                                     </tr>
-                                                @endforeach
-                                            </tbody>
-                                        </table>
-                                    </div>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach($currentBatch->branchAllocations as $branchAllocation)
+                                                        <tr>
+                                                            <td class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700">
+                                                                {{ $branchAllocation->branch->name }}
+                                                            </td>
+                                                            @foreach($filteredProductsForMatrix as $product)
+                                                                <td class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-center bg-white dark:bg-gray-800">
+                                                                    <input type="number"
+                                                                           wire:model="matrixQuantities.{{ $branchAllocation->id }}.{{ $product->id }}"
+                                                                           min="0"
+                                                                           placeholder="0"
+                                                                           class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white text-center">
+                                                                </td>
+                                                            @endforeach
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
 
-                                    <div class="mt-4 flex justify-end">
-                                        <button wire:click="saveMatrixAllocations"
-                                                class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                                            Save All Allocations
-                                        </button>
-                                    </div>
+                                        <div class="mt-4 flex justify-end">
+                                            <button wire:click="saveMatrixAllocations"
+                                                    class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                                Save All Allocations
+                                            </button>
+                                        </div>
+                                    @else
+                                        <p class="text-gray-500 dark:text-gray-400">No products match the selected filters. Please adjust your filter criteria.</p>
+                                    @endif
                                 @else
-                                    <p class="text-gray-500 dark:text-gray-400">No products available or batch not created yet.</p>
+                                    <p class="text-gray-500 dark:text-gray-400">Please select filters (Category or Product) to display the allocation matrix.</p>
                                 @endif
                             </div>
 
@@ -795,11 +894,22 @@ document.addEventListener('DOMContentLoaded', function() {
                                                 </div>
                                                 <div class="overflow-x-auto">
                                                     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                                        <div class="px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 flex justify-end">
+                                                        <div class="px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 flex justify-end space-x-2">
                                                             <button type="button"
-                                                                    wire:click="resetScannedQuantities({{ $activeBranchAllocation->id }})"
+                                                                    wire:click="generateDeliveryReceipt({{ $activeBranchAllocation->id }})"
+                                                                    class="inline-flex items-center px-3 py-1 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                                </svg>
+                                                                Generate Delivery Receipt
+                                                            </button>
+                                                            <button type="button"
+                                                                    wire:click="resetScannedQuantities({{ $activeBranchAllocation->branch->name }})"
                                                                     wire:confirm="Are you sure you want to reset all scanned quantities for {{ $activeBranchAllocation->branch->name }}? This cannot be undone."
-                                                                    class="px-3 py-1 text-xs font-medium text-white bg-orange-600 rounded hover:bg-orange-700">
+                                                                    class="inline-flex items-center px-3 py-1 text-xs font-medium text-white bg-orange-600 rounded hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
+                                                                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h5M20 20v-5h-5M4 19l16-7M4 12l16-7"></path>
+                                                                </svg>
                                                                 🔄 Reset Branch Scans
                                                             </button>
                                                         </div>
@@ -827,7 +937,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                                                 @foreach($activeBranchAllocation->items as $item)
                                                                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                                                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                                                                            {{ $item->product->name }}
+                                                                            {{ $item->product->remarks }}
                                                                         </td>
                                                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 font-mono">
                                                                             {{ $item->product->barcode ?? 'N/A' }}
@@ -927,7 +1037,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                             <div class="ml-3">
                                                 <h3 class="text-sm font-medium text-yellow-800 dark:text-yellow-200">Ready to Dispatch</h3>
                                                 <p class="mt-1 text-sm text-yellow-700 dark:text-yellow-300">
-                                                    Once dispatched, sales receipts will be generated for all branches and this batch cannot be modified.
+                                                    Once dispatched, delivery receipts will be generated for all branches and this batch cannot be modified.
                                                     Ensure all products for all branches are scanned before dispatching.
                                                 </p>
                                             </div>
@@ -1050,7 +1160,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         Status
                     </th>
                     <th class="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-200">
-                        Branches
+                        Batch
                     </th>
                     <th class="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-200">
                         Actions
@@ -1130,12 +1240,12 @@ document.addEventListener('DOMContentLoaded', function() {
                             {{ $record->status }}
                         </td>
 
-                        <!-- Branches -->
+                        <!-- Batches -->
                         <td class="px-4 py-2 text-sm text-gray-800 dark:text-gray-200">
-                            @if($record->branchAllocations->count() > 0)
-                                {{ $record->branchAllocations->pluck('branch.name')->implode(', ') }}
+                            @if($record->batch_number)
+                                {{ $record->batch_number }}
                             @else
-                                <span class="text-gray-400">No branches</span>
+                                <span class="text-gray-400">No batches</span>
                             @endif
                         </td>
 

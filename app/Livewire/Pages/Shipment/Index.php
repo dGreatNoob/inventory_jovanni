@@ -30,8 +30,6 @@ class Index extends Component
     public $perPage = 10;
     public $salesOrders;
     public $shipping_plan_num = '';
-    public $customer_name;
-    public $customer_address;
     public $scheduled_ship_date;
     public $delivery_method;
     public $vehicle_plate_number;
@@ -39,7 +37,6 @@ class Index extends Component
     public $filterStatus = '';
     public $search = '';
     public $salesOrderResults = [];
-    public $phone = '';
     public $editValue = null;
     public $statusFilter = '';
 
@@ -78,6 +75,11 @@ class Index extends Component
     {
         $this->availableBatches = BatchAllocation::with(['branchAllocations.branch'])
             ->where('status', 'dispatched')
+            ->whereDoesntHave('branchAllocations', function($query) {
+                $query->whereHas('shipments', function($query) {
+                    $query->whereIn('shipping_status', ['completed', 'cancelled', 'delivered']);
+                });
+            })
             ->orderBy('created_at', 'desc')
             ->get();
     }
@@ -115,9 +117,6 @@ class Index extends Component
                 $this->shipping_plan_num    = $result->shipping_plan_num;
                 $this->scheduled_ship_date  = $result->scheduled_ship_date;
                 $this->vehicle_plate_number = $result->vehicle_plate_number;
-                $this->customer_name        = $result->customer_name;
-                $this->customer_address     = $result->customer_address;
-                $this->phone                = $result->customer_phone;
                 $this->delivery_method      = $result->delivery_method;
                 $this->editValue            = $id;
 
@@ -155,9 +154,6 @@ class Index extends Component
             }],
             'delivery_method'     => 'required|string|max:255',
             'vehicle_plate_number'=> 'nullable|string|max:255',
-            'customer_name'       => 'required|string|max:255',
-            'phone'               => 'required|digits:11',
-            'customer_address'    => 'required|string|max:255',
             'selectedBranchIds'   => 'required|array|min:1',
             'selectedBranchIds.*' => 'exists:branch_allocations,id',
         ]);
@@ -176,12 +172,9 @@ class Index extends Component
                         'batch_allocation_id'  => $branchAllocation->batch_allocation_id,
                         'branch_allocation_id' => $branchAllocId,
                         'customer_id'          => null,
-                        'customer_name'        => $this->customer_name,
-                        'customer_address'     => $this->customer_address,
                         'scheduled_ship_date'  => $this->scheduled_ship_date,
                         'delivery_method'      => $this->delivery_method,
                         'vehicle_plate_number' => $this->vehicle_plate_number,
-                        'customer_phone'       => $this->phone,
                     ]);
                 }
             } else {
@@ -193,12 +186,9 @@ class Index extends Component
                     'batch_allocation_id'  => $branchAllocation?->batch_allocation_id,
                     'branch_allocation_id' => $this->selectedBranchIds[0] ?? null,
                     'customer_id'          => null,
-                    'customer_name'        => $this->customer_name,
-                    'customer_address'     => $this->customer_address,
                     'scheduled_ship_date'  => $this->scheduled_ship_date,
                     'delivery_method'      => $this->delivery_method,
                     'vehicle_plate_number' => $this->vehicle_plate_number,
-                    'customer_phone'       => $this->phone,
                 ];
                 $shipment->update($shipmentData);
             }
@@ -226,8 +216,6 @@ class Index extends Component
     {
         $this->reset([
             'shipping_plan_num',
-            'customer_name',
-            'customer_address',
             'scheduled_ship_date',
             'delivery_method',
             'vehicle_plate_number',

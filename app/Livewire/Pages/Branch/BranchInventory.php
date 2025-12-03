@@ -4,90 +4,133 @@ namespace App\Livewire\Pages\Branch;
 
 use Livewire\Component;
 use App\Models\Branch;
-use App\Models\Product;
+use App\Models\BatchAllocation;
 use App\Models\BranchAllocation;
 
 class BranchInventory extends Component
 {
-    public $branches;
-    public $products;
-    public $branchProductStocks;
-    public $branchProductBatches;
-    public $showModal = false;
-    public $selectedBranchId;
-    public $selectedProductId;
-    public $currentPage = 1;
-    public $perPage = 5;
+    // Batch selection properties - using the original 3-batch approach
+    public $selectedBatch = null;
+    public $batchBranches = [];
+
+    // Batch counts for UI
+    public $batch1BranchesCount = 0;
+    public $batch2BranchesCount = 0;
+    public $batch3BranchesCount = 0;
+
+    // Branch details modal
+    public $showBranchDetailsModal = false;
+    public $selectedBranchDetails = null;
 
     public function mount()
     {
-        $this->branches = Branch::all();
-        $this->products = Product::all();
+        $this->initializeBatchCounts();
+    }
 
-        // Load shipments indexed by branch_allocation_id
-        $shipments = \App\Models\Shipment::all()->keyBy('branch_allocation_id');
+    /**
+     * Initialize batch counts for the 3 batch buttons
+     */
+    protected function initializeBatchCounts()
+    {
+        // Get batch allocations grouped by batch number
+        $batchAllocations = BatchAllocation::with(['branchAllocations'])->get();
 
-        // Build branchProductStocks and branchProductBatches
-        $this->branchProductStocks = [];
-        $this->branchProductBatches = [];
-        foreach ($this->branches as $branch) {
-            foreach ($this->products as $product) {
-                $this->branchProductBatches[$branch->id][$product->id] = [];
-                $total = 0;
+        // Count branches for each batch
+        $this->batch1BranchesCount = $batchAllocations->filter(function($batch) {
+            return str_contains($batch->batch_number ?? '', '1') && $batch->branchAllocations->count() > 0;
+        })->flatMap->branchAllocations->count();
 
-                // Find allocations for this branch and product
-                $allocations = BranchAllocation::where('branch_id', $branch->id)
-                    ->with(['items' => function($q) use($product) {
-                        $q->where('product_id', $product->id);
-                    }])
-                    ->get();
+        $this->batch2BranchesCount = $batchAllocations->filter(function($batch) {
+            return str_contains($batch->batch_number ?? '', '2') && $batch->branchAllocations->count() > 0;
+        })->flatMap->branchAllocations->count();
 
-                foreach ($allocations as $alloc) {
-                    foreach ($alloc->items as $item) {
-                        $shipment = $shipments[$alloc->id] ?? null;
-                        if ($shipment) {
-                            $this->branchProductBatches[$branch->id][$product->id][] = [
-                                'reference' => $shipment->shipping_plan_num,
-                                'date' => $shipment->scheduled_ship_date ? \Carbon\Carbon::parse($shipment->scheduled_ship_date)->format('Y-m-d') : $shipment->created_at->format('Y-m-d'),
-                                'quantity' => $item->quantity
-                            ];
-                            $total += $item->quantity;
-                        }
-                    }
-                }
+        $this->batch3BranchesCount = $batchAllocations->filter(function($batch) {
+            return str_contains($batch->batch_number ?? '', '3') && $batch->branchAllocations->count() > 0;
+        })->flatMap->branchAllocations->count();
+    }
 
-                $this->branchProductStocks[$branch->id][$product->id] = $total;
+    /**
+     * Select a batch to view its branches
+     */
+    public function selectBatch($batchNumber)
+    {
+        $this->selectedBatch = $batchNumber;
+        $this->loadBatchBranches();
+    }
+
+    /**
+     * Load branches for the selected batch
+     */
+    protected function loadBatchBranches()
+    {
+        $this->batchBranches = [];
+
+        // Get batch allocations for the selected batch
+        $batchAllocations = BatchAllocation::with(['branchAllocations.branch'])
+            ->where(function($query) {
+                // Filter by batch number containing the selected batch digit
+                $query->where('batch_number', 'LIKE', "%{$this->selectedBatch}%")
+                      ->orWhere('id', $this->selectedBatch); // Fallback
+            })
+            ->get();
+
+        foreach ($batchAllocations as $batchAllocation) {
+            foreach ($batchAllocation->branchAllocations as $branchAllocation) {
+                $branch = $branchAllocation->branch;
+
+                $this->batchBranches[] = [
+                    'id' => $branch->id,
+                    'name' => $branch->name,
+                    'code' => $branch->code,
+                    'address' => $branch->address,
+                    'batch_number' => $batchAllocation->batch_number,
+                    'allocation_id' => $branchAllocation->id,
+                    'reference' => $batchAllocation->ref_no,
+                ];
             }
         }
     }
 
-    public function openModal($branchId, $productId)
+    /**
+     * View details of a specific branch
+     */
+    public function viewBranchDetails($branchId)
     {
-        $this->selectedBranchId = $branchId;
-        $this->selectedProductId = $productId;
-        $this->currentPage = 1;
-        $this->showModal = true;
-    }
+        $branchDetails = collect($this->batchBranches)->firstWhere('id', $branchId);
 
-    public function closeModal()
-    {
-        $this->showModal = false;
-    }
-
-    public function nextPage()
-    {
-        $batches = collect($this->branchProductBatches[$this->selectedBranchId][$this->selectedProductId] ?? []);
-        $totalPages = ceil($batches->count() / $this->perPage);
-        if ($this->currentPage < $totalPages) {
-            $this->currentPage++;
+        if ($branchDetails) {
+            $this->selectedBranchDetails = $branchDetails;
+            $this->showBranchDetailsModal = true;
         }
     }
 
-    public function prevPage()
+    /**
+     * Close the branch details modal
+     */
+    public function closeBranchDetailsModal()
     {
-        if ($this->currentPage > 1) {
-            $this->currentPage--;
+        $this->showBranchDetailsModal = false;
+        $this->selectedBranchDetails = null;
+    }
+
+    /**
+     * Refresh batch data
+     */
+    public function refreshBatchData()
+    {
+        $this->initializeBatchCounts();
+        if ($this->selectedBatch) {
+            $this->loadBatchBranches();
         }
+    }
+
+    /**
+     * Clear batch selection
+     */
+    public function clearSelection()
+    {
+        $this->selectedBatch = null;
+        $this->batchBranches = [];
     }
 
     public function render()

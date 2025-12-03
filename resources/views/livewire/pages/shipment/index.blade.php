@@ -113,15 +113,33 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @foreach($getShipmentDetails->branchAllocation->items as $item)
+                                            @forelse($getShipmentDetails->branchAllocation->items as $item)
                                             <tr class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700">
-                                                <td class="px-6 py-4 font-mono">{{ $item->product->supply_sku ?? 'N/A' }}</td>
-                                                <td class="px-6 py-4">{{ $item->product->supply_description ?? 'N/A' }}</td>
+                                                <td class="px-6 py-4 font-mono">
+                                                    @if($item->product)
+                                                        {{ $item->product->sku ?? 'N/A' }}
+                                                    @else
+                                                        N/A
+                                                    @endif
+                                                </td>
+                                                <td class="px-6 py-4">
+                                                    @if($item->product)
+                                                        {{ $item->product->remarks ?? 'N/A' }}
+                                                    @else
+                                                        N/A
+                                                    @endif
+                                                </td>
                                                 <td class="px-6 py-4">{{ number_format($item->quantity, 2) }}</td>
                                                 <td class="px-6 py-4">₱{{ number_format($item->unit_price, 2) }}</td>
                                                 <td class="px-6 py-4 font-semibold">₱{{ number_format($item->quantity * $item->unit_price, 2) }}</td>
                                             </tr>
-                                            @endforeach
+                                            @empty
+                                            <tr>
+                                                <td colspan="5" class="text-center py-4 text-gray-500 dark:text-gray-400">
+                                                    No items found for this shipment.
+                                                </td>
+                                            </tr>
+                                            @endforelse
                                         </tbody>
                                     </table>
                                 </div>
@@ -249,46 +267,7 @@
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Customer Information Section -->
-                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-                                <svg class="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                                </svg>
-                                Customer Information
-                            </h3>
-                            
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <x-input 
-                                    type="text" 
-                                    wire:model.defer="customer_name" 
-                                    name="customer_name" 
-                                    label="Customer Name" 
-                                    placeholder="Enter Customer Name"
-                                />
-
-                                <x-input 
-                                    type="text" 
-                                    wire:model.defer="customer_address" 
-                                    name="customer_address" 
-                                    label="Customer Address" 
-                                    placeholder="Enter Customer Address"
-                                />
-                                
-                                
-                                <x-input
-                                    type="tel"
-                                    wire:model.defer="phone"
-                                    name="phone"
-                                    label="Phone Number"
-                                    placeholder="Enter phone number"
-                                />
-                            </div>
-                          </div>
-
-                                               
-
+                        
                         <!-- Form Actions -->
                         <div class="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-600">
                            
@@ -350,12 +329,9 @@
                                         <option value="delivered">Delivered</option>
                                         <option value="cancelled">Cancelled</option>
                                         <option value="approved">Approved</option>
-                                        <option value="failed">Failed</option>
-                                        <option value="returned">Returned</option>
                                         <option value="completed">Completed</option>
                                         <option value="pending">Pending</option>
                                         <option value="in_transit">In Transit</option>
-                                        <option value="incomplete">Incomplete</option>
                                         <option value="damaged">Damaged</option>
                                     </select>
                                 </div>
@@ -368,7 +344,7 @@
                                         <th>QRCode</th>
                                         <th scope="col" class="px-6 py-3">Shipment Reference Number</th>
                                         <th scope="col" class="px-6 py-3">Branch</th>
-                                        <th scope="col" class="px-6 py-3">Customer</th>
+                                        <th scope="col" class="px-6 py-3">Shipping Date</th>
                                         <th scope="col" class="px-6 py-3">Status</th>
                                         <th scope="col" class="px-6 py-3">Delivery Method</th>
                                         <th scope="col" class="px-6 py-3">Action</th>
@@ -390,7 +366,7 @@
                                                 {{ $data->branchAllocation->branch->name ?? '—' }}
                                             </th>
                                             <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                                                {{ ucfirst($data->customer_name) }}
+                                                {{ \Carbon\Carbon::parse($data->scheduled_ship_date)->format('M d, Y') }}
                                             </th>
                                             <td class="px-6 py-4">
                                                 <span
@@ -425,11 +401,11 @@
                                             </td>
                                         </tr>
                                     @empty
-                                        <tr>
-                                            <td colspan="7" class="text-center py-4">
-                                                No shipping request found.
-                                            </td>
-                                        </tr>
+                                    <tr>
+                                        <td colspan="6" class="text-center py-4">
+                                            No shipping request found.
+                                        </td>
+                                    </tr>
                                     @endforelse
                                 </tbody>
                             </table>

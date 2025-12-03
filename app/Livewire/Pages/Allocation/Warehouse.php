@@ -53,7 +53,8 @@ class Warehouse extends Component
     public $remarks;
     public $ref_no;
     public $status = 'draft';
-    public $batch_number = ''; // New field for batch number selection
+    public $batch_number = ''; // Old field for single batch number selection
+    public $selectedBatchNumbers = []; // New field for multiple batch number selection
 
     // Stepper workflow fields
     public $currentStep = 1;
@@ -73,6 +74,13 @@ class Warehouse extends Component
     public $matrixQuantities = []; // Matrix: branch_id => product_id => quantity
     public $selectedProductIdsForAllocation = []; // Selected products for allocation matrix
 
+    // Product filtering fields
+    public $availableCategories = [];
+    public $selectedCategoryId = null;
+    public $selectedProductFilterId = null;
+    public $showAllProducts = false;
+    public $filteredProducts = [];
+
     // Add branches fields
     public $availableBranches = [];
     public $selectedBranchIds = [];
@@ -86,24 +94,28 @@ class Warehouse extends Component
     {
         // Set defaults
         $this->status = 'draft';
-        
+
         // Generate reference number
         $this->ref_no = $this->generateRefNo();
-        
+
         // Load data
         $this->loadAvailableBatchNumbers();
         $this->loadAvailableProducts();
+        $this->loadAvailableCategories();
         $this->loadBatchAllocations();
-        
+
         // Initialize batch steps for the table
         $this->initializeBatchSteps();
-        
+
         // Hide stepper on initial load
         $this->showStepper = false;
         $this->currentStep = 1;
-        
+
         // Initialize empty scanned quantities
         $this->scannedQuantities = [];
+
+        // Initialize selected batch numbers
+        $this->selectedBatchNumbers = [];
     }
 
     public function initializeScannedQuantities()
@@ -460,14 +472,47 @@ class Warehouse extends Component
         $this->availableProducts = Product::orderBy('name')->get();
     }
 
+    public function loadAvailableCategories()
+    {
+        $this->availableCategories = \App\Models\Category::orderBy('name')->get();
+    }
+
+    public function filterProducts()
+    {
+        $query = Product::query();
+
+        if ($this->selectedCategoryId) {
+            $query->where('category_id', $this->selectedCategoryId);
+        }
+
+        if ($this->selectedProductFilterId) {
+            $query->where('id', $this->selectedProductFilterId);
+        }
+
+        $this->filteredProducts = $query->orderBy('name')->get();
+        $this->showAllProducts = false;
+
+        // Clear any previously selected products when filtering
+        $this->selectedProductIdsForAllocation = [];
+    }
+
+    public function showAllProducts()
+    {
+        $this->showAllProducts = true;
+        $this->selectedCategoryId = null;
+        $this->selectedProductFilterId = null;
+        $this->filteredProducts = $this->availableProducts;
+    }
+
     public function loadBranchesByBatch()
     {
-        if (empty($this->batch_number)) {
+        if (empty($this->selectedBatchNumbers)) {
             $this->filteredBranchesByBatch = [];
             return;
         }
 
-        $branches = Branch::where('batch', $this->batch_number)
+        // Load branches from all selected batches
+        $branches = Branch::whereIn('batch', $this->selectedBatchNumbers)
             ->orderBy('name')
             ->get();
 
@@ -525,44 +570,50 @@ class Warehouse extends Component
     {
         $this->editingBatchId = $batchId;
         $this->isEditing = true;
-        
+
         // Load the batch
         $batch = BatchAllocation::with('branchAllocations.items.product', 'branchAllocations.branch')->find($batchId);
-        
+
         if (!$batch) {
             session()->flash('error', 'Batch not found.');
             return;
         }
-        
+
         // Populate fields
         $this->currentBatch = $batch;
         $this->batch_number = $batch->batch_number ?? '';
+        // Parse batch_number if it contains multiple batches
+        if (strpos($batch->batch_number, ',') !== false) {
+            $this->selectedBatchNumbers = array_map('trim', explode(',', $batch->batch_number));
+        } else {
+            $this->selectedBatchNumbers = $batch->batch_number ? [$batch->batch_number] : [];
+        }
         $this->ref_no = $batch->ref_no;
         $this->status = $batch->status;
         $this->remarks = $batch->remarks;
-        
+
         // Load available batch numbers
         $this->loadAvailableBatchNumbers();
-        
+
         // Load the saved workflow step from database
         $this->currentStep = $batch->workflow_step ?? $this->determineCurrentStep($batch);
-        
+
         // Load data based on step
-        if ($this->currentStep >= 2 && $this->batch_number) {
+        if ($this->currentStep >= 2 && !empty($this->selectedBatchNumbers)) {
             $this->loadBranchesByBatch();
         }
-        
+
         if ($this->currentStep >= 3) {
             $this->loadMatrixForEditing($batch);
         }
-        
+
         if ($this->currentStep >= 4) {
             $this->loadScannedQuantitiesForEditing($batch);
         }
-        
+
         // Open stepper
         $this->showStepper = true;
-        
+
         session()->flash('message', 'Editing batch: ' . $batch->ref_no . ' (Step ' . $this->currentStep . ')');
     }
 
@@ -583,7 +634,7 @@ class Warehouse extends Component
                 if (!isset($productData[$productId])) {
                     $productData[$productId] = [
                         'product_id' => $item->product_id,
-                        'product_name' => $item->product->name,
+                        'product_name' => $item->product->remarks,
                         'quantity' => 0,
                         'unit_price' => $item->unit_price,
                         'total_value' => 0,
@@ -1147,7 +1198,7 @@ class Warehouse extends Component
     {
         $lastBatch = BatchAllocation::orderBy('id', 'desc')->first();
         $nextNumber = $lastBatch ? $lastBatch->id + 1 : 1;
-        return 'WT-' . now()->format('Ymd') . '-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+        return 'A' . now()->format('Ymd') . '-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
     }
 
     public function openStepper()
@@ -1157,13 +1208,14 @@ class Warehouse extends Component
         $this->editingBatchId = null;
         $this->currentBatch = null;
         $this->currentStep = 1; // Start at step 1
-        
+
         // Reset form fields to defaults
         $this->status = 'draft';
         $this->ref_no = $this->generateRefNo();
         $this->batch_number = '';
+        $this->selectedBatchNumbers = []; // Reset selected batches
         $this->remarks = '';
-        
+
         // Reset allocations
         $this->selectedProductIdsForAllocation = [];
         $this->matrixQuantities = [];
@@ -1174,11 +1226,17 @@ class Warehouse extends Component
         $this->scanFeedback = '';
         $this->lastScannedBarcode = '';
         $this->branchRemarks = [];
-        
+
+        // Reset filtering - don't show products by default
+        $this->selectedCategoryId = null;
+        $this->selectedProductFilterId = null;
+        $this->showAllProducts = false; // Changed to false to not show products by default
+        $this->filteredProducts = [];
+
         // Load fresh data
         $this->loadAvailableBatchNumbers();
         $this->loadAvailableProducts();
-        
+
         // Show the stepper
         $this->showStepper = true;
     }
@@ -1228,7 +1286,7 @@ class Warehouse extends Component
         // Validation rules
         $rules = [
             'remarks' => 'nullable|string|max:1000',
-            'batch_number' => 'required|string|exists:branches,batch',
+            'selectedBatchNumbers' => 'required|array|min:1',
         ];
 
         if (!$this->isEditing) {
@@ -1242,7 +1300,7 @@ class Warehouse extends Component
         if ($this->isEditing && $this->currentBatch) {
             // UPDATE EXISTING BATCH
             $this->currentBatch->update([
-                'batch_number' => $this->batch_number,
+                'batch_number' => implode(', ', $this->selectedBatchNumbers),
                 'transaction_date' => $this->transaction_date,
                 'remarks' => $this->remarks,
                 'status' => $this->status,
@@ -1251,22 +1309,22 @@ class Warehouse extends Component
 
             $this->currentBatch->refresh();
             $this->loadBranchesByBatch();
-            
+
             session()->flash('message', 'Batch details updated successfully.');
-            
+
         } else {
             // CREATE NEW BATCH
             $batch = BatchAllocation::create([
                 'ref_no' => $this->ref_no,
-                'batch_number' => $this->batch_number,
+                'batch_number' => implode(', ', $this->selectedBatchNumbers),
                 'remarks' => $this->remarks,
                 'status' => $this->status,
                 'workflow_step' => 1, // Start at step 1
             ]);
 
-            // Create branch allocations
-            if (!empty($this->batch_number)) {
-                $branches = Branch::where('batch', $this->batch_number)->get();
+            // Create branch allocations from all selected batches
+            if (!empty($this->selectedBatchNumbers)) {
+                $branches = Branch::whereIn('batch', $this->selectedBatchNumbers)->get();
 
                 foreach ($branches as $branch) {
                     BranchAllocation::create([
@@ -1281,20 +1339,20 @@ class Warehouse extends Component
             $this->currentBatch = $batch;
             $this->editingBatchId = $batch->id;
             $this->isEditing = true;
-            
+
             $this->loadBranchesByBatch();
-            
-            session()->flash('message', 'Batch allocation created successfully with branches from batch: ' . $this->batch_number);
-            
+
+            session()->flash('message', 'Batch allocation created successfully with branches from batches: ' . implode(', ', $this->selectedBatchNumbers));
+
             // Move to step 2
             $this->currentStep = 2;
-            
+
             // Update workflow_step in database
             $this->currentBatch->update(['workflow_step' => 2]);
-            
+
             $this->loadMatrix();
         }
-        
+
         // Reload batch allocations
         $this->loadBatchAllocations();
     }
@@ -1799,6 +1857,61 @@ class Warehouse extends Component
             session()->flash('message', 'Opening VDR Excel export in new window...');
         } catch (\Exception $e) {
             session()->flash('error', 'Failed to export VDR to Excel: ' . $e->getMessage());
+        }
+    }
+
+    public function generateDeliveryReceipt($branchAllocationId)
+    {
+        try {
+            // Get the branch allocation to validate scanning completion
+            $branchAllocation = \App\Models\BranchAllocation::find($branchAllocationId);
+
+            if (!$branchAllocation) {
+                session()->flash('error', 'Branch allocation not found.');
+                return;
+            }
+
+            // Validate that all items are fully scanned
+            $allItemsScanned = true;
+            $incompleteItems = [];
+
+            foreach ($branchAllocation->items as $item) {
+                $scannedQty = $item->scanned_quantity ?? 0;
+                $allocatedQty = $item->quantity;
+
+                if ($scannedQty < $allocatedQty) {
+                    $allItemsScanned = false;
+                    $incompleteItems[] = $item->product->name . " (" . $scannedQty . "/" . $allocatedQty . ")";
+                }
+            }
+
+            if (!$allItemsScanned) {
+                $errorMessage = "Cannot generate delivery receipt. The following items are not fully scanned: " . implode(", ", $incompleteItems);
+                session()->flash('error', $errorMessage);
+                return;
+            }
+
+            // Generate the delivery receipt URL
+            $deliveryReceiptUrl = route('allocation.delivery-receipt.generate', [
+                'branchAllocationId' => $branchAllocationId
+            ]);
+
+            $branchName = $branchAllocation->branch->name ?? 'Unknown';
+            $refNo = $branchAllocation->batchAllocation->ref_no ?? 'Unknown';
+
+            // Clean filename from special characters
+            $cleanBranchName = preg_replace('/[^\w\-_.]/', '_', $branchName);
+            $cleanRefNo = preg_replace('/[^\w\-_.]/', '_', $refNo);
+
+            $filename = "delivery_receipt_{$cleanBranchName}_{$cleanRefNo}_" . now()->format('Y-m-d_H-i-s') . '.pdf';
+
+            // Dispatch event to JavaScript to handle download
+            $this->dispatch('download-delivery-receipt', url: $deliveryReceiptUrl, filename: $filename);
+
+            session()->flash('message', 'Delivery receipt generation started. PDF should download automatically.');
+
+        } catch (\Exception $e) {
+            session()->flash('error', 'Failed to generate delivery receipt: ' . $e->getMessage());
         }
     }
 }

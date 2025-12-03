@@ -28,25 +28,14 @@ class BranchInventory extends Component
     }
 
     /**
-     * Initialize batch counts for the 3 batch buttons
+     * Initialize batch counts based on branch batch field
      */
     protected function initializeBatchCounts()
     {
-        // Get batch allocations grouped by batch number
-        $batchAllocations = BatchAllocation::with(['branchAllocations'])->get();
-
-        // Count branches for each batch
-        $this->batch1BranchesCount = $batchAllocations->filter(function($batch) {
-            return str_contains($batch->batch_number ?? '', '1') && $batch->branchAllocations->count() > 0;
-        })->flatMap->branchAllocations->count();
-
-        $this->batch2BranchesCount = $batchAllocations->filter(function($batch) {
-            return str_contains($batch->batch_number ?? '', '2') && $batch->branchAllocations->count() > 0;
-        })->flatMap->branchAllocations->count();
-
-        $this->batch3BranchesCount = $batchAllocations->filter(function($batch) {
-            return str_contains($batch->batch_number ?? '', '3') && $batch->branchAllocations->count() > 0;
-        })->flatMap->branchAllocations->count();
+        // Count branches by their batch field
+        $this->batch1BranchesCount = Branch::where('batch', 'BATCH-01')->count();
+        $this->batch2BranchesCount = Branch::where('batch', 'BATCH-02')->count(); 
+        $this->batch3BranchesCount = Branch::where('batch', 'BATCH-03')->count();
     }
 
     /**
@@ -54,40 +43,37 @@ class BranchInventory extends Component
      */
     public function selectBatch($batchNumber)
     {
-        $this->selectedBatch = $batchNumber;
+        // Map batch number to batch name
+        $batchMap = [
+            '1' => 'BATCH-01',
+            '2' => 'BATCH-02', 
+            '3' => 'BATCH-03'
+        ];
+        
+        $this->selectedBatch = $batchMap[$batchNumber] ?? $batchNumber;
         $this->loadBatchBranches();
     }
 
     /**
-     * Load branches for the selected batch
+     * Load branches for the selected batch based on branch batch field
      */
     protected function loadBatchBranches()
     {
         $this->batchBranches = [];
 
-        // Get batch allocations for the selected batch
-        $batchAllocations = BatchAllocation::with(['branchAllocations.branch'])
-            ->where(function($query) {
-                // Filter by batch number containing the selected batch digit
-                $query->where('batch_number', 'LIKE', "%{$this->selectedBatch}%")
-                      ->orWhere('id', $this->selectedBatch); // Fallback
-            })
-            ->get();
+        // Get branches by their batch field
+        $branches = Branch::where('batch', $this->selectedBatch)->get();
 
-        foreach ($batchAllocations as $batchAllocation) {
-            foreach ($batchAllocation->branchAllocations as $branchAllocation) {
-                $branch = $branchAllocation->branch;
-
-                $this->batchBranches[] = [
-                    'id' => $branch->id,
-                    'name' => $branch->name,
-                    'code' => $branch->code,
-                    'address' => $branch->address,
-                    'batch_number' => $batchAllocation->batch_number,
-                    'allocation_id' => $branchAllocation->id,
-                    'reference' => $batchAllocation->ref_no,
-                ];
-            }
+        foreach ($branches as $branch) {
+            $this->batchBranches[] = [
+                'id' => $branch->id,
+                'name' => $branch->name,
+                'code' => $branch->code,
+                'address' => $branch->address,
+                'batch_number' => $branch->batch,
+                'category' => $branch->category,
+                'manager_name' => $branch->manager_name,
+            ];
         }
     }
 

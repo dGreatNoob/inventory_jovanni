@@ -27,8 +27,6 @@ class DatabaseSeeder extends Seeder
             InventoryLocationSeeder::class,
             FinanceSeeder::class,
             PromoSeeder::class,
-            AllocationWarehouseSeeder::class,
-            AllocationSalesSeeder::class,
         ]);
     }
 }

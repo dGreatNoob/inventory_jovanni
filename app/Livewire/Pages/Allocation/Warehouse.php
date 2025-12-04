@@ -376,7 +376,8 @@ class Warehouse extends Component
         $productFound = false;
 
         foreach ($branchAllocation->items as $item) {
-            if ($item->product->barcode === $barcode) {
+            // Use snapshot barcode for historical integrity - ensures scanning works even if product barcode changed
+            if ($item->display_barcode === $barcode) {
                 $productId = $item->product_id;
                 $allocatedQty = $item->quantity;
                 $branchName = $branchAllocation->branch->name;
@@ -1052,17 +1053,17 @@ class Warehouse extends Component
         // Get all branch allocation items for this batch, grouped by product
         $items = \App\Models\BranchAllocationItem::query()
             ->join('branch_allocations', 'branch_allocation_items.branch_allocation_id', '=', 'branch_allocations.id')
-            ->join('products', 'branch_allocation_items.product_id', '=', 'products.id')
             ->where('branch_allocations.batch_allocation_id', $this->currentBatch->id)
             ->select(
-                'products.id as product_id',
-                'products.name as product_name',
-                'products.barcode',
+                'branch_allocation_items.product_id',
+                \DB::raw('COALESCE(branch_allocation_items.product_snapshot_name, products.name) as product_name'),
+                \DB::raw('COALESCE(branch_allocation_items.product_snapshot_barcode, products.barcode) as barcode'),
                 \DB::raw('SUM(branch_allocation_items.quantity) as total_quantity'),
                 \DB::raw('AVG(branch_allocation_items.unit_price) as avg_unit_price'),
                 \DB::raw('COUNT(DISTINCT branch_allocations.branch_id) as branch_count')
             )
-            ->groupBy('products.id', 'products.name', 'products.barcode')
+            ->leftJoin('products', 'branch_allocation_items.product_id', '=', 'products.id')
+            ->groupBy('branch_allocation_items.product_id', 'product_name', 'barcode')
             ->get();
 
         $this->dispatchProducts = $items->map(function ($item) {

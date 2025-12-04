@@ -411,15 +411,15 @@ class Warehouse extends Component
                     $remaining = $allocatedQty - $newScannedQty;
 
                     if ($remaining === 0) {
-                        $this->scanFeedback = "✅ {$item->product->name} for {$branchName} - COMPLETE!";
-                        session()->flash('scan_success', "Product '{$item->product->name}' for {$branchName} is complete!");
+                        $this->scanFeedback = "✅ {$item->display_name} for {$branchName} - COMPLETE!";
+                        session()->flash('scan_success', "Product '{$item->display_name}' for {$branchName} is complete!");
                     } else {
-                        $this->scanFeedback = "✅ {$item->product->name} for {$branchName} - {$newScannedQty}/{$allocatedQty} ({$remaining} remaining)";
+                        $this->scanFeedback = "✅ {$item->display_name} for {$branchName} - {$newScannedQty}/{$allocatedQty} ({$remaining} remaining)";
                     }
 
                 } else {
-                    $this->scanFeedback = "⚠️ {$item->product->name} for {$branchName} - Already fully scanned!";
-                    session()->flash('scan_warning', "Product '{$item->product->name}' for {$branchName} is already fully scanned.");
+                    $this->scanFeedback = "⚠️ {$item->display_name} for {$branchName} - Already fully scanned!";
+                    session()->flash('scan_warning', "Product '{$item->display_name}' for {$branchName} is already fully scanned.");
                 }
 
                 $productFound = true;

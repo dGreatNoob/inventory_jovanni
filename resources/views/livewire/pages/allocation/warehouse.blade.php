@@ -1252,11 +1252,11 @@
                                     </div>
                                 @endif
                             </td>
-                            <td class="px-4 py-2 w-48 text-sm font-medium text-gray-900 dark:text-white truncate" title="{{ $item->product->name }}{{ $item->product->color ? ' ' . $item->product->color->name : '' }}">
-                                {{ $item->product->name }}{{ $item->product->color ? ' ' . $item->product->color->name : '' }}
+                            <td class="px-4 py-2 w-48 text-sm font-medium text-gray-900 dark:text-white truncate" title="{{ $item->display_name }}{{ $item->product && $item->product->color ? ' ' . $item->product->color->name : '' }}">
+                                {{ $item->display_name }}{{ $item->product && $item->product->color ? ' ' . $item->product->color->name : '' }}
                             </td>
-                            <td class="px-4 py-2 w-36 text-sm font-mono text-gray-500 dark:text-gray-400 truncate" title="{{ $item->product->barcode ?? 'N/A' }}">
-                                {{ $item->product->barcode ?? 'N/A' }}
+                            <td class="px-4 py-2 w-36 text-sm font-mono text-gray-500 dark:text-gray-400 truncate" title="{{ $item->display_barcode }}">
+                                {{ $item->display_barcode }}
                             </td>
                             <td class="px-4 py-2 w-24 text-sm font-semibold text-lg text-gray-900 dark:text-white">
                                 {{ $item->quantity }}

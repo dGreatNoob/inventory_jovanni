@@ -12,9 +12,6 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('branch_allocation_items', function (Blueprint $table) {
-            $table->foreignId('box_id')->nullable()->constrained()->onDelete('set null');
-            $table->foreignId('delivery_receipt_id')->nullable()->constrained()->onDelete('set null');
-
             // Add product snapshot fields for historical data integrity
             $table->string('product_snapshot_name')->nullable();
             $table->string('product_snapshot_sku')->nullable();
@@ -32,11 +29,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('branch_allocation_items', function (Blueprint $table) {
-            $table->dropForeign(['box_id']);
-            $table->dropColumn('box_id');
-            $table->dropForeign(['delivery_receipt_id']);
-            $table->dropColumn('delivery_receipt_id');
-
             // Remove product snapshot fields
             $table->dropColumn([
                 'product_snapshot_name',

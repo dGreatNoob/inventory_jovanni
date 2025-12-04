@@ -133,20 +133,25 @@ class Warehouse extends Component
     {
         // Load scanned quantities from database for current batch
         $this->scannedQuantities = [];
-        
+
         if (!$this->currentBatch) {
             return;
         }
-        
+
         // Refresh batch to get latest data
         $this->currentBatch->refresh();
-        
+
         foreach ($this->currentBatch->branchAllocations as $branchAllocation) {
             $this->scannedQuantities[$branchAllocation->id] = [];
-            
+
             foreach ($branchAllocation->items as $item) {
-                // Load scanned quantity from DATABASE
-                $this->scannedQuantities[$branchAllocation->id][$item->product_id] = $item->scanned_quantity ?? 0;
+                // Calculate total scanned quantity for this product across all boxes
+                $totalScannedQty = BranchAllocationItem::where('branch_allocation_id', $branchAllocation->id)
+                    ->where('product_id', $item->product_id)
+                    ->whereNotNull('box_id')
+                    ->sum('scanned_quantity');
+
+                $this->scannedQuantities[$branchAllocation->id][$item->product_id] = $totalScannedQty;
             }
         }
     }
@@ -259,9 +264,10 @@ class Warehouse extends Component
 
         $totalScannedQuantities = 0;
         foreach ($this->currentBatch->branchAllocations as $branchAllocation) {
-            foreach ($branchAllocation->items as $item) {
-                $totalScannedQuantities += $item->scanned_quantity ?? 0;
-            }
+            // Sum scanned quantities from items that have been scanned into boxes
+            $totalScannedQuantities += BranchAllocationItem::where('branch_allocation_id', $branchAllocation->id)
+                ->whereNotNull('box_id')
+                ->sum('scanned_quantity');
         }
 
         return $totalScannedQuantities;
@@ -271,22 +277,26 @@ class Warehouse extends Component
         if (!$this->currentBatch) {
             return 0;
         }
-        
+
         $count = 0;
-        
+
         // Refresh to get latest data
         $this->currentBatch->refresh();
-        
+
         foreach ($this->currentBatch->branchAllocations as $branchAllocation) {
             foreach ($branchAllocation->items as $item) {
-                // Use DATABASE value
-                $scannedQty = $item->scanned_quantity ?? 0;
-                if ($scannedQty >= $item->quantity) {
+                // Calculate total scanned quantity for this product across all boxes
+                $totalScannedQty = BranchAllocationItem::where('branch_allocation_id', $branchAllocation->id)
+                    ->where('product_id', $item->product_id)
+                    ->whereNotNull('box_id')
+                    ->sum('scanned_quantity');
+
+                if ($totalScannedQty >= $item->quantity) {
                     $count++;
                 }
             }
         }
-        
+
         return $count;
     }
 
@@ -295,21 +305,25 @@ class Warehouse extends Component
         if (!$this->currentBatch) {
             return false;
         }
-        
+
         $branchAllocation = $this->currentBatch->branchAllocations->find($branchAllocationId);
-        
+
         if (!$branchAllocation) {
             return false;
         }
-        
+
         foreach ($branchAllocation->items as $item) {
-            // Use DATABASE value
-            $scannedQty = $item->scanned_quantity ?? 0;
-            if ($scannedQty < $item->quantity) {
+            // Calculate total scanned quantity for this product across all boxes
+            $totalScannedQty = BranchAllocationItem::where('branch_allocation_id', $branchAllocation->id)
+                ->where('product_id', $item->product_id)
+                ->whereNotNull('box_id')
+                ->sum('scanned_quantity');
+
+            if ($totalScannedQty < $item->quantity) {
                 return false;
             }
         }
-        
+
         return true;
     }
 
@@ -318,20 +332,24 @@ class Warehouse extends Component
         if (!$this->currentBatch) {
             return false;
         }
-        
+
         // Refresh to get latest data
         $this->currentBatch->refresh();
-        
+
         foreach ($this->currentBatch->branchAllocations as $branchAllocation) {
             foreach ($branchAllocation->items as $item) {
-                // Use DATABASE value
-                $scannedQty = $item->scanned_quantity ?? 0;
-                if ($scannedQty < $item->quantity) {
+                // Calculate total scanned quantity for this product across all boxes
+                $totalScannedQty = BranchAllocationItem::where('branch_allocation_id', $branchAllocation->id)
+                    ->where('product_id', $item->product_id)
+                    ->whereNotNull('box_id')
+                    ->sum('scanned_quantity');
+
+                if ($totalScannedQty < $item->quantity) {
                     return false;
                 }
             }
         }
-        
+
         return true;
     }
     public function loadBatchAllocations()
@@ -428,45 +446,71 @@ class Warehouse extends Component
                 $allocatedQty = $item->quantity;
                 $branchName = $branchAllocation->branch->name;
 
-                // Get current scanned quantity from DATABASE
-                $currentScannedQty = $item->scanned_quantity ?? 0;
+                // Check if this product has already been scanned into the current box
+                $existingScannedItem = BranchAllocationItem::where('branch_allocation_id', $branchAllocation->id)
+                    ->where('product_id', $productId)
+                    ->where('box_id', $this->currentBox->id)
+                    ->first();
 
+                // Calculate total scanned quantity for this product across all boxes in this branch
+                $totalScannedQty = BranchAllocationItem::where('branch_allocation_id', $branchAllocation->id)
+                    ->where('product_id', $productId)
+                    ->whereNotNull('box_id')
+                    ->sum('scanned_quantity');
 
-                // Increment scanned quantity
-                if ($currentScannedQty < $allocatedQty) {
-                    $newScannedQty = $currentScannedQty + 1;
-
-                    // SAVE TO DATABASE with box and DR references
-                    $item->update([
-                        'scanned_quantity' => $newScannedQty,
-                        'box_id' => $this->currentBox->id,
-                        'delivery_receipt_id' => $this->currentDr->id,
-                    ]);
-
-                    // Update box count
-                    $this->currentBox->increment('current_count');
-
-                    // Update DR scanned items count
-                    $this->currentDr->increment('scanned_items');
-
-                    // Update component state (for real-time display)
-                    if (!isset($this->scannedQuantities[$this->activeBranchId])) {
-                        $this->scannedQuantities[$this->activeBranchId] = [];
-                    }
-                    $this->scannedQuantities[$this->activeBranchId][$productId] = $newScannedQty;
-
-                    $remaining = $allocatedQty - $newScannedQty;
-
-                    if ($remaining === 0) {
-                        $this->scanFeedback = "✅ {$item->display_name} for {$branchName} - COMPLETE!";
-                        session()->flash('scan_success', "Product '{$item->display_name}' for {$branchName} is complete!");
-                    } else {
-                        $this->scanFeedback = "✅ {$item->display_name} for {$branchName} - {$newScannedQty}/{$allocatedQty} ({$remaining} remaining)";
-                    }
-
-                } else {
+                // Check if we can still scan more of this product
+                if ($totalScannedQty >= $allocatedQty) {
                     $this->scanFeedback = "⚠️ {$item->display_name} for {$branchName} - Already fully scanned!";
                     session()->flash('scan_warning', "Product '{$item->display_name}' for {$branchName} is already fully scanned.");
+                    $productFound = true;
+                    break;
+                }
+
+                if ($existingScannedItem) {
+                    // Increment existing scanned item in this box
+                    $existingScannedItem->increment('scanned_quantity');
+                    $newScannedQty = $existingScannedItem->scanned_quantity;
+                } else {
+                    // Create new scanned item record for this box
+                    $newScannedItem = BranchAllocationItem::create([
+                        'branch_allocation_id' => $branchAllocation->id,
+                        'product_id' => $productId,
+                        'quantity' => 1, // This represents the scanned quantity in this box
+                        'scanned_quantity' => 1,
+                        'unit_price' => $item->unit_price,
+                        'box_id' => $this->currentBox->id,
+                        'delivery_receipt_id' => $this->currentDr->id,
+                        // Copy snapshot data
+                        'product_snapshot_name' => $item->product_snapshot_name,
+                        'product_snapshot_sku' => $item->product_snapshot_sku,
+                        'product_snapshot_barcode' => $item->product_snapshot_barcode,
+                        'product_snapshot_specs' => $item->product_snapshot_specs,
+                        'product_snapshot_price' => $item->product_snapshot_price,
+                        'product_snapshot_uom' => $item->product_snapshot_uom,
+                        'product_snapshot_created_at' => $item->product_snapshot_created_at,
+                    ]);
+                    $newScannedQty = 1;
+                }
+
+                // Update box count
+                $this->currentBox->increment('current_count');
+
+                // Update DR scanned items count
+                $this->currentDr->increment('scanned_items');
+
+                // Update component state (for real-time display)
+                if (!isset($this->scannedQuantities[$this->activeBranchId])) {
+                    $this->scannedQuantities[$this->activeBranchId] = [];
+                }
+                $this->scannedQuantities[$this->activeBranchId][$productId] = $totalScannedQty + 1;
+
+                $remaining = $allocatedQty - ($totalScannedQty + 1);
+
+                if ($remaining === 0) {
+                    $this->scanFeedback = "✅ {$item->display_name} for {$branchName} - COMPLETE!";
+                    session()->flash('scan_success', "Product '{$item->display_name}' for {$branchName} is complete!");
+                } else {
+                    $this->scanFeedback = "✅ {$item->display_name} for {$branchName} - " . ($totalScannedQty + 1) . "/{$allocatedQty} ({$remaining} remaining)";
                 }
 
                 $productFound = true;
@@ -493,30 +537,48 @@ class Warehouse extends Component
         if (!$this->currentBatch) {
             return;
         }
-        
+
         if ($branchAllocationId) {
-            // Reset for specific branch
+            // Reset for specific branch - delete all box-specific scanned item records
             $branchAllocation = $this->currentBatch->branchAllocations->find($branchAllocationId);
-            
+
             if ($branchAllocation) {
-                foreach ($branchAllocation->items as $item) {
-                    $item->update(['scanned_quantity' => 0]);
+                // Delete all scanned item records for this branch that have box_id (scanned items)
+                BranchAllocationItem::where('branch_allocation_id', $branchAllocationId)
+                    ->whereNotNull('box_id')
+                    ->delete();
+
+                // Reset box counts and DR counts
+                $boxes = Box::where('branch_allocation_id', $branchAllocationId)->get();
+                foreach ($boxes as $box) {
+                    $box->update(['current_count' => 0]);
+                    DeliveryReceipt::where('box_id', $box->id)->update(['scanned_items' => 0]);
                 }
+
                 session()->flash('message', 'Scanned quantities reset for ' . $branchAllocation->branch->name);
             }
         } else {
-            // Reset for all branches
-            foreach ($this->currentBatch->branchAllocations as $branchAllocation) {
-                foreach ($branchAllocation->items as $item) {
-                    $item->update(['scanned_quantity' => 0]);
-                }
+            // Reset for all branches - delete all box-specific scanned item records for the batch
+            $branchAllocationIds = $this->currentBatch->branchAllocations->pluck('id')->toArray();
+
+            // Delete all scanned item records for this batch that have box_id (scanned items)
+            BranchAllocationItem::whereIn('branch_allocation_id', $branchAllocationIds)
+                ->whereNotNull('box_id')
+                ->delete();
+
+            // Reset box counts and DR counts for all boxes in the batch
+            $boxes = Box::whereIn('branch_allocation_id', $branchAllocationIds)->get();
+            foreach ($boxes as $box) {
+                $box->update(['current_count' => 0]);
+                DeliveryReceipt::where('box_id', $box->id)->update(['scanned_items' => 0]);
             }
+
             session()->flash('message', 'All scanned quantities have been reset.');
         }
-        
+
         // Reload scanned quantities
         $this->initializeScannedQuantities();
-        
+
         // Refresh batch
         $this->currentBatch->refresh();
     }
@@ -613,7 +675,7 @@ class Warehouse extends Component
             return;
         }
 
-        // Reset scanned quantities for items in this box
+        // Reset scanned quantities for items in this box (make them available for rescanning)
         BranchAllocationItem::where('box_id', $boxId)->update([
             'scanned_quantity' => 0,
             'box_id' => null,
@@ -637,7 +699,7 @@ class Warehouse extends Component
             $this->showBarcodeScannerModal = false;
         }
 
-        session()->flash('message', 'Box deleted and scanned quantities reset.');
+        session()->flash('message', 'Box deleted and scanned quantities reset (items available for rescanning).');
     }
 
     public function declareBoxFull()

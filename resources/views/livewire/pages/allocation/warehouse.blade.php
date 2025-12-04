@@ -1262,11 +1262,17 @@
                                 {{ $item->quantity }}
                             </td>
                             <td class="px-4 py-2 w-24 text-3xl font-bold text-blue-600 dark:text-blue-400">
-                                {{ $item->scanned_quantity ?? 0 }}
+                                @php
+                                    $totalScannedQty = \App\Models\BranchAllocationItem::where('branch_allocation_id', $activeBranchAllocation->id)
+                                        ->where('product_id', $item->product_id)
+                                        ->whereNotNull('box_id')
+                                        ->sum('scanned_quantity');
+                                @endphp
+                                {{ $totalScannedQty }}
                             </td>
                             <td class="px-4 py-2 w-36 text-sm truncate">
                                 @php
-                                    $scannedQty = $item->scanned_quantity ?? 0;
+                                    $scannedQty = $totalScannedQty;
                                     $allocatedQty = $item->quantity;
                                 @endphp
                                 @if ($scannedQty == 0)
@@ -1997,7 +2003,12 @@
                             $allocatedQty = 0;
                             foreach ($record->branchAllocations as $branchAllocation) {
                                 foreach ($branchAllocation->items as $item) {
-                                    $scannedQty += $item->scanned_quantity ?? 0;
+                                    // Calculate total scanned quantity for this product across all boxes
+                                    $productScannedQty = \App\Models\BranchAllocationItem::where('branch_allocation_id', $branchAllocation->id)
+                                        ->where('product_id', $item->product_id)
+                                        ->whereNotNull('box_id')
+                                        ->sum('scanned_quantity');
+                                    $scannedQty += $productScannedQty;
                                     $allocatedQty += $item->quantity ?? 0;
                                 }
                             }

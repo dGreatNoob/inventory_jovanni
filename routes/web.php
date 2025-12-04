@@ -182,6 +182,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/allocation/delivery-receipt/generate/{branchAllocationId}', [\App\Http\Controllers\DeliveryReceiptController::class, 'generateDeliveryReceipt'])->name('allocation.delivery-receipt.generate');
     Route::get('/allocation/delivery-receipt/preview/{branchAllocationId}', [\App\Http\Controllers\DeliveryReceiptController::class, 'previewDeliveryReceipt'])->name('allocation.delivery-receipt.preview');
 
+    // Allocation Matrix PDF Export Route
+    Route::get('/allocation/matrix/pdf/{batchId}', [\App\Http\Controllers\AllocationMatrixController::class, 'exportPDF'])->name('allocation.matrix.pdf');
+
     Route::get('/sales-order', SalesManagementIndex::class)->name('salesorder.index');
     Route::get('/sales-order/{salesOrderId}', Viewsalesorder::class)->name('salesorder.view');
     Route::get('/sales-promo', SalesManagementPromo::class)->name('sales.promo');

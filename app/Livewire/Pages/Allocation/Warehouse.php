@@ -2306,11 +2306,32 @@ class Warehouse extends Component
                 'vendor_code' => urlencode($this->vendorCode),
                 'vendor_name' => urlencode($this->vendorName),
             ]);
-            
+
             $this->dispatch('open-excel-download', url: $excelUrl);
             session()->flash('message', 'Opening VDR Excel export in new window...');
         } catch (\Exception $e) {
             session()->flash('error', 'Failed to export VDR to Excel: ' . $e->getMessage());
+        }
+    }
+
+    public function exportAllocationToPDF()
+    {
+        if (!$this->currentBatch) {
+            session()->flash('error', 'No batch selected for export.');
+            return;
+        }
+
+        try {
+            // Generate PDF URL for allocation matrix
+            $pdfUrl = route('allocation.matrix.pdf', [
+                'batchId' => $this->currentBatch->id
+            ]);
+
+            // Dispatch event to open PDF in new window
+            $this->dispatch('open-pdf-download', url: $pdfUrl);
+            session()->flash('message', 'Opening allocation matrix PDF in new window...');
+        } catch (\Exception $e) {
+            session()->flash('error', 'Failed to export allocation to PDF: ' . $e->getMessage());
         }
     }
 

@@ -1634,6 +1634,72 @@
                                             </div>
                                         </section>
 
+                                        <!-- Scanned Items Table -->
+                                        @if ($currentBox && $currentDr)
+                                        <section class="space-y-4">
+                                            <div>
+                                                <flux:heading size="md" class="text-gray-900 dark:text-white">Scanned Items</flux:heading>
+                                                <p class="text-sm text-gray-500 dark:text-gray-400">Items scanned into this box.</p>
+                                            </div>
+
+                                            <div class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                                                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                                    <thead class="bg-gray-50 dark:bg-gray-700">
+                                                        <tr>
+                                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Image</th>
+                                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Product</th>
+                                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Barcode</th>
+                                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Quantity</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                                        @php
+                                                            $scannedItems = \App\Models\BranchAllocationItem::where('box_id', $currentBox->id)
+                                                                ->with('product')
+                                                                ->where('scanned_quantity', '>', 0)
+                                                                ->get();
+                                                        @endphp
+                                                        @if ($scannedItems->count() > 0)
+                                                            @foreach ($scannedItems as $item)
+                                                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                                                    <td class="px-4 py-3">
+                                                                        @if ($item->product && $item->product->primary_image)
+                                                                            <img src="{{ asset('storage/' . $item->product->primary_image) }}" alt="{{ $item->display_name }}" class="w-12 h-12 rounded object-cover">
+                                                                        @else
+                                                                            <div class="w-12 h-12 bg-gray-200 dark:bg-gray-600 rounded flex items-center justify-center">
+                                                                                <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 002 2v12a2 2 0 002 2z"></path>
+                                                                                </svg>
+                                                                            </div>
+                                                                        @endif
+                                                                    </td>
+                                                                    <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">
+                                                                        {{ $item->display_name }}
+                                                                        @if ($item->product && $item->product->color)
+                                                                            <span class="text-xs text-gray-500 dark:text-gray-400">({{ $item->product->color->name }})</span>
+                                                                        @endif
+                                                                    </td>
+                                                                    <td class="px-4 py-3 text-sm font-mono text-gray-500 dark:text-gray-400">
+                                                                        {{ $item->display_barcode }}
+                                                                    </td>
+                                                                    <td class="px-4 py-3 text-sm font-semibold text-blue-600 dark:text-blue-400">
+                                                                        {{ $item->scanned_quantity }}
+                                                                    </td>
+                                                                </tr>
+                                                            @endforeach
+                                                        @else
+                                                            <tr>
+                                                                <td colspan="4" class="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                                                                    No items scanned yet
+                                                                </td>
+                                                            </tr>
+                                                        @endif
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </section>
+                                        @endif
+
                                         <!-- Current Status -->
                                         <section class="space-y-4">
                                             <div>

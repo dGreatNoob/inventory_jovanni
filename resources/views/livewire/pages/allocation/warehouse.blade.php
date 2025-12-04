@@ -1268,8 +1268,12 @@
     <div class="max-h-64 overflow-y-auto">
         <table class="min-w-full table-fixed divide-y divide-gray-200 dark:divide-gray-700">
             <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                @if ($activeBranchAllocation->items->count() > 0)
-                    @foreach ($activeBranchAllocation->items as $item)
+                @php
+                    // Filter to show only original allocation items (not scanned tracking records)
+                    $originalItems = $activeBranchAllocation->items->where('box_id', null);
+                @endphp
+                @if ($originalItems->count() > 0)
+                    @foreach ($originalItems as $item)
                         <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
                             <td class="px-4 py-2 w-16">
                                 @if ($item->product->primary_image)

@@ -761,45 +761,62 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <p class="text-sm text-gray-700 dark:text-gray-300 mb-4">
                                         Choose which branch you are currently scanning products for. You must select a branch before scanning.
                                     </p>
-                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                                        @foreach($currentBatch->branchAllocations as $branchAllocation)
-                                            @php
-                                                $isActive = $activeBranchId === $branchAllocation->id;
-                                                $isComplete = $this->isBranchComplete($branchAllocation->id);
-                                            @endphp
-                                            <button type="button"
-                                                    wire:click="setActiveBranch({{ $branchAllocation->id }})"
-                                                    class="p-4 rounded-lg border-2 transition-all text-left
-                                                        @if($isActive)
-                                                            bg-blue-500 border-blue-600 text-white shadow-lg transform scale-105
-                                                        @elseif($isComplete)
-                                                            bg-green-50 border-green-500 text-green-800 dark:bg-green-900/20 dark:text-green-300
-                                                        @else
-                                                            bg-white border-gray-300 text-gray-800 hover:border-blue-400 dark:bg-gray-700 dark:border-gray-600 dark:text-white
-                                                        @endif">
-                                                <div class="flex items-center justify-between">
-                                                    <div class="flex-1">
-                                                        <div class="font-bold text-lg">
-                                                            @if($isActive) @endif
-                                                            @if($isComplete) ✅ @endif
+                                    <div class="overflow-x-auto max-h-96 border border-gray-200 dark:border-gray-700 rounded-lg">
+                                        <table class="min-w-full bg-white dark:bg-gray-800">
+                                            <thead class="bg-gray-50 dark:bg-gray-700 sticky top-0">
+                                                <tr>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Status</th>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Branch Name</th>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Products</th>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                                                @foreach($currentBatch->branchAllocations as $branchAllocation)
+                                                    @php
+                                                        $isActive = $activeBranchId === $branchAllocation->id;
+                                                        $isComplete = $this->isBranchComplete($branchAllocation->id);
+                                                    @endphp
+                                                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors
+                                                        @if($isActive) bg-blue-50 dark:bg-blue-900/20 @endif">
+                                                        <td class="px-4 py-3 whitespace-nowrap text-sm">
+                                                            @if($isComplete)
+                                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300">
+                                                                    ✅ Complete
+                                                                </span>
+                                                            @elseif($isActive)
+                                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
+                                                                    🔄 Active
+                                                                </span>
+                                                            @else
+                                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-200">
+                                                                    ⏳ Pending
+                                                                </span>
+                                                            @endif
+                                                        </td>
+                                                        <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                                                             {{ $branchAllocation->branch->name }}
-                                                        </div>
-                                                        <div class="text-sm mt-1 @if($isActive) text-blue-100 @endif">
+                                                        </td>
+                                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                                             {{ $branchAllocation->items->count() }} products
-                                                        </div>
-                                                    </div>
-                                                    @if($isActive)
-                                                        <div class="ml-2 px-3 py-1 bg-white text-blue-600 rounded-full text-xs font-bold">
-                                                            ACTIVE
-                                                        </div>
-                                                    @elseif($isComplete)
-                                                        <div class="ml-2 text-2xl">
-                                                            ✓
-                                                        </div>
-                                                    @endif
-                                                </div>
-                                            </button>
-                                        @endforeach
+                                                        </td>
+                                                        <td class="px-4 py-3 whitespace-nowrap text-sm">
+                                                            @if(!$isActive)
+                                                                <button type="button"
+                                                                        wire:click="setActiveBranch({{ $branchAllocation->id }})"
+                                                                        class="px-3 py-1 text-xs font-medium text-white bg-blue-600 border border-transparent rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                                                    Select
+                                                                </button>
+                                                            @else
+                                                                <span class="px-3 py-1 text-xs font-medium text-blue-600 bg-blue-100 rounded dark:bg-blue-900/20 dark:text-blue-300">
+                                                                    Current
+                                                                </span>
+                                                            @endif
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </div>
 
@@ -963,6 +980,9 @@ document.addEventListener('DOMContentLoaded', function() {
                                                         <thead class="bg-gray-50 dark:bg-gray-700">
                                                             <tr>
                                                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                                                    Image
+                                                                </th>
+                                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                                                     Product
                                                                 </th>
                                                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -983,8 +1003,25 @@ document.addEventListener('DOMContentLoaded', function() {
                                                             @if($activeBranchAllocation->items->count() > 0)
                                                                 @foreach($activeBranchAllocation->items as $item)
                                                                     <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                                                        <td class="px-6 py-4 whitespace-nowrap">
+                                                                            @if($item->product->primary_image)
+                                                                                <img src="{{ asset('storage/' . $item->product->primary_image) }}" 
+                                                                                     alt="{{ $item->product->name }}"
+                                                                                     class="w-12 h-12 rounded object-cover">
+                                                                            @else
+                                                                                <div class="w-12 h-12 bg-gray-200 dark:bg-gray-600 rounded flex items-center justify-center">
+                                                                                    <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 002 2v12a2 2 0 002 2z"></path>
+                                                                                    </svg>
+                                                                                </div>
+                                                                            @endif
+                                                                        </td>
                                                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                                                                            {{ $item->product->remarks }}
+                                                                            @php
+                                                                                $colorName = $item->product->color ? $item->product->color->name : '';
+                                                                                $productDisplayName = $item->product->name . ($colorName ? ' ' . $colorName : '');
+                                                                            @endphp
+                                                                            {{ $productDisplayName }}
                                                                         </td>
                                                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 font-mono">
                                                                             {{ $item->product->barcode ?? 'N/A' }}

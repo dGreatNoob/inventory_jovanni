@@ -39,13 +39,12 @@ class Warehouse extends Component
     public $isEditing = false;
     public $batchSteps = [];
 
-    // Box and DR management for step 4
+    // Box and DR related properties
+    public $availableBoxes = [];
+    public $selectedBoxId = null;
     public $currentBox = null;
     public $currentDr = null;
     public $motherDr = null;
-    public $availableBoxes = [];
-    public $showCreateDrModal = false;
-    public $selectedBoxId = null;
     public $showBarcodeScannerModal = false;
 
 
@@ -551,6 +550,66 @@ class Warehouse extends Component
         $this->showBarcodeScannerModal = false;
         $this->scanFeedback = '';
         $this->lastScannedBarcode = '';
+
+        // Reset selected box to "Select" status
+        $this->selectedBoxId = null;
+        $this->currentBox = null;
+        $this->currentDr = null;
+        $this->motherDr = null;
+    }
+
+    public function deleteBox($boxId)
+    {
+        $box = Box::find($boxId);
+        if (!$box) {
+            session()->flash('error', 'Box not found.');
+            return;
+        }
+
+        // Reset scanned quantities for items in this box
+        BranchAllocationItem::where('box_id', $boxId)->update([
+            'scanned_quantity' => 0,
+            'box_id' => null,
+            'delivery_receipt_id' => null,
+        ]);
+
+        // Delete the box
+        $box->delete();
+
+        // Delete associated DR
+        DeliveryReceipt::where('box_id', $boxId)->delete();
+
+        // Reload available boxes
+        $this->loadAvailableBoxes($this->activeBranchId);
+
+        // If the deleted box was currently selected, reset selection
+        if ($this->selectedBoxId == $boxId) {
+            $this->selectedBoxId = null;
+            $this->currentBox = null;
+            $this->currentDr = null;
+            $this->showBarcodeScannerModal = false;
+        }
+
+        session()->flash('message', 'Box deleted and scanned quantities reset.');
+    }
+
+    public function declareBoxFull()
+    {
+        if (!$this->currentBox) {
+            session()->flash('error', 'No box selected.');
+            return;
+        }
+
+        // Update box status to full
+        $this->currentBox->update(['status' => 'full']);
+
+        // Close scanner modal
+        $this->closeBarcodeScannerModal();
+
+        // Reload available boxes to reflect the change
+        $this->loadAvailableBoxes($this->activeBranchId);
+
+        session()->flash('message', 'Box declared as full.');
     }
 
     private function createDrForBox($boxId)

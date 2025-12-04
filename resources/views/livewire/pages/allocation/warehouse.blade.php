@@ -1028,6 +1028,7 @@
                                             <table class="min-w-full bg-white dark:bg-gray-800">
                                                 <thead class="bg-gray-50 dark:bg-gray-700 sticky top-0">
                                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Box Number</th>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Items</th>
                                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Status</th>
                                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">DR Status</th>
                                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Action</th>
@@ -1041,6 +1042,9 @@
                                                         <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors {{ $isSelected ? 'bg-green-50 dark:bg-green-900/20' : '' }}">
                                                             <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                                                                 {{ $box->box_number }}
+                                                            </td>
+                                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                                                {{ $box->current_count }}
                                                             </td>
                                                             <td class="px-4 py-3 whitespace-nowrap text-sm">
                                                                 @if ($box->status === 'full')
@@ -1061,20 +1065,29 @@
                                                                 @endif
                                                             </td>
                                                             <td class="px-4 py-3 whitespace-nowrap text-sm">
-                                                                @if (!$isSelected && $box->status !== 'closed')
-                                                                    <button type="button" wire:click="selectBox({{ $box->id }})"
-                                                                        class="px-3 py-1 text-xs font-medium text-white bg-blue-600 border border-transparent rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                                                        Select
-                                                                    </button>
-                                                                @elseif ($isSelected)
-                                                                    <span class="px-3 py-1 text-xs font-medium text-green-600 bg-green-100 rounded dark:bg-green-900/20 dark:text-green-300">
-                                                                        Active
-                                                                    </span>
-                                                                @else
-                                                                    <span class="px-3 py-1 text-xs font-medium text-gray-400 bg-gray-100 rounded dark:bg-gray-600 dark:text-gray-200">
-                                                                        Closed
-                                                                    </span>
-                                                                @endif
+                                                                <div class="flex items-center space-x-2">
+                                                                    @if (!$isSelected && $box->status !== 'closed')
+                                                                        <button type="button" wire:click="selectBox({{ $box->id }})"
+                                                                            class="px-3 py-1 text-xs font-medium text-white bg-blue-600 border border-transparent rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                                                            Select
+                                                                        </button>
+                                                                    @elseif ($isSelected)
+                                                                        <span class="px-3 py-1 text-xs font-medium text-green-600 bg-green-100 rounded dark:bg-green-900/20 dark:text-green-300">
+                                                                            Active
+                                                                        </span>
+                                                                    @else
+                                                                        <span class="px-3 py-1 text-xs font-medium text-gray-400 bg-gray-100 rounded dark:bg-gray-600 dark:text-gray-200">
+                                                                            Closed
+                                                                        </span>
+                                                                    @endif
+                                                                    @if ($box->status !== 'closed')
+                                                                        <button type="button" wire:click="deleteBox({{ $box->id }})"
+                                                                            wire:confirm="Are you sure you want to delete this box? All scanned items will be reset."
+                                                                            class="px-3 py-1 text-xs font-medium text-white bg-red-600 border border-transparent rounded hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                                                                            Delete
+                                                                        </button>
+                                                                    @endif
+                                                                </div>
                                                             </td>
                                                         </tr>
                                                     @endforeach
@@ -1089,7 +1102,7 @@
                                     @endif
 
                                     <!-- Current DR Info -->
-                                    @if ($currentDr)
+                                    {{-- @if ($currentDr)
                                         <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                                             <h5 class="font-medium text-blue-900 dark:text-blue-100 mb-2">Active Delivery Receipt</h5>
                                             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
@@ -1111,7 +1124,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                    @endif
+                                    @endif --}}
                                 </div>
                             @endif
 
@@ -1546,14 +1559,22 @@
                                             </div>
 
                                             <div class="space-y-4">
-                                                <flux:input
-                                                    wire:model.live="barcodeInput"
-                                                    wire:keydown.enter="processBarcodeScanner"
-                                                    label="Barcode"
-                                                    placeholder="Scan barcode or enter manually..."
-                                                    class="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                                                    autofocus
-                                                />
+                                                <div>
+                                                    <label for="barcode-input" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                                                        Barcode
+                                                    </label>
+                                                    <input
+                                                        id="barcode-input"
+                                                        type="text"
+                                                        wire:model.live="barcodeInput"
+                                                        wire:keydown.enter="processBarcodeScanner"
+                                                        placeholder="Scan barcode or enter manually..."
+                                                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                                        x-ref="barcodeInput"
+                                                        x-init="$nextTick(() => { if ($el) $el.focus(); })"
+                                                        autofocus
+                                                    />
+                                                </div>
                                             </div>
                                         </section>
 
@@ -1563,7 +1584,7 @@
                                                 <flux:heading size="md" class="text-gray-900 dark:text-white">Scan Status</flux:heading>
                                             </div>
 
-                                            <div class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
+                                            <div class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700">
                                                 <div class="flex items-start">
                                                     <div class="flex-shrink-0">
                                                         @if(str_contains($scanFeedback, '✅'))
@@ -1694,9 +1715,17 @@
                                                 Select a box to begin scanning
                                             @endif
                                         </div>
-                                        <flux:button type="button" wire:click="closeBarcodeScannerModal" variant="ghost">
-                                            Close Scanner
-                                        </flux:button>
+                                        <div class="flex items-center space-x-3">
+                                            @if($currentBox && $currentDr)
+                                                <button type="button" wire:click="declareBoxFull"
+                                                    class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                                    Declare as Full
+                                                </button>
+                                            @endif
+                                            <flux:button type="button" wire:click="closeBarcodeScannerModal" variant="ghost">
+                                                Close Scanner
+                                            </flux:button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

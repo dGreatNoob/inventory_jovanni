@@ -894,8 +894,10 @@
                                             </tbody>
                                         </table>
                                     </div>
-                                </div>
+                                    </div>
+                                    
                             @endif
+
 
                             <div
                                 class="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600 mt-6">
@@ -999,92 +1001,121 @@
                                 </div>
                             </div>
 
-                            <!-- Barcode Scanner Input - VISIBLE -->
+                            <!-- Box and DR Selection for Active Branch -->
+                            @if ($activeBranchId)
+                                <div class="mb-6 p-4 bg-white dark:bg-gray-900 border-2 border-green-500 dark:border-green-700 rounded-lg">
+                                    <h4 class="font-bold text-lg text-gray-900 dark:text-gray-100 mb-3">
+                                        Box & Delivery Receipt Management
+                                    </h4>
+                                    <p class="text-sm text-gray-700 dark:text-gray-300 mb-4">
+                                        Create or select boxes and manage delivery receipts for scanning products.
+                                    </p>
 
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div class="space-y-4"> <!-- COLUMN 1 -->
+                                    <!-- Create New Box Button -->
                                     <div class="mb-4">
-                                        <label for="barcode-scanner-input"
-                                            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                            <div class="flex items-center justify-between">
-                                                <div class="flex items-center">
-                                                    <svg class="h-5 w-5 mr-2 text-blue-600" fill="none"
-                                                        stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                            stroke-width="2"
-                                                            d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z">
-                                                        </path>
-                                                    </svg>
-                                                    Barcode Scanner Input
-                                                </div>
-                                                @if ($activeBranchId)
-                                                    @php
-                                                        $activeBranch = $currentBatch->branchAllocations->find(
-                                                            $activeBranchId,
-                                                        );
-                                                    @endphp
-                                                    <span
-                                                        class="px-3 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full text-sm font-semibold">
-                                                        Scanning for: {{ $activeBranch->branch->name ?? 'Unknown' }}
-                                                    </span>
-                                                @else
-                                                    <span
-                                                        class="px-3 py-1 bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 rounded-full text-sm font-semibold">
-                                                        ⚠️ Select a branch first
-                                                    </span>
-                                                @endif
-                                            </div>
-                                        </label>
-                                        <input type="text" wire:model.live="barcodeInput"
-                                            wire:keydown.enter="processBarcodeScanner" id="barcode-scanner-input"
-                                            autofocus placeholder="Click here and scan barcode..."
-                                            @if (!$activeBranchId) disabled @endif
-                                            class="w-full px-4 py-3 text-lg font-mono border-2 rounded-lg focus:outline-none focus:ring-2 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400
-                                            @if ($activeBranchId) border-blue-500 focus:ring-blue-500 focus:border-blue-600 dark:border-blue-600
-                                            @else
-                                                border-gray-300 bg-gray-100 cursor-not-allowed dark:border-gray-600 dark:bg-gray-800 @endif"
-                                            aria-label="Barcode Scanner Input">
-                                        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                                            @if ($activeBranchId)
-                                                🟢 Scanner ready - Scan products for the selected branch
-                                            @else
-                                                🔴 Scanner locked - Please select a branch above to start scanning
-                                            @endif
-                                        </p>
+                                        <button wire:click="createNewBox"
+                                            class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                            </svg>
+                                            Create New Box
+                                        </button>
                                     </div>
 
-                                    <!-- Scan Feedback -->
-                                    @if ($scanFeedback)
-                                        <div
-                                            class="mb-4 p-4 rounded-lg border-1 
-                                        @if (str_contains($scanFeedback, '✅')) bg-green-50 border-green-500 text-green-800 dark:bg-green-900/20 dark:text-green-300 @endif
-                                        @if (str_contains($scanFeedback, '❌')) bg-red-50 border-red-500 text-red-800 dark:bg-red-900/20 dark:text-red-300 @endif
-                                        @if (str_contains($scanFeedback, '⚠️')) bg-yellow-50 border-yellow-500 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300 @endif">
-                                            <div class="flex items-center">
-                                                <div class="text-2xl mr-3">
-                                                    @if (str_contains($scanFeedback, '✅'))
-                                                    @endif
-                                                    @if (str_contains($scanFeedback, '❌'))
-                                                    @endif
-                                                    @if (str_contains($scanFeedback, '⚠️'))
-                                                    @endif
+                                    <!-- Available Boxes Table -->
+                                    @if (!empty($availableBoxes))
+                                        <div class="overflow-x-auto max-h-64 border border-gray-200 dark:border-gray-700 rounded-lg">
+                                            <table class="min-w-full bg-white dark:bg-gray-800">
+                                                <thead class="bg-gray-50 dark:bg-gray-700 sticky top-0">
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Box Number</th>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Status</th>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">DR Status</th>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Action</th>
+                                                </thead>
+                                                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                                                    @foreach ($availableBoxes as $box)
+                                                        @php
+                                                            $isSelected = $selectedBoxId === $box->id;
+                                                            $dr = \App\Models\DeliveryReceipt::where('box_id', $box->id)->first();
+                                                        @endphp
+                                                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors {{ $isSelected ? 'bg-green-50 dark:bg-green-900/20' : '' }}">
+                                                            <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                                                                {{ $box->box_number }}
+                                                            </td>
+                                                            <td class="px-4 py-3 whitespace-nowrap text-sm">
+                                                                @if ($box->status === 'full')
+                                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300">Full</span>
+                                                                @elseif ($box->status === 'open')
+                                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300">Open</span>
+                                                                @else
+                                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-200">Closed</span>
+                                                                @endif
+                                                            </td>
+                                                            <td class="px-4 py-3 whitespace-nowrap text-sm">
+                                                                @if ($dr)
+                                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
+                                                                        {{ $dr->dr_number }} ({{ $dr->type }})
+                                                                    </span>
+                                                                @else
+                                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-200">No DR</span>
+                                                                @endif
+                                                            </td>
+                                                            <td class="px-4 py-3 whitespace-nowrap text-sm">
+                                                                @if (!$isSelected && $box->status !== 'closed')
+                                                                    <button type="button" wire:click="selectBox({{ $box->id }})"
+                                                                        class="px-3 py-1 text-xs font-medium text-white bg-blue-600 border border-transparent rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                                                        Select
+                                                                    </button>
+                                                                @elseif ($isSelected)
+                                                                    <span class="px-3 py-1 text-xs font-medium text-green-600 bg-green-100 rounded dark:bg-green-900/20 dark:text-green-300">
+                                                                        Active
+                                                                    </span>
+                                                                @else
+                                                                    <span class="px-3 py-1 text-xs font-medium text-gray-400 bg-gray-100 rounded dark:bg-gray-600 dark:text-gray-200">
+                                                                        Closed
+                                                                    </span>
+                                                                @endif
+                                                            </td>
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    @else
+                                        <div class="text-center py-8 border border-gray-200 dark:border-gray-600 rounded-lg">
+                                            <p class="text-gray-500 dark:text-gray-400 mb-4">No boxes available for this branch.</p>
+                                            <p class="text-sm text-gray-400 dark:text-gray-500">Create a new box to start scanning products.</p>
+                                        </div>
+                                    @endif
+
+                                    <!-- Current DR Info -->
+                                    @if ($currentDr)
+                                        <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                                            <h5 class="font-medium text-blue-900 dark:text-blue-100 mb-2">Active Delivery Receipt</h5>
+                                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                                <div>
+                                                    <span class="text-blue-700 dark:text-blue-300">DR Number:</span>
+                                                    <div class="font-medium text-blue-900 dark:text-blue-100">{{ $currentDr->dr_number }}</div>
                                                 </div>
-                                                <div class="text-lg font-semibold">{{ $scanFeedback }}</div>
+                                                <div>
+                                                    <span class="text-blue-700 dark:text-blue-300">Type:</span>
+                                                    <div class="font-medium text-blue-900 dark:text-blue-100">{{ ucfirst($currentDr->type) }}</div>
+                                                </div>
+                                                <div>
+                                                    <span class="text-blue-700 dark:text-blue-300">Status:</span>
+                                                    <div class="font-medium text-blue-900 dark:text-blue-100">{{ ucfirst($currentDr->status) }}</div>
+                                                </div>
+                                                <div>
+                                                    <span class="text-blue-700 dark:text-blue-300">Items Scanned:</span>
+                                                    <div class="font-medium text-blue-900 dark:text-blue-100">{{ $currentDr->scanned_items }} / {{ $currentDr->total_items }}</div>
+                                                </div>
                                             </div>
                                         </div>
                                     @endif
+                                </div>
+                            @endif
 
-                                    @if ($lastScannedBarcode)
-                                        <div class="mb-4 p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
-                                            <span class="text-sm text-gray-600 dark:text-gray-400">Last scanned:</span>
-                                            <span
-                                                class="ml-2 font-mono font-bold text-lg text-gray-900 dark:text-white">{{ $lastScannedBarcode }}</span>
-                                        </div>
-                                    @endif
-
-
-
-                                </div> <!-- END COLOUMN 1-->
+                            <!-- Barcode Scanner Modal will be shown when box is selected -->
 
 
                                 <div class="space-y-4"> <!-- COLUMN 2 -->
@@ -1436,6 +1467,245 @@
                 </script>
             @endpush
         @endif
+
+    <!-- Barcode Scanner Side Panel -->
+    <div
+        x-data="{ open: @entangle('showBarcodeScannerModal').live }"
+        x-cloak
+        x-on:keydown.escape.window="if (open) { open = false; $wire.closeBarcodeScannerModal(); }"
+    >
+        <template x-teleport="body">
+            <div
+                x-show="open"
+                x-transition.opacity
+                class="fixed inset-0 z-50 flex"
+            >
+                <div
+                    x-show="open"
+                    x-transition.opacity
+                    class="fixed inset-0 bg-neutral-900/30 dark:bg-neutral-900/50"
+                    @click="open = false; $wire.closeBarcodeScannerModal()"
+                ></div>
+
+                <section
+                    x-show="open"
+                    x-transition:enter="transform transition ease-in-out duration-300"
+                    x-transition:enter-start="translate-x-full"
+                    x-transition:enter-end="translate-x-0"
+                    x-transition:leave="transform transition ease-in-out duration-300"
+                    x-transition:leave-start="translate-x-0"
+                    x-transition:leave-end="translate-x-full"
+                    class="relative ml-auto flex h-full w-full max-w-2xl"
+                >
+                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 dark:bg-blue-400"></div>
+
+                    <div class="ml-[0.25rem] flex h-full w-full flex-col bg-white shadow-xl dark:bg-zinc-900">
+                        <header class="flex items-start justify-between border-b border-gray-200 px-6 py-5 dark:border-zinc-700">
+                            <div class="flex items-start gap-3">
+                                <div class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300">
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+                                        Barcode Scanner
+                                    </h2>
+                                    <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                                        @if ($activeBranchId && $currentBox && $currentDr)
+                                            {{ $currentBatch->branchAllocations->find($activeBranchId)->branch->name }}
+                                            • Box: {{ $currentBox->box_number }} • DR: {{ $currentDr->dr_number }}
+                                        @else
+                                            Select a box to begin scanning
+                                        @endif
+                                    </p>
+                                </div>
+                            </div>
+
+                            <button
+                                type="button"
+                                class="rounded-full p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-gray-500 dark:hover:bg-zinc-800 dark:hover:text-gray-200"
+                                @click="open = false; $wire.closeBarcodeScannerModal()"
+                                aria-label="Close scanner panel"
+                            >
+                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </header>
+
+                        <div class="flex-1 overflow-hidden">
+                            <div class="flex h-full flex-col">
+                                <div class="flex-1 overflow-y-auto px-6 py-6">
+                                    <div class="space-y-6">
+                                        <!-- Barcode Input -->
+                                        <section class="space-y-4">
+                                            <div>
+                                                <flux:heading size="md" class="text-gray-900 dark:text-white">Scan Product</flux:heading>
+                                                <p class="text-sm text-gray-500 dark:text-gray-400">Scan product barcodes to allocate items to the current box.</p>
+                                            </div>
+
+                                            <div class="space-y-4">
+                                                <flux:input
+                                                    wire:model.live="barcodeInput"
+                                                    wire:keydown.enter="processBarcodeScanner"
+                                                    label="Barcode"
+                                                    placeholder="Scan barcode or enter manually..."
+                                                    class="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                                    autofocus
+                                                />
+                                            </div>
+                                        </section>
+
+                                        <!-- Scan Feedback -->
+                                        <section class="space-y-4">
+                                            <div>
+                                                <flux:heading size="md" class="text-gray-900 dark:text-white">Scan Status</flux:heading>
+                                            </div>
+
+                                            <div class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/50">
+                                                <div class="flex items-start">
+                                                    <div class="flex-shrink-0">
+                                                        @if(str_contains($scanFeedback, '✅'))
+                                                            <svg class="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                                            </svg>
+                                                        @elseif(str_contains($scanFeedback, '❌'))
+                                                            <svg class="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                                                            </svg>
+                                                        @elseif(str_contains($scanFeedback, '⚠️'))
+                                                            <svg class="h-5 w-5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                                                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                                            </svg>
+                                                        @else
+                                                            <svg class="h-5 w-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                                                            </svg>
+                                                        @endif
+                                                    </div>
+                                                    <div class="ml-3 flex-1">
+                                                        <p class="text-sm font-medium text-gray-900 dark:text-white">
+                                                            {{ $scanFeedback ?: 'Ready to scan products...' }}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </section>
+
+                                        <!-- Current Status -->
+                                        <section class="space-y-4">
+                                            <div>
+                                                <flux:heading size="md" class="text-gray-900 dark:text-white">Current Status</flux:heading>
+                                            </div>
+
+                                            <div class="space-y-4">
+                                                <!-- Box Status -->
+                                                @if ($currentBox)
+                                                    <div class="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
+                                                        <h5 class="font-medium text-blue-900 dark:text-blue-100 mb-3 flex items-center">
+                                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                                                            </svg>
+                                                            Box Status
+                                                        </h5>
+                                                        <div class="space-y-2 text-sm">
+                                                            <div class="flex justify-between">
+                                                                <span class="text-blue-700 dark:text-blue-300">Box Number:</span>
+                                                                <span class="font-medium text-blue-900 dark:text-blue-100">{{ $currentBox->box_number }}</span>
+                                                            </div>
+                                                            <div class="flex justify-between">
+                                                                <span class="text-blue-700 dark:text-blue-300">Items in box:</span>
+                                                                <span class="font-medium text-blue-900 dark:text-blue-100">{{ $currentBox->current_count }}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                @endif
+
+                                                <!-- DR Status -->
+                                                @if ($currentDr)
+                                                    <div class="rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-900/20">
+                                                        <h5 class="font-medium text-green-900 dark:text-green-100 mb-3 flex items-center">
+                                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                            </svg>
+                                                            Delivery Receipt
+                                                        </h5>
+                                                        <div class="space-y-2 text-sm">
+                                                            <div class="flex justify-between">
+                                                                <span class="text-green-700 dark:text-green-300">DR Number:</span>
+                                                                <span class="font-medium text-green-900 dark:text-green-100">{{ $currentDr->dr_number }}</span>
+                                                            </div>
+                                                            <div class="flex justify-between">
+                                                                <span class="text-green-700 dark:text-green-300">Type:</span>
+                                                                <span class="font-medium text-green-900 dark:text-green-100">{{ ucfirst($currentDr->type) }}</span>
+                                                            </div>
+                                                            <div class="flex justify-between">
+                                                                <span class="text-green-700 dark:text-green-300">Items Scanned:</span>
+                                                                <span class="font-medium text-green-900 dark:text-green-100">{{ $currentDr->scanned_items }}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                @endif
+
+                                                <!-- Branch Progress -->
+                                                @if ($activeBranchId && $currentBatch)
+                                                    @php
+                                                        $branchAllocation = $currentBatch->branchAllocations->find($activeBranchId);
+                                                        $totalItems = $branchAllocation ? $branchAllocation->items->count() : 0;
+                                                        $scannedItems = 0;
+                                                        if ($branchAllocation) {
+                                                            foreach ($branchAllocation->items as $item) {
+                                                                if ($item->scanned_quantity >= $item->quantity) {
+                                                                    $scannedItems++;
+                                                                }
+                                                            }
+                                                        }
+                                                    @endphp
+                                                    <div class="rounded-lg border border-purple-200 bg-purple-50 p-4 dark:border-purple-800 dark:bg-purple-900/20">
+                                                        <h5 class="font-medium text-purple-900 dark:text-purple-100 mb-3 flex items-center">
+                                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                                            </svg>
+                                                            Branch Progress
+                                                        </h5>
+                                                        <div class="space-y-3 text-sm">
+                                                            <div class="flex justify-between">
+                                                                <span class="text-purple-700 dark:text-purple-300">Items Scanned:</span>
+                                                                <span class="font-medium text-purple-900 dark:text-purple-100">{{ $scannedItems }} / {{ $totalItems }}</span>
+                                                            </div>
+                                                            <div class="w-full bg-purple-200 rounded-full h-2 dark:bg-purple-700">
+                                                                <div class="bg-purple-600 h-2 rounded-full transition-all duration-300" style="width: {{ $totalItems > 0 ? ($scannedItems / $totalItems) * 100 : 0 }}%"></div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        </section>
+                                    </div>
+                                </div>
+
+                                <div class="border-t border-gray-200 bg-white px-6 py-4 dark:border-zinc-700 dark:bg-zinc-900">
+                                    <div class="flex items-center justify-between">
+                                        <div class="text-sm text-gray-500 dark:text-gray-400">
+                                            @if($currentBox && $currentDr)
+                                                Scanning active • Box: {{ $currentBox->box_number }} • DR: {{ $currentDr->dr_number }}
+                                            @else
+                                                Select a box to begin scanning
+                                            @endif
+                                        </div>
+                                        <flux:button type="button" wire:click="closeBarcodeScannerModal" variant="ghost">
+                                            Close Scanner
+                                        </flux:button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </template>
+    </div>
 
     </div>
 </div>

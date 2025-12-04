@@ -7,6 +7,8 @@ use App\Models\Branch;
 use App\Models\BranchAllocation;
 use App\Models\BranchAllocationItem;
 use App\Models\Product;
+use App\Models\Box;
+use App\Models\DeliveryReceipt;
 use Livewire\Component;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Layout;
@@ -36,6 +38,15 @@ class Warehouse extends Component
     public $editingBatchId = null;
     public $isEditing = false;
     public $batchSteps = [];
+
+    // Box and DR management for step 4
+    public $currentBox = null;
+    public $currentDr = null;
+    public $motherDr = null;
+    public $availableBoxes = [];
+    public $showCreateDrModal = false;
+    public $selectedBoxId = null;
+    public $showBarcodeScannerModal = false;
 
 
     // VDR Export fields
@@ -336,7 +347,7 @@ class Warehouse extends Component
 
         $barcode = trim($this->barcodeInput);
         $this->lastScannedBarcode = $barcode;
-        
+
         // Check if a branch is selected
         if (!$this->activeBranchId) {
             $this->scanFeedback = "⚠️ Please select a branch first before scanning!";
@@ -345,9 +356,17 @@ class Warehouse extends Component
             return;
         }
 
+        // Check if a box and DR are selected
+        if (!$this->currentBox || !$this->currentDr) {
+            $this->scanFeedback = "⚠️ Please select a box and create/open a DR first!";
+            session()->flash('scan_warning', 'You must select a box and have an active DR before scanning.');
+            $this->barcodeInput = '';
+            return;
+        }
+
         // Find the branch allocation
         $branchAllocation = $this->currentBatch->branchAllocations->find($this->activeBranchId);
-        
+
         if (!$branchAllocation) {
             $this->scanFeedback = "❌ Selected branch not found!";
             $this->barcodeInput = '';
@@ -356,60 +375,70 @@ class Warehouse extends Component
 
         // Find the product in this branch's items
         $productFound = false;
-        
+
         foreach ($branchAllocation->items as $item) {
             if ($item->product->barcode === $barcode) {
                 $productId = $item->product_id;
                 $allocatedQty = $item->quantity;
                 $branchName = $branchAllocation->branch->name;
-                
+
                 // Get current scanned quantity from DATABASE
                 $currentScannedQty = $item->scanned_quantity ?? 0;
-                
+
+
                 // Increment scanned quantity
                 if ($currentScannedQty < $allocatedQty) {
                     $newScannedQty = $currentScannedQty + 1;
-                    
-                    // SAVE TO DATABASE
+
+                    // SAVE TO DATABASE with box and DR references
                     $item->update([
-                        'scanned_quantity' => $newScannedQty
+                        'scanned_quantity' => $newScannedQty,
+                        'box_id' => $this->currentBox->id,
+                        'delivery_receipt_id' => $this->currentDr->id,
                     ]);
-                    
+
+                    // Update box count
+                    $this->currentBox->increment('current_count');
+
+                    // Update DR scanned items count
+                    $this->currentDr->increment('scanned_items');
+
                     // Update component state (for real-time display)
                     if (!isset($this->scannedQuantities[$this->activeBranchId])) {
                         $this->scannedQuantities[$this->activeBranchId] = [];
                     }
                     $this->scannedQuantities[$this->activeBranchId][$productId] = $newScannedQty;
-                    
+
                     $remaining = $allocatedQty - $newScannedQty;
-                    
+
                     if ($remaining === 0) {
                         $this->scanFeedback = "✅ {$item->product->name} for {$branchName} - COMPLETE!";
                         session()->flash('scan_success', "Product '{$item->product->name}' for {$branchName} is complete!");
                     } else {
                         $this->scanFeedback = "✅ {$item->product->name} for {$branchName} - {$newScannedQty}/{$allocatedQty} ({$remaining} remaining)";
                     }
+
                 } else {
                     $this->scanFeedback = "⚠️ {$item->product->name} for {$branchName} - Already fully scanned!";
                     session()->flash('scan_warning', "Product '{$item->product->name}' for {$branchName} is already fully scanned.");
                 }
-                
+
                 $productFound = true;
                 break;
             }
         }
-        
+
         if (!$productFound) {
             $this->scanFeedback = "❌ Barcode '{$barcode}' not found in {$branchAllocation->branch->name}'s allocation!";
             session()->flash('scan_error', "Barcode '{$barcode}' is not allocated to the selected branch.");
         }
-        
+
         // Clear input for next scan
         $this->barcodeInput = '';
-        
+
         // Refresh batch to get updated scanned quantities
         $this->currentBatch->refresh();
-        
+
         // Keep focus on input field
         $this->dispatch('refocus-barcode-input');
     }
@@ -449,11 +478,128 @@ class Warehouse extends Component
     {
         $this->activeBranchId = $branchAllocationId;
         $this->scanFeedback = '';
-        
+
         $branchAllocation = $this->currentBatch->branchAllocations->find($branchAllocationId);
         if ($branchAllocation) {
             session()->flash('message', "Now scanning for: {$branchAllocation->branch->name}");
+            $this->loadAvailableBoxes($branchAllocationId);
         }
+    }
+
+    public function loadAvailableBoxes($branchAllocationId)
+    {
+        $this->availableBoxes = Box::where('branch_allocation_id', $branchAllocationId)
+            ->where('status', '!=', 'closed')
+            ->orderBy('created_at', 'desc')
+            ->get();
+    }
+
+    public function createNewBox()
+    {
+        if (!$this->activeBranchId) {
+            session()->flash('error', 'Please select a branch first.');
+            return;
+        }
+
+        $branchAllocation = $this->currentBatch->branchAllocations->find($this->activeBranchId);
+        if (!$branchAllocation) {
+            session()->flash('error', 'Branch allocation not found.');
+            return;
+        }
+
+        // Generate unique box number
+        $boxNumber = 'BOX-' . $branchAllocation->branch->code . '-' . now()->format('YmdHis');
+
+        $box = Box::create([
+            'branch_allocation_id' => $this->activeBranchId,
+            'box_number' => $boxNumber,
+            'status' => 'open',
+            'current_count' => 0,
+        ]);
+
+        $this->loadAvailableBoxes($this->activeBranchId);
+        session()->flash('message', "New box created: {$boxNumber}");
+    }
+
+    public function selectBox($boxId)
+    {
+        $this->selectedBoxId = $boxId;
+        $this->currentBox = Box::find($boxId);
+
+        if ($this->currentBox) {
+            // Check if this box already has a DR
+            $existingDr = DeliveryReceipt::where('box_id', $boxId)->first();
+
+            if ($existingDr) {
+                $this->currentDr = $existingDr;
+            } else {
+                // Create new DR for this box
+                $this->createDrForBox($boxId);
+            }
+
+            // Open the barcode scanner modal
+            $this->showBarcodeScannerModal = true;
+
+            // Clear any previous scan feedback
+            $this->scanFeedback = '';
+            $this->lastScannedBarcode = '';
+        }
+    }
+
+    public function closeBarcodeScannerModal()
+    {
+        $this->showBarcodeScannerModal = false;
+        $this->scanFeedback = '';
+        $this->lastScannedBarcode = '';
+    }
+
+    private function createDrForBox($boxId)
+    {
+        $box = Box::find($boxId);
+        if (!$box) return;
+
+        $branchAllocation = $box->branchAllocation;
+
+        // Check if this is the first box for this branch (mother DR)
+        $existingBoxesCount = Box::where('branch_allocation_id', $branchAllocation->id)->count();
+
+        $isMother = $existingBoxesCount === 1; // First box is mother
+
+        // Generate DR number
+        $drNumber = 'DR-' . $branchAllocation->branch->code . '-' . now()->format('YmdHis');
+
+        $dr = DeliveryReceipt::create([
+            'branch_allocation_id' => $branchAllocation->id,
+            'box_id' => $boxId,
+            'dr_number' => $drNumber,
+            'type' => $isMother ? 'mother' : 'child',
+            'parent_dr_id' => $isMother ? null : $this->getMotherDrId($branchAllocation->id),
+            'status' => 'pending',
+            'total_items' => 0,
+            'scanned_items' => 0,
+        ]);
+
+        $this->currentDr = $dr;
+
+        if ($isMother) {
+            $this->motherDr = $dr;
+        }
+
+        session()->flash('message', "New DR created: {$drNumber} ({$dr->type})");
+    }
+
+    private function getMotherDrId($branchAllocationId)
+    {
+        if ($this->motherDr) {
+            return $this->motherDr->id;
+        }
+
+        // Find existing mother DR for this branch
+        $motherDr = DeliveryReceipt::where('branch_allocation_id', $branchAllocationId)
+            ->where('type', 'mother')
+            ->first();
+
+        return $motherDr ? $motherDr->id : null;
     }
 
     public function updatedBarcodeInput($value)
@@ -653,11 +799,8 @@ class Warehouse extends Component
 
             // When moving to step 3, initialize products
             if ($this->currentStep === 3) {
-                if (!$this->isEditing || empty($this->selectedProductIdsForAllocation)) {
-                    $this->selectedProductIdsForAllocation = $this->availableProductsForBatch->pluck('id')->toArray();
-                }
                 $this->loadMatrix();
-                
+
                 if ($this->isEditing && $this->currentBatch) {
                     $this->loadProductAllocations();
                 }
@@ -913,7 +1056,6 @@ class Warehouse extends Component
 
             // Initialize selected products if going to step 3
             if ($step === 3) {
-                $this->selectedProductIdsForAllocation = $this->availableProductsForBatch->pluck('id')->toArray();
                 $this->loadMatrix();
             }
         }

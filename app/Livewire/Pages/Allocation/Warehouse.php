@@ -73,11 +73,12 @@ class Warehouse extends Component
     public $branchQuantities = []; // Array of branch_id => quantity for per-branch allocation
     public $matrixQuantities = []; // Matrix: branch_id => product_id => quantity
     public $selectedProductIdsForAllocation = []; // Selected products for allocation matrix
+    public $temporarySelectedProducts = []; // Temporary selection for current filter
 
     // Product filtering fields
     public $availableCategories = [];
     public $selectedCategoryId = null;
-    public $selectedProductFilterId = null;
+    public $selectedProductFilterName = null;
     public $showAllProducts = false;
     public $filteredProducts = [];
 
@@ -485,22 +486,98 @@ class Warehouse extends Component
             $query->where('category_id', $this->selectedCategoryId);
         }
 
-        if ($this->selectedProductFilterId) {
-            $query->where('id', $this->selectedProductFilterId);
+        if ($this->selectedProductFilterName) {
+            $query->where('name', $this->selectedProductFilterName);
         }
 
         $this->filteredProducts = $query->orderBy('name')->get();
         $this->showAllProducts = false;
 
-        // Clear any previously selected products when filtering
-        $this->selectedProductIdsForAllocation = [];
+        // Clear temporary selection when filtering
+        $this->temporarySelectedProducts = [];
+    }
+
+    public function addSelectedProductsToAllocation()
+    {
+        // Add temporary selections to main allocation list
+        $this->selectedProductIdsForAllocation = array_unique(array_merge(
+            $this->selectedProductIdsForAllocation,
+            $this->temporarySelectedProducts
+        ));
+        
+        // Clear temporary selection
+        $this->temporarySelectedProducts = [];
+        
+        session()->flash('message', 'Products added to allocation list!');
+    }
+
+    public function selectAllVisible()
+    {
+        // Get all visible products based on current filter
+        $visibleProducts = $this->showAllProducts ? $this->availableProducts : $this->filteredProducts;
+        $visibleProductIds = $visibleProducts->pluck('id')->toArray();
+        
+        // Add all visible products to temporary selection
+        $this->temporarySelectedProducts = array_unique(array_merge(
+            $this->temporarySelectedProducts,
+            $visibleProductIds
+        ));
+    }
+
+    public function removeProductFromAllocation($productId)
+    {
+        // Remove product from allocation list
+        $this->selectedProductIdsForAllocation = array_values(array_filter(
+            $this->selectedProductIdsForAllocation,
+            function($id) use ($productId) {
+                return $id != $productId;
+            }
+        ));
+
+        // Remove product from matrix quantities
+        foreach ($this->matrixQuantities as $branchId => $products) {
+            if (isset($products[$productId])) {
+                unset($this->matrixQuantities[$branchId][$productId]);
+            }
+        }
+
+        session()->flash('message', 'Product removed from allocation!');
+    }
+
+
+    public function toggleProductGroup($productName)
+    {
+        // Get all product IDs for this base product name from filtered products
+        $products = $this->showAllProducts ? $this->availableProducts : $this->filteredProducts;
+        
+        // Filter products that have the same product name
+        $productGroupIds = $products->filter(function($product) use ($productName) {
+            return $product->name === $productName;
+        })->pluck('id')->toArray();
+
+        // Check if all products in this group are already selected
+        $allSelected = !array_diff($productGroupIds, $this->selectedProductIdsForAllocation);
+
+        if ($allSelected) {
+            // Deselect all products in this group
+            $this->selectedProductIdsForAllocation = array_diff(
+                $this->selectedProductIdsForAllocation,
+                $productGroupIds
+            );
+        } else {
+            // Select all products in this group
+            $this->selectedProductIdsForAllocation = array_unique(array_merge(
+                $this->selectedProductIdsForAllocation,
+                $productGroupIds
+            ));
+        }
     }
 
     public function showAllProducts()
     {
         $this->showAllProducts = true;
         $this->selectedCategoryId = null;
-        $this->selectedProductFilterId = null;
+        $this->selectedProductFilterName = null;
         $this->filteredProducts = $this->availableProducts;
     }
 
@@ -511,7 +588,7 @@ class Warehouse extends Component
             return;
         }
 
-        // Load branches from all selected batches
+        // Load branches from all selected batches (works for both editing and creating)
         $branches = Branch::whereIn('batch', $this->selectedBatchNumbers)
             ->orderBy('name')
             ->get();
@@ -525,6 +602,37 @@ class Warehouse extends Component
                 'batch' => $branch->batch,
             ];
         })->toArray();
+    }
+
+    public function updateBranchAllocationsForBatch()
+    {
+        if (!$this->currentBatch || empty($this->selectedBatchNumbers)) {
+            return;
+        }
+
+        // Get current branch allocations
+        $currentBranchIds = $this->currentBatch->branchAllocations->pluck('branch_id')->toArray();
+        
+        // Get new branch IDs from selected batches
+        $newBranchIds = Branch::whereIn('batch', $this->selectedBatchNumbers)->pluck('id')->toArray();
+
+        // Remove branch allocations that are no longer selected
+        $branchesToRemove = array_diff($currentBranchIds, $newBranchIds);
+        if (!empty($branchesToRemove)) {
+            \App\Models\BranchAllocation::where('batch_allocation_id', $this->currentBatch->id)
+                ->whereIn('branch_id', $branchesToRemove)
+                ->delete();
+        }
+
+        // Add new branch allocations for newly selected branches
+        $branchesToAdd = array_diff($newBranchIds, $currentBranchIds);
+        foreach ($branchesToAdd as $branchId) {
+            \App\Models\BranchAllocation::create([
+                'batch_allocation_id' => $this->currentBatch->id,
+                'branch_id' => $branchId,
+                'status' => 'pending',
+            ]);
+        }
     }
 
     // Stepper Navigation Methods
@@ -632,9 +740,13 @@ class Warehouse extends Component
                 $productId = $item->product_id;
                 
                 if (!isset($productData[$productId])) {
+                    $colorName = $item->product->color ? $item->product->color->name : '';
+                    $productDisplayName = $item->product->name . ($colorName ? ' ' . $colorName : '');
+                    
                     $productData[$productId] = [
                         'product_id' => $item->product_id,
-                        'product_name' => $item->product->remarks,
+                        'product_name' => $productDisplayName,
+                        'image' => $item->product->primary_image,
                         'quantity' => 0,
                         'unit_price' => $item->unit_price,
                         'total_value' => 0,
@@ -652,6 +764,7 @@ class Warehouse extends Component
             return [
                 'product_id' => $data['product_id'],
                 'product_name' => $data['product_name'],
+                'image' => $data['image'],
                 'quantity' => $data['quantity'],
                 'unit_price' => $data['unit_price'],
                 'total_value' => $data['total_value'],
@@ -984,6 +1097,16 @@ class Warehouse extends Component
 
         $changes = 0;
 
+        // First, delete any existing allocation items for products that are no longer selected
+        $branchAllocationIds = $this->currentBatch->branchAllocations->pluck('id')->toArray();
+        $deletedItems = BranchAllocationItem::whereIn('branch_allocation_id', $branchAllocationIds)
+            ->whereNotIn('product_id', $this->selectedProductIdsForAllocation)
+            ->delete();
+        
+        if ($deletedItems > 0) {
+            $changes += $deletedItems;
+        }
+
         foreach ($this->matrixQuantities as $branchAllocationId => $products) {
             foreach ($products as $productId => $quantity) {
                 // Only process selected products
@@ -1028,9 +1151,9 @@ class Warehouse extends Component
         if ($changes > 0) {
             $this->loadMatrix(); // Reload to reflect changes
             $this->loadBatchAllocations();
-            session()->flash('message', 'Allocations updated successfully.');
+            session()->flash('success', "Allocations updated successfully!");
         } else {
-            session()->flash('message', 'No changes made.');
+            session()->flash('info', 'No changes were made to the allocations.');
         }
     }
 
@@ -1229,7 +1352,7 @@ class Warehouse extends Component
 
         // Reset filtering - don't show products by default
         $this->selectedCategoryId = null;
-        $this->selectedProductFilterId = null;
+        $this->selectedProductFilterName = null;
         $this->showAllProducts = false; // Changed to false to not show products by default
         $this->filteredProducts = [];
 
@@ -1299,13 +1422,22 @@ class Warehouse extends Component
 
         if ($this->isEditing && $this->currentBatch) {
             // UPDATE EXISTING BATCH
-            $this->currentBatch->update([
+            $updateData = [
                 'batch_number' => implode(', ', $this->selectedBatchNumbers),
-                'transaction_date' => $this->transaction_date,
                 'remarks' => $this->remarks,
                 'status' => $this->status,
                 'workflow_step' => $this->currentStep, // Save current step
-            ]);
+            ];
+            
+            // Only update transaction_date if it exists
+            if (isset($this->transaction_date)) {
+                $updateData['transaction_date'] = $this->transaction_date;
+            }
+            
+            $this->currentBatch->update($updateData);
+
+            // If batch numbers changed, update branch allocations
+            $this->updateBranchAllocationsForBatch();
 
             $this->currentBatch->refresh();
             $this->loadBranchesByBatch();
@@ -1360,11 +1492,19 @@ class Warehouse extends Component
     // Separate method for updating batch details
     public function updateBatchDetails()
     {
+        $this->validate([
+            'selectedBatchNumbers' => 'required|array|min:1',
+            'remarks' => 'nullable|string|max:1000',
+        ]);
+
         $this->currentBatch->update([
-            'batch_number' => $this->batch_number,
+            'batch_number' => implode(', ', $this->selectedBatchNumbers),
             'remarks' => $this->remarks,
             'status' => $this->status,
         ]);
+
+        // Update branch allocations if batch numbers changed
+        $this->updateBranchAllocationsForBatch();
 
         $this->currentBatch->refresh();
         $this->loadBranchesByBatch();

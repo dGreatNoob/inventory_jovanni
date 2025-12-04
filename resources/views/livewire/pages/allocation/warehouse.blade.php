@@ -94,6 +94,31 @@ document.addEventListener('DOMContentLoaded', function() {
         // Open the delivery receipt URL which will trigger a download
         window.open(url, '_blank');
     });
+
+    // Success popup handler
+    window.Livewire.on('show-success-popup', (data) => {
+        const { title, message } = data[0];
+        
+        Swal.fire({
+            icon: 'success',
+            title: title,
+            text: message,
+            timer: 3000,
+            showConfirmButton: false
+        });
+    });
+
+    // Info popup handler
+    window.Livewire.on('show-info-popup', (data) => {
+        const { title, message } = data[0];
+        
+        Swal.fire({
+            icon: 'info',
+            title: title,
+            text: message,
+            confirmButtonText: 'OK'
+        });
+    });
 });
 </script>
 @endscript
@@ -231,15 +256,14 @@ document.addEventListener('DOMContentLoaded', function() {
                                                     <input type="checkbox"
                                                            wire:model.live="selectedBatchNumbers"
                                                            value="{{ $batchNum }}"
-                                                           class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                                                           @if($isEditing) disabled @endif>
+                                                           class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
                                                     <span class="ml-2 text-sm text-gray-900 dark:text-white">{{ $batchNum }}</span>
                                                 </label>
                                             @endforeach
                                         </div>
                                         @if($isEditing)
-                                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                                Batch numbers cannot be changed when editing
+                                            <p class="mt-1 text-xs text-blue-600 dark:text-blue-400">
+                                                You can modify batch selection when editing
                                             </p>
                                         @endif
                                         @error('selectedBatchNumbers')
@@ -408,15 +432,15 @@ document.addEventListener('DOMContentLoaded', function() {
                                     <!-- Product Filter -->
                                     <div>
                                         <label for="product-filter" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
-                                            Product
+                                            Product Name
                                         </label>
                                         <select id="product-filter"
-                                                wire:model.live="selectedProductFilterId"
+                                                wire:model.live="selectedProductFilterName"
                                                 wire:change="filterProducts"
                                                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
                                             <option value="">All Products</option>
-                                            @foreach($availableProducts as $product)
-                                                <option value="{{ $product->id }}">{{ $product->remarks }}</option>
+                                            @foreach($availableProducts->groupBy('name') as $productName => $variants)
+                                                <option value="{{ $productName }}">{{ $productName }}</option>
                                             @endforeach
                                         </select>
                                     </div>
@@ -431,45 +455,140 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </div>
 
                                 <!-- Filtered Product Selection -->
-                                <h5 class="font-medium mb-3">Select Products for Allocation</h5>
+                                <div class="flex items-center justify-between mb-3">
+                                    <h5 class="font-medium">Select Products for Allocation</h5>
+                                    <div class="flex items-center space-x-2">
+                                        @if($selectedCategoryId || $selectedProductFilterName || $showAllProducts)
+                                            <button type="button"
+                                                    wire:click="selectAllVisible"
+                                                    class="px-3 py-1 text-sm font-medium text-gray-600 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                                                Select All Visible
+                                            </button>
+                                        @endif
+                                        @if(!empty($temporarySelectedProducts))
+                                            <button type="button"
+                                                    wire:click="addSelectedProductsToAllocation"
+                                                    class="px-3 py-1 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                                Add Selected ({{ count($temporarySelectedProducts) }})
+                                            </button>
+                                        @endif
+                                    </div>
+                                </div>
                                 <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
                                     Choose which products you want to allocate to branches. Only selected products will appear in the allocation matrix below.
                                 </p>
 
-                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-60 overflow-y-auto">
-                                    @if($selectedCategoryId || $selectedProductFilterId || $showAllProducts)
-                                        @if(($showAllProducts ? $availableProducts : $filteredProducts)->count() > 0)
-                                            @foreach($showAllProducts ? $availableProducts : $filteredProducts as $product)
-                                                <label class="flex items-center p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer">
-                                                    <input type="checkbox"
-                                                           wire:model.live="selectedProductIdsForAllocation"
-                                                           value="{{ $product->id }}"
-                                                           class="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded">
-                                                    <div class="ml-3 flex-1">
-                                                        <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $product->name }} {{ $product->color->name }} ({{ $product->color->shortcut }})</div>
-                                                        <div class="text-xs text-gray-500 dark:text-gray-400">
-                                                            ₱{{ number_format($product->price ?? $product->selling_price ?? 0, decimals: 2) }} |
-                                                            Stock: {{ intval($product->initial_quantity) ?? 0 }}
-                                                        </div>
-                                                    </div>
-                                                </label>
-                                            @endforeach
-                                        @else
-                                            <p class="text-gray-500 dark:text-gray-400 col-span-full">No products match the selected filters.</p>
-                                        @endif
-                                    @else
-                                        <div class="col-span-full bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-                                            <div class="flex items-center justify-center">
-                                                <svg class="h-5 w-5 text-yellow-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
-                                                </svg>
-                                                <span class="text-sm text-yellow-700 dark:text-yellow-300">
-                                                    Please use the filtering controls above to find and select products.
+                                <!-- Show Already Selected Products -->
+                                @if(!empty($selectedProductIdsForAllocation))
+                                    <div class="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg">
+                                        <h6 class="text-sm font-medium text-green-800 dark:text-green-200 mb-2">
+                                            Products Added to Allocation ({{ count($selectedProductIdsForAllocation) }})
+                                        </h6>
+                                        <div class="flex flex-wrap gap-2">
+                                            @foreach($availableProducts->whereIn('id', $selectedProductIdsForAllocation) as $product)
+                                                <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
+                                                    {{ $product->sku }} - {{ $product->name }}
+                                                    @if($product->color)
+                                                        ({{ $product->color->code }})
+                                                    @endif
                                                 </span>
-                                            </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endif
+
+                                @if($selectedCategoryId || $selectedProductFilterName || $showAllProducts)
+                                    @if(($showAllProducts ? $availableProducts : $filteredProducts)->count() > 0)
+                                        <div class="border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden max-h-80 overflow-y-auto">
+                                            <table class="min-w-full">
+                                                <thead class="bg-gray-50 dark:bg-gray-700 sticky top-0">
+                                                    <tr>
+                                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Select</th>
+                                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Product Details</th>
+                                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Price & Stock</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody class="bg-white dark:bg-gray-800">
+                                                    @php
+                                                        $products = $showAllProducts ? $availableProducts : $filteredProducts;
+                                                        // Group products by product name
+                                                        $groupedProducts = $products->groupBy('name');
+                                                    @endphp
+                                                    @foreach($groupedProducts as $productName => $productVariants)
+                                                        <!-- Product Group Header -->
+                                                        <tr class="bg-gray-100 dark:bg-gray-700">
+                                                            <td colspan="3" class="px-4 py-2 border-t border-gray-300 dark:border-gray-600">
+                                                                <div class="flex items-center justify-between">
+                                                                    <span class="text-sm font-semibold text-gray-800 dark:text-white">
+                                                                        {{ $productName }} 
+                                                                        <span class="text-xs text-gray-600 dark:text-gray-400">({{ $productVariants->count() }} colors)</span>
+                                                                    </span>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                        <!-- Product Variants -->
+                                                        @foreach($productVariants as $product)
+                                                            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 border-l-4 border-blue-200">
+                                                                <td class="px-4 py-3 pl-8">
+                                                                    <input type="checkbox"
+                                                                           wire:model.live="temporarySelectedProducts"
+                                                                           value="{{ $product->id }}"
+                                                                           class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                                                </td>
+                                                                <td class="px-4 py-3">
+                                                                    @php
+                                                                        $colorCode = $product->color->code ?? '';
+                                                                    @endphp
+                                                                    <div class="text-sm text-gray-900 dark:text-white">
+                                                                        <span class="font-mono bg-blue-100 dark:bg-blue-900 px-2 py-1 rounded text-xs">{{ $product->sku }}</span>
+                                                                        <span class="ml-2 font-medium">{{ $product->name }}</span>
+                                                                    </div>
+                                                                    <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                                                        @if($colorCode)
+                                                                            <span class="font-medium">Color: {{ $colorCode }}</span>
+                                                                        @endif
+                                                                        @if($product->color && $product->color->name)
+                                                                            <span class="ml-2">({{ $product->color->name }})</span>
+                                                                        @endif
+                                                                        @if($product->color && $product->color->code)
+                                                                            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium" 
+                                                                                  style="background-color: {{ $product->color->code }}20; color: {{ $product->color->code }}">
+                                                                                {{ $product->color->code }}
+                                                                            </span>
+                                                                        @endif
+                                                                    </div>
+                                                                </td>
+                                                                <td class="px-4 py-3">
+                                                                    <div class="text-sm text-gray-900 dark:text-white">
+                                                                        ₱{{ number_format($product->price ?? $product->selling_price ?? 0, 2) }}
+                                                                    </div>
+                                                                    <div class="text-xs text-gray-500 dark:text-gray-400">
+                                                                        Stock: {{ intval($product->initial_quantity) ?? 0 }}
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        @endforeach
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    @else
+                                        <div class="text-center py-8 border border-gray-200 dark:border-gray-600 rounded-lg">
+                                            <p class="text-gray-500 dark:text-gray-400">No products match the selected filters.</p>
                                         </div>
                                     @endif
-                                </div>
+                                @else
+                                    <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                                        <div class="flex items-center justify-center">
+                                            <svg class="h-5 w-5 text-yellow-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                            </svg>
+                                            <span class="text-sm text-yellow-700 dark:text-yellow-300">
+                                                Please use the filtering controls above to find and select products.
+                                            </span>
+                                        </div>
+                                    </div>
+                                @endif
 
                                 @if(empty($selectedProductIdsForAllocation))
                                     <div class="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
@@ -485,20 +604,10 @@ document.addEventListener('DOMContentLoaded', function() {
                                     Enter quantities for each product and branch combination. Leave blank or 0 for no allocation.
                                 </p>
 
-                                @if($currentBatch && !empty($selectedProductIdsForAllocation) && ($selectedCategoryId || $selectedProductFilterId))
+                                @if($currentBatch && !empty($selectedProductIdsForAllocation))
                                     @php
-                                        // Filter products based on selected filters
+                                        // Show ALL products that have been added to allocation, regardless of current filters
                                         $filteredProductsForMatrix = $this->availableProductsForBatch->whereIn('id', $selectedProductIdsForAllocation);
-
-                                        // Apply category filter if selected
-                                        if($selectedCategoryId) {
-                                            $filteredProductsForMatrix = $filteredProductsForMatrix->where('category_id', $selectedCategoryId);
-                                        }
-
-                                        // Apply product filter if selected
-                                        if($selectedProductFilterId) {
-                                            $filteredProductsForMatrix = $filteredProductsForMatrix->where('id', $selectedProductFilterId);
-                                        }
                                     @endphp
 
                                     @if($filteredProductsForMatrix->count() > 0)
@@ -509,14 +618,21 @@ document.addEventListener('DOMContentLoaded', function() {
                                                         <th class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase bg-gray-50 dark:bg-gray-700">Branch</th>
                                                         @foreach($filteredProductsForMatrix as $product)
                                                             <th class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase min-w-[120px] bg-gray-50 dark:bg-gray-700">
-                                                                {{ $product->name }} {{ $product->color->name }} ({{ $product->color->shortcut }})<br>
-                                                                @if($product->color)
-                                                                    <!-- <span class="text-xs text-gray-400">
-                                                                        {{ $product->color->code }} - {{ $product->color->name }} ({{ $product->color->shortcut }})
-                                                                    </span><br> -->
-                                                                @endif
-                                                                <span class="text-xs text-gray-400">₱{{ number_format($product->price ?? $product->selling_price ?? 0, 2) }}</span><br>
-                                                                <span class="text-xs text-gray-400">Stock: {{ intval($product->initial_quantity) }}</span>
+                                                                <div class="flex flex-col items-center space-y-1">
+                                                                    <button type="button"
+                                                                            wire:click="removeProductFromAllocation({{ $product->id }})"
+                                                                            class="text-red-500 hover:text-red-700 text-xs mb-1"
+                                                                            title="Remove this product from allocation">
+                                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                                        </svg>
+                                                                    </button>
+                                                                    <div class="text-center">
+                                                                        {{ $product->name }} {{ $product->color->name ?? '' }} ({{ $product->color->shortcut ?? '' }})<br>
+                                                                        <span class="text-xs text-gray-400">₱{{ number_format($product->price ?? $product->selling_price ?? 0, 2) }}</span><br>
+                                                                        <span class="text-xs text-gray-400">Stock: {{ intval($product->initial_quantity) }}</span>
+                                                                    </div>
+                                                                </div>
                                                             </th>
                                                         @endforeach
                                                     </tr>
@@ -530,7 +646,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                                             @foreach($filteredProductsForMatrix as $product)
                                                                 <td class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-center bg-white dark:bg-gray-800">
                                                                     <input type="number"
-                                                                           wire:model="matrixQuantities.{{ $branchAllocation->id }}.{{ $product->id }}"
+                                                                           wire:model.blur="matrixQuantities.{{ $branchAllocation->id }}.{{ $product->id }}"
                                                                            min="0"
                                                                            placeholder="0"
                                                                            class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white text-center">
@@ -542,7 +658,19 @@ document.addEventListener('DOMContentLoaded', function() {
                                             </table>
                                         </div>
 
-                                        <div class="mt-4 flex justify-end">
+                                        <div class="mt-4 flex justify-end items-center space-x-3">
+                                            <!-- Flash Messages -->
+                                            @if (session()->has('success'))
+                                                <div class="px-3 py-2 text-sm text-green-700 bg-green-100 border border-green-200 rounded-md">
+                                                    {{ session('success') }}
+                                                </div>
+                                            @endif
+                                            @if (session()->has('info'))
+                                                <div class="px-3 py-2 text-sm text-blue-700 bg-blue-100 border border-blue-200 rounded-md">
+                                                    {{ session('info') }}
+                                                </div>
+                                            @endif
+                                            
                                             <button wire:click="saveMatrixAllocations"
                                                     class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                                                 Save All Allocations
@@ -566,17 +694,30 @@ document.addEventListener('DOMContentLoaded', function() {
                                         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                                             <thead class="bg-gray-50 dark:bg-gray-700">
                                                 <tr>
+                                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Image</th>
                                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Product</th>
                                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Quantity</th>
                                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Unit Price</th>
                                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Total Value</th>
                                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Applied to Branches</th>
-                                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Action</th>
                                                 </tr>
                                             </thead>
                                             <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                                                 @foreach($productAllocations as $index => $allocation)
                                                     <tr>
+                                                        <td class="px-6 py-4 whitespace-nowrap">
+                                                            @if($allocation['image'])
+                                                                <img src="{{ asset('storage/' . $allocation['image']) }}" 
+                                                                     alt="{{ $allocation['product_name'] }}"
+                                                                     class="w-12 h-12 rounded object-cover">
+                                                            @else
+                                                                <div class="w-12 h-12 bg-gray-200 dark:bg-gray-600 rounded flex items-center justify-center">
+                                                                    <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                                                    </svg>
+                                                                </div>
+                                                            @endif
+                                                        </td>
                                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{{ $allocation['product_name'] }}</td>
                                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{{ $allocation['quantity'] }}</td>
                                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
@@ -586,13 +727,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                                             @if($allocation['total_value'] === 'Varies') {{ $allocation['total_value'] }} @else ₱{{ number_format($allocation['total_value'], 2) }} @endif
                                                         </td>
                                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{{ $allocation['applied_to_branches'] }}</td>
-                                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                                            <button wire:click="removeProductAllocation({{ $index }})"
-                                                                    wire:confirm="Are you sure you want to remove this product allocation?"
-                                                                    class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300">
-                                                                Remove
-                                                            </button>
-                                                        </td>
                                                     </tr>
                                                 @endforeach
                                             </tbody>
@@ -1272,3 +1406,4 @@ document.addEventListener('DOMContentLoaded', function() {
         </table>
     </div>
 </div>
+

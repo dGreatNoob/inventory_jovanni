@@ -64,7 +64,6 @@
 </head>
 <body>
     <div class="header">
-        <h1>Allocation Matrix</h1>
         <p><strong>Batch Reference:</strong> {{ $batch->ref_no }}</p>
         <p><strong>Batch Number:</strong> {{ $batch->batch_number }}</p>
         <p><strong>Generated:</strong> {{ $generated_at->format('F j, Y g:i A') }}</p>
@@ -91,7 +90,6 @@
                 <tr>
                     <td>
                         <strong>{{ $branchAllocation->branch->name }}</strong>
-                        <br><small>{{ $branchAllocation->branch->code }}</small>
                     </td>
                     @php
                         $branchTotal = 0;

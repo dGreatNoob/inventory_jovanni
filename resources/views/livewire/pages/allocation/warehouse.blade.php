@@ -1204,7 +1204,7 @@
 <div class="border border-gray-200 dark:border-gray-700 rounded-lg">
 
     <!-- Buttons above table -->
-    <div class="px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 flex justify-end space-x-2">
+    {{-- <div class="px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 flex justify-end space-x-2">
         <button type="button"
             wire:click="generateDeliveryReceipt({{ $activeBranchAllocation->id }})"
             class="inline-flex items-center px-3 py-1 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
@@ -1217,7 +1217,7 @@
             class="inline-flex items-center px-3 py-1 text-xs font-medium text-white bg-orange-600 rounded hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
             🔄 Reset Branch Scans
         </button>
-    </div>
+    </div> --}}
 
     <!-- Table -->
     <table class="min-w-full table-fixed divide-y divide-gray-200 dark:divide-gray-700">
@@ -1311,7 +1311,7 @@
                                 </div> <!-- END COLUMN 2 -->
                                 <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6">
                                     <h4 class="font-medium mb-3">Batch Summary</h4>
-                                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                                    <div class="flex flex-wrap gap-6 text-sm">
                                         <div>
                                             <span class="text-gray-600 dark:text-gray-400">Reference:</span>
                                             <div class="font-medium">{{ $currentBatch->ref_no }}</div>
@@ -1323,8 +1323,16 @@
                                             </div>
                                         </div>
                                         <div>
+                                            <span class="text-gray-600 dark:text-gray-400">Boxes:</span>
+                                            <div class="font-medium">{{ $this->getTotalBoxesCount() }}</div>
+                                        </div>
+                                        <div>
                                             <span class="text-gray-600 dark:text-gray-400">Total Items:</span>
                                             <div class="font-medium">{{ $this->getTotalItemsCount() }}</div>
+                                        </div>
+                                        <div>
+                                            <span class="text-gray-600 dark:text-gray-400">Total Quantities:</span>
+                                            <div class="font-medium">{{ $this->getTotalQuantitiesCount() }}</div>
                                         </div>
                                     </div>
                                 </div>
@@ -1335,11 +1343,23 @@
                                     <h5 class="font-medium text-blue-900 dark:text-blue-100 mb-2">Overall Scan
                                         Summary
                                     </h5>
-                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                    <div class="flex flex-wrap gap-6 text-sm">
                                         <div>
                                             <span class="text-blue-700 dark:text-blue-300">Total Items:</span>
                                             <div class="font-medium text-blue-900 dark:text-blue-100 text-xl">
                                                 {{ $this->getTotalItemsCount() }}</div>
+                                        </div>
+                                        <div>
+                                            <span class="text-blue-700 dark:text-blue-300">Total Quantities:</span>
+                                            <div class="font-medium text-blue-900 dark:text-blue-100 text-xl">
+                                                {{ $this->getTotalQuantitiesCount() }}</div>
+                                        </div>
+                                        <div>
+                                            <span class="text-blue-700 dark:text-blue-300">Scanned Quantities:</span>
+                                            <div class="font-medium text-blue-900 dark:text-blue-100 text-xl">
+                                                {{ $this->getTotalScannedQuantitiesCount() }} /
+                                                {{ $this->getTotalQuantitiesCount() }}
+                                            </div>
                                         </div>
                                         <div>
                                             <span class="text-blue-700 dark:text-blue-300">Fully
@@ -1958,7 +1978,7 @@
                             style="min-width: 150px; min-height:42px;">
                             <button wire:click="editRecord({{ $record->id }})"
                                 class="px-3 py-1 text-xs font-medium text-white rounded bg-blue-600 hover:bg-blue-700">
-                                Edit
+                                View
                             </button>
                             <button wire:click="removeBatch({{ $record->id }})"
                                 class="px-3 py-1 text-xs font-medium text-white bg-red-600 rounded hover:bg-red-700">

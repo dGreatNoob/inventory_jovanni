@@ -212,13 +212,59 @@ class Warehouse extends Component
         if (!$this->currentBatch) {
             return 0;
         }
-        
+
         $total = 0;
         foreach ($this->currentBatch->branchAllocations as $branchAllocation) {
             $total += $branchAllocation->items->count();
         }
-        
+
         return $total;
+    }
+
+    public function getTotalBoxesCount()
+    {
+        if (!$this->currentBatch) {
+            return 0;
+        }
+
+        $totalBoxes = 0;
+        foreach ($this->currentBatch->branchAllocations as $branchAllocation) {
+            $totalBoxes += Box::where('branch_allocation_id', $branchAllocation->id)->count();
+        }
+
+        return $totalBoxes;
+    }
+
+    public function getTotalQuantitiesCount()
+    {
+        if (!$this->currentBatch) {
+            return 0;
+        }
+
+        $totalQuantities = 0;
+        foreach ($this->currentBatch->branchAllocations as $branchAllocation) {
+            foreach ($branchAllocation->items as $item) {
+                $totalQuantities += $item->quantity;
+            }
+        }
+
+        return $totalQuantities;
+    }
+
+    public function getTotalScannedQuantitiesCount()
+    {
+        if (!$this->currentBatch) {
+            return 0;
+        }
+
+        $totalScannedQuantities = 0;
+        foreach ($this->currentBatch->branchAllocations as $branchAllocation) {
+            foreach ($branchAllocation->items as $item) {
+                $totalScannedQuantities += $item->scanned_quantity ?? 0;
+            }
+        }
+
+        return $totalScannedQuantities;
     }
     public function getFullyScannedCount()
     {
@@ -1063,7 +1109,11 @@ class Warehouse extends Component
                 \DB::raw('COUNT(DISTINCT branch_allocations.branch_id) as branch_count')
             )
             ->leftJoin('products', 'branch_allocation_items.product_id', '=', 'products.id')
-            ->groupBy('branch_allocation_items.product_id', 'product_name', 'barcode')
+            ->groupBy(
+                'branch_allocation_items.product_id',
+                \DB::raw('COALESCE(branch_allocation_items.product_snapshot_name, products.name)'),
+                \DB::raw('COALESCE(branch_allocation_items.product_snapshot_barcode, products.barcode)')
+            )
             ->get();
 
         $this->dispatchProducts = $items->map(function ($item) {

@@ -58,6 +58,10 @@ class Warehouse extends Component
     public $search = '';
     public $dateFrom = '';
     public $dateTo = '';
+    
+    // Sorting fields
+    public $sortField = 'created_at';
+    public $sortDirection = 'desc';
 
     // Create batch fields
     public $remarks;
@@ -395,7 +399,7 @@ class Warehouse extends Component
         $query = BatchAllocation::with([
             'branchAllocations.branch',
             'branchAllocations.items.product'
-        ])->orderBy('created_at', 'desc');
+        ]);
 
         // Apply filters...
         if ($this->search) {
@@ -409,12 +413,15 @@ class Warehouse extends Component
         }
 
         if ($this->dateFrom) {
-            $query->where('transaction_date', '>=', $this->dateFrom);
+            $query->whereDate('created_at', '>=', $this->dateFrom);
         }
 
         if ($this->dateTo) {
-            $query->where('transaction_date', '<=', $this->dateTo);
+            $query->whereDate('created_at', '<=', $this->dateTo);
         }
+
+        // Apply sorting
+        $query->orderBy($this->sortField, $this->sortDirection);
 
         $this->batchAllocations = $query->get();
         
@@ -2142,6 +2149,18 @@ class Warehouse extends Component
     public function updatedSelectedProductIdsForAllocation()
     {
         $this->loadMatrix();
+    }
+
+    public function sortBy($field)
+    {
+        if ($this->sortField === $field) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortDirection = 'asc';
+        }
+        
+        $this->sortField = $field;
+        $this->loadBatchAllocations();
     }
 
     // VDR Export Methods

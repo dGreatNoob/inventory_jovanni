@@ -1521,11 +1521,8 @@ class Warehouse extends Component
             }
         }
 
-        // Validate all products are fully scanned
-        if (!$this->allProductsFullyScanned()) {
-            session()->flash('error', 'Cannot dispatch batch. Please complete scanning all products for all branches.');
-            return;
-        }
+        // Note: Dispatch is now allowed even if all products are not fully scanned
+        // This supports partial dispatching based on actual container/truck capacity
 
         DB::beginTransaction();
         try {

@@ -1165,9 +1165,8 @@
                                 <div class="space-y-4"> <!-- COLUMN 2 -->
                                     <h3 class="text-lg font-medium mb-4">Step 4: Dispatch Batch</h3>
                                     <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">
-                                        Review and dispatch your batch allocation. Select a branch and scan barcodes for
-                                        each
-                                        product before dispatching.
+                                        Review and dispatch your batch allocation. Scan items based on container/truck capacity.
+                                        Dispatch is allowed even if all items are not scanned.
                                     </p>
 
                                     @if ($currentBatch)
@@ -1419,13 +1418,8 @@
                                         <div>
                                             <span class="text-blue-700 dark:text-blue-300">Status:</span>
                                             <div class="font-medium text-lg">
-                                                @if ($this->allProductsFullyScanned())
-                                                    <span class="text-green-600 dark:text-green-400">✓ Ready to
-                                                        Dispatch</span>
-                                                @else
-                                                    <span class="text-yellow-600 dark:text-yellow-400">⏳
-                                                        Scanning...</span>
-                                                @endif
+                                                <span class="text-green-600 dark:text-green-400">✓ Ready to Dispatch</span>
+                                                <span class="text-sm text-gray-500 dark:text-gray-400">(Partial scanning allowed)</span>
                                             </div>
                                         </div>
                                     </div>
@@ -1450,8 +1444,7 @@
                                                 Once dispatched, delivery receipts will be generated for all
                                                 branches
                                                 and this batch cannot be modified.
-                                                Ensure all products for all branches are scanned before
-                                                dispatching.
+                                                You can dispatch based on scanned items (partial dispatch allowed).
                                             </p>
                                         </div>
                                     </div>
@@ -1465,13 +1458,8 @@
                     </button>
                     <button type="button" wire:click="dispatchBatchFromStepper"
                         wire:confirm="Are you sure you want to dispatch this batch? This action cannot be undone."
-                        @if (!$this->allProductsFullyScanned()) disabled @endif
-                        class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:opacity-50">
-                        @if ($this->allProductsFullyScanned())
-                            ✓ Dispatch Batch
-                        @else
-                            🔒 Complete All Branch Scanning to Dispatch
-                        @endif
+                        class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                        ✓ Dispatch Batch
                     </button>
                 </div>
             </div>

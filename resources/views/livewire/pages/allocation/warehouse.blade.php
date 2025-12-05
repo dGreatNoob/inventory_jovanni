@@ -1009,7 +1009,7 @@
                                                     </td>
                                                     <td
                                                         class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                                        {{ $branchAllocation->items->count() }} products
+                                                        {{ $branchAllocation->items()->whereNull('box_id')->count() }} products
                                                     </td>
                                                     <td class="px-4 py-3 whitespace-nowrap text-sm">
                                                         @if (!$isActive)
@@ -1192,7 +1192,7 @@
                                                                         class="ml-2 px-2 py-1 bg-white text-blue-600 rounded text-xs">ACTIVE</span>
                                                                 </h5>
                                                                 <p class="text-sm text-blue-100 mt-1">
-                                                                    {{ $activeBranchAllocation->items->count() }}
+                                                                    {{ $activeBranchAllocation->items()->whereNull('box_id')->count() }}
                                                                     products
                                                                     allocated
                                                                 </p>
@@ -1200,8 +1200,9 @@
                                                             <div class="text-right">
                                                                 @php
                                                                     $branchScannedCount = 0;
-                                                                    $branchTotalProducts = $activeBranchAllocation->items->count();
-                                                                    foreach ($activeBranchAllocation->items as $item) {
+                                                                    $branchTotalProducts = $activeBranchAllocation->items()->whereNull('box_id')->count();
+                                                                    $originalItems = $activeBranchAllocation->items()->whereNull('box_id')->get();
+                                                                    foreach ($originalItems as $item) {
                                                                         $scannedQty =
                                                                             $scannedQuantities[
                                                                                 $activeBranchAllocation->id
@@ -1349,81 +1350,60 @@
                                         @endif
 
                                 </div> <!-- END COLUMN 2 -->
-                                <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6">
-                                    <h4 class="font-medium mb-3">Batch Summary</h4>
-                                    <div class="flex flex-wrap gap-6 text-sm">
-                                        <div>
-                                            <span class="text-gray-600 dark:text-gray-400">Reference:</span>
-                                            <div class="font-medium">{{ $currentBatch->ref_no }}</div>
-                                        </div>
-                                        <div>
-                                            <span class="text-gray-600 dark:text-gray-400">Branches:</span>
-                                            <div class="font-medium">
-                                                {{ $currentBatch->branchAllocations->count() }}
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <span class="text-gray-600 dark:text-gray-400">Boxes:</span>
-                                            <div class="font-medium">{{ $this->getTotalBoxesCount() }}</div>
-                                        </div>
-                                        <div>
-                                            <span class="text-gray-600 dark:text-gray-400">Total Items:</span>
-                                            <div class="font-medium">{{ $this->getTotalItemsCount() }}</div>
-                                        </div>
-                                        <div>
-                                            <span class="text-gray-600 dark:text-gray-400">Total Quantities:</span>
-                                            <div class="font-medium">{{ $this->getTotalQuantitiesCount() }}</div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                                <!-- Overall Scan Summary -->
-                                <div
-                                    class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
-                                    <h5 class="font-medium text-blue-900 dark:text-blue-100 mb-2">Overall Scan
-                                        Summary
-                                    </h5>
-                                    <div class="flex flex-wrap gap-6 text-sm">
-                                        <div>
-                                            <span class="text-blue-700 dark:text-blue-300">Total Items:</span>
-                                            <div class="font-medium text-blue-900 dark:text-blue-100 text-xl">
-                                                {{ $this->getTotalItemsCount() }}</div>
-                                        </div>
-                                        <div>
-                                            <span class="text-blue-700 dark:text-blue-300">Total Quantities:</span>
-                                            <div class="font-medium text-blue-900 dark:text-blue-100 text-xl">
-                                                {{ $this->getTotalQuantitiesCount() }}</div>
-                                        </div>
-                                        <div>
-                                            <span class="text-blue-700 dark:text-blue-300">Scanned Quantities:</span>
-                                            <div class="font-medium text-blue-900 dark:text-blue-100 text-xl">
-                                                {{ $this->getTotalScannedQuantitiesCount() }} /
-                                                {{ $this->getTotalQuantitiesCount() }}
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <span class="text-blue-700 dark:text-blue-300">Fully
-                                                Scanned:</span>
-                                            <div class="font-medium text-blue-900 dark:text-blue-100 text-xl">
-                                                {{ $this->getFullyScannedCount() }} /
-                                                {{ $this->getTotalItemsCount() }}
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <span class="text-blue-700 dark:text-blue-300">Pending:</span>
-                                            <div class="font-medium text-blue-900 dark:text-blue-100 text-xl">
-                                                {{ $this->getTotalItemsCount() - $this->getFullyScannedCount() }}
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <span class="text-blue-700 dark:text-blue-300">Status:</span>
-                                            <div class="font-medium text-lg">
-                                                <span class="text-green-600 dark:text-green-400">✓ Ready to Dispatch</span>
-                                                <span class="text-sm text-gray-500 dark:text-gray-400">(Partial scanning allowed)</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+    <!-- Batch Summary -->
+    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6">
+        <h4 class="font-medium mb-3">Batch Summary</h4>
+        <div class="flex flex-wrap gap-6 text-sm">
+            <div>
+                <span class="text-gray-600 dark:text-gray-400">Reference:</span>
+                <div class="font-medium">{{ $currentBatch->ref_no }}</div>
+            </div>
+            <div>
+                <span class="text-gray-600 dark:text-gray-400">Branches:</span>
+                <div class="font-medium">{{ $currentBatch->branchAllocations->count() }}</div>
+            </div>
+            <div>
+                <span class="text-gray-600 dark:text-gray-400">Boxes:</span>
+                <div class="font-medium">{{ $this->getTotalBoxesCount() }}</div>
+            </div>
+            <div>
+                <span class="text-gray-600 dark:text-gray-400">Total Quantities:</span>
+                <div class="font-medium">{{ $this->getTotalQuantitiesCount() }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overall Scan Summary -->
+    <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800
+                rounded-lg p-4 mb-6">
+        <h5 class="font-medium text-blue-900 dark:text-blue-100 mb-2">Overall Scan Summary</h5>
+        <div class="flex flex-wrap gap-6 text-sm">
+            <div>
+                <span class="text-blue-700 dark:text-blue-300">Total Quantities:</span>
+                <div class="font-medium text-blue-900 dark:text-blue-100 text-xl">
+                    {{ $this->getTotalQuantitiesCount() }}
+                </div>
+            </div>
+            <div>
+                <span class="text-blue-700 dark:text-blue-300">Scanned Quantities:</span>
+                <div class="font-medium text-blue-900 dark:text-blue-100 text-xl">
+                    {{ $this->getTotalScannedQuantitiesCount() }} /
+                    {{ $this->getTotalQuantitiesCount() }}
+                </div>
+            </div>
+            <div>
+                <span class="text-blue-700 dark:text-blue-300">Pending:</span>
+                <div class="font-medium text-blue-900 dark:text-blue-100 text-xl">
+                    {{ $this->getPendingItemsCount() }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
 
                                
                 </div> <!-- END OF 2 COLUMNS -->
@@ -1788,11 +1768,17 @@
                                                 @if ($activeBranchId && $currentBatch)
                                                     @php
                                                         $branchAllocation = $currentBatch->branchAllocations->find($activeBranchId);
-                                                        $totalItems = $branchAllocation ? $branchAllocation->items->count() : 0;
+                                                        $totalItems = $branchAllocation ? $branchAllocation->items()->whereNull('box_id')->count() : 0;
                                                         $scannedItems = 0;
                                                         if ($branchAllocation) {
-                                                            foreach ($branchAllocation->items as $item) {
-                                                                if ($item->scanned_quantity >= $item->quantity) {
+                                                            $originalItems = $branchAllocation->items()->whereNull('box_id')->get();
+                                                            foreach ($originalItems as $item) {
+                                                                // Calculate actual scanned quantity for this product
+                                                                $productScannedQty = \App\Models\BranchAllocationItem::where('branch_allocation_id', $branchAllocation->id)
+                                                                    ->where('product_id', $item->product_id)
+                                                                    ->whereNotNull('box_id')
+                                                                    ->sum('scanned_quantity');
+                                                                if ($productScannedQty >= $item->quantity) {
                                                                     $scannedItems++;
                                                                 }
                                                             }
@@ -2025,7 +2011,9 @@
                             $scannedQty = 0;
                             $allocatedQty = 0;
                             foreach ($record->branchAllocations as $branchAllocation) {
-                                foreach ($branchAllocation->items as $item) {
+                                // Only count original allocation items (without box_id)
+                                $originalItems = $branchAllocation->items()->whereNull('box_id')->get();
+                                foreach ($originalItems as $item) {
                                     // Calculate total scanned quantity for this product across all boxes
                                     $productScannedQty = \App\Models\BranchAllocationItem::where('branch_allocation_id', $branchAllocation->id)
                                         ->where('product_id', $item->product_id)

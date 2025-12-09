@@ -4,119 +4,334 @@ namespace App\Livewire\Pages\Branch;
 
 use Livewire\Component;
 use App\Models\Branch;
-use App\Models\BatchAllocation;
+use App\Models\Shipment;
 use App\Models\BranchAllocation;
+use App\Models\BranchAllocationItem;
 
 class BranchInventory extends Component
 {
-    // Batch selection properties - using the original 3-batch approach
+    // Batch selection
     public $selectedBatch = null;
+    public $batches = [];
+
+    // Branch selection within batch
+    public $selectedBranchId = null;
     public $batchBranches = [];
 
-    // Batch counts for UI
-    public $batch1BranchesCount = 0;
-    public $batch2BranchesCount = 0;
-    public $batch3BranchesCount = 0;
+    // Shipment data for selected branch
+    public $branchShipments = [];
+    public $selectedShipmentDetails = null;
 
-    // Branch details modal
-    public $showBranchDetailsModal = false;
-    public $selectedBranchDetails = null;
+    // Search and filters
+    public $search = '';
+    public $dateFrom = '';
+    public $dateTo = '';
+    public $statusFilter = '';
+
+    // Modal controls
+    public $showShipmentDetailsModal = false;
 
     public function mount()
     {
-        $this->initializeBatchCounts();
+        $this->loadBatches();
     }
 
     /**
-     * Initialize batch counts based on branch batch field
+     * Load all batches with branch and shipment counts
      */
-    protected function initializeBatchCounts()
+    protected function loadBatches()
     {
-        // Count branches by their batch field
-        $this->batch1BranchesCount = Branch::where('batch', 'BATCH-01')->count();
-        $this->batch2BranchesCount = Branch::where('batch', 'BATCH-02')->count(); 
-        $this->batch3BranchesCount = Branch::where('batch', 'BATCH-03')->count();
+        // Get unique batch values from branches that have completed shipments
+        $batchesWithShipments = Branch::whereHas('branchAllocations.shipments', function ($q) {
+            $q->where('shipping_status', 'completed');
+        })
+        ->distinct()
+        ->pluck('batch')
+        ->filter()
+        ->sort()
+        ->values();
+
+        $this->batches = $batchesWithShipments->map(function ($batchName) {
+            $branchCount = Branch::where('batch', $batchName)
+                ->whereHas('branchAllocations.shipments', function ($q) {
+                    $q->where('shipping_status', 'completed');
+                })
+                ->count();
+
+            $totalShipments = Shipment::whereHas('branchAllocation.branch', function ($q) use ($batchName) {
+                $q->where('batch', $batchName);
+            })
+            ->where('shipping_status', 'completed')
+            ->count();
+
+            return [
+                'name' => $batchName,
+                'branch_count' => $branchCount,
+                'total_shipments' => $totalShipments,
+                'last_shipment_date' => $this->getLastShipmentDateForBatch($batchName),
+            ];
+        });
+    }
+
+    /**
+     * Get the last shipment date for a batch
+     */
+    protected function getLastShipmentDateForBatch($batchName)
+    {
+        $lastShipment = Shipment::whereHas('branchAllocation.branch', function ($q) use ($batchName) {
+            $q->where('batch', $batchName);
+        })
+        ->where('shipping_status', 'completed')
+        ->latest('updated_at')
+        ->first();
+
+        return $lastShipment ? $lastShipment->updated_at->format('M d, Y') : null;
+    }
+
+    /**
+     * Get the last shipment date for a branch
+     */
+    protected function getLastShipmentDate($branchId)
+    {
+        $lastShipment = Shipment::whereHas('branchAllocation', function ($q) use ($branchId) {
+            $q->where('branch_id', $branchId);
+        })
+        ->where('shipping_status', 'completed')
+        ->latest('updated_at')
+        ->first();
+
+        return $lastShipment ? $lastShipment->updated_at->format('M d, Y') : null;
     }
 
     /**
      * Select a batch to view its branches
      */
-    public function selectBatch($batchNumber)
+    public function selectBatch($batchName)
     {
-        // Map batch number to batch name
-        $batchMap = [
-            '1' => 'BATCH-01',
-            '2' => 'BATCH-02', 
-            '3' => 'BATCH-03'
-        ];
-        
-        $this->selectedBatch = $batchMap[$batchNumber] ?? $batchNumber;
+        $this->selectedBatch = $batchName;
+        $this->selectedBranchId = null;
+        $this->branchShipments = [];
         $this->loadBatchBranches();
     }
 
     /**
-     * Load branches for the selected batch based on branch batch field
+     * Load branches for the selected batch
      */
     protected function loadBatchBranches()
     {
-        $this->batchBranches = [];
+        if (!$this->selectedBatch) return;
 
-        // Get branches by their batch field
-        $branches = Branch::where('batch', $this->selectedBatch)->get();
+        $this->batchBranches = Branch::where('batch', $this->selectedBatch)
+            ->whereHas('branchAllocations.shipments', function ($q) {
+                $q->where('shipping_status', 'completed');
+            })
+            ->withCount([
+                'branchAllocations as completed_shipments_count' => function ($query) {
+                    $query->whereHas('shipments', function ($q) {
+                        $q->where('shipping_status', 'completed');
+                    });
+                }
+            ])
+            ->get()
+            ->map(function ($branch) {
+                return [
+                    'id' => $branch->id,
+                    'name' => $branch->name,
+                    'code' => $branch->code,
+                    'address' => $branch->address,
+                    'completed_shipments_count' => $branch->completed_shipments_count,
+                    'last_shipment_date' => $this->getLastShipmentDate($branch->id),
+                ];
+            });
+    }
 
-        foreach ($branches as $branch) {
-            $this->batchBranches[] = [
-                'id' => $branch->id,
-                'name' => $branch->name,
-                'code' => $branch->code,
-                'address' => $branch->address,
-                'batch_number' => $branch->batch,
-                'category' => $branch->category,
-                'manager_name' => $branch->manager_name,
+    /**
+     * Select a branch to view its shipments
+     */
+    public function selectBranch($branchId)
+    {
+        $this->selectedBranchId = $branchId;
+        $this->loadBranchShipments();
+    }
+
+    /**
+     * Load shipments for the selected branch
+     */
+    protected function loadBranchShipments()
+    {
+        if (!$this->selectedBranchId) return;
+
+        $query = Shipment::with([
+            'branchAllocation.branch',
+            'branchAllocation.items.product',
+            'branchAllocation.batchAllocation'
+        ])
+        ->whereHas('branchAllocation', function ($q) {
+            $q->where('branch_id', $this->selectedBranchId);
+        })
+        ->where('shipping_status', 'completed');
+
+        // Apply filters
+        if ($this->search) {
+            $query->where('shipping_plan_num', 'like', '%' . $this->search . '%');
+        }
+
+        if ($this->dateFrom) {
+            $query->whereDate('created_at', '>=', $this->dateFrom);
+        }
+
+        if ($this->dateTo) {
+            $query->whereDate('created_at', '<=', $this->dateTo);
+        }
+
+        if ($this->statusFilter) {
+            $query->where('shipping_status', $this->statusFilter);
+        }
+
+        $shipments = $query->orderBy('created_at', 'desc')->get();
+
+        $this->branchShipments = $shipments->map(function ($shipment) {
+            $allocation = $shipment->branchAllocation;
+            $totalItems = $allocation ? $allocation->items->sum('quantity') : 0;
+            $totalValue = $allocation ? $allocation->items->sum(function ($item) {
+                return $item->quantity * $item->getDisplayPriceAttribute();
+            }) : 0;
+
+            return [
+                'id' => $shipment->id,
+                'shipping_plan_num' => $shipment->shipping_plan_num,
+                'shipment_date' => $shipment->created_at->format('M d, Y'),
+                'carrier_name' => $shipment->carrier_name ?: 'N/A',
+                'delivery_method' => $shipment->delivery_method ?: 'N/A',
+                'status' => $shipment->shipping_status,
+                'allocations' => $this->formatAllocationsForShipment($shipment),
+                'total_items' => $totalItems,
+                'total_value' => $totalValue,
             ];
+        });
+    }
+
+    /**
+     * Format allocations data for a shipment
+     */
+    protected function formatAllocationsForShipment($shipment)
+    {
+        $allocation = $shipment->branchAllocation;
+
+        if (!$allocation) return [];
+
+        return [
+            [
+                'id' => $allocation->id,
+                'reference' => $allocation->batchAllocation->ref_no ?? 'N/A',
+                'created_date' => $allocation->created_at->format('M d, Y'),
+                'created_by' => 'System', // Default since no user relationship
+                'products' => $allocation->items->map(function ($item) {
+                    return [
+                        'id' => $item->id,
+                        'name' => $item->getDisplayNameAttribute(),
+                        'sku' => $item->getDisplaySkuAttribute(),
+                        'quantity' => $item->quantity,
+                        'price' => $item->getDisplayPriceAttribute(),
+                        'total' => $item->quantity * $item->getDisplayPriceAttribute(),
+                        'status' => $this->getItemStatus($item),
+                    ];
+                }),
+                'total_products' => $allocation->items->count(),
+                'total_quantity' => $allocation->items->sum('quantity'),
+            ]
+        ];
+    }
+
+    /**
+     * Get status for an allocation item
+     */
+    protected function getItemStatus($item)
+    {
+        $scanned = $item->scanned_quantity ?? 0;
+        $allocated = $item->quantity;
+
+        if ($scanned >= $allocated) {
+            return 'received';
+        } elseif ($scanned > 0) {
+            return 'partial';
+        } else {
+            return 'pending';
         }
     }
 
     /**
-     * View details of a specific branch
+     * View shipment details
      */
-    public function viewBranchDetails($branchId)
+    public function viewShipmentDetails($shipmentId)
     {
-        $branchDetails = collect($this->batchBranches)->firstWhere('id', $branchId);
+        $shipment = collect($this->branchShipments)->firstWhere('id', $shipmentId);
 
-        if ($branchDetails) {
-            $this->selectedBranchDetails = $branchDetails;
-            $this->showBranchDetailsModal = true;
+        if ($shipment) {
+            $this->selectedShipmentDetails = $shipment;
+            $this->showShipmentDetailsModal = true;
         }
     }
 
     /**
-     * Close the branch details modal
+     * Close shipment details modal
      */
-    public function closeBranchDetailsModal()
+    public function closeShipmentDetailsModal()
     {
-        $this->showBranchDetailsModal = false;
-        $this->selectedBranchDetails = null;
-    }
-
-    /**
-     * Refresh batch data
-     */
-    public function refreshBatchData()
-    {
-        $this->initializeBatchCounts();
-        if ($this->selectedBatch) {
-            $this->loadBatchBranches();
-        }
+        $this->showShipmentDetailsModal = false;
+        $this->selectedShipmentDetails = null;
     }
 
     /**
      * Clear batch selection
      */
-    public function clearSelection()
+    public function clearBatchSelection()
     {
         $this->selectedBatch = null;
+        $this->selectedBranchId = null;
         $this->batchBranches = [];
+        $this->branchShipments = [];
+        $this->selectedShipmentDetails = null;
+        $this->showShipmentDetailsModal = false;
+    }
+
+    /**
+     * Clear branch selection (within batch)
+     */
+    public function clearBranchSelection()
+    {
+        $this->selectedBranchId = null;
+        $this->branchShipments = [];
+        $this->selectedShipmentDetails = null;
+        $this->showShipmentDetailsModal = false;
+    }
+
+    /**
+     * Clear all filters
+     */
+    public function clearFilters()
+    {
+        $this->search = '';
+        $this->dateFrom = '';
+        $this->dateTo = '';
+        $this->statusFilter = '';
+        if ($this->selectedBranchId) {
+            $this->loadBranchShipments();
+        }
+    }
+
+    /**
+     * Refresh data
+     */
+    public function refreshData()
+    {
+        $this->loadBatches();
+        if ($this->selectedBatch) {
+            $this->loadBatchBranches();
+            if ($this->selectedBranchId) {
+                $this->loadBranchShipments();
+            }
+        }
     }
 
     public function render()

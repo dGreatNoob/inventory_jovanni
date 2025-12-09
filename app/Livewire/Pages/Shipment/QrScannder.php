@@ -11,17 +11,10 @@ use Illuminate\Support\Facades\Auth;
 
 class QrScannder extends Component
 {
-    public $scannedCode = '';
     public $foundShipment = null;
-
-    public $foundProduct = null;
     public $showResult = false;
-
     public $stockInQuantity = '';
-
-
     public $showStockOutModal = false;
-
     public $message = '';
     public $messageType = '';
     public $receivingStatus = 'good';
@@ -33,94 +26,82 @@ class QrScannder extends Component
     public $itemRemarks = [];
     public $generalRemarks = '';
 
-    // Store the scanned PO number
-    public $scannedShipmentNumber = '';
-
-    // Manual input
+    // Shipment selection
+    public $availableShipments = [];
+    public $selectedShipmentId = null;
     public $manualShipmentRef = '';
 
-    #[On('qrScanned')]
-    public function handleQrScanned($code)
+    public function mount()
     {
-        $this->message = "QR Scanned: {$code}";
-        $this->messageType = 'info';
-
-        $this->scannedCode = $code;
-
-        $this->processScannedCode($code);
+        $this->loadAvailableShipments();
     }
 
-    public function processManualInput()
+    public function loadAvailableShipments()
     {
-        if (empty($this->manualShipmentRef)) {
-            $this->message = "Please enter a shipment reference number";
+        $this->availableShipments = Shipment::with('branchAllocation.branch')
+            ->whereIn('shipping_status', ['approved', 'in_transit'])
+            ->whereHas('branchAllocation.items')
+            ->orderBy('created_at', 'desc')
+            ->get();
+    }
+
+    public function selectShipment()
+    {
+        if (!$this->selectedShipmentId && empty($this->manualShipmentRef)) {
+            $this->message = "Please select a shipment or enter a reference number manually";
             $this->messageType = 'error';
             return;
         }
 
-        $this->message = "Processing manual input: {$this->manualShipmentRef}";
-        $this->messageType = 'info';
+        $shipmentId = $this->selectedShipmentId ?: null;
+        $reference = $this->manualShipmentRef ?: null;
 
-        $this->scannedCode = $this->manualShipmentRef;
-        $this->processScannedCode($this->manualShipmentRef);
-    }
+        $query = Shipment::with('branchAllocation.items.product');
 
-    public function processScannedCode($code)
-    { 
-        // Clear any previous state
-        $this->foundShipment = null;
-        $this->foundProduct = null;
-        $this->scannedShipmentNumber = '';
-        
-        // First, try to find a shipment with this reference number
-        $Shipment = Shipment::with('branchAllocation.items.product')
-            ->where('shipping_plan_num', $code)
-            ->first();
+        if ($shipmentId) {
+            $query->where('id', $shipmentId);
+        } elseif ($reference) {
+            $query->where('shipping_plan_num', $reference);
+        }
 
-        if ($Shipment) {
+        $Shipment = $query->first();
 
-            //Check for valid status - allow multiple valid statuses
-            $validStatuses = ['approved', 'in_transit'];
-            if (!in_array($Shipment->shipping_status, $validStatuses)) {
-                $this->foundShipment = null;
-                $this->foundProduct = null;
-                $this->showResult = true;
-                $this->message = "Shipment found, but status is '{$Shipment->shipping_status}'. Only Shipments with status 'Approved' or 'In Transit' can be processed.";
-                $this->messageType = 'error';
-                return;
-            }
-
-            // Check if shipment has associated branch allocation with items
-            if (!$Shipment->branchAllocation || $Shipment->branchAllocation->items->isEmpty()) {
-                $this->foundShipment = null;
-                $this->foundProduct = null;
-                $this->showResult = true;
-                $this->message = "Shipment found, but it has no associated allocated items to review.";
-                $this->messageType = 'error';
-                return;
-            }
-
-            // Store the scanned Shipping Plan number FIRST
-            $this->scannedShipmentNumber = $code;
-
-            // Then set the found shipment
-            $this->foundShipment = $Shipment;
-
-            $this->foundProduct = null;
-            $this->showResult = true;
-            $this->message = "Shipment found: {$Shipment->shipping_plan_num}";
-            $this->messageType = 'success';
-
-            // Initialize step 2 data
-            $this->initializeStep2Data();
-
-            // Automatically advance to step 2
-            $this->currentStep = 1;
-
-            Log::info("Advanced to step 1. Final state - scannedShipmentNumber: {$this->scannedShipmentNumber}");
-
+        if (!$Shipment) {
+            $this->message = "Shipment not found";
+            $this->messageType = 'error';
             return;
         }
+
+        //Check for valid status - allow multiple valid statuses
+        $validStatuses = ['approved', 'in_transit'];
+        if (!in_array($Shipment->shipping_status, $validStatuses)) {
+            $this->foundShipment = null;
+            $this->showResult = true;
+            $this->message = "Shipment found, but status is '{$Shipment->shipping_status}'. Only Shipments with status 'Approved' or 'In Transit' can be processed.";
+            $this->messageType = 'error';
+            return;
+        }
+
+        // Check if shipment has associated branch allocation with items
+        if (!$Shipment->branchAllocation || $Shipment->branchAllocation->items->isEmpty()) {
+            $this->foundShipment = null;
+            $this->showResult = true;
+            $this->message = "Shipment found, but it has no associated allocated items to review.";
+            $this->messageType = 'error';
+            return;
+        }
+
+        // Set the found shipment
+        $this->foundShipment = $Shipment;
+        $this->showResult = true;
+        $this->message = "Shipment selected: {$Shipment->shipping_plan_num}";
+        $this->messageType = 'success';
+
+        // Initialize step 2 data
+        $this->initializeStep2Data();
+
+        // Automatically advance to step 2
+        $this->currentStep = 1;
     }
 
     public function initializeStep2Data()
@@ -270,71 +251,19 @@ class QrScannder extends Component
         $this->currentStep = 0;
         $this->reset(
             [
-                'scannedCode',
                 'foundShipment',
-                'foundProduct',
                 'showResult',
                 'message',
                 'messageType',
                 'itemStatuses',
                 'itemRemarks',
                 'generalRemarks',
-                'scannedShipmentNumber',
+                'selectedShipmentId',
                 'manualShipmentRef'
             ]
         );
     }
 
-    public function testStep2()
-    {
-        if ($this->scannedShipmentNumber) {
-            $shipmentResults = Shipment::with(['branchAllocation.items.product'])
-                ->where('shipping_plan_num', $this->scannedShipmentNumber)
-                ->first();
-
-            if ($shipmentResults) {
-                $this->foundShipment = $shipmentResults;
-                $this->currentStep = 1;
-                $this->initializeStep2Data();
-                return;
-            }
-        }
-
-        // Fallback: if no scanned shipment number, get the first shipment for testing
-        $testShipment = Shipment::with(['branchAllocation.items.product'])->first();
-        if ($testShipment) {
-            $this->foundShipment = $testShipment;
-            $this->currentStep = 1;
-            $this->initializeStep2Data();
-        }
-    }
-
-    public function fixScannedShipment()
-    {
-        if ($this->scannedCode) {
-            // Force reload the shipment based on scanned code
-            $shipmentResults = Shipment::with(['branchAllocation.items.product'])
-                ->where('shipping_plan_num', $this->scannedCode)
-                ->first();
-
-            if ($shipmentResults) {
-                $this->scannedShipmentNumber = $this->scannedCode;
-                $this->foundShipment = $shipmentResults;
-                $this->initializeStep2Data();
-            } else {
-                Log::error("No Shipment found for scanned code: {$this->scannedCode}");
-            }
-        }
-    }
-
-    public function ensureCorrectPO()
-    {          
-        // If we have a scanned code but the displayed PO doesn't match, fix it
-        if ($this->scannedCode && $this->foundShipment && $this->foundShipment->shipping_plan_num !== $this->scannedCode) {
-            Log::info("Shipment mismatch detected. Displayed: {$this->foundShipment->shipping_plan_num}, Scanned: {$this->scannedCode}");
-            $this->fixScannedShipment();
-        }
-    }
 
     public function setReceivingStatus($status)
     {
@@ -356,11 +285,9 @@ class QrScannder extends Component
     {
         $this->reset(
             [
-                'scannedCode', 
-                'foundShipment', 
-                'foundProduct', 
-                'showResult', 
-                'message', 
+                'foundShipment',
+                'showResult',
+                'message',
                 'messageType'
             ]
         );

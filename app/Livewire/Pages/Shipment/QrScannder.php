@@ -107,8 +107,8 @@ class QrScannder extends Component
     public function initializeStep2Data()
     {
         if (!$this->foundShipment || !$this->foundShipment->branchAllocation) return;
-        // Initialize status and remarks for each branch allocation item
-        foreach ($this->foundShipment->branchAllocation->items as $item) {
+        // Initialize status and remarks for each branch allocation item (only original items, not scanned duplicates)
+        foreach ($this->foundShipment->branchAllocation->items->where('box_id', null) as $item) {
             $this->itemStatuses[$item->id] = 'good';
             $this->itemRemarks[$item->id] = '';
         }
@@ -161,8 +161,8 @@ class QrScannder extends Component
                 return;
             }
 
-            // Process each branch allocation item based on its status
-            foreach ($this->foundShipment->branchAllocation->items as $item) {
+            // Process each branch allocation item based on its status (only original items, not scanned duplicates)
+            foreach ($this->foundShipment->branchAllocation->items->where('box_id', null) as $item) {
                 $itemCondition = $this->itemStatuses[$item->id];
                 $remarks = $this->itemRemarks[$item->id] ?? '';
 
@@ -214,12 +214,13 @@ class QrScannder extends Component
                 }
             }
 
-            // Update Shipment status based on overall status
+            // Update Shipment status based on overall status (only consider original items)
             $allGood = true;
             $hasDestroyed = false;
             $hasIncomplete = false;
 
-            foreach ($this->itemStatuses as $status) {
+            foreach ($this->foundShipment->branchAllocation->items->where('box_id', null) as $item) {
+                $status = $this->itemStatuses[$item->id] ?? 'good';
                 if ($status === 'destroyed') $hasDestroyed = true;
                 if ($status === 'incomplete') $hasIncomplete = true;
                 if ($status !== 'good') $allGood = false;

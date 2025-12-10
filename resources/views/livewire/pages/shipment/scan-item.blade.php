@@ -159,7 +159,7 @@
             
             <div class="space-y-4">
                 @if($foundShipment->branchAllocation)
-                @foreach($foundShipment->branchAllocation->items as $item)
+                @foreach($foundShipment->branchAllocation->items->where('box_id', null) as $item)
                 <div class="border border-gray-200 dark:border-zinc-600 rounded-xl p-4 space-y-3">
                     <!-- Item Header -->
                     <div class="flex justify-between items-start">
@@ -289,7 +289,7 @@
                 <h3 class="text-lg font-bold text-gray-900 dark:text-white">Items Review Summary</h3>
 
                 @if($foundShipment->branchAllocation)
-                @foreach($foundShipment->branchAllocation->items as $item)
+                @foreach($foundShipment->branchAllocation->items->where('box_id', null) as $item)
                 <div class="border border-gray-200 dark:border-zinc-700 rounded-xl p-4 space-y-3 bg-white dark:bg-zinc-800">
                     <!-- Item Header -->
                     <div class="flex justify-between items-start">

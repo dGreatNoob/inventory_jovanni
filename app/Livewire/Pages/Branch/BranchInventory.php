@@ -192,8 +192,8 @@ class BranchInventory extends Component
 
         $this->branchShipments = $shipments->map(function ($shipment) {
             $allocation = $shipment->branchAllocation;
-            $totalItems = $allocation ? $allocation->items->sum('quantity') : 0;
-            $totalValue = $allocation ? $allocation->items->sum(function ($item) {
+            $totalItems = $allocation ? $allocation->items->where('box_id', null)->sum('quantity') : 0;
+            $totalValue = $allocation ? $allocation->items->where('box_id', null)->sum(function ($item) {
                 return $item->quantity * $item->getDisplayPriceAttribute();
             }) : 0;
 
@@ -226,7 +226,7 @@ class BranchInventory extends Component
                 'reference' => $allocation->batchAllocation->ref_no ?? 'N/A',
                 'created_date' => $allocation->created_at->format('M d, Y'),
                 'created_by' => 'System', // Default since no user relationship
-                'products' => $allocation->items->map(function ($item) {
+                'products' => $allocation->items->where('box_id', null)->map(function ($item) {
                     return [
                         'id' => $item->id,
                         'name' => $item->getDisplayNameAttribute(),
@@ -237,8 +237,8 @@ class BranchInventory extends Component
                         'status' => $this->getItemStatus($item),
                     ];
                 }),
-                'total_products' => $allocation->items->count(),
-                'total_quantity' => $allocation->items->sum('quantity'),
+                'total_products' => $allocation->items->where('box_id', null)->count(),
+                'total_quantity' => $allocation->items->where('box_id', null)->sum('quantity'),
             ]
         ];
     }
@@ -248,12 +248,17 @@ class BranchInventory extends Component
      */
     protected function getItemStatus($item)
     {
-        $scanned = $item->scanned_quantity ?? 0;
+        // Calculate total scanned quantity for this product across all boxes
+        $totalScanned = \App\Models\BranchAllocationItem::where('branch_allocation_id', $item->branch_allocation_id)
+            ->where('product_id', $item->product_id)
+            ->whereNotNull('box_id')
+            ->sum('scanned_quantity');
+
         $allocated = $item->quantity;
 
-        if ($scanned >= $allocated) {
+        if ($totalScanned >= $allocated) {
             return 'received';
-        } elseif ($scanned > 0) {
+        } elseif ($totalScanned > 0) {
             return 'partial';
         } else {
             return 'pending';
@@ -331,6 +336,16 @@ class BranchInventory extends Component
             if ($this->selectedBranchId) {
                 $this->loadBranchShipments();
             }
+        }
+    }
+
+    /**
+     * Update hook to reload shipments when filters change
+     */
+    public function updated($property)
+    {
+        if (in_array($property, ['search', 'dateFrom', 'dateTo', 'statusFilter']) && $this->selectedBranchId) {
+            $this->loadBranchShipments();
         }
     }
 

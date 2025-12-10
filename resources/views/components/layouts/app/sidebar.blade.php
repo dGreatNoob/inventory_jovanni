@@ -208,8 +208,8 @@
 
                          <flux:navlist.item
                             icon="building-storefront"
-                            href="{{ route('allocation.warehouse') }}"
-                            :current="request()->routeIs('allocation.warehouse')"
+                            href="#"
+                            :current="false"
                             wire:navigate
                         >
                             {{ __('Branch Transfer') }}

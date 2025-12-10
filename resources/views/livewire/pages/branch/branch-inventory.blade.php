@@ -179,8 +179,39 @@
                     </div>
                 </div>
 
+                <!-- Summary Header -->
+                @if(!empty($branchShipments))
+                    <div class="mt-8 bg-gray-50 dark:bg-gray-700 rounded-lg p-6">
+                        <h4 class="font-semibold text-gray-900 dark:text-white mb-4">Branch Summary</h4>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ count($branchShipments) }}</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">Total Shipments</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-green-600 dark:text-green-400">
+                                    {{ $branchShipments->sum('total_items') }}
+                                </div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">Total Items</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                                    ₱{{ number_format($branchShipments->sum('total_value'), 2) }}
+                                </div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">Total Value</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                                    {{ $branchShipments->sum(function($shipment) { return collect($shipment['allocations'])->sum('total_products'); }) }}
+                                </div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">Unique Products</div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
                 <!-- Shipments List -->
-                <div class="space-y-6">
+                <div class="space-y-6 mt-8">
                     @foreach($branchShipments as $shipment)
                         <!-- Shipment Card -->
                         <div class="bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden">
@@ -304,37 +335,6 @@
                         </div>
                     @endforeach
                 </div>
-
-                <!-- Summary Footer -->
-                @if(!empty($branchShipments))
-                    <div class="mt-8 bg-gray-50 dark:bg-gray-700 rounded-lg p-6">
-                        <h4 class="font-semibold text-gray-900 dark:text-white mb-4">Branch Summary</h4>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-                            <div class="text-center">
-                                <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ count($branchShipments) }}</div>
-                                <div class="text-sm text-gray-600 dark:text-gray-400">Total Shipments</div>
-                            </div>
-                            <div class="text-center">
-                                <div class="text-2xl font-bold text-green-600 dark:text-green-400">
-                                    {{ $branchShipments->sum('total_items') }}
-                                </div>
-                                <div class="text-sm text-gray-600 dark:text-gray-400">Total Items</div>
-                            </div>
-                            <div class="text-center">
-                                <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                                    ₱{{ number_format($branchShipments->sum('total_value'), 2) }}
-                                </div>
-                                <div class="text-sm text-gray-600 dark:text-gray-400">Total Value</div>
-                            </div>
-                            <div class="text-center">
-                                <div class="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                                    {{ $branchShipments->sum(function($shipment) { return collect($shipment['allocations'])->sum('total_products'); }) }}
-                                </div>
-                                <div class="text-sm text-gray-600 dark:text-gray-400">Unique Products</div>
-                            </div>
-                        </div>
-                    </div>
-                @endif
             </div>
         @endif
     </div>

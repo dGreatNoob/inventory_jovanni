@@ -3,7 +3,7 @@
 <div class="min-h-[70vh] flex flex-col justify-center items-center py-4">
     @php
         $steps = [
-            ['label' => 'Select Shipment'],
+            ['label' => 'Select'],
             ['label' => 'Review'],
             ['label' => 'Submit'],
             ['label' => 'Finish'],
@@ -165,7 +165,8 @@
                     <div class="flex justify-between items-start">
                         <div class="flex-1">
                             <h4 class="font-semibold text-gray-900 dark:text-white text-sm">{{ $item->product->supply_description }}</h4>
-                            <p class="text-xs text-gray-600 dark:text-gray-400">SKU: {{ $item->product->supply_sku }}</p>
+                            <p class="text-xs text-gray-600 dark:text-gray-400">SKU: {{ $item->product->sku }}</p>
+                            <p class="text-xs text-gray-600 dark:text-gray-400">Product Name: {{ $item->product->name }}</p>
                         </div>
                         <div class="text-right">
                             <p class="text-sm font-medium text-gray-900 dark:text-white">{{ $item->quantity }} {{ $item->product->supply_uom }}</p>
@@ -294,7 +295,8 @@
                     <div class="flex justify-between items-start">
                         <div class="flex-1">
                             <h4 class="font-bold text-gray-900 dark:text-white text-sm">{{ $item->product->supply_description }}</h4>
-                            <p class="text-xs text-gray-700 dark:text-gray-200">SKU: {{ $item->product->supply_sku }}</p>
+                            <p class="text-xs text-gray-700 dark:text-gray-200">SKU: {{ $item->product->sku }}</p>
+                            <p class="text-xs text-gray-600 dark:text-gray-400">Product Name: {{ $item->product->name }}</p>
                         </div>
                         <div class="text-right">
                             <p class="text-sm font-bold text-gray-900 dark:text-white">{{ $item->quantity }} {{ $item->product->supply_uom }}</p>

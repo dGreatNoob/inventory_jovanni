@@ -243,7 +243,7 @@
                         @endif
                         @if (Route::has('shipment.qrscanner'))
                             <flux:navlist.item icon="banknotes" href="{{ route('shipment.qrscanner') }}"
-                                :current="request()->routeIs('shipment.qrscanner')" wire:navigate>{{ __('QR Scanner') }}
+                                :current="request()->routeIs('shipment.qrscanner')" wire:navigate>{{ __('Deliveries') }}
                             </flux:navlist.item>
                         @endif
                     </flux:navlist.group>

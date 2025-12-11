@@ -147,9 +147,9 @@ class QrScannder extends Component
                 return;
             }
 
-            // Validate that all items have statuses
+            // Validate that all items have statuses (only for items without box_id)
             $missingStatuses = [];
-            foreach ($this->foundShipment->branchAllocation->items as $item) {
+            foreach ($this->foundShipment->branchAllocation->items->where('box_id', null) as $item) {
                 if (!isset($this->itemStatuses[$item->id]) || empty($this->itemStatuses[$item->id])) {
                     $missingStatuses[] = $item->product->supply_description;
                 }

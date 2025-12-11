@@ -11,6 +11,7 @@ class BranchAllocationItem extends Model
             'product_id',
             'quantity',
             'scanned_quantity',
+            'sold_quantity',
             'unit_price',
             'box_id',
             'delivery_receipt_id',
@@ -27,6 +28,7 @@ class BranchAllocationItem extends Model
     protected $casts = [
         'quantity' => 'integer',
         'scanned_quantity' => 'integer',
+        'sold_quantity' => 'integer',
         'unit_price' => 'decimal:2',
         'product_snapshot_specs' => 'array',
         'product_snapshot_price' => 'decimal:2',

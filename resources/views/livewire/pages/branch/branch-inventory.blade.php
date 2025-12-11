@@ -135,9 +135,9 @@
                     </div>
 
                     <div class="flex space-x-2">
-                        <button wire:click="clearBranchSelection"
-                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
-                            Upload Text File
+                        <button wire:click="openUploadModal"
+                                class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                            📄 Upload Text File
                         </button>
                         <button wire:click="clearBranchSelection"
                                 class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
@@ -320,7 +320,7 @@
                                                                     {{ $product['quantity'] }}
                                                                 </td>
                                                                 <td class="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white text-center">
-                                                                    0
+                                                                    {{ $product['quantity_sold'] ?? 0 }}
                                                                 </td>
                                                                 <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
                                                                     ₱{{ number_format($product['price'], 2) }}
@@ -358,4 +358,251 @@
             </div>
         @endif
     </div>
+
+    <!-- Upload Text File Modal -->
+    @if($showUploadModal)
+        <div class="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Upload Text File</h3>
+                    <button wire:click="closeUploadModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="mb-4">
+                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                        Upload a text file containing barcodes (one barcode per line). The system will compare these barcodes with products in the current branch and update the Quantity Sold column.
+                    </p>
+                </div>
+
+                <div class="mb-4">
+                    <label for="textFile" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                        Choose Text File (.txt)
+                    </label>
+                    <input type="file" id="textFile" wire:model="textFile" accept=".txt"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                    @error('textFile')
+                        <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div class="flex justify-end space-x-3">
+                    <button wire:click="closeUploadModal" type="button"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                        Cancel
+                    </button>
+                    <button wire:click="processTextFile" type="button"
+                            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                        Process File
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Results Slider -->
+    @if($showResultsModal)
+        <div class="fixed inset-0 z-50">
+            <div class="absolute inset-0 bg-opacity-50" wire:click="closeResultsModal"></div>
+            <div class="absolute right-0 top-0 h-full w-full max-w-2xl bg-white dark:bg-gray-800 shadow-xl transform transition-transform duration-300 {{ $showResultsModal ? 'translate-x-0' : 'translate-x-full' }}">
+                <div class="p-6 h-full overflow-y-auto">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Barcode Comparison Results</h3>
+                        <button wire:click="closeResultsModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="mb-6">
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                            <div>
+                                <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ $uploadedBarcodeCount }}</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">Total Barcodes Uploaded</div>
+                            </div>
+                            <div>
+                                <div class="text-2xl font-bold text-green-600 dark:text-green-400">{{ $matchedBarcodeCount }}</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">Matching Products Found</div>
+                            </div>
+                            <div>
+                                <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ $uploadedBarcodeCount - $matchedBarcodeCount }}</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">Unmatched Barcodes</div>
+                            </div>
+                            <div>
+                                <div class="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                                    {{ array_sum(array_column($barcodeMatches, 'quantity_sold')) }}
+                                </div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">Total Quantity Sold</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if(!empty($validBarcodes))
+                        <div class="mb-6">
+                            <h4 class="font-medium text-green-600 dark:text-green-400 mb-3 flex items-center">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                Will Be Saved ({{ count($validBarcodes) }}):
+                            </h4>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                    <thead class="bg-gray-50 dark:bg-gray-700">
+                                        <tr>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Barcode</th>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Product Name</th>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">SKU</th>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Quantity Sold</th>
+                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Available Quantity</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                        @foreach($validBarcodes as $barcode => $result)
+                                            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                                <td class="px-4 py-3 text-sm font-mono text-gray-900 dark:text-white">{{ $barcode }}</td>
+                                                <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">{{ $result['product_name'] }}</td>
+                                                <td class="px-4 py-3 text-sm font-mono text-gray-500 dark:text-gray-400">{{ $result['sku'] }}</td>
+                                                <td class="px-4 py-3 text-sm font-semibold text-green-600 dark:text-green-400 text-center">{{ $result['quantity_sold'] }}</td>
+                                                <td class="px-4 py-3 text-sm text-gray-900 dark:text-white text-center">{{ $result['available_quantity'] }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    @endif
+
+                    @if(!empty($invalidBarcodes))
+                        <div class="mb-6">
+                            <h4 class="font-medium text-red-600 dark:text-red-400 mb-3 flex items-center">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                </svg>
+                                Will Be Skipped ({{ count($invalidBarcodes) }}):
+                            </h4>
+                            <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full divide-y divide-red-200 dark:divide-red-700">
+                                        <thead class="bg-red-100 dark:bg-red-900/40">
+                                            <tr>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-red-700 dark:text-red-300 uppercase">Barcode</th>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-red-700 dark:text-red-300 uppercase">Product Name</th>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-red-700 dark:text-red-300 uppercase">SKU</th>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-red-700 dark:text-red-300 uppercase">Attempted Qty</th>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-red-700 dark:text-red-300 uppercase">Remaining</th>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-red-700 dark:text-red-300 uppercase">Already Sold</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="bg-red-50 dark:bg-red-900/20 divide-y divide-red-200 dark:divide-red-700">
+                                            @foreach($invalidBarcodes as $barcode => $result)
+                                                <tr class="hover:bg-red-100 dark:hover:bg-red-900/30">
+                                                    <td class="px-4 py-3 text-sm font-mono text-red-900 dark:text-red-100">{{ $barcode }}</td>
+                                                    <td class="px-4 py-3 text-sm text-red-900 dark:text-red-100">{{ $result['product_name'] }}</td>
+                                                    <td class="px-4 py-3 text-sm font-mono text-red-700 dark:text-red-300">{{ $result['sku'] }}</td>
+                                                    <td class="px-4 py-3 text-sm font-semibold text-red-600 dark:text-red-400 text-center">{{ $result['quantity_sold'] }}</td>
+                                                    <td class="px-4 py-3 text-sm text-red-900 dark:text-red-100 text-center">{{ $result['available_quantity'] }}</td>
+                                                    <td class="px-4 py-3 text-sm text-red-900 dark:text-red-100 text-center">{{ $result['already_sold'] }}</td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
+                    @if(!empty($unmatchedBarcodes))
+                        <div class="mb-6">
+                            <h4 class="font-medium text-red-600 dark:text-red-400 mb-3 flex items-center">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                </svg>
+                                Unmatched Barcodes (Errors):
+                            </h4>
+                            <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full divide-y divide-red-200 dark:divide-red-700">
+                                        <thead class="bg-red-100 dark:bg-red-900/40">
+                                            <tr>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-red-700 dark:text-red-300 uppercase">Barcode</th>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-red-700 dark:text-red-300 uppercase">Count</th>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-red-700 dark:text-red-300 uppercase">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="bg-red-50 dark:bg-red-900/20 divide-y divide-red-200 dark:divide-red-700">
+                                            @foreach($unmatchedBarcodes as $barcode => $count)
+                                                <tr class="hover:bg-red-100 dark:hover:bg-red-900/30">
+                                                    <td class="px-4 py-3 text-sm font-mono text-red-900 dark:text-red-100">{{ $barcode }}</td>
+                                                    <td class="px-4 py-3 text-sm font-semibold text-red-600 dark:text-red-400 text-center">{{ $count }}</td>
+                                                    <td class="px-4 py-3 text-sm">
+                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300">
+                                                            ✗ Not Found
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
+                    <div class="flex justify-end space-x-3">
+                        <button wire:click="closeResultsModal"
+                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                            Cancel
+                        </button>
+                        <button wire:click="saveMatchedBarcodesToDatabase"
+                                class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                            Update Quantity Sold
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Success Modal -->
+    @if($showSuccessModal)
+        <div class="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Success</h3>
+                    <button wire:click="closeSuccessModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="mb-6">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <svg class="h-8 w-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm font-medium text-gray-900 dark:text-white">
+                                {{ $successMessage }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end">
+                    <button wire:click="closeSuccessModal"
+                            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                        OK
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
+</div>
 </div>

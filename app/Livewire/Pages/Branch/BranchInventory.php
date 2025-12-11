@@ -3,6 +3,7 @@
 namespace App\Livewire\Pages\Branch;
 
 use Livewire\Component;
+use Livewire\WithFileUploads;
 use App\Models\Branch;
 use App\Models\Shipment;
 use App\Models\BranchAllocation;
@@ -10,6 +11,7 @@ use App\Models\BranchAllocationItem;
 
 class BranchInventory extends Component
 {
+    use WithFileUploads;
     // Batch selection
     public $selectedBatch = null;
     public $batches = [];
@@ -30,6 +32,20 @@ class BranchInventory extends Component
 
     // Modal controls
     public $showShipmentDetailsModal = false;
+    public $showUploadModal = false;
+    public $showResultsModal = false;
+    public $showSuccessModal = false;
+    public $successMessage = '';
+
+    // File upload properties
+    public $textFile;
+    public $uploadedBarcodeCount = 0;
+    public $matchedBarcodeCount = 0;
+    public $barcodeMatches = [];
+    public $uploadResults = [];
+    public $unmatchedBarcodes = [];
+    public $validBarcodes = [];
+    public $invalidBarcodes = [];
 
     public function mount()
     {
@@ -234,6 +250,7 @@ class BranchInventory extends Component
                         'barcode' => $product->barcode ?? 'N/A',
                         'sku' => $item->getDisplaySkuAttribute(),
                         'quantity' => $item->quantity,
+                        'quantity_sold' => $item->sold_quantity,
                         'price' => $item->getDisplayPriceAttribute(),
                         'total' => $item->quantity * $item->getDisplayPriceAttribute(),
                         'status' => $this->getItemStatus($item),
@@ -349,6 +366,250 @@ class BranchInventory extends Component
     {
         if (in_array($property, ['search', 'dateFrom', 'dateTo', 'statusFilter']) && $this->selectedBranchId) {
             $this->loadBranchShipments();
+        }
+    }
+
+    /**
+     * Open the upload modal
+     */
+    public function openUploadModal()
+    {
+        $this->showUploadModal = true;
+    }
+
+    /**
+     * Close the upload modal
+     */
+    public function closeUploadModal()
+    {
+        $this->showUploadModal = false;
+        $this->textFile = null;
+    }
+
+    /**
+     * Save matched barcodes to database
+     */
+    public function saveMatchedBarcodesToDatabase()
+    {
+        if (!$this->selectedBranchId || empty($this->validBarcodes)) {
+            return;
+        }
+
+        try {
+            // Save only the valid barcodes, distributing the quantity across available items
+            foreach ($this->validBarcodes as $barcode => $result) {
+                $items = \App\Models\BranchAllocationItem::whereHas('product', function($q) use ($barcode) {
+                    $q->where('barcode', $barcode);
+                })
+                ->whereHas('branchAllocation', function($q) {
+                    $q->where('branch_id', $this->selectedBranchId);
+                })
+                ->where('box_id', null) // Only unpacked items
+                ->orderBy('id')
+                ->get();
+
+                $remaining = $result['quantity_sold'];
+                foreach ($items as $item) {
+                    $available = $item->quantity - $item->sold_quantity;
+                    if ($available > 0 && $remaining > 0) {
+                        $increment = min($remaining, $available);
+                        $item->increment('sold_quantity', $increment);
+                        $remaining -= $increment;
+                    }
+                    if ($remaining <= 0) break;
+                }
+            }
+
+            // Close modal and refresh data
+            $this->showResultsModal = false;
+            $this->loadBranchShipments();
+
+            // Prepare success message
+            $savedCount = count($this->validBarcodes);
+            $skippedCount = count($this->invalidBarcodes);
+            $message = "{$savedCount} barcode(s) saved successfully!";
+
+            if ($skippedCount > 0) {
+                $message .= " {$skippedCount} barcode(s) were skipped due to quantity limits.";
+            }
+
+            $this->successMessage = $message;
+            $this->showSuccessModal = true;
+
+        } catch (\Exception $e) {
+            $this->addError('save', 'Error saving data: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Close the results modal
+     */
+    public function closeResultsModal()
+    {
+        $this->showResultsModal = false;
+    }
+
+    /**
+     * Close the success modal
+     */
+    public function closeSuccessModal()
+    {
+        $this->showSuccessModal = false;
+        $this->successMessage = '';
+    }
+
+    /**
+     * Process the uploaded text file
+     */
+    public function processTextFile()
+    {
+        $this->validate([
+            'textFile' => 'required|file|mimes:txt|max:1024',
+        ]);
+
+        try {
+            // Read the file content
+            $content = file_get_contents($this->textFile->getRealPath());
+            $barcodes = $this->parseBarcodeFile($content);
+
+            // Process the barcodes and compare with current products
+            $this->processBarcodeComparison($barcodes);
+
+            // Close upload modal and show results
+            $this->showUploadModal = false;
+            $this->showResultsModal = true;
+
+        } catch (\Exception $e) {
+            $this->addError('textFile', 'Error processing file: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Parse the text file content to extract barcodes
+     */
+    protected function parseBarcodeFile($content)
+    {
+        // Split by new lines and filter out empty lines
+        $lines = explode("\n", $content);
+        $barcodes = [];
+
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if (!empty($line)) {
+                $barcodes[] = $line;
+            }
+        }
+
+        $this->uploadedBarcodeCount = count($barcodes);
+        return $barcodes;
+    }
+
+    /**
+     * Process barcode comparison with current branch products
+     */
+    protected function processBarcodeComparison($uploadedBarcodes)
+    {
+        // Get all products from current branch shipments
+        $allProducts = [];
+        foreach ($this->branchShipments as $shipment) {
+            foreach ($shipment['allocations'] as $allocation) {
+                foreach ($allocation['products'] as $product) {
+                    if (!empty($product['barcode']) && $product['barcode'] !== 'N/A') {
+                        $allProducts[$product['barcode']] = [
+                            'name' => $product['name'],
+                            'sku' => $product['sku'],
+                            'quantity' => $product['quantity'],
+                            'quantity_sold' => 0,
+                        ];
+                    }
+                }
+            }
+        }
+
+        // Count matches for each barcode
+        $barcodeCount = array_count_values($uploadedBarcodes);
+        $matches = [];
+
+        foreach ($barcodeCount as $barcode => $count) {
+            if (isset($allProducts[$barcode])) {
+                $matches[$barcode] = [
+                    'product_name' => $allProducts[$barcode]['name'],
+                    'sku' => $allProducts[$barcode]['sku'],
+                    'quantity_sold' => $count,
+                    'available_quantity' => $allProducts[$barcode]['quantity'],
+                ];
+            }
+        }
+
+        $this->matchedBarcodeCount = count($matches);
+        $this->barcodeMatches = $matches;
+        $this->uploadResults = $matches;
+
+        // Collect unmatched barcodes
+        $this->unmatchedBarcodes = [];
+        foreach ($barcodeCount as $barcode => $count) {
+            if (!isset($matches[$barcode])) {
+                $this->unmatchedBarcodes[$barcode] = $count;
+            }
+        }
+
+        // Validate matched barcodes for quantity limits
+        $this->validateBarcodeQuantities($matches);
+
+        // Update the quantity sold in the branch shipments data
+        $this->updateQuantitySoldInShipments($matches);
+    }
+
+    /**
+     * Validate barcode quantities against available inventory
+     */
+    protected function validateBarcodeQuantities($matches)
+    {
+        $this->validBarcodes = [];
+        $this->invalidBarcodes = [];
+
+        foreach ($matches as $barcode => $result) {
+            $items = \App\Models\BranchAllocationItem::with('product')
+                ->whereHas('product', function($q) use ($barcode) {
+                    $q->where('barcode', $barcode);
+                })
+                ->whereHas('branchAllocation', function($q) {
+                    $q->where('branch_id', $this->selectedBranchId);
+                })
+                ->where('box_id', null) // Only unpacked items
+                ->get();
+
+            $totalAllocated = $items->sum('quantity');
+            $totalAlreadySold = $items->sum('sold_quantity');
+            $newSold = $result['quantity_sold'];
+
+            if ($totalAlreadySold + $newSold <= $totalAllocated) {
+                $this->validBarcodes[$barcode] = $result;
+            } else {
+                $this->invalidBarcodes[$barcode] = [
+                    'quantity_sold' => $newSold,
+                    'available_quantity' => $totalAllocated - $totalAlreadySold,
+                    'already_sold' => $totalAlreadySold,
+                    'product_name' => $result['product_name'],
+                    'sku' => $result['sku']
+                ];
+            }
+        }
+    }
+
+    /**
+     * Update quantity sold in the shipments data
+     */
+    protected function updateQuantitySoldInShipments($matches)
+    {
+        foreach ($this->branchShipments as &$shipment) {
+            foreach ($shipment['allocations'] as &$allocation) {
+                foreach ($allocation['products'] as &$product) {
+                    if (!empty($product['barcode']) && $product['barcode'] !== 'N/A' && isset($matches[$product['barcode']])) {
+                        $product['quantity_sold'] += $matches[$product['barcode']]['quantity_sold'];
+                    }
+                }
+            }
         }
     }
 

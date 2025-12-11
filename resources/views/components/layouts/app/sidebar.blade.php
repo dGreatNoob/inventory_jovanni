@@ -241,11 +241,11 @@
                                 :current="request()->routeIs('shipment.index')" wire:navigate>{{ __('Shipments') }}
                             </flux:navlist.item>
                         @endif
-                        @if (Route::has('shipment.qrscanner'))
+                        <!-- @if (Route::has('shipment.qrscanner'))
                             <flux:navlist.item icon="banknotes" href="{{ route('shipment.qrscanner') }}"
                                 :current="request()->routeIs('shipment.qrscanner')" wire:navigate>{{ __('Deliveries') }}
                             </flux:navlist.item>
-                        @endif
+                        @endif -->
                     </flux:navlist.group>
                 @endif
 

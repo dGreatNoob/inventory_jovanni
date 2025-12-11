@@ -137,6 +137,10 @@
                     <div class="flex space-x-2">
                         <button wire:click="clearBranchSelection"
                                 class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                            Upload Text File
+                        </button>
+                        <button wire:click="clearBranchSelection"
+                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
                             Back to Branches
                         </button>
                     </div>
@@ -282,9 +286,12 @@
                                                 <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                                                     <thead class="bg-gray-50 dark:bg-gray-700">
                                                         <tr>
+                                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Image</th>
                                                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Product</th>
+                                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Barcode</th>
                                                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">SKU</th>
                                                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Quantity</th>
+                                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Quantity Sold</th>
                                                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Unit Price</th>
                                                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Total</th>
                                                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Status</th>
@@ -293,14 +300,27 @@
                                                     <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                                                         @foreach($allocation['products'] as $product)
                                                             <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                                                <td class="px-4 py-3 text-sm">
+                                                                    @if(isset($product['image_url']))
+                                                                        <img src="{{ $product['image_url'] }}" alt="{{ $product['name'] }}" class="w-12 h-12 object-cover rounded">
+                                                                    @else
+                                                                        <span class="text-gray-400 dark:text-gray-500">No image</span>
+                                                                    @endif
+                                                                </td>
                                                                 <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">
                                                                     {{ $product['name'] }}
                                                                 </td>
                                                                 <td class="px-4 py-3 text-sm font-mono text-gray-500 dark:text-gray-400">
+                                                                    {{ $product['barcode'] ?? 'N/A' }}
+                                                                </td>
+                                                                <td class="px-4 py-3 text-sm font-mono text-gray-500 dark:text-gray-400">
                                                                     {{ $product['sku'] }}
                                                                 </td>
-                                                                <td class="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
+                                                                <td class="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white text-center">
                                                                     {{ $product['quantity'] }}
+                                                                </td>
+                                                                <td class="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white text-center">
+                                                                    0
                                                                 </td>
                                                                 <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
                                                                     ₱{{ number_format($product['price'], 2) }}

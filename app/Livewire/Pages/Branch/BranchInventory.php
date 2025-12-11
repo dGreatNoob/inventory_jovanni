@@ -227,14 +227,17 @@ class BranchInventory extends Component
                 'created_date' => $allocation->created_at->format('M d, Y'),
                 'created_by' => 'System', // Default since no user relationship
                 'products' => $allocation->items->where('box_id', null)->map(function ($item) {
+                    $product = $item->product;
                     return [
                         'id' => $item->id,
                         'name' => $item->getDisplayNameAttribute(),
+                        'barcode' => $product->barcode ?? 'N/A',
                         'sku' => $item->getDisplaySkuAttribute(),
                         'quantity' => $item->quantity,
                         'price' => $item->getDisplayPriceAttribute(),
                         'total' => $item->quantity * $item->getDisplayPriceAttribute(),
                         'status' => $this->getItemStatus($item),
+                        'image_url' => $product->getPrimaryImageAttribute() ? asset('storage/photos/' . $product->getPrimaryImageAttribute()) : null,
                     ];
                 }),
                 'total_products' => $allocation->items->where('box_id', null)->count(),

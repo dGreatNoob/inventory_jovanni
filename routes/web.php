@@ -47,6 +47,7 @@ use App\Livewire\Pages\Shipment\QrScannder as ShipmentQrScannder;
 use App\Models\Branch;
 use App\Livewire\Pages\Branch\BranchInventory;
 use App\Livewire\Pages\Branch\SalesTracker;
+use App\Livewire\Pages\Branch\BranchTransfer;
 
 
 
@@ -121,6 +122,9 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/branch-sales-tracker', SalesTracker::class)
         ->name('branch.salesTrack');
+
+    Route::get('/branch-transfer', BranchTransfer::class)
+        ->name('branch.stockTransfer');
 
 
 

@@ -7,8 +7,7 @@ enum RolesEnum: string
     
 
     case PURCHASER = 'Purchasing Head';
-    case RAWMAT = 'Raw Material Personnel';
-    case SUPPLY = 'Supply Personnel'; 
+ 
     case SUPERADMIN = 'Super Admin';
 
     case PRODUCTMANAGEMENT = 'Product Management';
@@ -22,9 +21,7 @@ enum RolesEnum: string
     {
         return match ($this) {
             static::PURCHASER => 'Purchase Personnel',
-            static::RAWMAT => 'Raw Material Personnel',
             static::SUPERADMIN => 'User Administrator',
-            static::SUPPLY => 'Supply Personnel',
         };
     }
 }

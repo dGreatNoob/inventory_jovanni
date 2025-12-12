@@ -3,7 +3,6 @@ namespace App\Livewire\Pages\SalesManagement;
 
 use Livewire\Component;
 use App\Models\SalesOrder;
-use App\Models\SupplyBatch;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Layout;
 use Livewire\WithPagination;

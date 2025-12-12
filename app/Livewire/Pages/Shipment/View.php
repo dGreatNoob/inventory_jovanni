@@ -25,30 +25,16 @@ class View extends Component
 
     }
 
-    public function approveSalesOrder()
+    public function completeShipment()
     {
-        // if (!Auth::user()->can(PermissionEnum::APPROVE_REQUEST_SLIP->value)) {
-
-        //     abort(403, 'You do not have permission to approve this request slip.');
-
-        // } else {
-        //     $this->request_slip->update([
-        //         'status' => 'approved',
-        //         'approver' => Auth::user()->id,
-
-        //     ]);
-        //     session()->flash('message', 'Request Slip approved successfully.');
-        //     return redirect()->route('requisition.requestslip');
-        // }
-
         // Only update if the current shipping status is 'pending' to prevent bypassing the intended flow
         if ($this->ShipmentResult->shipping_status === 'pending') {
-            $this->ShipmentResult->shipping_status = 'approved';
+            $this->ShipmentResult->shipping_status = 'completed';
             $this->ShipmentResult->approver_id = Auth::id(); // shorter version of Auth::user()->id
             $this->ShipmentResult->save();
         }
 
-        session()->flash('message', 'Shipment has been approved successfully.');
+        session()->flash('message', 'Shipment has been completed successfully.');
         return redirect()->route('shipment.index');
     }
 

@@ -25,7 +25,31 @@
                 <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')"
                     wire:navigate>{{ __('Dashboard') }}
                 </flux:navlist.item>
-
+{{-- User Management --}}
+                @if(Auth::user()->hasAnyPermission([
+                    'user view',
+                    'user create',
+                    'user edit',
+                    'user delete',
+                    'role view',
+                    'role create',
+                    'role edit',
+                    'role delete',
+                    'permission manage'
+                ]))
+                    <flux:navlist.group expandable
+                        :expanded="request()->routeIs('user.index') || request()->routeIs('roles.index')"
+                        :heading="__('User Management')" class="lg:grid">
+                        <flux:navlist.item icon="users" href="{{ route('user.index') }}"
+                            :current="request()->routeIs('user.index')" wire:navigate>
+                            {{ __('Manage Users') }}
+                        </flux:navlist.item>
+                        <flux:navlist.item icon="shield-check" href="{{ route('roles.index') }}"
+                            :current="request()->routeIs('roles.index')" wire:navigate>
+                            {{ __('Roles & Permissions') }}
+                        </flux:navlist.item>
+                    </flux:navlist.group>
+                @endif
                 {{-- Request Management --}}
                 {{-- @if (Route::has('requisition.requestslip'))
                     <flux:navlist.group expandable :expanded="request()->routeIs('requisition.*')"
@@ -53,25 +77,33 @@
                     </flux:navlist.group>
                 @endif
 
-                {{-- Purchase Order Management --}}
-                 @if(Auth::user()->hasAnyPermission([
-                    'po view',          
-                    'po create',        
-                    'po edit',          
-                    'po delete',        
-                    'po approve',      
-                    'po receive',       
-                    'po report view'    
+                {{-- Agent & Branches Management --}}
+                @if(Auth::user()->hasAnyPermission([
+                    'agent view',
+                    'agent create',
+                    'agent edit',
+                    'agent delete',
+                    'branch view',
+                    'branch create',
+                    'branch edit',
+                    'branch delete',
+                    'agent assign branch',
+                    'agent transfer branch'
                 ]))
-                <flux:navlist.group expandable :expanded="request()->routeIs('pomanagement.*')" :heading="__('PO Management')" class="lg:grid">
-                    <flux:navlist.item icon="inbox-stack" href="{{ route('pomanagement.purchaseorder') }}"
-                        :current="request()->routeIs('pomanagement.purchaseorder')" wire:navigate>
-                        {{ __('Purchase Order') }}
+                <flux:navlist.group expandable :expanded="request()->routeIs('customer.*') || request()->routeIs('branch.*') || request()->routeIs('agent.*')"
+                    :heading="__('Branch Management')" class="lg:grid">
+                    <flux:navlist.item icon="building-storefront" href="{{ route('branch.profile') }}"
+                        :current="request()->routeIs('branch.profile')" wire:navigate>{{ __('Branches') }}
                     </flux:navlist.item>
-                    <flux:navlist.item icon="truck" href="{{ route('pomanagement.deliveries') }}"
-                        :current="request()->routeIs('pomanagement.deliveries')" wire:navigate>
-                        {{ __('Deliveries') }}
+                    <flux:navlist.item icon="building-storefront" href="{{ route('branch.inventory') }}"
+                        :current="request()->routeIs('branch.inventory')" wire:navigate>{{ __('Branch Inventory') }}
                     </flux:navlist.item>
+                    <flux:navlist.item icon="users" href="{{ route('agent.profile') }}"
+                        :current="request()->routeIs('agent.profile')" wire:navigate>{{ __('Agents') }}
+                    </flux:navlist.item>
+                    <!-- <flux:navlist.item icon="banknotes" href="javascript:void(0);"
+                        :current="request()->routeIs('customer.rebate')" wire:navigate>{{ __('Rebate Criteria') }}
+                    </flux:navlist.item> -->
                 </flux:navlist.group>
                 @endif
 
@@ -134,37 +166,35 @@
                     </flux:navlist.group>
                 @endif
 
-                {{-- User Management --}}
-                @if(Auth::user()->hasAnyPermission([
-                    'user view',
-                    'user create',
-                    'user edit',
-                    'user delete',
-                    'role view',
-                    'role create',
-                    'role edit',
-                    'role delete',
-                    'permission manage'
+                {{-- Purchase Order Management --}}
+                 @if(Auth::user()->hasAnyPermission([
+                    'po view',          
+                    'po create',        
+                    'po edit',          
+                    'po delete',        
+                    'po approve',      
+                    'po receive',       
+                    'po report view'    
                 ]))
-                    <flux:navlist.group expandable
-                        :expanded="request()->routeIs('user.index') || request()->routeIs('roles.index')"
-                        :heading="__('User Management')" class="lg:grid">
-                        <flux:navlist.item icon="users" href="{{ route('user.index') }}"
-                            :current="request()->routeIs('user.index')" wire:navigate>
-                            {{ __('Manage Users') }}
-                        </flux:navlist.item>
-                        <flux:navlist.item icon="shield-check" href="{{ route('roles.index') }}"
-                            :current="request()->routeIs('roles.index')" wire:navigate>
-                            {{ __('Roles & Permissions') }}
-                        </flux:navlist.item>
-                    </flux:navlist.group>
+                <flux:navlist.group expandable :expanded="request()->routeIs('pomanagement.*')" :heading="__('Purchase Management')" class="lg:grid">
+                    <flux:navlist.item icon="inbox-stack" href="{{ route('pomanagement.purchaseorder') }}"
+                        :current="request()->routeIs('pomanagement.purchaseorder')" wire:navigate>
+                        {{ __('Purchase Orders') }}
+                    </flux:navlist.item>
+                    <flux:navlist.item icon="truck" href="{{ route('pomanagement.deliveries') }}"
+                        :current="request()->routeIs('pomanagement.deliveries')" wire:navigate>
+                        {{ __('Deliveries') }}
+                    </flux:navlist.item>
+                </flux:navlist.group>
                 @endif
+
+                
 
                 {{-- Allocation --}}
                 <flux:navlist.group
                     expandable
                     :expanded="request()->routeIs('allocation.*')"
-                    :heading="__('Allocation')"
+                    :heading="__('Allocation Management')"
                     class="lg:grid"
                 >
                     <flux:navlist.item
@@ -173,43 +203,50 @@
                             :current="request()->routeIs('allocation.warehouse')"
                             wire:navigate
                         >
-                            {{ __('Warehouse') }}
+                            {{ __('Warehouse Transfer') }}
                         </flux:navlist.item>
+
+                         <flux:navlist.item
+                            icon="building-storefront"
+                            href="#"
+                            :current="false"
+                            wire:navigate
+                        >
+                            {{ __('Branch Transfer') }}
+                        </flux:navlist.item>
+
                         <flux:navlist.item
                             icon="chart-bar"
                             href="{{ route('allocation.sales') }}"
                             :current="request()->routeIs('allocation.sales')"
                             wire:navigate
                         >
-                            {{ __('Sales') }}
+                            {{ __('Sales Tracking') }}
                         </flux:navlist.item>
                 </flux:navlist.group>
 
-                {{-- Agent & Branches Management --}}
-                @if(Auth::user()->hasAnyPermission([
-                    'agent view',
-                    'agent create',
-                    'agent edit',
-                    'agent delete',
-                    'branch view',
-                    'branch create',
-                    'branch edit',
-                    'branch delete',
-                    'agent assign branch',
-                    'agent transfer branch'
-                ]))
-                <flux:navlist.group expandable :expanded="request()->routeIs('customer.*') || request()->routeIs('branch.*') || request()->routeIs('agent.*')"
-                    :heading="__('Operational Management')" class="lg:grid">
-                    <flux:navlist.item icon="users" href="{{ route('agent.profile') }}"
-                        :current="request()->routeIs('agent.profile')" wire:navigate>{{ __('Agent management') }}
-                    </flux:navlist.item>
-                    <flux:navlist.item icon="building-storefront" href="{{ route('branch.profile') }}"
-                        :current="request()->routeIs('branch.profile')" wire:navigate>{{ __('Branch management') }}
-                    </flux:navlist.item>
-                    <!-- <flux:navlist.item icon="banknotes" href="javascript:void(0);"
-                        :current="request()->routeIs('customer.rebate')" wire:navigate>{{ __('Rebate Criteria') }}
-                    </flux:navlist.item> -->
-                </flux:navlist.group>
+                {{-- Shipment Management --}}
+                @php
+                    $shipmentRoutes = [
+                        'shipment.index',
+                        'shipment.qrscanner',
+                    ];
+                    $hasShipmentRoutes = collect($shipmentRoutes)->some(fn ($name) => Route::has($name));
+                @endphp
+                @if ($hasShipmentRoutes)
+                    <flux:navlist.group expandable :expanded="request()->routeIs('shipment.*')"
+                        :heading="__('Shipment Management')" class="lg:grid">
+                        @if (Route::has('shipment.index'))
+                            <flux:navlist.item icon="banknotes" href="{{ route('shipment.index') }}"
+                                :current="request()->routeIs('shipment.index')" wire:navigate>{{ __('Shipments') }}
+                            </flux:navlist.item>
+                        @endif
+                        <!-- @if (Route::has('shipment.qrscanner'))
+                            <flux:navlist.item icon="banknotes" href="{{ route('shipment.qrscanner') }}"
+                                :current="request()->routeIs('shipment.qrscanner')" wire:navigate>{{ __('Deliveries') }}
+                            </flux:navlist.item>
+                        @endif -->
+                    </flux:navlist.group>
                 @endif
 
                 {{-- Finance --}}
@@ -253,29 +290,7 @@
                     </flux:navlist.group>
                 @endif
 
-                {{-- Shipment Management --}}
-                @php
-                    $shipmentRoutes = [
-                        'shipment.index',
-                        'shipment.qrscanner',
-                    ];
-                    $hasShipmentRoutes = collect($shipmentRoutes)->some(fn ($name) => Route::has($name));
-                @endphp
-                @if ($hasShipmentRoutes)
-                    <flux:navlist.group expandable :expanded="request()->routeIs('shipment.*')"
-                        :heading="__('Shipment Management')" class="lg:grid">
-                        @if (Route::has('shipment.index'))
-                            <flux:navlist.item icon="banknotes" href="{{ route('shipment.index') }}"
-                                :current="request()->routeIs('shipment.index')" wire:navigate>{{ __('Shipments') }}
-                            </flux:navlist.item>
-                        @endif
-                        @if (Route::has('shipment.qrscanner'))
-                            <flux:navlist.item icon="banknotes" href="{{ route('shipment.qrscanner') }}"
-                                :current="request()->routeIs('shipment.qrscanner')" wire:navigate>{{ __('QR Scanner') }}
-                            </flux:navlist.item>
-                        @endif
-                    </flux:navlist.group>
-                @endif
+                
 
                 {{-- Warehouse Staff --}}
                 @php

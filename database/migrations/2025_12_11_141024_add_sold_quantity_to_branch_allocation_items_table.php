@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('supply_orders', function (Blueprint $table) {
-            $table->text('receiving_remarks')->nullable()->after('receiving_status');
+        Schema::table('branch_allocation_items', function (Blueprint $table) {
+            $table->integer('sold_quantity')->default(0)->after('scanned_quantity');
         });
     }
 
@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('supply_orders', function (Blueprint $table) {
-            $table->dropColumn('receiving_remarks');
+        Schema::table('branch_allocation_items', function (Blueprint $table) {
+            $table->dropColumn('sold_quantity');
         });
     }
 };

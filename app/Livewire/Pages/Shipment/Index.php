@@ -25,8 +25,6 @@ class Index extends Component
         'express'     => 'Express',
     ];
 
-    public $showQrModal = false;
-    public $getShipmentDetails = null;
     public $perPage = 10;
     public $salesOrders;
     public $shipping_plan_num = '';
@@ -130,14 +128,6 @@ class Index extends Component
         }
     }
 
-    public function showShipmentQrCode($shipping_plan_num)
-    {
-        $this->showQrModal = true;
-        $this->getShipmentDetails = Shipment::where('shipping_plan_num', $shipping_plan_num)
-            ->with(['branchAllocation.items.product'])
-            ->first();
-    }
-
     public function updatedStatusFilter($value)
     {
         $this->statusFilter = $value;
@@ -204,12 +194,6 @@ class Index extends Component
         }
 
         // You may want further logic here for each branch allocation if needed.
-    }
-
-    public function closeQrModal()
-    {
-        $this->showQrModal = false;
-        $this->getShipmentDetails = null;
     }
 
     protected function resetForm()

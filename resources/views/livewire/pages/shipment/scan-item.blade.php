@@ -3,7 +3,7 @@
 <div class="min-h-[70vh] flex flex-col justify-center items-center py-4">
     @php
         $steps = [
-            ['label' => 'Scan QR'],
+            ['label' => 'Select'],
             ['label' => 'Review'],
             ['label' => 'Submit'],
             ['label' => 'Finish'],
@@ -57,47 +57,30 @@
     </div>
     @endif
 
-    <!-- Step 1: Scan QR -->
+    <!-- Step 1: Select Shipment -->
     @if($currentStep === 0)
-
-    <!-- Camera Status Toast -->
-    <div id="camera-status-toast" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-xs px-4 hidden">
-        <div id="camera-status-toast-content" class="flex items-start gap-3 p-4 rounded-xl shadow-xl border bg-blue-50 border-blue-300 text-blue-900 dark:bg-blue-900 dark:border-blue-700 dark:text-blue-100">
-            <div class="pt-1">
-                <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /></svg>
-            </div>
-            <div class="flex-1">
-                <div id="camera-status-toast-message" class="text-sm"></div>
-            </div>
-            <button onclick="document.getElementById('camera-status-toast').classList.add('hidden')" class="ml-2 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 focus:outline-none">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-            </button>
-        </div>
-    </div>
-
     <div class="w-full max-w-md mx-auto space-y-6">
-        <!-- QR Scanner Section -->
+        <!-- Shipment Selection Section -->
         <div class="bg-zinc-50 dark:bg-zinc-900 rounded-2xl shadow-lg p-6">
-            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4 text-center">Scan Shipment QR Code</h3>
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4 text-center">Select Approved Shipment</h3>
 
-            <div id="qr-reader"
-                class="w-full aspect-square bg-gray-100 dark:bg-zinc-700 border-2 border-dashed border-gray-300 dark:border-zinc-600 rounded-2xl overflow-hidden flex items-center justify-center relative">
-                <div class="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
-                    <div class="text-center">
-                        <svg class="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V6a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1zm12 0h2a1 1 0 001-1V6a1 1 0 00-1-1h-2a1 1 0 00-1 1v1a1 1 0 001 1zM5 20h2a1 1 0 001-1v-1a1 1 0 00-1-1H5a1 1 0 00-1 1v1a1 1 0 001 1z"></path>
-                        </svg>
-                        <p class="text-base">Camera starting...</p>
-                    </div>
+            <div class="space-y-4">
+                <div>
+                    <label for="shipment-select" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Choose from Available Shipments
+                    </label>
+                    <select
+                        id="shipment-select"
+                        wire:model.live="selectedShipmentId"
+                        class="w-full px-4 py-3 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-400 dark:focus:border-blue-400">
+                        <option value="">Select a shipment...</option>
+                        @foreach($availableShipments as $shipment)
+                            <option value="{{ $shipment->id }}">
+                                {{ $shipment->shipping_plan_num }} - {{ $shipment->branchAllocation->branch->name ?? 'Branch' }} ({{ \Carbon\Carbon::parse($shipment->scheduled_ship_date)->format('M d, Y') }})
+                            </option>
+                        @endforeach
+                    </select>
                 </div>
-                <div id="qr-loading" class="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-zinc-900/80 z-10 hidden">
-                    <svg class="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
-                </div>
-            </div>
-
-            <div id="qr-result" class="hidden w-full mt-4 p-4 rounded-lg bg-green-50 border border-green-400 text-green-700 text-center font-semibold flex flex-col items-center justify-center">
-                <span class="text-2xl mb-2">✅</span>
-                <span id="qr-value" class="font-mono text-base break-words"></span>
             </div>
         </div>
 
@@ -120,13 +103,13 @@
                 </div>
 
                 <button
-                    wire:click="processManualInput"
+                    wire:click="selectShipment"
                     wire:loading.attr="disabled"
                     class="w-full px-6 py-3 text-base font-medium text-white bg-blue-600 border border-transparent rounded-xl hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-400 dark:focus:border-blue-400 transition-colors duration-200 flex items-center justify-center gap-2">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" wire:loading.remove>
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
-                    <span wire:loading.remove>Process Shipment</span>
+                    <span wire:loading.remove>Select Shipment</span>
                     <svg class="animate-spin h-5 w-5 hidden" fill="none" viewBox="0 0 24 24" wire:loading>
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
@@ -141,7 +124,7 @@
 
     <!-- Step 2: Items Review -->
         @if($currentStep === 1 && $foundShipment)
-    <div class="w-full max-w-md mx-auto space-y-4" wire:init="ensureCorrectPO">
+    <div class="w-full max-w-md mx-auto space-y-4">
         
         <!-- Purchase Order Header -->
         <div class="bg-white dark:bg-zinc-800 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-zinc-700">
@@ -176,13 +159,14 @@
             
             <div class="space-y-4">
                 @if($foundShipment->branchAllocation)
-                @foreach($foundShipment->branchAllocation->items as $item)
+                @foreach($foundShipment->branchAllocation->items->where('box_id', null) as $item)
                 <div class="border border-gray-200 dark:border-zinc-600 rounded-xl p-4 space-y-3">
                     <!-- Item Header -->
                     <div class="flex justify-between items-start">
                         <div class="flex-1">
                             <h4 class="font-semibold text-gray-900 dark:text-white text-sm">{{ $item->product->supply_description }}</h4>
-                            <p class="text-xs text-gray-600 dark:text-gray-400">SKU: {{ $item->product->supply_sku }}</p>
+                            <p class="text-xs text-gray-600 dark:text-gray-400">SKU: {{ $item->product->sku }}</p>
+                            <p class="text-xs text-gray-600 dark:text-gray-400">Product Name: {{ $item->product->name }}</p>
                         </div>
                         <div class="text-right">
                             <p class="text-sm font-medium text-gray-900 dark:text-white">{{ $item->quantity }} {{ $item->product->supply_uom }}</p>
@@ -305,13 +289,14 @@
                 <h3 class="text-lg font-bold text-gray-900 dark:text-white">Items Review Summary</h3>
 
                 @if($foundShipment->branchAllocation)
-                @foreach($foundShipment->branchAllocation->items as $item)
+                @foreach($foundShipment->branchAllocation->items->where('box_id', null) as $item)
                 <div class="border border-gray-200 dark:border-zinc-700 rounded-xl p-4 space-y-3 bg-white dark:bg-zinc-800">
                     <!-- Item Header -->
                     <div class="flex justify-between items-start">
                         <div class="flex-1">
                             <h4 class="font-bold text-gray-900 dark:text-white text-sm">{{ $item->product->supply_description }}</h4>
-                            <p class="text-xs text-gray-700 dark:text-gray-200">SKU: {{ $item->product->supply_sku }}</p>
+                            <p class="text-xs text-gray-700 dark:text-gray-200">SKU: {{ $item->product->sku }}</p>
+                            <p class="text-xs text-gray-600 dark:text-gray-400">Product Name: {{ $item->product->name }}</p>
                         </div>
                         <div class="text-right">
                             <p class="text-sm font-bold text-gray-900 dark:text-white">{{ $item->quantity }} {{ $item->product->supply_uom }}</p>
@@ -427,14 +412,14 @@
             </div>
 
             <!-- Action Buttons -->
-            <div class="flex flex-col sm:flex-row gap-3">
+            <div class="flex flex-col sm:flex-row justify-center">
                 <button 
                     wire:click="goBackToStep1"
                     class="flex-1 sm:flex-none px-6 py-4 text-base font-medium text-white bg-blue-600 border border-transparent rounded-xl hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-400 dark:focus:border-blue-400 transition-colors duration-200 flex items-center justify-center gap-2">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                     </svg>
-                    <span>Scan New Shipment</span>
+                    <span>Select New Shipment</span>
                 </button>
             </div>
         </div>
@@ -443,344 +428,3 @@
 
 </div>
 
-<!-- Include html5-qrcode library -->
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-
-<script>
-    let html5Qr = null;
-    let isInitialized = false;
-    let camerasList = [];
-
-    // Show status message
-    function showStatus(message, type = 'info') {
-        const toast = document.getElementById('camera-status-toast');
-        const toastContent = document.getElementById('camera-status-toast-content');
-        const toastMsg = document.getElementById('camera-status-toast-message');
-        if (!toast || !toastContent || !toastMsg) return;
-        toastMsg.textContent = message;
-        toast.classList.remove('hidden');
-        // Set color/icon
-        if (type === 'error') {
-            toastContent.className = 'flex items-start gap-3 p-4 rounded-xl shadow-xl border bg-red-50 border-red-300 text-red-900 dark:bg-red-900 dark:border-red-700 dark:text-red-100';
-            toastContent.querySelector('svg').className = 'w-6 h-6 text-red-500';
-        } else if (type === 'success') {
-            toastContent.className = 'flex items-start gap-3 p-4 rounded-xl shadow-xl border bg-green-50 border-green-300 text-green-900 dark:bg-green-900 dark:border-green-700 dark:text-green-100';
-            toastContent.querySelector('svg').className = 'w-6 h-6 text-green-500';
-        } else {
-            toastContent.className = 'flex items-start gap-3 p-4 rounded-xl shadow-xl border bg-blue-50 border-blue-300 text-blue-900 dark:bg-blue-900 dark:border-blue-700 dark:text-blue-100';
-            toastContent.querySelector('svg').className = 'w-6 h-6 text-blue-500';
-        }
-        // Auto-dismiss after 4s for info/success, stay for error
-        if (type === 'error') return;
-        setTimeout(() => { toast.classList.add('hidden'); }, 4000);
-    }
-
-    // Direct html5-qrcode implementation
-    async function startQRScanner() {
-        try {
-            // Check if Html5Qrcode is available
-            if (typeof Html5Qrcode === 'undefined') {
-                console.error('Html5Qrcode library not loaded');
-                showStatus('QR Scanner library not loaded. Please check if html5-qrcode is properly included.', 'error');
-                return false;
-            }
-
-            console.log('Html5Qrcode library found:', typeof Html5Qrcode);
-            showStatus('Initializing QR scanner...', 'info');
-
-            const qrRegionId = "qr-reader";
-            const html5QrCode = new Html5Qrcode(qrRegionId);
-            
-            // Get available cameras
-            const devices = await Html5Qrcode.getCameras();
-            console.log('Available cameras:', devices);
-            
-            if (devices && devices.length) {
-                // Prefer back camera
-                let selectedCameraId = devices[0].id;
-                for (const device of devices) {
-                    if (device.label.toLowerCase().includes('back') || 
-                        device.label.toLowerCase().includes('environment')) {
-                        selectedCameraId = device.id;
-                        break;
-                    }
-                }
-
-                console.log('Selected camera:', selectedCameraId);
-
-                // Start scanning
-                await html5QrCode.start(
-                    selectedCameraId,
-                    {
-                        fps: 10,
-                        qrbox: { width: 250, height: 250 }
-                    },
-                    (decodedText, decodedResult) => {
-                        // QR Code detected
-                        console.log("QR Code detected:", decodedText);
-                        
-                        // Update UI
-                        document.getElementById("qr-value").textContent = decodedText;
-                        document.getElementById("qr-result").classList.remove("hidden");
-                        
-                        // Play sound if available
-                        const scanSound = document.getElementById("scanSound");
-                        if (scanSound) {
-                            scanSound.currentTime = 0;
-                            scanSound.play().catch(err => {
-                                console.warn("Sound playback failed:", err);
-                            });
-                        }
-
-                        // Check Livewire availability
-                        console.log('Checking Livewire availability...');
-                        console.log('window.Livewire:', window.Livewire);
-                        console.log('typeof window.Livewire.emit:', typeof window.Livewire?.emit);
-                        console.log('window.$wire:', window.$wire);
-                        console.log('document.querySelector("[wire\\:id]")', document.querySelector('[wire\\:id]'));
-
-                        // Try multiple methods to communicate with Livewire
-                        let eventEmitted = false;
-                        
-                        // Method 1: Try window.Livewire.emit
-                        if (window.Livewire && typeof window.Livewire.emit === 'function') {
-                            console.log("Method 1: Using window.Livewire.emit");
-                            window.Livewire.emit('qrScanned', decodedText);
-                            eventEmitted = true;
-                        }
-                        // Method 2: Try window.$wire
-                        else if (window.$wire && typeof window.$wire.handleQrScanned === 'function') {
-                            console.log("Method 2: Using window.$wire.handleQrScanned");
-                            window.$wire.handleQrScanned(decodedText);
-                            eventEmitted = true;
-                        }
-                        // Method 3: Try Livewire.find
-                        else if (window.Livewire && typeof window.Livewire.find === 'function') {
-                            console.log("Method 3: Using window.Livewire.find");
-                            const component = window.Livewire.find(document.querySelector('[wire\\:id]')?.getAttribute('wire:id'));
-                            if (component) {
-                                component.call('handleQrScanned', decodedText);
-                                eventEmitted = true;
-                            }
-                        }
-                        // Method 4: Try dispatching a custom event
-                        else {
-                            console.log("Method 4: Dispatching custom event");
-                            const event = new CustomEvent('qrScanned', { detail: decodedText });
-                            document.dispatchEvent(event);
-                            eventEmitted = true;
-                        }
-
-                        if (!eventEmitted) {
-                            console.error("No Livewire communication method available");
-                            console.log("Available window objects:", Object.keys(window).filter(key => key.toLowerCase().includes('livewire')));
-                            showStatus('Livewire not available for QR processing', 'error');
-                        } else {
-                            console.log("Event emitted successfully");
-                            showStatus('Processing QR code...', 'info');
-                        }
-
-                        // Stop scanner
-                        html5QrCode.stop().then(() => {
-                            console.log("QR Scanner stopped");
-                        }).catch(err => {
-                            console.error("Error stopping scanner:", err);
-                        });
-                    },
-                    (errorMessage) => {
-                        // Ignore errors during scanning
-                        console.log('Scanning error (ignored):', errorMessage);
-                    }
-                );
-
-                html5Qr = html5QrCode;
-                isInitialized = true;
-                showStatus('QR Scanner started successfully', 'success');
-                return true;
-
-            } else {
-                showStatus('No cameras found', 'error');
-                return false;
-            }
-
-        } catch (err) {
-            console.error('QR Scanner error:', err);
-            showStatus('Failed to start QR scanner: ' + err.message, 'error');
-            return false;
-        }
-    }
-
-    // Manual trigger function (for testing)
-    function triggerQRScanned() {
-        const qrValue = "7000"; // Use a real PO number for testing
-        document.getElementById("qr-value").textContent = qrValue;
-        document.getElementById("qr-result").classList.remove("hidden");
-        
-        // Emit to Livewire
-        if (window.Livewire && typeof window.Livewire.emit === 'function') {
-            console.log("Emitting qrScanned event from main context (manual trigger)");
-            window.Livewire.emit('qrScanned', qrValue);
-        } else {
-            console.error("Livewire still not available in main context (manual trigger)");
-            showStatus('Livewire not available', 'error');
-        }
-    }
-
-    // Initialize QR Scanner
-    document.addEventListener('DOMContentLoaded', function() {
-        // Add custom event listener for QR scanning
-        document.addEventListener('qrScanned', function(event) {
-            console.log('Custom qrScanned event received:', event.detail);
-            // Try to call the Livewire method directly
-            if (window.Livewire) {
-                window.Livewire.emit('qrScanned', event.detail);
-            }
-        });
-
-        let html5QrCode = null;
-        
-        // Show initial status
-        showStatus('Initializing QR scanner...', 'info');
-
-        const qrCodeSuccessCallback = (decodedText, decodedResult) => {
-            // QR Code detected
-            console.log("QR Code detected:", decodedText);
-            
-            // Show success notification
-            showStatus(`QR Code detected: ${decodedText}`, 'success');
-            
-            // Update UI
-            document.getElementById("qr-value").textContent = decodedText;
-            document.getElementById("qr-result").classList.remove("hidden");
-            
-            // Play sound if available
-            const scanSound = document.getElementById("scanSound");
-            if (scanSound) {
-                scanSound.currentTime = 0;
-                scanSound.play().catch(err => {
-                    console.warn("Sound playback failed:", err);
-                });
-            }
-
-            // Check Livewire availability
-            console.log('Checking Livewire availability...');
-            console.log('window.Livewire:', window.Livewire);
-            console.log('typeof window.Livewire.emit:', typeof window.Livewire?.emit);
-            console.log('window.$wire:', window.$wire);
-            console.log('document.querySelector("[wire\\:id]")', document.querySelector('[wire\\:id]'));
-
-            // Try multiple methods to communicate with Livewire
-            let eventEmitted = false;
-            
-            // Method 1: Try window.Livewire.emit
-            if (window.Livewire && typeof window.Livewire.emit === 'function') {
-                console.log("Method 1: Using window.Livewire.emit");
-                window.Livewire.emit('qrScanned', decodedText);
-                eventEmitted = true;
-            }
-            // Method 2: Try window.$wire
-            else if (window.$wire && typeof window.$wire.handleQrScanned === 'function') {
-                console.log("Method 2: Using window.$wire.handleQrScanned");
-                window.$wire.handleQrScanned(decodedText);
-                eventEmitted = true;
-            }
-            // Method 3: Try Livewire.find
-            else if (window.Livewire && typeof window.Livewire.find === 'function') {
-                console.log("Method 3: Using window.Livewire.find");
-                const component = window.Livewire.find(document.querySelector('[wire\\:id]')?.getAttribute('wire:id'));
-                if (component) {
-                    component.call('handleQrScanned', decodedText);
-                    eventEmitted = true;
-                }
-            }
-            // Method 4: Try dispatching a custom event
-            else {
-                console.log("Method 4: Dispatching custom event");
-                const event = new CustomEvent('qrScanned', { detail: decodedText });
-                document.dispatchEvent(event);
-                eventEmitted = true;
-            }
-
-            if (!eventEmitted) {
-                console.error("No Livewire communication method available");
-                console.log("Available window objects:", Object.keys(window).filter(key => key.toLowerCase().includes('livewire')));
-                showStatus('Livewire not available for QR processing', 'error');
-            } else {
-                console.log("Event emitted successfully");
-            }
-
-            // Stop scanner
-            showStatus('Stopping QR scanner...', 'info');
-            if (html5QrCode) {
-                html5QrCode.stop().then(() => {
-                    console.log("QR Scanner stopped");
-                    showStatus('QR Scanner stopped', 'info');
-                }).catch(err => {
-                    console.error("Error stopping scanner:", err);
-                    showStatus('Error stopping scanner: ' + err.message, 'error');
-                });
-            }
-        };
-
-        const qrCodeErrorCallback = (errorMessage) => {
-            // Ignore errors during scanning
-            console.log('Scanning error (ignored):', errorMessage);
-        };
-
-        // Initialize scanner
-        html5QrCode = new Html5Qrcode("qr-reader");
-
-        // Get available cameras
-        showStatus('Checking for available cameras...', 'info');
-        
-        Html5Qrcode.getCameras().then(devices => {
-            console.log('Available cameras:', devices);
-            if (devices && devices.length) {
-                showStatus(`Found ${devices.length} camera(s). Selecting best camera...`, 'info');
-                
-                // Prefer back camera
-                let selectedCameraId = devices[0].id;
-                let selectedCameraName = devices[0].label || 'Camera 1';
-                
-                for (const device of devices) {
-                    if (device.label.toLowerCase().includes('back') || 
-                        device.label.toLowerCase().includes('environment')) {
-                        selectedCameraId = device.id;
-                        selectedCameraName = device.label || 'Back Camera';
-                        break;
-                    }
-                }
-                
-                console.log('Selected camera:', selectedCameraId);
-                showStatus(`Starting camera: ${selectedCameraName}`, 'info');
-                
-                html5QrCode.start(selectedCameraId, { 
-                    fps: 10,
-                    qrbox: { width: 250, height: 250 }
-                }, qrCodeSuccessCallback, qrCodeErrorCallback).then(() => {
-                    showStatus('QR Scanner ready! Point camera at QR code', 'success');
-                }).catch(err => {
-                    console.error("Error starting scanner:", err);
-                    if (err.message.includes('Permission')) {
-                        showStatus('Camera permission denied. Please allow camera access and refresh the page.', 'error');
-                    } else if (err.message.includes('NotFound')) {
-                        showStatus('Camera not found or in use by another application.', 'error');
-                    } else {
-                        showStatus('Failed to start QR scanner: ' + err.message, 'error');
-                    }
-                });
-            } else {
-                showStatus('No cameras found on this device. Please check your camera connection.', 'error');
-            }
-        }).catch(err => {
-            console.error("Error getting cameras:", err);
-            if (err.message.includes('Permission')) {
-                showStatus('Camera permission denied. Please allow camera access and refresh the page.', 'error');
-            } else if (err.message.includes('NotAllowed')) {
-                showStatus('Camera access blocked. Please check your browser settings and allow camera permissions.', 'error');
-            } else {
-                showStatus('Failed to access cameras: ' + err.message, 'error');
-            }
-        });
-    });
-</script>

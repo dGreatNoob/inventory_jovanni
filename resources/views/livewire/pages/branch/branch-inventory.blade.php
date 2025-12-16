@@ -552,6 +552,49 @@
                         </div>
                     @endif
 
+                    @if(!empty($similarBarcodes))
+                        <div class="mb-6">
+                            <h4 class="font-medium text-yellow-600 dark:text-yellow-400 mb-3 flex items-center">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                </svg>
+                                Similar Barcodes:
+                            </h4>
+                            <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full divide-y divide-yellow-200 dark:divide-yellow-700">
+                                        <thead class="bg-yellow-100 dark:bg-yellow-900/40">
+                                            <tr>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-yellow-700 dark:text-yellow-300 uppercase">Uploaded Barcode</th>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-yellow-700 dark:text-yellow-300 uppercase">Existing Barcode</th>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-yellow-700 dark:text-yellow-300 uppercase">Product Name</th>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-yellow-700 dark:text-yellow-300 uppercase">SKU</th>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-yellow-700 dark:text-yellow-300 uppercase">Quantity Sold</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="bg-yellow-50 dark:bg-yellow-900/20 divide-y divide-yellow-200 dark:divide-yellow-700">
+                                            @foreach($similarBarcodes as $item)
+                                                <tr class="hover:bg-yellow-100 dark:hover:bg-yellow-900/30">
+                                                    <td class="px-4 py-3 text-sm font-mono text-yellow-900 dark:text-yellow-100">{{ $item['uploaded_barcode'] }}</td>
+                                                    <td class="px-4 py-3 text-sm font-mono text-yellow-900 dark:text-yellow-100">{{ $item['existing_barcode'] }}</td>
+                                                    <td class="px-4 py-3 text-sm text-yellow-900 dark:text-yellow-100">{{ $item['product_name'] }}</td>
+                                                    <td class="px-4 py-3 text-sm font-mono text-yellow-700 dark:text-yellow-300">{{ $item['sku'] }}</td>
+                                                    <td class="px-4 py-3 text-sm font-semibold text-yellow-600 dark:text-yellow-400 text-center">{{ $item['quantity_sold'] }}</td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="mt-4 flex justify-end">
+                                    <button wire:click="syncSimilarBarcodes"
+                                            class="px-4 py-2 text-sm font-medium text-white bg-yellow-600 rounded-md hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2">
+                                        Sync Similar Barcodes
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
                     <div class="flex justify-end space-x-3">
                         <button wire:click="closeResultsModal"
                                 class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">

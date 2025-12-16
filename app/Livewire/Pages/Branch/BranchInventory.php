@@ -46,6 +46,7 @@ class BranchInventory extends Component
     public $unmatchedBarcodes = [];
     public $validBarcodes = [];
     public $invalidBarcodes = [];
+    public $similarBarcodes = [];
 
     public function mount()
     {
@@ -442,11 +443,60 @@ class BranchInventory extends Component
     }
 
     /**
+     * Sync similar barcodes to database
+     */
+    public function syncSimilarBarcodes()
+    {
+        if (!$this->selectedBranchId || empty($this->similarBarcodes)) {
+            return;
+        }
+
+        try {
+            foreach ($this->similarBarcodes as $item) {
+                $barcode = $item['existing_barcode'];
+                $quantitySold = $item['quantity_sold'];
+
+                $items = \App\Models\BranchAllocationItem::whereHas('product', function($q) use ($barcode) {
+                    $q->where('barcode', $barcode);
+                })
+                ->whereHas('branchAllocation', function($q) {
+                    $q->where('branch_id', $this->selectedBranchId);
+                })
+                ->where('box_id', null)
+                ->orderBy('id')
+                ->get();
+
+                $remaining = $quantitySold;
+                foreach ($items as $item) {
+                    $available = $item->quantity - $item->sold_quantity;
+                    if ($available > 0 && $remaining > 0) {
+                        $increment = min($remaining, $available);
+                        $item->increment('sold_quantity', $increment);
+                        $remaining -= $increment;
+                    }
+                    if ($remaining <= 0) break;
+                }
+            }
+
+            $this->showResultsModal = false;
+            $this->loadBranchShipments();
+
+            $syncedCount = count($this->similarBarcodes);
+            $this->successMessage = "{$syncedCount} similar barcode(s) synced successfully!";
+            $this->showSuccessModal = true;
+
+        } catch (\Exception $e) {
+            $this->addError('sync', 'Error syncing data: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Close the results modal
      */
     public function closeResultsModal()
     {
         $this->showResultsModal = false;
+        $this->similarBarcodes = [];
     }
 
     /**
@@ -466,6 +516,9 @@ class BranchInventory extends Component
         $this->validate([
             'textFile' => 'required|file|mimes:txt|max:1024',
         ]);
+
+        // Reset previous results
+        $this->similarBarcodes = [];
 
         try {
             // Read the file content
@@ -550,6 +603,27 @@ class BranchInventory extends Component
         foreach ($barcodeCount as $barcode => $count) {
             if (!isset($matches[$barcode])) {
                 $this->unmatchedBarcodes[$barcode] = $count;
+            }
+        }
+
+        // Find similar barcodes (same first 10 digits, different last 6 digits)
+        $this->similarBarcodes = [];
+        foreach ($this->unmatchedBarcodes as $uploadedBarcode => $count) {
+            $prefix = substr($uploadedBarcode, 0, 10);
+            $suffix = substr($uploadedBarcode, 10);
+            foreach (array_keys($allProducts) as $existingBarcode) {
+                $existingPrefix = substr($existingBarcode, 0, 10);
+                $existingSuffix = substr($existingBarcode, 10);
+                if ($prefix === $existingPrefix && $suffix !== $existingSuffix) {
+                    $this->similarBarcodes[] = [
+                        'uploaded_barcode' => $uploadedBarcode,
+                        'existing_barcode' => $existingBarcode,
+                        'product_name' => $allProducts[$existingBarcode]['name'],
+                        'sku' => $allProducts[$existingBarcode]['sku'],
+                        'quantity_sold' => $count,
+                    ];
+                    break; // One match per uploaded barcode
+                }
             }
         }
 

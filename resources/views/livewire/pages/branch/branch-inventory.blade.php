@@ -325,21 +325,45 @@
                         <h4 class="font-semibold text-gray-900 dark:text-white mb-4">Upload History</h4>
                         <div class="space-y-2 max-h-48 overflow-y-auto">
                             @php
+                                // Get recent activities for this product
+                                $currentBarcode = $selectedProductDetails['barcode'];
+
                                 $histories = \Spatie\Activitylog\Models\Activity::where('log_name', 'branch_inventory')
-                                    ->where('properties->barcode', $selectedProductDetails['barcode'])
+                                    ->where('properties->barcode', $currentBarcode)
                                     ->where('properties->branch_id', $selectedBranchId)
                                     ->where('properties->uploaded_file', true)
                                     ->orderBy('created_at', 'desc')
                                     ->limit(10)
                                     ->get();
+
+                                $processedHistories = [];
+
+                                foreach ($histories as $history) {
+                                    $properties = $history->properties;
+
+                                    // Get the quantity sold from the activity properties
+                                    $quantitySold = $properties['quantity_sold'] ?? 1;
+
+                                    $isDuplicate = $quantitySold > 1;
+
+                                    $processedHistories[] = [
+                                        'quantity' => $quantitySold,
+                                        'time' => $history->created_at,
+                                        'is_duplicate' => $isDuplicate
+                                    ];
+                                }
                             @endphp
-                            @forelse($histories as $history)
+                            @forelse($processedHistories as $historyItem)
                                 <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
                                     <div class="text-sm text-blue-900 dark:text-blue-100">
-                                        {{ $history->description }}
+                                        @if($historyItem['is_duplicate'])
+                                            {{ $historyItem['quantity'] }} barcodes scanned to this product and {{ $historyItem['quantity'] }} sold of this upload
+                                        @else
+                                            Scanned 1 barcode for this product 1 sold of this upload
+                                        @endif
                                     </div>
                                     <div class="text-xs text-blue-600 dark:text-blue-300 mt-1">
-                                        {{ $history->created_at->format('M d, Y H:i') }}
+                                        {{ $historyItem['time']->format('M d, Y H:i') }}
                                     </div>
                                 </div>
                             @empty

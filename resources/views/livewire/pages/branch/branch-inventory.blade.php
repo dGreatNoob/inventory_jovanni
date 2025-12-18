@@ -284,18 +284,20 @@
 
     <!-- Product View Modal -->
     @if($showProductViewModal && $selectedProductDetails)
-        <div class="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white dark:bg-gray-800 rounded-lg w-full max-w-4xl max-h-screen overflow-y-auto">
-                <div class="p-6">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Product Details: {{ $selectedProductDetails['name'] }}</h3>
-                        <button wire:click="closeProductViewModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
-                        </button>
-                    </div>
+        <div class="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white dark:bg-gray-800 rounded-lg w-full max-w-4xl h-full max-h-[90vh] flex flex-col">
+                <!-- Header -->
+                <div class="flex-shrink-0 flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700">
+                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Product Details: {{ $selectedProductDetails['name'] }}</h3>
+                    <button wire:click="closeProductViewModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
 
+                <!-- Scrollable Content -->
+                <div class="flex-1 overflow-y-auto p-6">
                     <!-- Product Summary -->
                     <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6">
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -321,7 +323,7 @@
                     <!-- History -->
                     <div class="mb-6">
                         <h4 class="font-semibold text-gray-900 dark:text-white mb-4">Upload History</h4>
-                        <div class="space-y-2">
+                        <div class="space-y-2 max-h-48 overflow-y-auto">
                             @php
                                 $histories = \Spatie\Activitylog\Models\Activity::where('log_name', 'branch_inventory')
                                     ->where('properties->barcode', $selectedProductDetails['barcode'])
@@ -349,46 +351,49 @@
                     <!-- Shipments List -->
                     <div class="space-y-4">
                         <h4 class="font-semibold text-gray-900 dark:text-white mb-4">Shipments Containing This Product</h4>
-                        @foreach($selectedProductDetails['shipments'] as $shipment)
-                            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 p-4">
-                                <div class="flex items-center justify-between mb-3">
-                                    <div class="flex items-center space-x-3">
-                                        <div class="bg-green-100 dark:bg-green-900/20 p-2 rounded-lg">
-                                            <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                                            </svg>
+                        <div class="max-h-96 overflow-y-auto">
+                            @foreach($selectedProductDetails['shipments'] as $shipment)
+                                <div class="bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 p-4 mb-4">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="bg-green-100 dark:bg-green-900/20 p-2 rounded-lg">
+                                                <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <h5 class="font-semibold text-gray-900 dark:text-white">
+                                                    {{ $shipment['shipping_plan_num'] }}
+                                                </h5>
+                                                <p class="text-sm text-gray-600 dark:text-gray-400">
+                                                    Shipped: {{ $shipment['shipment_date'] }} • {{ $shipment['carrier_name'] }} • {{ $shipment['delivery_method'] }}
+                                                </p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <h5 class="font-semibold text-gray-900 dark:text-white">
-                                                {{ $shipment['shipping_plan_num'] }}
-                                            </h5>
-                                            <p class="text-sm text-gray-600 dark:text-gray-400">
-                                                Shipped: {{ $shipment['shipment_date'] }} • {{ $shipment['carrier_name'] }} • {{ $shipment['delivery_method'] }}
-                                            </p>
+                                        <div class="text-right">
+                                            <div class="text-lg font-semibold text-gray-900 dark:text-white">
+                                                ₱{{ number_format($shipment['total'], 2) }}
+                                            </div>
+                                            <div class="text-sm text-gray-600 dark:text-gray-400">
+                                                {{ $shipment['allocated_quantity'] }} allocated • {{ $shipment['sold_quantity'] }} sold
+                                            </div>
                                         </div>
                                     </div>
-                                    <div class="text-right">
-                                        <div class="text-lg font-semibold text-gray-900 dark:text-white">
-                                            ₱{{ number_format($shipment['total'], 2) }}
-                                        </div>
-                                        <div class="text-sm text-gray-600 dark:text-gray-400">
-                                            {{ $shipment['allocated_quantity'] }} allocated • {{ $shipment['sold_quantity'] }} sold
-                                        </div>
+                                    <div class="text-sm text-gray-600 dark:text-gray-400">
+                                        Allocation: {{ $shipment['allocation_reference'] }} • Barcode: {{ $shipment['barcode'] }}
                                     </div>
                                 </div>
-                                <div class="text-sm text-gray-600 dark:text-gray-400">
-                                    Allocation: {{ $shipment['allocation_reference'] }} • Barcode: {{ $shipment['barcode'] }}
-                                </div>
-                            </div>
-                        @endforeach
+                            @endforeach
+                        </div>
                     </div>
+                </div>
 
-                    <div class="flex justify-end mt-6">
-                        <button wire:click="closeProductViewModal"
-                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
-                            Close
-                        </button>
-                    </div>
+                <!-- Footer -->
+                <div class="flex-shrink-0 flex justify-end p-6 border-t border-gray-200 dark:border-gray-700">
+                    <button wire:click="closeProductViewModal"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                        Close
+                    </button>
                 </div>
             </div>
         </div>

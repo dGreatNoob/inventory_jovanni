@@ -324,8 +324,9 @@
                         <div class="space-y-2">
                             @php
                                 $histories = \Spatie\Activitylog\Models\Activity::where('log_name', 'branch_inventory')
-                                    ->whereJsonContains('properties->barcode', $selectedProductDetails['barcode'])
-                                    ->whereJsonContains('properties->branch_id', $selectedBranchId)
+                                    ->where('properties->barcode', $selectedProductDetails['barcode'])
+                                    ->where('properties->branch_id', $selectedBranchId)
+                                    ->where('properties->uploaded_file', true)
                                     ->orderBy('created_at', 'desc')
                                     ->limit(10)
                                     ->get();

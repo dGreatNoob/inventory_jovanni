@@ -477,6 +477,27 @@ class BranchInventory extends Component
             $this->showResultsModal = false;
             $this->loadBranchProducts();
 
+            // Log activity for each synced product
+            foreach ($this->similarBarcodes as $item) {
+                Activity::create([
+                    'log_name' => 'branch_inventory',
+                    'description' => "Synced similar barcode {$item['uploaded_barcode']} to {$item['existing_barcode']} in branch {$this->selectedBranchId}",
+                    'subject_type' => BranchAllocationItem::class,
+                    'subject_id' => null, // Since multiple items
+                    'causer_type' => null, // No user
+                    'causer_id' => null,
+                    'properties' => [
+                        'barcode' => $item['existing_barcode'],
+                        'uploaded_barcode' => $item['uploaded_barcode'],
+                        'product_name' => $item['product_name'],
+                        'quantity_sold' => $item['quantity_sold'],
+                        'branch_id' => $this->selectedBranchId,
+                        'uploaded_file' => true,
+                        'synced_similar' => true,
+                    ],
+                ]);
+            }
+
             $syncedCount = count($this->similarBarcodes);
             $this->successMessage = "{$syncedCount} similar barcode(s) synced successfully!";
             $this->showSuccessModal = true;

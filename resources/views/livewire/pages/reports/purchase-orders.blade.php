@@ -2,43 +2,69 @@
 <x-slot:subheader>Analysis of purchase orders and supplier performance</x-slot:subheader>
 
 <div class="space-y-6">
+    <!-- Filters -->
+    <div class="p-4 bg-gray-50 rounded-lg dark:bg-gray-800/50 grid gap-4 md:grid-cols-4">
+        <div>
+            <label for="dateFrom" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">From Date</label>
+            <input type="date" id="dateFrom" wire:model.live="dateFrom" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+        </div>
+        <div>
+            <label for="dateTo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">To Date</label>
+            <input type="date" id="dateTo" wire:model.live="dateTo" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+        </div>
+        <div>
+            <label for="selectedSupplier" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Supplier</label>
+            <select id="selectedSupplier" wire:model.live="selectedSupplier" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+                <option value="">All Suppliers</option>
+                @foreach($suppliers as $supplier)
+                    <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div>
+            <label for="statusFilter" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Status</label>
+            <select id="statusFilter" wire:model.live="statusFilter" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+                <option value="">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="to_receive">To Receive</option>
+                <option value="received">Received</option>
+                <option value="cancelled">Cancelled</option>
+            </select>
+        </div>
+    </div>
+
     <!-- KPI Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         @php
-            $totalPOs = \App\Models\PurchaseOrder::count();
-            $pendingPOs = \App\Models\PurchaseOrder::where('status', 'for_approval')->count();
-            $toReceivePOs = \App\Models\PurchaseOrder::where('status', 'to_receive')->count();
-            $receivedPOs = \App\Models\PurchaseOrder::where('status', 'received')->count();
-            $totalValue = \App\Models\PurchaseOrder::sum('total_price');
-            
             $dashboardStats = [
                 [
                     'label' => 'Total Purchase Orders',
                     'value' => number_format($totalPOs),
                     'gradient' => 'from-blue-500 to-blue-600',
-                    'change' => 8.5,
-                    'period' => 'last month'
+                    'change' => null,
+                    'period' => null
                 ],
                 [
                     'label' => 'Pending Approval',
                     'value' => number_format($pendingPOs),
                     'gradient' => 'from-yellow-500 to-yellow-600',
-                    'change' => -2.1,
-                    'period' => 'last month'
+                    'change' => null,
+                    'period' => null
                 ],
                 [
                     'label' => 'To Receive',
                     'value' => number_format($toReceivePOs),
                     'gradient' => 'from-orange-500 to-orange-600',
-                    'change' => 5.2,
-                    'period' => 'last month'
+                    'change' => null,
+                    'period' => null
                 ],
                 [
                     'label' => 'Total Value',
                     'value' => '₱' . number_format($totalValue, 0),
                     'gradient' => 'from-green-500 to-green-600',
-                    'change' => 12.8,
-                    'period' => 'last month'
+                    'change' => null,
+                    'period' => null
                 ]
             ];
         @endphp
@@ -116,7 +142,6 @@
                             $pendingPercentage = ($pendingPOs / $totalOrdersNum) * 100;
                             $toReceivePercentage = ($toReceivePOs / $totalOrdersNum) * 100;
                             $receivedPercentage = ($receivedPOs / $totalOrdersNum) * 100;
-                            $completedPercentage = 100 - $pendingPercentage - $toReceivePercentage - $receivedPercentage;
                             $currentAngle = 0;
                         @endphp
                         
@@ -178,20 +203,18 @@
             <!-- Bar Chart -->
             <div class="relative h-48 flex items-end justify-between space-x-2 px-4">
                 @php
-                    $months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-                    $values = [85, 92, 78, 95, 88, 96]; // Sample values
-                    $maxValue = max($values);
+                    $safeValues = $values ?: [0];
+                    $maxValue = max($safeValues);
                 @endphp
-                
                 @foreach($months as $index => $month)
                     @php
-                        $height = ($values[$index] / $maxValue) * 140;
+                        $val = $values[$index] ?? 0;
+                        $height = $maxValue > 0 ? ($val / $maxValue) * 140 : 0;
                     @endphp
                     <div class="flex flex-col items-center group">
                         <div class="relative bg-blue-500 rounded-t-sm hover:bg-blue-600 transition-colors" style="height: {{ $height }}px; width: 32px;">
-                            <!-- Value tooltip -->
                             <div class="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                {{ $values[$index] }}
+                                {{ $val }}
                             </div>
                         </div>
                         <div class="text-xs text-gray-500 dark:text-gray-400 mt-2">{{ $month }}</div>
@@ -218,18 +241,7 @@
             </h3>
             
             <div class="space-y-4">
-                @php
-                    $topSuppliers = \App\Models\PurchaseOrder::select('supplier_id')
-                        ->selectRaw('COUNT(*) as order_count')
-                        ->selectRaw('SUM(total_price) as total_value')
-                        ->with('supplier')
-                        ->groupBy('supplier_id')
-                        ->orderBy('order_count', 'desc')
-                        ->limit(5)
-                        ->get();
-                    
-                    $maxSupplierOrders = $topSuppliers->max('order_count') ?: 1;
-                @endphp
+                @php $maxSupplierOrders = $topSuppliers->max('order_count') ?: 1; @endphp
                 
                 @forelse($topSuppliers as $supplierData)
                     <div class="flex items-center justify-between">
@@ -265,25 +277,20 @@
             </h3>
             
             <div class="space-y-3 max-h-64 overflow-y-auto">
-                @php
-                    $recentOrders = \App\Models\PurchaseOrder::with('supplier')->latest()->limit(5)->get();
-                @endphp
-                
                 @forelse($recentOrders as $order)
                     <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                         <div class="flex-1 min-w-0">
                             <p class="text-sm font-medium text-gray-900 dark:text-white">{{ $order->po_num }}</p>
                             <p class="text-xs text-gray-500 dark:text-gray-400">{{ $order->supplier->name ?? 'N/A' }}</p>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ $order->order_date->format('M d, Y') }}</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ $order->order_date ? $order->order_date->format('M d, Y') : 'N/A' }}</p>
                         </div>
                         <div class="text-right">
-                            <span class="inline-block px-2 py-1 text-xs font-semibold rounded-full
-                                @if ($order->status === 'for_approval') bg-yellow-100 text-yellow-800
-                                @elseif($order->status === 'to_receive') bg-blue-100 text-blue-800
-                                @elseif($order->status === 'received') bg-green-100 text-green-800
-                                @elseif($order->status === 'rejected') bg-red-100 text-red-800
-                                @else bg-gray-100 text-gray-800 @endif">
-                                {{ str_replace('_', ' ', ucfirst($order->status)) }}
+                            @php
+                                $color = $order->display_status_color; // yellow/blue/purple/green/red/orange
+                                $badge = "inline-block px-2 py-1 text-xs font-semibold rounded-full bg-{$color}-100 text-{$color}-800";
+                            @endphp
+                            <span class="{{ $badge }}">
+                                {{ $order->display_status }}
                             </span>
                             <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">₱{{ number_format($order->total_price, 2) }}</p>
                         </div>

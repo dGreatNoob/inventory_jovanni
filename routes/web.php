@@ -214,7 +214,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/suppliers', \App\Livewire\Pages\SupplierManagement\Profile\Index::class)->name('suppliers');
         Route::get('/locations', \App\Livewire\Pages\ProductManagement\InventoryLocationManagement::class)->name('locations');
         Route::get('/images', \App\Livewire\Pages\ProductManagement\ProductImageGallery::class)->name('images');
-        Route::get('/dashboard', \App\Livewire\Pages\ProductManagement\InventoryDashboard::class)->name('dashboard');
+        // Analytics dashboard removed from Product Management
         Route::get('/print-catalog', function() {
             $products = \App\Models\Product::with(['images' => function($q){
                 $q->orderByDesc('is_primary')->orderBy('sort_order')->orderBy('created_at', 'desc');
@@ -287,7 +287,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/reports/sales-orders', \App\Livewire\Pages\Reports\SalesOrders::class)
         ->name('reports.sales-orders');
         
-    Route::get('/reports/stock-available', \App\Livewire\Pages\Reports\StockAvailable::class)
+    Route::get('/reports/stock-available', \App\Livewire\Pages\Reports\ProductInventoryReport::class)
         ->name('reports.stock-available');
         
     Route::get('/reports/purchase-orders', \App\Livewire\Pages\Reports\PurchaseOrders::class)

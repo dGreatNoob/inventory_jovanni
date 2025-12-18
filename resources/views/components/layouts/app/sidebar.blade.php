@@ -155,14 +155,6 @@
                         wire:navigate>{{ __('Promo Creation') }}
                         </flux:navlist.item>
 
-                        <flux:navlist.item 
-                            icon="chart-bar" 
-                            href="{{ route('product-management.dashboard') }}" 
-                            :current="request()->routeIs('product-management.dashboard')" 
-                            wire:navigate
-                        >
-                            {{ __('Analytics') }}
-                        </flux:navlist.item>
                     </flux:navlist.group>
                 @endif
 
@@ -316,11 +308,34 @@
                     </flux:navlist.group>
                 @endif
 
+                {{-- Reports --}}
+                <flux:navlist.group expandable :expanded="request()->routeIs('reports.stock-available') || request()->routeIs('reports.purchase-orders')" :heading="__('Reports')"
+                    class="lg:grid">
+                    <flux:navlist.item 
+                        icon="clipboard-document-list" 
+                        href="{{ route('reports.stock-available') }}" 
+                        :current="request()->routeIs('reports.stock-available')" 
+                        wire:navigate
+                    >
+                        {{ __('Product Inventory') }}
+                    </flux:navlist.item>
+
+                    <flux:navlist.item 
+                        icon="clipboard-document-list" 
+                        href="{{ route('reports.purchase-orders') }}" 
+                        :current="request()->routeIs('reports.purchase-orders')" 
+                        wire:navigate
+                    >
+                        {{ __('Purchase Orders') }}
+                    </flux:navlist.item>
+                </flux:navlist.group>
+
                 {{-- Activity Logs --}}
                 <flux:navlist.item icon="clipboard-document-list" href="{{ route('activity.logs') }}"
                     :current="request()->routeIs('activity.logs')" wire:navigate>
                     {{ __('Activity Logs') }}
                 </flux:navlist.item>
+
 
                 {{-- ==========================================
                      HIDDEN/COMMENTED OUT MENU ITEMS

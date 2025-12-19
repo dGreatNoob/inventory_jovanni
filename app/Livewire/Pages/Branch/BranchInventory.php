@@ -49,6 +49,10 @@ class BranchInventory extends Component
     public $invalidBarcodes = [];
     public $similarBarcodes = [];
 
+    // Inline editing properties
+    public $editingShipmentId = null;
+    public $editingAllocatedQuantity = 0;
+
     public function mount()
     {
         $this->loadBatches();
@@ -283,6 +287,107 @@ class BranchInventory extends Component
     {
         $this->showProductViewModal = false;
         $this->selectedProductDetails = null;
+        $this->editingShipmentId = null;
+        $this->editingAllocatedQuantity = 0;
+    }
+
+    /**
+     * Start editing allocated quantity for a shipment
+     */
+    public function startEditingQuantity($shipmentId, $currentQuantity)
+    {
+        $this->editingShipmentId = $shipmentId;
+        $this->editingAllocatedQuantity = $currentQuantity;
+    }
+
+    /**
+     * Cancel editing allocated quantity
+     */
+    public function cancelEditingQuantity()
+    {
+        $this->editingShipmentId = null;
+        $this->editingAllocatedQuantity = 0;
+    }
+
+    /**
+     * Save the edited allocated quantity
+     */
+    public function saveAllocatedQuantity()
+    {
+        if (!$this->editingShipmentId || !$this->selectedProductDetails) {
+            return;
+        }
+
+        $this->validate([
+            'editingAllocatedQuantity' => 'required|integer|min:0',
+        ]);
+
+        try {
+            // Find the BranchAllocationItem for this shipment and product
+            $productId = $this->selectedProductDetails['id'];
+            $shipment = collect($this->selectedProductDetails['shipments'])->firstWhere('id', $this->editingShipmentId);
+
+            if (!$shipment) {
+                session()->flash('error', 'Shipment not found.');
+                return;
+            }
+
+            // Find the BranchAllocationItem
+            $allocationItem = BranchAllocationItem::whereHas('branchAllocation.shipments', function($q) use ($shipment) {
+                $q->where('id', $shipment['id']);
+            })
+            ->where('product_id', $productId)
+            ->where('box_id', null) // Only unpacked items
+            ->first();
+
+            if (!$allocationItem) {
+                session()->flash('error', 'Allocation item not found.');
+                return;
+            }
+
+            // Check if new quantity is less than sold quantity
+            if ($this->editingAllocatedQuantity < $allocationItem->sold_quantity) {
+                session()->flash('error', 'Cannot reduce allocated quantity below sold quantity (' . $allocationItem->sold_quantity . ').');
+                return;
+            }
+
+            // Update the quantity
+            $allocationItem->update([
+                'quantity' => $this->editingAllocatedQuantity
+            ]);
+
+            // Log activity
+            Activity::create([
+                'log_name' => 'branch_inventory',
+                'description' => "Updated allocated quantity for product {$this->selectedProductDetails['barcode']} in shipment {$shipment['shipping_plan_num']}",
+                'subject_type' => BranchAllocationItem::class,
+                'subject_id' => $allocationItem->id,
+                'causer_type' => null,
+                'causer_id' => null,
+                'properties' => [
+                    'product_id' => $productId,
+                    'product_name' => $this->selectedProductDetails['name'],
+                    'barcode' => $this->selectedProductDetails['barcode'],
+                    'shipment_id' => $this->editingShipmentId,
+                    'old_quantity' => $allocationItem->getOriginal('quantity'),
+                    'new_quantity' => $this->editingAllocatedQuantity,
+                    'branch_id' => $this->selectedBranchId,
+                ],
+            ]);
+
+            // Reset editing state
+            $this->editingShipmentId = null;
+            $this->editingAllocatedQuantity = 0;
+
+            // Refresh data
+            $this->loadBranchProducts();
+            $this->viewProductDetails($productId); // Refresh the modal data
+
+            session()->flash('message', 'Allocated quantity updated successfully.');
+
+        } catch (\Exception $e) {
+            session()->flash('error', 'Error updating quantity: ' . $e->getMessage());
+        }
     }
 
     /**

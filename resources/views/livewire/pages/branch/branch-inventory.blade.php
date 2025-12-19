@@ -398,8 +398,26 @@
                                             <div class="text-lg font-semibold text-gray-900 dark:text-white">
                                                 ₱{{ number_format($shipment['total'], 2) }}
                                             </div>
-                                            <div class="text-sm text-gray-600 dark:text-gray-400">
-                                                {{ $shipment['allocated_quantity'] }} allocated • {{ $shipment['sold_quantity'] }} sold
+                                            <div class="text-sm text-gray-600 dark:text-gray-400 flex items-center justify-end space-x-2">
+                                                @if($editingShipmentId == $shipment['id'])
+                                                    <input type="number" wire:model="editingAllocatedQuantity" min="0"
+                                                           class="w-16 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                                                    <button wire:click="saveAllocatedQuantity"
+                                                            class="px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded focus:outline-none focus:ring-1 focus:ring-green-500">
+                                                        ✓
+                                                    </button>
+                                                    <button wire:click="cancelEditingQuantity"
+                                                            class="px-2 py-1 bg-gray-600 hover:bg-gray-700 text-white text-xs rounded focus:outline-none focus:ring-1 focus:ring-gray-500">
+                                                        ✕
+                                                    </button>
+                                                @else
+                                                    {{ $shipment['allocated_quantity'] }} allocated • {{ $shipment['sold_quantity'] }} sold
+                                                    <button wire:click="startEditingQuantity({{ $shipment['id'] }}, {{ $shipment['allocated_quantity'] }})"
+                                                            class="ml-2 px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                            title="Edit allocated quantity">
+                                                        ✏️
+                                                    </button>
+                                                @endif
                                             </div>
                                         </div>
                                     </div>

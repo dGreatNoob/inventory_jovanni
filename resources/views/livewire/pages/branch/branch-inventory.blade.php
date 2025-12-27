@@ -121,16 +121,16 @@
             </div>
         @endif
 
-        <!-- Selected Branch Shipments -->
-        @if($selectedBranchId && !empty($branchShipments))
+        <!-- Selected Branch Products -->
+        @if($selectedBranchId && !empty($branchProducts))
             <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 p-6">
                 <div class="flex justify-between items-center mb-6">
                     <div>
                         <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
-                            📍 {{ collect($batchBranches)->firstWhere('id', $selectedBranchId)['name'] ?? 'Branch' }} - Completed Shipments
+                            📍 {{ collect($batchBranches)->firstWhere('id', $selectedBranchId)['name'] ?? 'Branch' }} - Branch Products
                         </h3>
                         <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                            {{ count($branchShipments) }} completed shipments with allocated products
+                            {{ count($branchProducts) }} products from completed shipments
                         </p>
                     </div>
 
@@ -184,180 +184,262 @@
                 </div>
 
                 <!-- Summary Header -->
-                @if(!empty($branchShipments))
+                @if(!empty($branchProducts))
                     <div class="mt-8 bg-gray-50 dark:bg-gray-700 rounded-lg p-6">
                         <h4 class="font-semibold text-gray-900 dark:text-white mb-4">Branch Summary</h4>
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
                             <div class="text-center">
-                                <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ count($branchShipments) }}</div>
-                                <div class="text-sm text-gray-600 dark:text-gray-400">Total Shipments</div>
+                                <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ count($branchProducts) }}</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">Total Products</div>
                             </div>
                             <div class="text-center">
                                 <div class="text-2xl font-bold text-green-600 dark:text-green-400">
-                                    {{ $branchShipments->sum('total_items') }}
+                                    {{ $branchProducts->sum('total_quantity') }}
                                 </div>
-                                <div class="text-sm text-gray-600 dark:text-gray-400">Total Items</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">Total Quantity</div>
                             </div>
                             <div class="text-center">
                                 <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                                    ₱{{ number_format($branchShipments->sum('total_value'), 2) }}
+                                    {{ $branchProducts->sum('total_sold') }}
                                 </div>
-                                <div class="text-sm text-gray-600 dark:text-gray-400">Total Value</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">Total Sold</div>
                             </div>
                             <div class="text-center">
                                 <div class="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                                    {{ $branchShipments->sum(function($shipment) { return collect($shipment['allocations'])->sum('total_products'); }) }}
+                                    ₱{{ number_format($branchProducts->sum('total_value'), 2) }}
                                 </div>
-                                <div class="text-sm text-gray-600 dark:text-gray-400">Unique Products</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">Total Value</div>
                             </div>
                         </div>
                     </div>
                 @endif
 
-                <!-- Shipments List -->
-                <div class="space-y-6 mt-8">
-                    @foreach($branchShipments as $shipment)
-                        <!-- Shipment Card -->
-                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden">
-                            <!-- Shipment Header -->
-                            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-600 bg-gradient-to-r from-green-500 to-green-600">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center space-x-3">
-                                        <div class="bg-white p-2 rounded-lg">
-                                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                                            </svg>
-                                        </div>
-                                        <div>
-                                            <h4 class="font-bold text-lg text-white">
-                                                {{ $shipment['shipping_plan_num'] }}
-                                            </h4>
-                                            <p class="text-sm text-green-100">
-                                                Shipped: {{ $shipment['shipment_date'] }} • {{ $shipment['carrier_name'] }} • {{ $shipment['delivery_method'] }}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div class="text-right">
-                                        <div class="text-2xl font-bold text-white">
-                                            ₱{{ number_format($shipment['total_value'], 2) }}
-                                        </div>
-                                        <div class="text-xs text-green-100">
-                                            {{ $shipment['total_items'] }} items
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Shipment Content -->
-                            <div class="p-6">
-                                @foreach($shipment['allocations'] as $allocation)
-                                    <!-- Allocation Section -->
-                                    <div class="mb-6 last:mb-0">
-                                        <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 p-4">
-                                            <!-- Allocation Header -->
-                                            <div class="flex items-center justify-between mb-4">
-                                                <div class="flex items-center space-x-3">
-                                                    <div class="bg-blue-100 dark:bg-blue-900/20 p-2 rounded-lg">
-                                                        <svg class="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                                        </svg>
-                                                    </div>
-                                                    <div>
-                                                        <h5 class="font-semibold text-gray-900 dark:text-white">
-                                                            Allocation: {{ $allocation['reference'] }}
-                                                        </h5>
-                                                        <p class="text-sm text-gray-600 dark:text-gray-400">
-                                                            Created: {{ $allocation['created_date'] }} • By: {{ $allocation['created_by'] }}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                <div class="text-right">
-                                                    <div class="text-lg font-semibold text-gray-900 dark:text-white">
-                                                        {{ $allocation['total_products'] }} products
-                                                    </div>
-                                                    <div class="text-sm text-gray-600 dark:text-gray-400">
-                                                        {{ $allocation['total_quantity'] }} total qty
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <!-- Products Table -->
-                                            <div class="overflow-x-auto">
-                                                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                                    <thead class="bg-gray-50 dark:bg-gray-700">
-                                                        <tr>
-                                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Image</th>
-                                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Product</th>
-                                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Barcode</th>
-                                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">SKU</th>
-                                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Quantity</th>
-                                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Quantity Sold</th>
-                                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Unit Price</th>
-                                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Total</th>
-                                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Status</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                                        @foreach($allocation['products'] as $product)
-                                                            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                                                <td class="px-4 py-3 text-sm">
-                                                                    @if(isset($product['image_url']))
-                                                                        <img src="{{ $product['image_url'] }}" alt="{{ $product['name'] }}" class="w-12 h-12 object-cover rounded">
-                                                                    @else
-                                                                        <span class="text-gray-400 dark:text-gray-500">No image</span>
-                                                                    @endif
-                                                                </td>
-                                                                <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">
-                                                                    {{ $product['name'] }}
-                                                                </td>
-                                                                <td class="px-4 py-3 text-sm font-mono text-gray-500 dark:text-gray-400">
-                                                                    {{ $product['barcode'] ?? 'N/A' }}
-                                                                </td>
-                                                                <td class="px-4 py-3 text-sm font-mono text-gray-500 dark:text-gray-400">
-                                                                    {{ $product['sku'] }}
-                                                                </td>
-                                                                <td class="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white text-center">
-                                                                    {{ $product['quantity'] }}
-                                                                </td>
-                                                                <td class="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white text-center">
-                                                                    {{ $product['quantity_sold'] ?? 0 }}
-                                                                </td>
-                                                                <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
-                                                                    ₱{{ number_format($product['price'], 2) }}
-                                                                </td>
-                                                                <td class="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
-                                                                    ₱{{ number_format($product['total'], 2) }}
-                                                                </td>
-                                                                <td class="px-4 py-3 text-sm">
-                                                                    @if($product['status'] === 'received')
-                                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300">
-                                                                            ✓ Received
-                                                                        </span>
-                                                                    @elseif($product['status'] === 'partial')
-                                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300">
-                                                                            Partial
-                                                                        </span>
-                                                                    @else
-                                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-200">
-                                                                            Pending
-                                                                        </span>
-                                                                    @endif
-                                                                </td>
-                                                            </tr>
-                                                        @endforeach
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                    </div>
+                <!-- Products List -->
+                <div class="mt-8 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead class="bg-gray-50 dark:bg-gray-700">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Image</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Product</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Barcode</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">SKU</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Total Quantity</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Total Sold</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Remaining</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Unit Price</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Total Value</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                @foreach($branchProducts as $product)
+                                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                        <td class="px-4 py-3 text-sm">
+                                            @if(isset($product['image_url']))
+                                                <img src="{{ $product['image_url'] }}" alt="{{ $product['name'] }}" class="w-12 h-12 object-cover rounded">
+                                            @else
+                                                <span class="text-gray-400 dark:text-gray-500">No image</span>
+                                            @endif
+                                        </td>
+                                        <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">
+                                            {{ $product['name'] }}
+                                        </td>
+                                        <td class="px-4 py-3 text-sm font-mono text-gray-500 dark:text-gray-400">
+                                            {{ $product['barcode'] ?? 'N/A' }}
+                                        </td>
+                                        <td class="px-4 py-3 text-sm font-mono text-gray-500 dark:text-gray-400">
+                                            {{ $product['sku'] }}
+                                        </td>
+                                        <td class="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white text-center">
+                                            {{ $product['total_quantity'] }}
+                                        </td>
+                                        <td class="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white text-center">
+                                            {{ $product['total_sold'] }}
+                                        </td>
+                                        <td class="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white text-center">
+                                            {{ $product['remaining_quantity'] }}
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                                            ₱{{ number_format($product['unit_price'], 2) }}
+                                        </td>
+                                        <td class="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
+                                            ₱{{ number_format($product['total_value'], 2) }}
+                                        </td>
+                                        <td class="px-4 py-3 text-sm">
+                                            <button wire:click="viewProductDetails({{ $product['id'] }})"
+                                                    class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                                View Details
+                                            </button>
+                                        </td>
+                                    </tr>
                                 @endforeach
-                            </div>
-                        </div>
-                    @endforeach
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         @endif
     </div>
+
+    <!-- Product View Modal -->
+    @if($showProductViewModal && $selectedProductDetails)
+        <div class="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white dark:bg-gray-800 rounded-lg w-full max-w-4xl h-full max-h-[90vh] flex flex-col">
+                <!-- Header -->
+                <div class="flex-shrink-0 flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700">
+                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Product Details: {{ $selectedProductDetails['name'] }}</h3>
+                    <button wire:click="closeProductViewModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Scrollable Content -->
+                <div class="flex-1 overflow-y-auto p-6">
+                    <!-- Product Summary -->
+                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6">
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">Barcode</div>
+                                <div class="font-mono text-gray-900 dark:text-white">{{ $selectedProductDetails['barcode'] ?? 'N/A' }}</div>
+                            </div>
+                            <div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">SKU</div>
+                                <div class="font-mono text-gray-900 dark:text-white">{{ $selectedProductDetails['sku'] }}</div>
+                            </div>
+                            <div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">Total Quantity</div>
+                                <div class="font-semibold text-gray-900 dark:text-white">{{ $selectedProductDetails['total_quantity'] }}</div>
+                            </div>
+                            <div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">Total Sold</div>
+                                <div class="font-semibold text-gray-900 dark:text-white">{{ $selectedProductDetails['total_sold'] }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- History -->
+                    <div class="mb-6">
+                        <h4 class="font-semibold text-gray-900 dark:text-white mb-4">Upload History</h4>
+                        <div class="space-y-2 max-h-48 overflow-y-auto">
+                            @php
+                                // Get recent activities for this product
+                                $currentBarcode = $selectedProductDetails['barcode'];
+
+                                $histories = \Spatie\Activitylog\Models\Activity::where('log_name', 'branch_inventory')
+                                    ->where('properties->barcode', $currentBarcode)
+                                    ->where('properties->branch_id', $selectedBranchId)
+                                    ->where('properties->uploaded_file', true)
+                                    ->orderBy('created_at', 'desc')
+                                    ->limit(10)
+                                    ->get();
+
+                                $processedHistories = [];
+
+                                foreach ($histories as $history) {
+                                    $properties = $history->properties;
+
+                                    // Get the quantity sold from the activity properties
+                                    $quantitySold = $properties['quantity_sold'] ?? 1;
+
+                                    $isDuplicate = $quantitySold > 1;
+
+                                    $processedHistories[] = [
+                                        'quantity' => $quantitySold,
+                                        'time' => $history->created_at,
+                                        'is_duplicate' => $isDuplicate
+                                    ];
+                                }
+                            @endphp
+                            @forelse($processedHistories as $historyItem)
+                                <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                                    <div class="text-sm text-blue-900 dark:text-blue-100">
+                                        @if($historyItem['is_duplicate'])
+                                            {{ $historyItem['quantity'] }} barcodes scanned to this product and {{ $historyItem['quantity'] }} sold of this upload
+                                        @else
+                                            Scanned 1 barcode for this product 1 sold of this upload
+                                        @endif
+                                    </div>
+                                    <div class="text-xs text-blue-600 dark:text-blue-300 mt-1">
+                                        {{ $historyItem['time']->format('M d, Y H:i') }}
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="text-sm text-gray-500 dark:text-gray-400">No upload history found.</div>
+                            @endforelse
+                        </div>
+                    </div>
+
+                    <!-- Shipments List -->
+                    <div class="space-y-4">
+                        <h4 class="font-semibold text-gray-900 dark:text-white mb-4">Shipments Containing This Product</h4>
+                        <div class="max-h-96 overflow-y-auto">
+                            @foreach($selectedProductDetails['shipments'] as $shipment)
+                                <div class="bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 p-4 mb-4">
+                                    <div class="flex items-center justify-between mb-3">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="bg-green-100 dark:bg-green-900/20 p-2 rounded-lg">
+                                                <svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <h5 class="font-semibold text-gray-900 dark:text-white">
+                                                    {{ $shipment['shipping_plan_num'] }}
+                                                </h5>
+                                                <p class="text-sm text-gray-600 dark:text-gray-400">
+                                                    Shipped: {{ $shipment['shipment_date'] }} • {{ $shipment['carrier_name'] }} • {{ $shipment['delivery_method'] }}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <div class="text-lg font-semibold text-gray-900 dark:text-white">
+                                                ₱{{ number_format($shipment['total'], 2) }}
+                                            </div>
+                                            <div class="text-sm text-gray-600 dark:text-gray-400 flex items-center justify-end space-x-2">
+                                                @if($editingShipmentId == $shipment['id'])
+                                                    <input type="number" wire:model="editingAllocatedQuantity" min="0"
+                                                           class="w-16 px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                                                    <button wire:click="saveAllocatedQuantity"
+                                                            class="px-2 py-1 bg-green-600 hover:bg-green-700 text-white text-xs rounded focus:outline-none focus:ring-1 focus:ring-green-500">
+                                                        ✓
+                                                    </button>
+                                                    <button wire:click="cancelEditingQuantity"
+                                                            class="px-2 py-1 bg-gray-600 hover:bg-gray-700 text-white text-xs rounded focus:outline-none focus:ring-1 focus:ring-gray-500">
+                                                        ✕
+                                                    </button>
+                                                @else
+                                                    {{ $shipment['allocated_quantity'] }} allocated • {{ $shipment['sold_quantity'] }} sold
+                                                    <button wire:click="startEditingQuantity({{ $shipment['id'] }}, {{ $shipment['allocated_quantity'] }})"
+                                                            class="ml-2 px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                                            title="Edit allocated quantity">
+                                                        ✏️
+                                                    </button>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="text-sm text-gray-600 dark:text-gray-400">
+                                        Allocation: {{ $shipment['allocation_reference'] }} • Barcode: {{ $shipment['barcode'] }}
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="flex-shrink-0 flex justify-end p-6 border-t border-gray-200 dark:border-gray-700">
+                    <button wire:click="closeProductViewModal"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
 
     <!-- Upload Text File Modal -->
     @if($showUploadModal)
@@ -547,6 +629,49 @@
                                             @endforeach
                                         </tbody>
                                     </table>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
+                    @if(!empty($similarBarcodes))
+                        <div class="mb-6">
+                            <h4 class="font-medium text-yellow-600 dark:text-yellow-400 mb-3 flex items-center">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                </svg>
+                                Similar Barcodes:
+                            </h4>
+                            <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full divide-y divide-yellow-200 dark:divide-yellow-700">
+                                        <thead class="bg-yellow-100 dark:bg-yellow-900/40">
+                                            <tr>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-yellow-700 dark:text-yellow-300 uppercase">Uploaded Barcode</th>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-yellow-700 dark:text-yellow-300 uppercase">Existing Barcode</th>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-yellow-700 dark:text-yellow-300 uppercase">Product Name</th>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-yellow-700 dark:text-yellow-300 uppercase">SKU</th>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-yellow-700 dark:text-yellow-300 uppercase">Quantity Sold</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="bg-yellow-50 dark:bg-yellow-900/20 divide-y divide-yellow-200 dark:divide-yellow-700">
+                                            @foreach($similarBarcodes as $item)
+                                                <tr class="hover:bg-yellow-100 dark:hover:bg-yellow-900/30">
+                                                    <td class="px-4 py-3 text-sm font-mono text-yellow-900 dark:text-yellow-100">{{ $item['uploaded_barcode'] }}</td>
+                                                    <td class="px-4 py-3 text-sm font-mono text-yellow-900 dark:text-yellow-100">{{ $item['existing_barcode'] }}</td>
+                                                    <td class="px-4 py-3 text-sm text-yellow-900 dark:text-yellow-100">{{ $item['product_name'] }}</td>
+                                                    <td class="px-4 py-3 text-sm font-mono text-yellow-700 dark:text-yellow-300">{{ $item['sku'] }}</td>
+                                                    <td class="px-4 py-3 text-sm font-semibold text-yellow-600 dark:text-yellow-400 text-center">{{ $item['quantity_sold'] }}</td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="mt-4 flex justify-end">
+                                    <button wire:click="syncSimilarBarcodes"
+                                            class="px-4 py-2 text-sm font-medium text-white bg-yellow-600 rounded-md hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2">
+                                        Sync Similar Barcodes
+                                    </button>
                                 </div>
                             </div>
                         </div>

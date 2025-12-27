@@ -8,6 +8,7 @@ use App\Models\Branch;
 use App\Models\Shipment;
 use App\Models\BranchAllocation;
 use App\Models\BranchAllocationItem;
+use Spatie\Activitylog\Models\Activity;
 
 class BranchInventory extends Component
 {
@@ -20,9 +21,9 @@ class BranchInventory extends Component
     public $selectedBranchId = null;
     public $batchBranches = [];
 
-    // Shipment data for selected branch
-    public $branchShipments = [];
-    public $selectedShipmentDetails = null;
+    // Product data for selected branch
+    public $branchProducts = [];
+    public $selectedProductDetails = null;
 
     // Search and filters
     public $search = '';
@@ -31,7 +32,7 @@ class BranchInventory extends Component
     public $statusFilter = '';
 
     // Modal controls
-    public $showShipmentDetailsModal = false;
+    public $showProductViewModal = false;
     public $showUploadModal = false;
     public $showResultsModal = false;
     public $showSuccessModal = false;
@@ -46,6 +47,11 @@ class BranchInventory extends Component
     public $unmatchedBarcodes = [];
     public $validBarcodes = [];
     public $invalidBarcodes = [];
+    public $similarBarcodes = [];
+
+    // Inline editing properties
+    public $editingShipmentId = null;
+    public $editingAllocatedQuantity = 0;
 
     public function mount()
     {
@@ -126,7 +132,7 @@ class BranchInventory extends Component
     {
         $this->selectedBatch = $batchName;
         $this->selectedBranchId = null;
-        $this->branchShipments = [];
+        $this->branchProducts = [];
         $this->loadBatchBranches();
     }
 
@@ -162,106 +168,82 @@ class BranchInventory extends Component
     }
 
     /**
-     * Select a branch to view its shipments
+     * Select a branch to view its products
      */
     public function selectBranch($branchId)
     {
         $this->selectedBranchId = $branchId;
-        $this->loadBranchShipments();
+        $this->loadBranchProducts();
     }
 
     /**
-     * Load shipments for the selected branch
+     * Load products for the selected branch
      */
-    protected function loadBranchShipments()
+    protected function loadBranchProducts()
     {
         if (!$this->selectedBranchId) return;
 
-        $query = Shipment::with([
-            'branchAllocation.branch',
-            'branchAllocation.items.product',
+        // Get all branch allocation items for completed shipments in this branch
+        $items = \App\Models\BranchAllocationItem::with([
+            'product',
+            'branchAllocation.shipments',
             'branchAllocation.batchAllocation'
         ])
         ->whereHas('branchAllocation', function ($q) {
             $q->where('branch_id', $this->selectedBranchId);
         })
-        ->where('shipping_status', 'completed');
+        ->whereHas('branchAllocation.shipments', function ($q) {
+            $q->where('shipping_status', 'completed');
+        })
+        ->where('box_id', null) // Only unpacked items
+        ->get();
 
-        // Apply filters
-        if ($this->search) {
-            $query->where('shipping_plan_num', 'like', '%' . $this->search . '%');
-        }
+        // Group by product_id
+        $groupedProducts = $items->groupBy('product_id');
 
-        if ($this->dateFrom) {
-            $query->whereDate('created_at', '>=', $this->dateFrom);
-        }
+        $this->branchProducts = $groupedProducts->map(function ($productItems, $productId) {
+            $product = $productItems->first()->product;
+            $totalQuantity = $productItems->sum('quantity');
+            $totalSold = $productItems->sum('sold_quantity');
 
-        if ($this->dateTo) {
-            $query->whereDate('created_at', '<=', $this->dateTo);
-        }
-
-        if ($this->statusFilter) {
-            $query->where('shipping_status', $this->statusFilter);
-        }
-
-        $shipments = $query->orderBy('created_at', 'desc')->get();
-
-        $this->branchShipments = $shipments->map(function ($shipment) {
-            $allocation = $shipment->branchAllocation;
-            $totalItems = $allocation ? $allocation->items->where('box_id', null)->sum('quantity') : 0;
-            $totalValue = $allocation ? $allocation->items->where('box_id', null)->sum(function ($item) {
-                return $item->quantity * $item->getDisplayPriceAttribute();
-            }) : 0;
+            // Collect shipment details for this product
+            $shipments = $productItems->map(function ($item) {
+                $shipment = $item->branchAllocation->shipments->where('shipping_status', 'completed')->first();
+                if (!$shipment) return null;
+                $allocation = $item->branchAllocation;
+                return [
+                    'id' => $shipment->id,
+                    'shipping_plan_num' => $shipment->shipping_plan_num,
+                    'shipment_date' => $shipment->created_at->format('M d, Y'),
+                    'carrier_name' => $shipment->carrier_name ?: 'N/A',
+                    'delivery_method' => $shipment->delivery_method ?: 'N/A',
+                    'allocation_reference' => $allocation->batchAllocation->ref_no ?? 'N/A',
+                    'barcode' => $item->getDisplayBarcodeAttribute(),
+                    'allocated_quantity' => $item->quantity,
+                    'sold_quantity' => $item->sold_quantity,
+                    'price' => $item->unit_price,
+                    'total' => $item->quantity * $item->unit_price,
+                ];
+            })->filter();
 
             return [
-                'id' => $shipment->id,
-                'shipping_plan_num' => $shipment->shipping_plan_num,
-                'shipment_date' => $shipment->created_at->format('M d, Y'),
-                'carrier_name' => $shipment->carrier_name ?: 'N/A',
-                'delivery_method' => $shipment->delivery_method ?: 'N/A',
-                'status' => $shipment->shipping_status,
-                'allocations' => $this->formatAllocationsForShipment($shipment),
-                'total_items' => $totalItems,
-                'total_value' => $totalValue,
-            ];
-        });
-    }
-
-    /**
-     * Format allocations data for a shipment
-     */
-    protected function formatAllocationsForShipment($shipment)
-    {
-        $allocation = $shipment->branchAllocation;
-
-        if (!$allocation) return [];
-
-        return [
-            [
-                'id' => $allocation->id,
-                'reference' => $allocation->batchAllocation->ref_no ?? 'N/A',
-                'created_date' => $allocation->created_at->format('M d, Y'),
-                'created_by' => 'System', // Default since no user relationship
-                'products' => $allocation->items->where('box_id', null)->map(function ($item) {
-                    $product = $item->product;
-                    return [
-                        'id' => $item->id,
-                        'name' => $item->getDisplayNameAttribute(),
-                        'barcode' => $product->barcode ?? 'N/A',
-                        'sku' => $item->getDisplaySkuAttribute(),
-                        'quantity' => $item->quantity,
-                        'quantity_sold' => $item->sold_quantity,
-                        'price' => $item->getDisplayPriceAttribute(),
-                        'total' => $item->quantity * $item->getDisplayPriceAttribute(),
-                        'status' => $this->getItemStatus($item),
-                        'image_url' => $product->getPrimaryImageAttribute() ? asset('storage/photos/' . $product->getPrimaryImageAttribute()) : null,
-                    ];
+                'id' => $productId,
+                'name' => $productItems->first()->getDisplayNameAttribute(),
+                'barcode' => $productItems->first()->getDisplayBarcodeAttribute(),
+                'sku' => $productItems->first()->getDisplaySkuAttribute(),
+                'total_quantity' => $totalQuantity,
+                'total_sold' => $totalSold,
+                'remaining_quantity' => $totalQuantity - $totalSold,
+                'unit_price' => $productItems->first()->unit_price,
+                'total_value' => $productItems->sum(function ($item) {
+                    return $item->quantity * $item->unit_price;
                 }),
-                'total_products' => $allocation->items->where('box_id', null)->count(),
-                'total_quantity' => $allocation->items->where('box_id', null)->sum('quantity'),
-            ]
-        ];
+                'image_url' => $product->getPrimaryImageAttribute() ? asset('storage/photos/' . $product->getPrimaryImageAttribute()) : null,
+                'shipments' => $shipments,
+            ];
+        })->values();
     }
+
 
     /**
      * Get status for an allocation item
@@ -286,25 +268,126 @@ class BranchInventory extends Component
     }
 
     /**
-     * View shipment details
+     * View product details
      */
-    public function viewShipmentDetails($shipmentId)
+    public function viewProductDetails($productId)
     {
-        $shipment = collect($this->branchShipments)->firstWhere('id', $shipmentId);
+        $product = collect($this->branchProducts)->firstWhere('id', $productId);
 
-        if ($shipment) {
-            $this->selectedShipmentDetails = $shipment;
-            $this->showShipmentDetailsModal = true;
+        if ($product) {
+            $this->selectedProductDetails = $product;
+            $this->showProductViewModal = true;
         }
     }
 
     /**
-     * Close shipment details modal
+     * Close product view modal
      */
-    public function closeShipmentDetailsModal()
+    public function closeProductViewModal()
     {
-        $this->showShipmentDetailsModal = false;
-        $this->selectedShipmentDetails = null;
+        $this->showProductViewModal = false;
+        $this->selectedProductDetails = null;
+        $this->editingShipmentId = null;
+        $this->editingAllocatedQuantity = 0;
+    }
+
+    /**
+     * Start editing allocated quantity for a shipment
+     */
+    public function startEditingQuantity($shipmentId, $currentQuantity)
+    {
+        $this->editingShipmentId = $shipmentId;
+        $this->editingAllocatedQuantity = $currentQuantity;
+    }
+
+    /**
+     * Cancel editing allocated quantity
+     */
+    public function cancelEditingQuantity()
+    {
+        $this->editingShipmentId = null;
+        $this->editingAllocatedQuantity = 0;
+    }
+
+    /**
+     * Save the edited allocated quantity
+     */
+    public function saveAllocatedQuantity()
+    {
+        if (!$this->editingShipmentId || !$this->selectedProductDetails) {
+            return;
+        }
+
+        $this->validate([
+            'editingAllocatedQuantity' => 'required|integer|min:0',
+        ]);
+
+        try {
+            // Find the BranchAllocationItem for this shipment and product
+            $productId = $this->selectedProductDetails['id'];
+            $shipment = collect($this->selectedProductDetails['shipments'])->firstWhere('id', $this->editingShipmentId);
+
+            if (!$shipment) {
+                session()->flash('error', 'Shipment not found.');
+                return;
+            }
+
+            // Find the BranchAllocationItem
+            $allocationItem = BranchAllocationItem::whereHas('branchAllocation.shipments', function($q) use ($shipment) {
+                $q->where('id', $shipment['id']);
+            })
+            ->where('product_id', $productId)
+            ->where('box_id', null) // Only unpacked items
+            ->first();
+
+            if (!$allocationItem) {
+                session()->flash('error', 'Allocation item not found.');
+                return;
+            }
+
+            // Check if new quantity is less than sold quantity
+            if ($this->editingAllocatedQuantity < $allocationItem->sold_quantity) {
+                session()->flash('error', 'Cannot reduce allocated quantity below sold quantity (' . $allocationItem->sold_quantity . ').');
+                return;
+            }
+
+            // Update the quantity
+            $allocationItem->update([
+                'quantity' => $this->editingAllocatedQuantity
+            ]);
+
+            // Log activity
+            Activity::create([
+                'log_name' => 'branch_inventory',
+                'description' => "Updated allocated quantity for product {$this->selectedProductDetails['barcode']} in shipment {$shipment['shipping_plan_num']}",
+                'subject_type' => BranchAllocationItem::class,
+                'subject_id' => $allocationItem->id,
+                'causer_type' => null,
+                'causer_id' => null,
+                'properties' => [
+                    'product_id' => $productId,
+                    'product_name' => $this->selectedProductDetails['name'],
+                    'barcode' => $this->selectedProductDetails['barcode'],
+                    'shipment_id' => $this->editingShipmentId,
+                    'old_quantity' => $allocationItem->getOriginal('quantity'),
+                    'new_quantity' => $this->editingAllocatedQuantity,
+                    'branch_id' => $this->selectedBranchId,
+                ],
+            ]);
+
+            // Reset editing state
+            $this->editingShipmentId = null;
+            $this->editingAllocatedQuantity = 0;
+
+            // Refresh data
+            $this->loadBranchProducts();
+            $this->viewProductDetails($productId); // Refresh the modal data
+
+            session()->flash('message', 'Allocated quantity updated successfully.');
+
+        } catch (\Exception $e) {
+            session()->flash('error', 'Error updating quantity: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -315,9 +398,9 @@ class BranchInventory extends Component
         $this->selectedBatch = null;
         $this->selectedBranchId = null;
         $this->batchBranches = [];
-        $this->branchShipments = [];
-        $this->selectedShipmentDetails = null;
-        $this->showShipmentDetailsModal = false;
+        $this->branchProducts = [];
+        $this->selectedProductDetails = null;
+        $this->showProductViewModal = false;
     }
 
     /**
@@ -326,9 +409,9 @@ class BranchInventory extends Component
     public function clearBranchSelection()
     {
         $this->selectedBranchId = null;
-        $this->branchShipments = [];
-        $this->selectedShipmentDetails = null;
-        $this->showShipmentDetailsModal = false;
+        $this->branchProducts = [];
+        $this->selectedProductDetails = null;
+        $this->showProductViewModal = false;
     }
 
     /**
@@ -341,7 +424,7 @@ class BranchInventory extends Component
         $this->dateTo = '';
         $this->statusFilter = '';
         if ($this->selectedBranchId) {
-            $this->loadBranchShipments();
+            $this->loadBranchProducts();
         }
     }
 
@@ -354,18 +437,18 @@ class BranchInventory extends Component
         if ($this->selectedBatch) {
             $this->loadBatchBranches();
             if ($this->selectedBranchId) {
-                $this->loadBranchShipments();
+                $this->loadBranchProducts();
             }
         }
     }
 
     /**
-     * Update hook to reload shipments when filters change
+     * Update hook to reload products when filters change
      */
     public function updated($property)
     {
         if (in_array($property, ['search', 'dateFrom', 'dateTo', 'statusFilter']) && $this->selectedBranchId) {
-            $this->loadBranchShipments();
+            $this->loadBranchProducts();
         }
     }
 
@@ -422,7 +505,7 @@ class BranchInventory extends Component
 
             // Close modal and refresh data
             $this->showResultsModal = false;
-            $this->loadBranchShipments();
+            $this->loadBranchProducts();
 
             // Prepare success message
             $savedCount = count($this->validBarcodes);
@@ -431,6 +514,25 @@ class BranchInventory extends Component
 
             if ($skippedCount > 0) {
                 $message .= " {$skippedCount} barcode(s) were skipped due to quantity limits.";
+            }
+
+            // Log activity for each updated product
+            foreach ($this->validBarcodes as $barcode => $result) {
+                Activity::create([
+                    'log_name' => 'branch_inventory',
+                    'description' => "Updated quantity sold for product {$barcode} in branch {$this->selectedBranchId}",
+                    'subject_type' => BranchAllocationItem::class,
+                    'subject_id' => null, // Since multiple items
+                    'causer_type' => null, // No user
+                    'causer_id' => null,
+                    'properties' => [
+                        'barcode' => $barcode,
+                        'product_name' => $result['product_name'],
+                        'quantity_sold' => $result['quantity_sold'],
+                        'branch_id' => $this->selectedBranchId,
+                        'uploaded_file' => true,
+                    ],
+                ]);
             }
 
             $this->successMessage = $message;
@@ -442,11 +544,81 @@ class BranchInventory extends Component
     }
 
     /**
+     * Sync similar barcodes to database
+     */
+    public function syncSimilarBarcodes()
+    {
+        if (!$this->selectedBranchId || empty($this->similarBarcodes)) {
+            return;
+        }
+
+        try {
+            foreach ($this->similarBarcodes as $item) {
+                $barcode = $item['existing_barcode'];
+                $quantitySold = $item['quantity_sold'];
+
+                $items = \App\Models\BranchAllocationItem::whereHas('product', function($q) use ($barcode) {
+                    $q->where('barcode', $barcode);
+                })
+                ->whereHas('branchAllocation', function($q) {
+                    $q->where('branch_id', $this->selectedBranchId);
+                })
+                ->where('box_id', null)
+                ->orderBy('id')
+                ->get();
+
+                $remaining = $quantitySold;
+                foreach ($items as $item) {
+                    $available = $item->quantity - $item->sold_quantity;
+                    if ($available > 0 && $remaining > 0) {
+                        $increment = min($remaining, $available);
+                        $item->increment('sold_quantity', $increment);
+                        $remaining -= $increment;
+                    }
+                    if ($remaining <= 0) break;
+                }
+            }
+
+            $this->showResultsModal = false;
+            $this->loadBranchProducts();
+
+            // Log activity for each synced product
+            foreach ($this->similarBarcodes as $item) {
+                Activity::create([
+                    'log_name' => 'branch_inventory',
+                    'description' => "Synced similar barcode {$item['uploaded_barcode']} to {$item['existing_barcode']} in branch {$this->selectedBranchId}",
+                    'subject_type' => BranchAllocationItem::class,
+                    'subject_id' => null, // Since multiple items
+                    'causer_type' => null, // No user
+                    'causer_id' => null,
+                    'properties' => [
+                        'barcode' => $item['existing_barcode'],
+                        'uploaded_barcode' => $item['uploaded_barcode'],
+                        'product_name' => $item['product_name'],
+                        'quantity_sold' => $item['quantity_sold'],
+                        'branch_id' => $this->selectedBranchId,
+                        'uploaded_file' => true,
+                        'synced_similar' => true,
+                    ],
+                ]);
+            }
+
+            $syncedCount = count($this->similarBarcodes);
+            $this->successMessage = "{$syncedCount} similar barcode(s) synced successfully!";
+            $this->showSuccessModal = true;
+
+        } catch (\Exception $e) {
+            $this->addError('sync', 'Error syncing data: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Close the results modal
      */
     public function closeResultsModal()
     {
         $this->showResultsModal = false;
+        $this->similarBarcodes = [];
     }
 
     /**
@@ -466,6 +638,9 @@ class BranchInventory extends Component
         $this->validate([
             'textFile' => 'required|file|mimes:txt|max:1024',
         ]);
+
+        // Reset previous results
+        $this->similarBarcodes = [];
 
         try {
             // Read the file content
@@ -509,20 +684,16 @@ class BranchInventory extends Component
      */
     protected function processBarcodeComparison($uploadedBarcodes)
     {
-        // Get all products from current branch shipments
+        // Get all products from current branch products
         $allProducts = [];
-        foreach ($this->branchShipments as $shipment) {
-            foreach ($shipment['allocations'] as $allocation) {
-                foreach ($allocation['products'] as $product) {
-                    if (!empty($product['barcode']) && $product['barcode'] !== 'N/A') {
-                        $allProducts[$product['barcode']] = [
-                            'name' => $product['name'],
-                            'sku' => $product['sku'],
-                            'quantity' => $product['quantity'],
-                            'quantity_sold' => 0,
-                        ];
-                    }
-                }
+        foreach ($this->branchProducts as $product) {
+            if (!empty($product['barcode']) && $product['barcode'] !== 'N/A') {
+                $allProducts[$product['barcode']] = [
+                    'name' => $product['name'],
+                    'sku' => $product['sku'],
+                    'quantity' => $product['total_quantity'],
+                    'quantity_sold' => 0,
+                ];
             }
         }
 
@@ -553,11 +724,32 @@ class BranchInventory extends Component
             }
         }
 
+        // Find similar barcodes (same first 10 digits, different last 6 digits)
+        $this->similarBarcodes = [];
+        foreach ($this->unmatchedBarcodes as $uploadedBarcode => $count) {
+            $prefix = substr($uploadedBarcode, 0, 10);
+            $suffix = substr($uploadedBarcode, 10);
+            foreach (array_keys($allProducts) as $existingBarcode) {
+                $existingPrefix = substr($existingBarcode, 0, 10);
+                $existingSuffix = substr($existingBarcode, 10);
+                if ($prefix === $existingPrefix && $suffix !== $existingSuffix) {
+                    $this->similarBarcodes[] = [
+                        'uploaded_barcode' => $uploadedBarcode,
+                        'existing_barcode' => $existingBarcode,
+                        'product_name' => $allProducts[$existingBarcode]['name'],
+                        'sku' => $allProducts[$existingBarcode]['sku'],
+                        'quantity_sold' => $count,
+                    ];
+                    break; // One match per uploaded barcode
+                }
+            }
+        }
+
         // Validate matched barcodes for quantity limits
         $this->validateBarcodeQuantities($matches);
 
-        // Update the quantity sold in the branch shipments data
-        $this->updateQuantitySoldInShipments($matches);
+        // Update the quantity sold in the branch products data
+        $this->updateQuantitySoldInProducts($matches);
     }
 
     /**
@@ -598,17 +790,14 @@ class BranchInventory extends Component
     }
 
     /**
-     * Update quantity sold in the shipments data
+     * Update quantity sold in the products data
      */
-    protected function updateQuantitySoldInShipments($matches)
+    protected function updateQuantitySoldInProducts($matches)
     {
-        foreach ($this->branchShipments as &$shipment) {
-            foreach ($shipment['allocations'] as &$allocation) {
-                foreach ($allocation['products'] as &$product) {
-                    if (!empty($product['barcode']) && $product['barcode'] !== 'N/A' && isset($matches[$product['barcode']])) {
-                        $product['quantity_sold'] += $matches[$product['barcode']]['quantity_sold'];
-                    }
-                }
+        foreach ($this->branchProducts as &$product) {
+            if (!empty($product['barcode']) && $product['barcode'] !== 'N/A' && isset($matches[$product['barcode']])) {
+                $product['total_sold'] += $matches[$product['barcode']]['quantity_sold'];
+                $product['remaining_quantity'] = $product['total_quantity'] - $product['total_sold'];
             }
         }
     }

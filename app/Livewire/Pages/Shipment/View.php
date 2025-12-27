@@ -14,6 +14,8 @@ class View extends Component
     public $company_results;
     public $product_results;
     public $shippingMethodDropDown = [];
+    public $editingItemId = null;
+    public $editQuantities = [];
     
     public function mount($shipmentId)
     {
@@ -53,19 +55,48 @@ class View extends Component
         //     session()->flash('message', 'Request Slip Rejected.');
         //     return redirect()->route('requisition.requestslip');
         // }
-               
-        $this->ShipmentResult->shipping_status = 'cancelled'; 
-        $this->ShipmentResult->approver_id = Auth::user()->id; 
+
+        $this->ShipmentResult->shipping_status = 'cancelled';
+        $this->ShipmentResult->approver_id = Auth::user()->id;
         $this->ShipmentResult->save();
-       
+
         session()->flash('message', 'Shipment has been cancelled successfully.');
         return redirect()->route('shipment.index');
     }
 
+    public function startEdit($itemId)
+    {
+        $this->editingItemId = $itemId;
+        $item = \App\Models\BranchAllocationItem::find($itemId);
+        $this->editQuantities[$itemId] = $item->quantity;
+    }
+
+    public function saveEdit($itemId)
+    {
+        $this->validate([
+            'editQuantities.' . $itemId => 'required|integer|min:0',
+        ]);
+
+        $item = \App\Models\BranchAllocationItem::find($itemId);
+        $item->quantity = $this->editQuantities[$itemId];
+        $item->save();
+
+        $this->editingItemId = null;
+        unset($this->editQuantities[$itemId]);
+
+        session()->flash('message', 'Product quantity updated successfully.');
+    }
+
+    public function cancelEdit()
+    {
+        $this->editingItemId = null;
+        $this->editQuantities = [];
+    }
+
     public function render()
-    {               
+    {
         return view('livewire.pages.shipment.view', [
-            'shipment_view' => Shipment::with(['salesOrder'])->find($this->shipmentId),
+            'shipment_view' => Shipment::with(['salesOrder', 'branchAllocation.items.product'])->find($this->shipmentId),
         ]);
     }
 }

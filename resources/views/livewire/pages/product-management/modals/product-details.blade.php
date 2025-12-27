@@ -153,7 +153,7 @@
                             <dl class="space-y-2 text-sm">
                                 <div class="flex justify-between gap-4"><dt class="text-gray-500 dark:text-gray-400">Category</dt><dd class="text-gray-900 dark:text-white text-right">{{ $editingProduct->category->name ?? 'N/A' }}</dd></div>
                                 <div class="flex justify-between gap-4"><dt class="text-gray-500 dark:text-gray-400">Supplier</dt><dd class="text-gray-900 dark:text-white text-right">{{ $editingProduct->supplier->name ?? 'N/A' }}</dd></div>
-                                <div class="flex justify-between gap-4"><dt class="text-gray-500 dark:text-gray-400">Supplier Code</dt><dd class="text-gray-900 dark:text-white text-right">{{ $editingProduct->supplier_code ?: '—' }}</dd></div>
+                                <div class="flex justify-between gap-4"><dt class="text-gray-500 dark:text-gray-400">Supplier SKU</dt><dd class="text-gray-900 dark:text-white text-right">{{ $editingProduct->supplier_code ?: '—' }}</dd></div>
                                 <div class="flex justify-between gap-4"><dt class="text-gray-500 dark:text-gray-400">Color</dt><dd class="text-gray-900 dark:text-white text-right">{{ optional($editingProduct->color)->shortcut ?: optional($editingProduct->color)->name ?: '—' }}</dd></div>
                             </dl>
                         </div>

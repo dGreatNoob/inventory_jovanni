@@ -481,8 +481,11 @@ class BranchInventory extends Component
         try {
             // Save only the valid barcodes, distributing the quantity across available items
             foreach ($this->validBarcodes as $barcode => $result) {
-                $items = \App\Models\BranchAllocationItem::whereHas('product', function($q) use ($barcode) {
-                    $q->where('barcode', $barcode);
+                $items = \App\Models\BranchAllocationItem::where(function($q) use ($barcode) {
+                    $q->where('product_snapshot_barcode', $barcode)
+                      ->orWhereHas('product', function($sub) use ($barcode) {
+                          $sub->where('barcode', $barcode);
+                      });
                 })
                 ->whereHas('branchAllocation', function($q) {
                     $q->where('branch_id', $this->selectedBranchId);
@@ -560,8 +563,11 @@ class BranchInventory extends Component
                 $barcode = $item['existing_barcode'];
                 $quantitySold = $item['quantity_sold'];
 
-                $items = \App\Models\BranchAllocationItem::whereHas('product', function($q) use ($barcode) {
-                    $q->where('barcode', $barcode);
+                $items = \App\Models\BranchAllocationItem::where(function($q) use ($barcode) {
+                    $q->where('product_snapshot_barcode', $barcode)
+                      ->orWhereHas('product', function($sub) use ($barcode) {
+                          $sub->where('barcode', $barcode);
+                      });
                 })
                 ->whereHas('branchAllocation', function($q) {
                     $q->where('branch_id', $this->selectedBranchId);
@@ -768,8 +774,11 @@ class BranchInventory extends Component
 
         foreach ($matches as $barcode => $result) {
             $items = \App\Models\BranchAllocationItem::with('product')
-                ->whereHas('product', function($q) use ($barcode) {
-                    $q->where('barcode', $barcode);
+                ->where(function($q) use ($barcode) {
+                    $q->where('product_snapshot_barcode', $barcode)
+                      ->orWhereHas('product', function($sub) use ($barcode) {
+                          $sub->where('barcode', $barcode);
+                      });
                 })
                 ->whereHas('branchAllocation', function($q) {
                     $q->where('branch_id', $this->selectedBranchId);

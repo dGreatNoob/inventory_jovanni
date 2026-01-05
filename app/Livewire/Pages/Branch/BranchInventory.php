@@ -487,6 +487,9 @@ class BranchInventory extends Component
                 ->whereHas('branchAllocation', function($q) {
                     $q->where('branch_id', $this->selectedBranchId);
                 })
+                ->whereHas('branchAllocation.shipments', function ($q) {
+                    $q->where('shipping_status', 'completed');
+                })
                 ->where('box_id', null) // Only unpacked items
                 ->orderBy('id')
                 ->get();
@@ -562,6 +565,9 @@ class BranchInventory extends Component
                 })
                 ->whereHas('branchAllocation', function($q) {
                     $q->where('branch_id', $this->selectedBranchId);
+                })
+                ->whereHas('branchAllocation.shipments', function ($q) {
+                    $q->where('shipping_status', 'completed');
                 })
                 ->where('box_id', null)
                 ->orderBy('id')
@@ -767,6 +773,9 @@ class BranchInventory extends Component
                 })
                 ->whereHas('branchAllocation', function($q) {
                     $q->where('branch_id', $this->selectedBranchId);
+                })
+                ->whereHas('branchAllocation.shipments', function ($q) {
+                    $q->where('shipping_status', 'completed');
                 })
                 ->where('box_id', null) // Only unpacked items
                 ->get();

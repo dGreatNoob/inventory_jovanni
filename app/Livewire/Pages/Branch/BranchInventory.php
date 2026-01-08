@@ -53,6 +53,17 @@ class BranchInventory extends Component
     public $editingShipmentId = null;
     public $editingAllocatedQuantity = 0;
 
+    // Modal tab properties
+    public $activeHistoryTab = 'upload_history';
+
+    /**
+     * Set the active history tab
+     */
+    public function setActiveHistoryTab($tab)
+    {
+        $this->activeHistoryTab = $tab;
+    }
+
     public function mount()
     {
         $this->loadBatches();
@@ -289,6 +300,7 @@ class BranchInventory extends Component
         $this->selectedProductDetails = null;
         $this->editingShipmentId = null;
         $this->editingAllocatedQuantity = 0;
+        $this->activeHistoryTab = 'upload_history';
     }
 
     /**
@@ -351,6 +363,9 @@ class BranchInventory extends Component
                 return;
             }
 
+            // Store old quantity before update
+            $oldQuantity = $allocationItem->quantity;
+
             // Update the quantity
             $allocationItem->update([
                 'quantity' => $this->editingAllocatedQuantity
@@ -369,7 +384,7 @@ class BranchInventory extends Component
                     'product_name' => $this->selectedProductDetails['name'],
                     'barcode' => $this->selectedProductDetails['barcode'],
                     'shipment_id' => $this->editingShipmentId,
-                    'old_quantity' => $allocationItem->getOriginal('quantity'),
+                    'old_quantity' => $oldQuantity,
                     'new_quantity' => $this->editingAllocatedQuantity,
                     'branch_id' => $this->selectedBranchId,
                 ],

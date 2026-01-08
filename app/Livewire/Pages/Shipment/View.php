@@ -78,8 +78,28 @@ class View extends Component
         ]);
 
         $item = \App\Models\BranchAllocationItem::find($itemId);
+        $oldQuantity = $item->quantity;
         $item->quantity = $this->editQuantities[$itemId];
         $item->save();
+
+        // Log activity
+        \Spatie\Activitylog\Models\Activity::create([
+            'log_name' => 'branch_inventory',
+            'description' => "Updated allocated quantity for product {$item->getDisplayBarcodeAttribute()} in shipment {$this->ShipmentResult->shipping_plan_num}",
+            'subject_type' => \App\Models\BranchAllocationItem::class,
+            'subject_id' => $item->id,
+            'causer_type' => null,
+            'causer_id' => null,
+            'properties' => [
+                'product_id' => $item->product_id,
+                'product_name' => $item->getDisplayNameAttribute(),
+                'barcode' => $item->getDisplayBarcodeAttribute(),
+                'shipment_id' => $this->ShipmentResult->id,
+                'old_quantity' => $oldQuantity,
+                'new_quantity' => $this->editQuantities[$itemId],
+                'branch_id' => $this->ShipmentResult->branchAllocation->branch_id ?? null,
+            ],
+        ]);
 
         $this->editingItemId = null;
         unset($this->editQuantities[$itemId]);

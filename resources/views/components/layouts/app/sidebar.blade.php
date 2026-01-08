@@ -207,13 +207,13 @@
                         </flux:navlist.item>
 
                          <flux:navlist.item
-                            icon="building-storefront"
-                            href="#"
-                            :current="false"
-                            wire:navigate
-                        >
-                            {{ __('Branch Transfer') }}
-                        </flux:navlist.item>
+                           icon="building-storefront"
+                           href="{{ route('branch.stockTransfer') }}"
+                           :current="request()->routeIs('branch.stockTransfer')"
+                           wire:navigate
+                       >
+                           {{ __('Branch Transfer') }}
+                       </flux:navlist.item>
 
                         <flux:navlist.item
                             icon="chart-bar"

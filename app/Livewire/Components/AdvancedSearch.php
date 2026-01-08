@@ -49,7 +49,7 @@ class AdvancedSearch extends Component
         'sku' => 'SKU',
         'barcode' => 'Barcode',
         'remarks' => 'Remarks',
-        'supplier_code' => 'Supplier Code',
+        'supplier_code' => 'Supplier SKU',
         'price_note' => 'Price Note',
     ];
 

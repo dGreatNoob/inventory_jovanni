@@ -1,3 +1,5 @@
+<x-slot:header>Branch Management</x-slot:header>
+<x-slot:subheader>Stcok Transfer</x-slot:subheader>
 @script
     <script>
         // VDR CSV Download Handler
@@ -172,7 +174,9 @@
     </script>
 @endscript
 
-<div>
+<div class="pt-4">
+    @include('livewire.pages.branch.branch-management-tabs')
+
     <!-- Success/Error Messages -->
     @if (session()->has('message'))
         <div

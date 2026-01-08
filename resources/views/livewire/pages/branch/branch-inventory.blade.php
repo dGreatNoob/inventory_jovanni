@@ -229,6 +229,7 @@
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Remaining</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Unit Price</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Total Value</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Promo Type</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Actions</th>
                                 </tr>
                             </thead>
@@ -265,6 +266,9 @@
                                         </td>
                                         <td class="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
                                             ₱{{ number_format($product['total_value'], 2) }}
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                                            {{ $product['promo_name'] }}
                                         </td>
                                         <td class="px-4 py-3 text-sm">
                                             <button wire:click="viewProductDetails({{ $product['id'] }})"

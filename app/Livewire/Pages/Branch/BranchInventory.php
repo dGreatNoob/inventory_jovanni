@@ -8,6 +8,7 @@ use App\Models\Branch;
 use App\Models\Shipment;
 use App\Models\BranchAllocation;
 use App\Models\BranchAllocationItem;
+use App\Models\Promo;
 use Spatie\Activitylog\Models\Activity;
 
 class BranchInventory extends Component
@@ -229,6 +230,7 @@ class BranchInventory extends Component
                     'carrier_name' => $shipment->carrier_name ?: 'N/A',
                     'delivery_method' => $shipment->delivery_method ?: 'N/A',
                     'allocation_reference' => $allocation->batchAllocation->ref_no ?? 'N/A',
+                    'batch_allocation_id' => $allocation->batchAllocation->id ?? null,
                     'barcode' => $item->getDisplayBarcodeAttribute(),
                     'allocated_quantity' => $item->quantity,
                     'sold_quantity' => $item->sold_quantity,
@@ -253,6 +255,27 @@ class BranchInventory extends Component
                 'shipments' => $shipments,
             ];
         })->values();
+
+        // Add promo information to each product
+        $this->branchProducts = $this->branchProducts->map(function ($product) {
+            $productId = $product['id'];
+            $batchAllocationIds = collect($product['shipments'])->pluck('batch_allocation_id')->filter()->unique();
+
+            $promo = Promo::where('product', 'like', '%' . (string)$productId . '%')
+                ->where(function($q) use ($batchAllocationIds) {
+                    $q->where(function($sub) use ($batchAllocationIds) {
+                        foreach ($batchAllocationIds as $id) {
+                            $sub->orWhere('branch', 'like', '%' . (string)$id . '%');
+                        }
+                    });
+                })
+                ->where('startDate', '<=', now())
+                ->where('endDate', '>=', now())
+                ->first();
+
+            $product['promo_name'] = $promo ? $promo->name : 'none';
+            return $product;
+        });
     }
 
 

@@ -1298,10 +1298,21 @@
                             </td>
                             <td class="px-4 py-2 w-24 text-3xl font-bold text-blue-600 dark:text-blue-400">
                                 @php
-                                    $totalScannedQty = \App\Models\BranchAllocationItem::where('branch_allocation_id', $activeBranchAllocation->id)
-                                        ->where('product_id', $item->product_id)
-                                        ->whereNotNull('box_id')
-                                        ->sum('scanned_quantity');
+                                    // Check if this item has been quantity edited
+                                    $hasBeenEdited = \Spatie\Activitylog\Models\Activity::where('log_name', 'branch_inventory')
+                                        ->where('properties->barcode', $item->getDisplayBarcodeAttribute())
+                                        ->where('properties->branch_id', $activeBranchAllocation->branch_id)
+                                        ->where('description', 'like', 'Updated allocated quantity%')
+                                        ->exists();
+
+                                    if ($hasBeenEdited) {
+                                        $totalScannedQty = $item->quantity;
+                                    } else {
+                                        $totalScannedQty = \App\Models\BranchAllocationItem::where('branch_allocation_id', $activeBranchAllocation->id)
+                                            ->where('product_id', $item->product_id)
+                                            ->whereNotNull('box_id')
+                                            ->sum('scanned_quantity');
+                                    }
                                 @endphp
                                 {{ $totalScannedQty }}
                             </td>
@@ -2061,24 +2072,43 @@
                         @php
                             $scannedQty = 0;
                             $allocatedQty = 0;
+                            $allScanned = true;
                             foreach ($record->branchAllocations as $branchAllocation) {
                                 // Only count original allocation items (without box_id)
                                 $originalItems = $branchAllocation->items()->whereNull('box_id')->get();
                                 foreach ($originalItems as $item) {
-                                    // Calculate total scanned quantity for this product across all boxes
-                                    $productScannedQty = \App\Models\BranchAllocationItem::where('branch_allocation_id', $branchAllocation->id)
-                                        ->where('product_id', $item->product_id)
-                                        ->whereNotNull('box_id')
-                                        ->sum('scanned_quantity');
-                                    $scannedQty += $productScannedQty;
                                     $allocatedQty += $item->quantity ?? 0;
+
+                                    // Check if this product has been quantity edited
+                                    $hasBeenEdited = \Spatie\Activitylog\Models\Activity::where('log_name', 'branch_inventory')
+                                        ->where('properties->barcode', $item->product->barcode ?? '')
+                                        ->where('properties->branch_id', $branchAllocation->branch_id)
+                                        ->where('description', 'like', 'Updated allocated quantity%')
+                                        ->exists();
+
+                                    if ($hasBeenEdited) {
+                                        // If edited, consider it fully scanned
+                                        $scannedQty += $item->quantity ?? 0;
+                                    } else {
+                                        // Calculate actual scanned quantity for this product across all boxes
+                                        $productScannedQty = \App\Models\BranchAllocationItem::where('branch_allocation_id', $branchAllocation->id)
+                                            ->where('product_id', $item->product_id)
+                                            ->whereNotNull('box_id')
+                                            ->sum('scanned_quantity');
+                                        $scannedQty += $productScannedQty;
+
+                                        // Check if this product is fully scanned
+                                        if ($productScannedQty < ($item->quantity ?? 0)) {
+                                            $allScanned = false;
+                                        }
+                                    }
                                 }
                             }
                         @endphp
                         @if ($allocatedQty > 0)
                             <span class="font-semibold">{{ $scannedQty }}/{{ $allocatedQty }}</span>
                             <span
-                                class="ml-2 px-2 py-0.5 rounded text-xs font-medium 
+                                class="ml-2 px-2 py-0.5 rounded text-xs font-medium
                                     @if ($scannedQty >= $allocatedQty && $allocatedQty > 0) bg-green-100 text-green-800 dark:bg-green-900/10 dark:text-green-200
                                     @elseif($scannedQty == 0)
                                         bg-gray-100 text-gray-500 dark:bg-gray-900/10 dark:text-gray-400

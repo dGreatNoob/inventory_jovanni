@@ -300,10 +300,28 @@ class Warehouse extends Component
 
         $totalScannedQuantities = 0;
         foreach ($this->currentBatch->branchAllocations as $branchAllocation) {
-            // Sum scanned quantities from items that have been scanned into boxes
-            $totalScannedQuantities += BranchAllocationItem::where('branch_allocation_id', $branchAllocation->id)
-                ->whereNotNull('box_id')
-                ->sum('scanned_quantity');
+            // Only check original allocation items (without box_id)
+            $originalItems = $branchAllocation->items()->whereNull('box_id')->get();
+            foreach ($originalItems as $item) {
+                // Check if this item has been quantity edited
+                $hasBeenEdited = \Spatie\Activitylog\Models\Activity::where('log_name', 'branch_inventory')
+                    ->where('properties->barcode', $item->product->barcode ?? '')
+                    ->where('properties->branch_id', $branchAllocation->branch_id)
+                    ->where('description', 'like', 'Updated allocated quantity%')
+                    ->exists();
+
+                if ($hasBeenEdited) {
+                    // If edited, consider it fully scanned
+                    $totalScannedQuantities += $item->quantity ?? 0;
+                } else {
+                    // Calculate actual scanned quantity for this product across all boxes
+                    $productScannedQty = BranchAllocationItem::where('branch_allocation_id', $branchAllocation->id)
+                        ->where('product_id', $item->product_id)
+                        ->whereNotNull('box_id')
+                        ->sum('scanned_quantity');
+                    $totalScannedQuantities += $productScannedQty;
+                }
+            }
         }
 
         return $totalScannedQuantities;
@@ -353,14 +371,26 @@ class Warehouse extends Component
         // Only check original allocation items (without box_id)
         $originalItems = $branchAllocation->items()->whereNull('box_id')->get();
         foreach ($originalItems as $item) {
-            // Calculate total scanned quantity for this product across all boxes
-            $totalScannedQty = BranchAllocationItem::where('branch_allocation_id', $branchAllocation->id)
-                ->where('product_id', $item->product_id)
-                ->whereNotNull('box_id')
-                ->sum('scanned_quantity');
+            // Check if this item has been quantity edited
+            $hasBeenEdited = \Spatie\Activitylog\Models\Activity::where('log_name', 'branch_inventory')
+                ->where('properties->barcode', $item->product->barcode ?? '')
+                ->where('properties->branch_id', $branchAllocation->branch_id)
+                ->where('description', 'like', 'Updated allocated quantity%')
+                ->exists();
 
-            if ($totalScannedQty < $item->quantity) {
-                return false;
+            if ($hasBeenEdited) {
+                // If edited, consider it fully scanned
+                continue;
+            } else {
+                // Calculate total scanned quantity for this product across all boxes
+                $totalScannedQty = BranchAllocationItem::where('branch_allocation_id', $branchAllocation->id)
+                    ->where('product_id', $item->product_id)
+                    ->whereNotNull('box_id')
+                    ->sum('scanned_quantity');
+
+                if ($totalScannedQty < $item->quantity) {
+                    return false;
+                }
             }
         }
 
@@ -380,14 +410,26 @@ class Warehouse extends Component
             // Only check original allocation items (without box_id)
             $originalItems = $branchAllocation->items()->whereNull('box_id')->get();
             foreach ($originalItems as $item) {
-                // Calculate total scanned quantity for this product across all boxes
-                $totalScannedQty = BranchAllocationItem::where('branch_allocation_id', $branchAllocation->id)
-                    ->where('product_id', $item->product_id)
-                    ->whereNotNull('box_id')
-                    ->sum('scanned_quantity');
+                // Check if this item has been quantity edited
+                $hasBeenEdited = \Spatie\Activitylog\Models\Activity::where('log_name', 'branch_inventory')
+                    ->where('properties->barcode', $item->product->barcode ?? '')
+                    ->where('properties->branch_id', $branchAllocation->branch_id)
+                    ->where('description', 'like', 'Updated allocated quantity%')
+                    ->exists();
 
-                if ($totalScannedQty < $item->quantity) {
-                    return false;
+                if ($hasBeenEdited) {
+                    // If edited, consider it fully scanned
+                    continue;
+                } else {
+                    // Calculate total scanned quantity for this product across all boxes
+                    $totalScannedQty = BranchAllocationItem::where('branch_allocation_id', $branchAllocation->id)
+                        ->where('product_id', $item->product_id)
+                        ->whereNotNull('box_id')
+                        ->sum('scanned_quantity');
+
+                    if ($totalScannedQty < $item->quantity) {
+                        return false;
+                    }
                 }
             }
         }

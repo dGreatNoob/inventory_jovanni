@@ -47,8 +47,3 @@
         </a>
     </div>
 </div>
-
-<!-- Branch Transfer Content -->
-<!-- @if(request()->routeIs('branch.stockTransfer'))
-    @include('livewire.pages.branch.branch-transfer')
-@endif -->

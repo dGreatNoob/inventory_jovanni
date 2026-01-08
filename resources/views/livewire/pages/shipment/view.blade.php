@@ -138,11 +138,12 @@
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Barcode</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">SKU</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Quantity</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
                             @foreach($shipment_view->branchAllocation->items->where('box_id', null) as $item)
-                            <tr>
+                            <tr @key($item->id)>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     @if($item->product && $item->product->images && $item->product->images->first())
                                         <img src="{{ $item->product->images->first()->url }}"
@@ -170,9 +171,25 @@
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-500 dark:text-gray-300">
-                                        {{ $item->quantity }}
-                                    </div>
+                                    @if($editingItemId == $item->id)
+                                        <div class="flex items-center space-x-2">
+                                            <input type="number" wire:model="editQuantities.{{ $item->id }}" min="0" class="w-20 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                                            <button type="button" wire:click.stop="saveEdit({{ $item->id }})" class="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700">Save</button>
+                                            <button type="button" wire:click.stop="cancelEdit" class="px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700">Cancel</button>
+                                        </div>
+                                        @error('editQuantities.' . $item->id)
+                                            <span class="text-red-500 text-xs">{{ $message }}</span>
+                                        @enderror
+                                    @else
+                                        <div class="text-sm text-gray-500 dark:text-gray-300">
+                                            {{ $item->quantity }}
+                                        </div>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    @if($editingItemId != $item->id)
+                                        <button type="button" wire:click.stop="startEdit({{ $item->id }})" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200 text-sm">Edit</button>
+                                    @endif
                                 </td>
                             </tr>
                             @endforeach

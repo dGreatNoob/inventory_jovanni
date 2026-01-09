@@ -1298,21 +1298,22 @@
                             </td>
                             <td class="px-4 py-2 w-24 text-3xl font-bold text-blue-600 dark:text-blue-400">
                                 @php
-                                    // Check if this item has been quantity edited
+                                    // Calculate actual scanned quantity from box-specific records
+                                    $actualScannedQty = \App\Models\BranchAllocationItem::where('branch_allocation_id', $activeBranchAllocation->id)
+                                        ->where('product_id', $item->product_id)
+                                        ->whereNotNull('box_id')
+                                        ->sum('scanned_quantity');
+
+                                    // Check if this product has been quantity edited AFTER the batch was created
                                     $hasBeenEdited = \Spatie\Activitylog\Models\Activity::where('log_name', 'branch_inventory')
-                                        ->where('properties->barcode', $item->getDisplayBarcodeAttribute())
+                                        ->where('properties->barcode', $item->product->barcode ?? '')
                                         ->where('properties->branch_id', $activeBranchAllocation->branch_id)
                                         ->where('description', 'like', 'Updated allocated quantity%')
+                                        ->where('created_at', '>', $currentBatch->created_at)
                                         ->exists();
 
-                                    if ($hasBeenEdited) {
-                                        $totalScannedQty = $item->quantity;
-                                    } else {
-                                        $totalScannedQty = \App\Models\BranchAllocationItem::where('branch_allocation_id', $activeBranchAllocation->id)
-                                            ->where('product_id', $item->product_id)
-                                            ->whereNotNull('box_id')
-                                            ->sum('scanned_quantity');
-                                    }
+                                    // If edited after batch creation, consider it fully scanned
+                                    $totalScannedQty = $hasBeenEdited ? $item->quantity : $actualScannedQty;
                                 @endphp
                                 {{ $totalScannedQty }}
                             </td>
@@ -2079,11 +2080,12 @@
                                 foreach ($originalItems as $item) {
                                     $allocatedQty += $item->quantity ?? 0;
 
-                                    // Check if this product has been quantity edited
+                                    // Check if this product has been quantity edited AFTER the batch was created
                                     $hasBeenEdited = \Spatie\Activitylog\Models\Activity::where('log_name', 'branch_inventory')
                                         ->where('properties->barcode', $item->product->barcode ?? '')
                                         ->where('properties->branch_id', $branchAllocation->branch_id)
                                         ->where('description', 'like', 'Updated allocated quantity%')
+                                        ->where('created_at', '>', $record->created_at)
                                         ->exists();
 
                                     if ($hasBeenEdited) {

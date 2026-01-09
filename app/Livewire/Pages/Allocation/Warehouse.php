@@ -303,16 +303,17 @@ class Warehouse extends Component
             // Only check original allocation items (without box_id)
             $originalItems = $branchAllocation->items()->whereNull('box_id')->get();
             foreach ($originalItems as $item) {
-                // Check if this item has been quantity edited
+                // Check if this product has been quantity edited AFTER the batch was created
                 $hasBeenEdited = \Spatie\Activitylog\Models\Activity::where('log_name', 'branch_inventory')
                     ->where('properties->barcode', $item->product->barcode ?? '')
                     ->where('properties->branch_id', $branchAllocation->branch_id)
                     ->where('description', 'like', 'Updated allocated quantity%')
+                    ->where('created_at', '>', $this->currentBatch->created_at)
                     ->exists();
 
                 if ($hasBeenEdited) {
                     // If edited, consider it fully scanned
-                    $totalScannedQuantities += $item->quantity ?? 0;
+                    $totalScannedQuantities += $item->quantity;
                 } else {
                     // Calculate actual scanned quantity for this product across all boxes
                     $productScannedQty = BranchAllocationItem::where('branch_allocation_id', $branchAllocation->id)
@@ -371,11 +372,12 @@ class Warehouse extends Component
         // Only check original allocation items (without box_id)
         $originalItems = $branchAllocation->items()->whereNull('box_id')->get();
         foreach ($originalItems as $item) {
-            // Check if this item has been quantity edited
+            // Check if this item has been quantity edited AFTER the batch was created
             $hasBeenEdited = \Spatie\Activitylog\Models\Activity::where('log_name', 'branch_inventory')
                 ->where('properties->barcode', $item->product->barcode ?? '')
                 ->where('properties->branch_id', $branchAllocation->branch_id)
                 ->where('description', 'like', 'Updated allocated quantity%')
+                ->where('created_at', '>', $this->currentBatch->created_at)
                 ->exists();
 
             if ($hasBeenEdited) {
@@ -410,26 +412,14 @@ class Warehouse extends Component
             // Only check original allocation items (without box_id)
             $originalItems = $branchAllocation->items()->whereNull('box_id')->get();
             foreach ($originalItems as $item) {
-                // Check if this item has been quantity edited
-                $hasBeenEdited = \Spatie\Activitylog\Models\Activity::where('log_name', 'branch_inventory')
-                    ->where('properties->barcode', $item->product->barcode ?? '')
-                    ->where('properties->branch_id', $branchAllocation->branch_id)
-                    ->where('description', 'like', 'Updated allocated quantity%')
-                    ->exists();
-
-                if ($hasBeenEdited) {
-                    // If edited, consider it fully scanned
-                    continue;
-                } else {
-                    // Calculate total scanned quantity for this product across all boxes
-                    $totalScannedQty = BranchAllocationItem::where('branch_allocation_id', $branchAllocation->id)
-                        ->where('product_id', $item->product_id)
-                        ->whereNotNull('box_id')
-                        ->sum('scanned_quantity');
-
-                    if ($totalScannedQty < $item->quantity) {
-                        return false;
-                    }
+                // Calculate total scanned quantity for this product across all boxes
+                $totalScannedQty = BranchAllocationItem::where('branch_allocation_id', $branchAllocation->id)
+                    ->where('product_id', $item->product_id)
+                    ->whereNotNull('box_id')
+                    ->sum('scanned_quantity');
+    
+                if ($totalScannedQty < $item->quantity) {
+                    return false;
                 }
             }
         }

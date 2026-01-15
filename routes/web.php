@@ -302,6 +302,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/reports/branch-inventory', \App\Livewire\Pages\Reports\BranchInventoryReport::class)
         ->name('reports.branch-inventory');
 
+    Route::get('/reports/warehouse-allocation', \App\Livewire\Pages\Reports\WarehouseAllocationReport::class)
+        ->name('reports.warehouse-allocation');
+
     Route::get('/reports/stock-movement', \App\Livewire\Pages\Reports\StockMovement::class)
         ->name('reports.stock-movement');
         

@@ -84,6 +84,7 @@ enum PermissionEnum: string
     case REPORT_PRODUCT_INVENTORY = 'report product inventory';
     case REPORT_PURCHASE_ORDERS = 'report purchase orders';
     case REPORT_BRANCH_INVENTORY = 'report branch inventory';
+    case REPORT_WAREHOUSE_ALLOCATION = 'report warehouse allocation';
 
     // 🏷️ Human-readable Labels
     public function label(): string
@@ -171,6 +172,7 @@ enum PermissionEnum: string
             static::REPORT_PRODUCT_INVENTORY => 'Product Inventory Report',
             static::REPORT_PURCHASE_ORDERS => 'Purchase Orders Report',
             static::REPORT_BRANCH_INVENTORY => 'Branch Inventory Report',
+            static::REPORT_WAREHOUSE_ALLOCATION => 'Warehouse Allocation Report',
         };
     }
 
@@ -256,7 +258,8 @@ enum PermissionEnum: string
             // Reports
             static::REPORT_PRODUCT_INVENTORY,
             static::REPORT_PURCHASE_ORDERS,
-            static::REPORT_BRANCH_INVENTORY => 'Reports',
+            static::REPORT_BRANCH_INVENTORY,
+            static::REPORT_WAREHOUSE_ALLOCATION => 'Reports',
         };
     }
 

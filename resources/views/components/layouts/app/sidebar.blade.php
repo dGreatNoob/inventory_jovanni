@@ -297,14 +297,15 @@
                 @if(Auth::user()->hasAnyPermission([
                     'report product inventory',
                     'report purchase orders',
-                    'report branch inventory'
+                    'report branch inventory',
+                    'report warehouse allocation'
                 ]))
-                <flux:navlist.group expandable :expanded="request()->routeIs('reports.stock-available') || request()->routeIs('reports.purchase-orders') || request()->routeIs('reports.branch-inventory')" :heading="__('Reports')"
+                <flux:navlist.group expandable :expanded="request()->routeIs('reports.stock-available') || request()->routeIs('reports.purchase-orders') || request()->routeIs('reports.branch-inventory') || request()->routeIs('reports.warehouse-allocation')" :heading="__('Reports')"
                     class="lg:grid">
-                    <flux:navlist.item 
-                        icon="clipboard-document-list" 
-                        href="{{ route('reports.stock-available') }}" 
-                        :current="request()->routeIs('reports.stock-available')" 
+                    <flux:navlist.item
+                        icon="clipboard-document-list"
+                        href="{{ route('reports.stock-available') }}"
+                        :current="request()->routeIs('reports.stock-available')"
                         wire:navigate
                     >
                         {{ __('Product Inventory') }}
@@ -326,6 +327,15 @@
                         wire:navigate
                     >
                         {{ __('Branch Inventory') }}
+                    </flux:navlist.item>
+
+                    <flux:navlist.item
+                        icon="clipboard-document-list"
+                        href="{{ route('reports.warehouse-allocation') }}"
+                        :current="request()->routeIs('reports.warehouse-allocation')"
+                        wire:navigate
+                    >
+                        {{ __('Warehouse Allocation') }}
                     </flux:navlist.item>
                 </flux:navlist.group>
                 @endif

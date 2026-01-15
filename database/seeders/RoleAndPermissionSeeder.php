@@ -25,16 +25,6 @@ class RoleAndPermissionSeeder extends Seeder
 
         // ✅ Step 2: Define roles and their permissions
         $roles = [
-            RolesEnum::PURCHASER->value => [
-                PermissionEnum::CREATE_PURCHASE_ORDER,
-                PermissionEnum::APPROVE_PURCHASE_ORDER,
-                PermissionEnum::VIEW_PURCHASE_ORDER,
-
-                PermissionEnum::CREATE_REQUEST_SLIP,
-                PermissionEnum::APPROVE_REQUEST_SLIP,
-                PermissionEnum::VIEW_REQUEST_SLIP,
-                PermissionEnum::DELETE_REQUEST_SLIP,
-            ],
 
 
             RolesEnum::PRODUCTMANAGEMENT->value => [

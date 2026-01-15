@@ -937,7 +937,11 @@
                     @if ($currentStep === 4)
                         <div>
                             <!-- Export Allocation Matrix Button -->
-                            <div class="mb-6 flex justify-end">
+                            <div class="mb-6 flex justify-end space-x-3">
+                                <button
+                                    class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                                    Genereta DR
+                                </button>
                                 <button wire:click="exportAllocationToPDF"
                                     class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
                                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

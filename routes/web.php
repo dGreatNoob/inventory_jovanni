@@ -38,6 +38,7 @@ use App\Livewire\Pages\SalesManagement\Index as SalesManagementIndex;
 use App\Livewire\Pages\SalesManagement\View as Viewsalesorder;
 use App\Livewire\Pages\SalesManagement\SalesPromo as SalesManagementPromo;
 use App\Livewire\Pages\SalesManagement\PromoView;
+use App\Livewire\SalesManagement\SalesReturn;
 
 
 
@@ -193,6 +194,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/sales-order/{salesOrderId}', Viewsalesorder::class)->name('salesorder.view');
     Route::get('/sales-promo', SalesManagementPromo::class)->name('sales.promo');
     Route::get('/promo/view/{id}', \App\Livewire\Pages\SalesManagement\PromoView::class)->name('promo.view');
+    Route::get('/sales-return', SalesReturn::class)->name('sales-return.index');
 
     // Allocation Management
     Route::prefix('allocation')->name('allocation.')->group(function () {

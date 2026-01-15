@@ -38,6 +38,7 @@ use App\Livewire\Pages\SalesManagement\Index as SalesManagementIndex;
 use App\Livewire\Pages\SalesManagement\View as Viewsalesorder;
 use App\Livewire\Pages\SalesManagement\SalesPromo as SalesManagementPromo;
 use App\Livewire\Pages\SalesManagement\PromoView;
+use App\Livewire\SalesManagement\SalesReturn;
 
 
 
@@ -47,6 +48,7 @@ use App\Livewire\Pages\Shipment\QrScannder as ShipmentQrScannder;
 use App\Models\Branch;
 use App\Livewire\Pages\Branch\BranchInventory;
 use App\Livewire\Pages\Branch\SalesTracker;
+use App\Livewire\Pages\Branch\BranchTransfer;
 
 
 
@@ -122,6 +124,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/branch-sales-tracker', SalesTracker::class)
         ->name('branch.salesTrack');
 
+    Route::get('/branch-transfer', BranchTransfer::class)
+        ->name('branch.stockTransfer');
+
 
 
     //Route::get('/warehouseguy/stockin', BodegeroStockIn::class)
@@ -189,6 +194,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/sales-order/{salesOrderId}', Viewsalesorder::class)->name('salesorder.view');
     Route::get('/sales-promo', SalesManagementPromo::class)->name('sales.promo');
     Route::get('/promo/view/{id}', \App\Livewire\Pages\SalesManagement\PromoView::class)->name('promo.view');
+    Route::get('/sales-return', SalesReturn::class)->name('sales-return.index');
 
     // Allocation Management
     Route::prefix('allocation')->name('allocation.')->group(function () {

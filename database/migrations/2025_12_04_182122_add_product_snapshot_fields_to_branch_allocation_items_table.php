@@ -13,13 +13,13 @@ return new class extends Migration
     {
         Schema::table('branch_allocation_items', function (Blueprint $table) {
             // Add product snapshot fields for historical data integrity
-            $table->string('product_snapshot_name')->nullable();
-            $table->string('product_snapshot_sku')->nullable();
-            $table->string('product_snapshot_barcode')->nullable();
-            $table->json('product_snapshot_specs')->nullable();
-            $table->decimal('product_snapshot_price', 10, 2)->nullable();
-            $table->string('product_snapshot_uom')->nullable();
-            $table->timestamp('product_snapshot_created_at')->nullable();
+            // $table->string('product_snapshot_name')->nullable();
+            // $table->string('product_snapshot_sku')->nullable();
+            // $table->string('product_snapshot_barcode')->nullable();
+            // $table->json('product_snapshot_specs')->nullable();
+            // $table->decimal('product_snapshot_price', 10, 2)->nullable();
+            // $table->string('product_snapshot_uom')->nullable();
+            // $table->timestamp('product_snapshot_created_at')->nullable();
         });
     }
 

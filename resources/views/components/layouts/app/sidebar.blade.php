@@ -304,7 +304,7 @@
                 @endif
 
                 {{-- Reports --}}
-                <flux:navlist.group expandable :expanded="request()->routeIs('reports.stock-available') || request()->routeIs('reports.purchase-orders')" :heading="__('Reports')"
+                <flux:navlist.group expandable :expanded="request()->routeIs('reports.stock-available') || request()->routeIs('reports.purchase-orders') || request()->routeIs('reports.branch-inventory')" :heading="__('Reports')"
                     class="lg:grid">
                     <flux:navlist.item 
                         icon="clipboard-document-list" 

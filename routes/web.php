@@ -298,7 +298,10 @@ Route::middleware(['auth'])->group(function () {
         
     Route::get('/reports/purchase-orders', \App\Livewire\Pages\Reports\PurchaseOrders::class)
         ->name('reports.purchase-orders');
-        
+
+    Route::get('/reports/branch-inventory', \App\Livewire\Pages\Reports\BranchInventoryReport::class)
+        ->name('reports.branch-inventory');
+
     Route::get('/reports/stock-movement', \App\Livewire\Pages\Reports\StockMovement::class)
         ->name('reports.stock-movement');
         

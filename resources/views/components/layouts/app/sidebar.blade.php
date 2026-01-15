@@ -315,13 +315,22 @@
                         {{ __('Product Inventory') }}
                     </flux:navlist.item>
 
-                    <flux:navlist.item 
-                        icon="clipboard-document-list" 
-                        href="{{ route('reports.purchase-orders') }}" 
-                        :current="request()->routeIs('reports.purchase-orders')" 
+                    <flux:navlist.item
+                        icon="clipboard-document-list"
+                        href="{{ route('reports.purchase-orders') }}"
+                        :current="request()->routeIs('reports.purchase-orders')"
                         wire:navigate
                     >
                         {{ __('Purchase Orders') }}
+                    </flux:navlist.item>
+
+                    <flux:navlist.item
+                        icon="clipboard-document-list"
+                        href="{{ route('reports.branch-inventory') }}"
+                        :current="request()->routeIs('reports.branch-inventory')"
+                        wire:navigate
+                    >
+                        {{ __('Branch Inventory') }}
                     </flux:navlist.item>
                 </flux:navlist.group>
 

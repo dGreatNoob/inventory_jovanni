@@ -300,7 +300,7 @@
                     'report branch inventory',
                     'report warehouse allocation'
                 ]))
-                <flux:navlist.group expandable :expanded="request()->routeIs('reports.stock-available') || request()->routeIs('reports.purchase-orders') || request()->routeIs('reports.branch-inventory') || request()->routeIs('reports.warehouse-allocation')" :heading="__('Reports')"
+                <flux:navlist.group expandable :expanded="request()->routeIs('reports.stock-available') || request()->routeIs('reports.purchase-orders') || request()->routeIs('reports.branch-inventory') || request()->routeIs('reports.warehouse-allocation') || request()->routeIs('reports.finance')" :heading="__('Reports')"
                     class="lg:grid">
                     <flux:navlist.item
                         icon="clipboard-document-list"
@@ -336,6 +336,15 @@
                         wire:navigate
                     >
                         {{ __('Warehouse Allocation') }}
+                    </flux:navlist.item>
+
+                    <flux:navlist.item
+                        icon="clipboard-document-list"
+                        href="{{ route('reports.finance') }}"
+                        :current="request()->routeIs('reports.finance')"
+                        wire:navigate
+                    >
+                        {{ __('Finance Report') }}
                     </flux:navlist.item>
                 </flux:navlist.group>
                 @endif

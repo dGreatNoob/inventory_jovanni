@@ -25,16 +25,6 @@ class RoleAndPermissionSeeder extends Seeder
 
         // ✅ Step 2: Define roles and their permissions
         $roles = [
-            RolesEnum::PURCHASER->value => [
-                PermissionEnum::CREATE_PURCHASE_ORDER,
-                PermissionEnum::APPROVE_PURCHASE_ORDER,
-                PermissionEnum::VIEW_PURCHASE_ORDER,
-
-                PermissionEnum::CREATE_REQUEST_SLIP,
-                PermissionEnum::APPROVE_REQUEST_SLIP,
-                PermissionEnum::VIEW_REQUEST_SLIP,
-                PermissionEnum::DELETE_REQUEST_SLIP,
-            ],
 
 
             RolesEnum::PRODUCTMANAGEMENT->value => [
@@ -122,20 +112,6 @@ class RoleAndPermissionSeeder extends Seeder
         );
         if (!$super_admin->hasRole(RolesEnum::SUPERADMIN->value)) {
             $super_admin->assignRole(RolesEnum::SUPERADMIN->value);
-        }
-
-        $purchaseDept = Department::where('name', 'Purchase Department')->firstOrFail();
-        $purchaser = User::firstOrCreate(
-            ['email' => 'purchaser@spc.com'],
-            [
-                'name' => 'Mrs. Purchaser',
-                'email_verified_at' => now(),
-                'password' => bcrypt('admin123!'),
-                'department_id' => $purchaseDept->id,
-            ]
-        );
-        if (!$purchaser->hasRole(RolesEnum::PURCHASER->value)) {
-            $purchaser->assignRole(RolesEnum::PURCHASER->value);
         }
 
         // Raw material and supply user creation removed - those roles no longer exist

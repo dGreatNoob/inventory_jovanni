@@ -114,20 +114,6 @@ class RoleAndPermissionSeeder extends Seeder
             $super_admin->assignRole(RolesEnum::SUPERADMIN->value);
         }
 
-        $purchaseDept = Department::where('name', 'Purchase Department')->firstOrFail();
-        $purchaser = User::firstOrCreate(
-            ['email' => 'purchaser@spc.com'],
-            [
-                'name' => 'Mrs. Purchaser',
-                'email_verified_at' => now(),
-                'password' => bcrypt('admin123!'),
-                'department_id' => $purchaseDept->id,
-            ]
-        );
-        if (!$purchaser->hasRole(RolesEnum::PURCHASER->value)) {
-            $purchaser->assignRole(RolesEnum::PURCHASER->value);
-        }
-
         // Raw material and supply user creation removed - those roles no longer exist
     }
 }

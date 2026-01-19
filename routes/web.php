@@ -179,6 +179,9 @@ Route::middleware(['auth'])->group(function () {
     // VDR Excel Export Route
     Route::get('/allocation/vdr/excel/{batchId}', [\App\Http\Controllers\VDRExcelController::class, 'exportVDR'])->name('allocation.vdr.excel');
 
+    // DR Excel Export Route
+    Route::get('/allocation/dr/excel/{batchId}', [\App\Http\Controllers\DRExcelController::class, 'exportDR'])->name('allocation.dr.excel');
+
     // Receipt PDF and Excel Export Routes
     Route::get('/allocation/receipt/pdf/{receiptId}', [\App\Http\Controllers\ReceiptController::class, 'exportPDF'])->name('allocation.receipt.pdf');
     Route::get('/allocation/receipt/excel/{receiptId}', [\App\Http\Controllers\ReceiptController::class, 'exportExcel'])->name('allocation.receipt.excel');
@@ -298,7 +301,16 @@ Route::middleware(['auth'])->group(function () {
         
     Route::get('/reports/purchase-orders', \App\Livewire\Pages\Reports\PurchaseOrders::class)
         ->name('reports.purchase-orders');
-        
+
+    Route::get('/reports/branch-inventory', \App\Livewire\Pages\Reports\BranchInventoryReport::class)
+        ->name('reports.branch-inventory');
+
+    Route::get('/reports/warehouse-allocation', \App\Livewire\Pages\Reports\WarehouseAllocationReport::class)
+        ->name('reports.warehouse-allocation');
+
+    Route::get('/reports/finance', \App\Livewire\Pages\Reports\FinanceReport::class)
+        ->name('reports.finance');
+
     Route::get('/reports/stock-movement', \App\Livewire\Pages\Reports\StockMovement::class)
         ->name('reports.stock-movement');
         

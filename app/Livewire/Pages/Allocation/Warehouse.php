@@ -2436,6 +2436,26 @@ class Warehouse extends Component
         }
     }
 
+    public function generateDR()
+    {
+        if (!$this->currentBatch) {
+            session()->flash('error', 'No batch selected for DR export.');
+            return;
+        }
+
+        try {
+            // Open DR Excel export in new window (this will trigger download)
+            $drUrl = route('allocation.dr.excel', [
+                'batchId' => $this->currentBatch->id
+            ]);
+
+            $this->dispatch('open-excel-download', url: $drUrl);
+            session()->flash('message', 'Opening DR Excel export in new window...');
+        } catch (\Exception $e) {
+            session()->flash('error', 'Failed to export DR to Excel: ' . $e->getMessage());
+        }
+    }
+
     public function generateDeliveryReceipt($branchAllocationId)
     {
         try {

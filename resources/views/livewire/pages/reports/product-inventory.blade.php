@@ -3,7 +3,7 @@
     <div class="mb-6">
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div class="flex-1">
-                <h1 class="text-2xl font-semibold text-gray-800 dark:text-white">Inventory Dashboard</h1>
+                <h1 class="text-2xl font-semibold text-gray-800 dark:text-white">Product Inventory</h1>
                 <p class="mt-1 text-sm text-gray-600 dark:text-neutral-300">Real-time inventory analytics and insights</p>
             </div>
             <div class="flex flex-row items-center space-x-3">
@@ -38,40 +38,38 @@
         </div>
     </div>
 
-    <!-- Alerts -->
+    <!-- Alerts (placed right after header for priority visibility) -->
     @if(count($alerts) > 0)
-        <div class="space-y-3">
+        <div class="space-y-3 mb-6" aria-label="Inventory alerts">
             @foreach($alerts as $alert)
                 <div class="rounded-md p-4 
                     @if($alert['type'] === 'error') bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800
                     @elseif($alert['type'] === 'warning') bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800
                     @else bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800
                     @endif">
-                    <div class="flex">
+                    <div class="flex items-start">
                         <div class="flex-shrink-0">
                             <svg class="h-5 w-5 
                                 @if($alert['type'] === 'error') text-red-400
                                 @elseif($alert['type'] === 'warning') text-yellow-400
                                 @else text-blue-400
-                                @endif" fill="currentColor" viewBox="0 0 20 20">
+                                @endif" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
                                 <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
                             </svg>
                         </div>
                         <div class="ml-3">
-                            <h3 class="text-sm font-medium 
+                            <h3 class="text-sm font-semibold 
                                 @if($alert['type'] === 'error') text-red-800 dark:text-red-200
                                 @elseif($alert['type'] === 'warning') text-yellow-800 dark:text-yellow-200
                                 @else text-blue-800 dark:text-blue-200
                                 @endif">
                                 {{ $alert['title'] }}
                             </h3>
-                            <div class="mt-2 text-sm 
+                            <p class="mt-1 text-sm 
                                 @if($alert['type'] === 'error') text-red-700 dark:text-red-300
                                 @elseif($alert['type'] === 'warning') text-yellow-700 dark:text-yellow-300
                                 @else text-blue-700 dark:text-blue-300
-                                @endif">
-                                <p>{{ $alert['message'] }}</p>
-                            </div>
+                                @endif">{{ $alert['message'] }}</p>
                         </div>
                     </div>
                 </div>
@@ -86,7 +84,7 @@
                 <h3 class="text-lg font-medium text-gray-900 dark:text-white">Time Period</h3>
                 <p class="text-sm text-gray-500 dark:text-gray-400">Select the time range for analytics</p>
             </div>
-            <div class="flex space-x-4">
+            <div class="flex flex-wrap gap-4 items-end" aria-label="Filters">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Quick Select</label>
                     <select wire:model.live="timePeriod" 
@@ -109,12 +107,206 @@
                            wire:model.live="dateTo" 
                            class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 sm:text-sm rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                 </div>
+                <div class="w-56">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Search</label>
+                    <input type="text" 
+                           placeholder="SKU or Product name" 
+                           wire:model.live="search" 
+                           class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 sm:text-sm rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                </div>
+                <div class="w-56">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Category</label>
+                    <select wire:model.live="categoryId" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 sm:text-sm rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        <option value="">All</option>
+                        @foreach($this->categoryOptions as $opt)
+                            <option value="{{ $opt->id }}">{{ $opt->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="w-56">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Supplier</label>
+                    <select wire:model.live="supplierId" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 sm:text-sm rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        <option value="">All</option>
+                        @foreach($this->supplierOptions as $opt)
+                            <option value="{{ $opt->id }}">{{ $opt->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="w-56">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Location</label>
+                    <select wire:model.live="locationId" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 sm:text-sm rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                        <option value="">All</option>
+                        @foreach($this->locationOptions as $opt)
+                            <option value="{{ $opt->id }}">{{ $opt->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Overview Stats -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+    <!-- Inventory Balances Table (moved directly under Time Period) -->
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg mb-6">
+        <div class="px-4 py-5 sm:p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white">Inventory Balances</h3>
+                <div class="flex items-center gap-3">
+                    <div class="text-sm text-gray-500 dark:text-gray-400">Shows on-hand, available, on-order and valuation</div>
+                    <div class="flex items-center gap-2">
+                        <flux:button size="sm" variant="ghost" wire:click="exportCsv">Export CSV</flux:button>
+                        <flux:button size="sm" variant="ghost" wire:click="exportXlsx">Export XLSX</flux:button>
+                        <flux:button size="sm" variant="ghost" wire:click="exportPdf">Export PDF</flux:button>
+                    </div>
+                </div>
+            </div>
+            <div class="mb-3">
+                <div class="flex flex-wrap items-center gap-3" aria-label="Column visibility">
+                    @php($cols = $visibleColumns)
+                    @foreach($cols as $col => $visible)
+                        <label class="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                            <input type="checkbox" wire:model.live="visibleColumns.{{ $col }}" class="rounded border-gray-300 dark:border-gray-600">
+                            <span>{{ ucwords(str_replace('_', ' ', $col)) }}</span>
+                        </label>
+                    @endforeach
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700" aria-describedby="inventory-balances-caption">
+                    <caption id="inventory-balances-caption" class="sr-only">Inventory balances with stock and valuation</caption>
+                    <thead class="bg-gray-50 dark:bg-gray-700">
+                        <tr>
+                            @if($visibleColumns['sku'])
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">SKU</th>
+                            @endif
+                            @if($visibleColumns['name'])
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">
+                                <button type="button" class="inline-flex items-center gap-1" wire:click="sortBy('name')" aria-label="Sort by Product">
+                                    Product
+                                    @if($sortField==='name')
+                                        <svg class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor"><path d="M5 8l5-5 5 5H5zm0 4h10l-5 5-5-5z"/></svg>
+                                    @endif
+                                </button>
+                            </th>
+                            @endif
+                            @if($visibleColumns['category'])
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">Category</th>
+                            @endif
+                            @if($visibleColumns['supplier'])
+                            <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">Supplier</th>
+                            @endif
+                            @if($visibleColumns['on_hand'])
+                            <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">
+                                <button type="button" class="inline-flex items-center gap-1" wire:click="sortBy('on_hand')" aria-label="Sort by On-hand">On-hand
+                                    @if($sortField==='on_hand')
+                                        <svg class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor"><path d="M5 8l5-5 5 5H5zm0 4h10l-5 5-5-5z"/></svg>
+                                    @endif
+                                </button>
+                            </th>
+                            @endif
+                            @if($visibleColumns['allocated'])
+                            <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">Allocated</th>
+                            @endif
+                            @if($visibleColumns['available'])
+                            <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">Available</th>
+                            @endif
+                            @if($visibleColumns['on_order'])
+                            <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">On-order</th>
+                            @endif
+                            @if($visibleColumns['unit_cost'])
+                            <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">Unit Cost</th>
+                            @endif
+                            @if($visibleColumns['ext_value'])
+                            <th scope="col" class="px-4 py-3 text-right text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">Ext. Value</th>
+                            @endif
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                        @forelse($inventoryBalances as $row)
+                            <tr>
+                                @if($visibleColumns['sku'])
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-200">{{ $row['sku'] ?? '—' }}</td>
+                                @endif
+                                <td class="px-4 py-3 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                        <a href="{{ route('product-management.index', ['search' => $row['sku']]) }}" class="hover:underline">
+                                            {{ $row['name'] ?? 'N/A' }}
+                                        </a>
+                                    </div>
+                                </td>
+                                @if($visibleColumns['category'])
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-200">{{ $row['category'] ?? '—' }}</td>
+                                @endif
+                                @if($visibleColumns['supplier'])
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-200">{{ $row['supplier'] ?? '—' }}</td>
+                                @endif
+                                @if($visibleColumns['on_hand'])
+                                <td class="px-4 py-3 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white">{{ number_format($row['on_hand']) }}</td>
+                                @endif
+                                @if($visibleColumns['allocated'])
+                                <td class="px-4 py-3 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white">{{ number_format($row['allocated']) }}</td>
+                                @endif
+                                @if($visibleColumns['available'])
+                                <td class="px-4 py-3 whitespace-nowrap text-right text-sm text-emerald-700 dark:text-emerald-300">{{ number_format($row['available']) }}</td>
+                                @endif
+                                @if($visibleColumns['on_order'])
+                                <td class="px-4 py-3 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white">{{ number_format($row['on_order']) }}</td>
+                                @endif
+                                @if($visibleColumns['unit_cost'])
+                                <td class="px-4 py-3 whitespace-nowrap text-right text-sm text-gray-900 dark:text-white">₱{{ number_format($row['unit_cost'], 2) }}</td>
+                                @endif
+                                @if($visibleColumns['ext_value'])
+                                <td class="px-4 py-3 whitespace-nowrap text-right text-sm font-medium text-gray-900 dark:text-white">₱{{ number_format($row['ext_value'], 2) }}</td>
+                                @endif
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="10" class="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">No inventory balances found</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+                <div class="mt-4">{{ $inventoryBalances->links() }}</div>
+            </div>
+            <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                    <h4 class="text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Totals</h4>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-600 dark:text-gray-300">On-hand</span>
+                        <span class="text-gray-900 dark:text-white">{{ number_format($totals['on_hand']) }}</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-600 dark:text-gray-300">Valuation</span>
+                        <span class="text-gray-900 dark:text-white">₱{{ number_format($totals['value'], 2) }}</span>
+                    </div>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                    <h4 class="text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">By Category</h4>
+                    <div class="space-y-1 max-h-48 overflow-auto">
+                        @foreach($categorySubtotals as $c)
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-600 dark:text-gray-300">{{ $c->name }}</span>
+                                <span class="text-gray-900 dark:text-white">{{ number_format($c->on_hand_sum) }} • ₱{{ number_format($c->value_sum, 2) }}</span>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                    <h4 class="text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">By Supplier</h4>
+                    <div class="space-y-1 max-h-48 overflow-auto">
+                        @foreach($supplierSubtotals as $s)
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-600 dark:text-gray-300">{{ $s->name }}</span>
+                                <span class="text-gray-900 dark:text-white">{{ number_format($s->on_hand_sum) }} • ₱{{ number_format($s->value_sum, 2) }}</span>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6" aria-label="Key performance indicators">
         <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
             <div class="p-5">
                 <div class="flex items-center">
@@ -188,8 +380,8 @@
         </div>
     </div>
 
-    <!-- Movement Stats -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+    <!-- Movement Stats (compact summary) -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6" aria-label="Movement summary">
         <div class="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg">
             <div class="p-5">
                 <div class="flex items-center">
@@ -263,8 +455,8 @@
         </div>
     </div>
 
-    <!-- Charts and Tables Row -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <!-- Insights Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6" aria-label="Insights">
         <!-- Top Products -->
         <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
             <div class="px-4 py-5 sm:p-6">
@@ -312,8 +504,8 @@
         </div>
     </div>
 
-    <!-- Recent Movements -->
-    <div class="bg-white dark:bg-gray-800 shadow rounded-lg mb-6">
+    <!-- Recent Movements (detailed ledger) -->
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg mb-6" aria-label="Recent inventory movements">
         <div class="px-4 py-5 sm:p-6">
             <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white mb-4">Recent Inventory Movements</h3>
             <div class="overflow-x-auto">
@@ -323,6 +515,8 @@
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">Product</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">Type</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">Quantity</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">Location</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">User</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider">Date</th>
                         </tr>
                     </thead>
@@ -345,6 +539,12 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                                     {{ number_format($movement->quantity) }}
                                 </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                    {{ $movement->location->name ?? '—' }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                    {{ $movement->creator->name ?? '—' }}
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                     {{ $movement->created_at->format('M j, Y g:i A') }}
                                 </td>
@@ -362,10 +562,9 @@
         </div>
     </div>
 
-    <!-- Category Distribution -->
+    <!-- Subtotals & Distribution -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- Category Distribution -->
-        <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg" aria-label="Category distribution">
             <div class="px-4 py-5 sm:p-6">
                 <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white mb-4">Products by Category</h3>
                 <div class="space-y-3">

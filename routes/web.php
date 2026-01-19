@@ -38,6 +38,7 @@ use App\Livewire\Pages\SalesManagement\Index as SalesManagementIndex;
 use App\Livewire\Pages\SalesManagement\View as Viewsalesorder;
 use App\Livewire\Pages\SalesManagement\SalesPromo as SalesManagementPromo;
 use App\Livewire\Pages\SalesManagement\PromoView;
+use App\Livewire\SalesManagement\SalesReturn;
 
 
 
@@ -193,6 +194,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/sales-order/{salesOrderId}', Viewsalesorder::class)->name('salesorder.view');
     Route::get('/sales-promo', SalesManagementPromo::class)->name('sales.promo');
     Route::get('/promo/view/{id}', \App\Livewire\Pages\SalesManagement\PromoView::class)->name('promo.view');
+    Route::get('/sales-return', SalesReturn::class)->name('sales-return.index');
 
     // Allocation Management
     Route::prefix('allocation')->name('allocation.')->group(function () {
@@ -218,7 +220,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/suppliers', \App\Livewire\Pages\SupplierManagement\Profile\Index::class)->name('suppliers');
         Route::get('/locations', \App\Livewire\Pages\ProductManagement\InventoryLocationManagement::class)->name('locations');
         Route::get('/images', \App\Livewire\Pages\ProductManagement\ProductImageGallery::class)->name('images');
-        Route::get('/dashboard', \App\Livewire\Pages\ProductManagement\InventoryDashboard::class)->name('dashboard');
+        // Analytics dashboard removed from Product Management
         Route::get('/print-catalog', function() {
             $products = \App\Models\Product::with(['images' => function($q){
                 $q->orderByDesc('is_primary')->orderBy('sort_order')->orderBy('created_at', 'desc');
@@ -291,7 +293,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/reports/sales-orders', \App\Livewire\Pages\Reports\SalesOrders::class)
         ->name('reports.sales-orders');
         
-    Route::get('/reports/stock-available', \App\Livewire\Pages\Reports\StockAvailable::class)
+    Route::get('/reports/stock-available', \App\Livewire\Pages\Reports\ProductInventoryReport::class)
         ->name('reports.stock-available');
         
     Route::get('/reports/purchase-orders', \App\Livewire\Pages\Reports\PurchaseOrders::class)

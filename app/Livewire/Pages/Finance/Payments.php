@@ -26,8 +26,9 @@ class Payments extends Component
     public $filterStatus = '';
     public $filterDateFrom = '';
     public $filterDateTo = '';
-    
+
     public $editingPaymentId = null;
+    public $showCreatePanel = false;
     public $showEditModal = false;
     public $showDeleteModal = false;
     public $paymentToDelete = null;
@@ -55,6 +56,20 @@ class Payments extends Component
         $this->loadAvailableFinances();
         $this->payment_date = now()->format('Y-m-d');
         $this->payment_method = 'Cash';
+    }
+
+    public function openCreatePanel()
+    {
+        $this->showCreatePanel = true;
+        $this->resetForm();
+        $this->generatePaymentRef();
+    }
+
+    public function closeCreatePanel()
+    {
+        $this->showCreatePanel = false;
+        $this->editingPaymentId = null;
+        $this->resetForm();
     }
 
     private function generatePaymentRef()
@@ -125,7 +140,7 @@ class Payments extends Component
         $finance->save();
 
         session()->flash('success', 'Payment recorded successfully!');
-        $this->resetForm();
+        $this->closeCreatePanel();
     }
 
     public function edit($id)
@@ -140,7 +155,7 @@ class Payments extends Component
         $this->status = $payment->status;
         $this->remarks = $payment->remarks;
         $this->selectedFinanceBalance = $payment->finance->balance + $payment->amount; // Add back original payment
-        $this->showEditModal = true;
+        $this->showCreatePanel = true;
     }
 
     public function update()
@@ -171,7 +186,7 @@ class Payments extends Component
         $finance->save();
 
         session()->flash('success', 'Payment updated successfully!');
-        $this->resetEditState();
+        $this->closeCreatePanel();
     }
 
     public function confirmDelete($id)
@@ -201,7 +216,7 @@ class Payments extends Component
 
     public function cancel()
     {
-        $this->resetEditState();
+        $this->closeCreatePanel();
     }
 
     public function closeDeleteModal()
@@ -225,7 +240,7 @@ class Payments extends Component
     private function resetEditState()
     {
         $this->editingPaymentId = null;
-        $this->showEditModal = false;
+        $this->showCreatePanel = false;
         $this->resetForm();
     }
 

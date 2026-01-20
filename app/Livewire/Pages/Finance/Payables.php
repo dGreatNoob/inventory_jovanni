@@ -26,6 +26,7 @@ class Payables extends Component
     public $search = '';
     public $perPage = 10;
     public $editingPayableId = null;
+    public $showCreatePanel = false;
     public $showEditModal = false;
     public $showDeleteModal = false;
     public $payableToDelete = null;
@@ -51,6 +52,28 @@ class Payables extends Component
     {
         $this->generateReferenceId();
         $this->purchaseOrders = PurchaseOrder::orderBy('po_num')->get(); // <-- Populate POs for dropdown
+    }
+
+    public function openCreatePanel()
+    {
+        $this->showCreatePanel = true;
+        $this->resetForm();
+        $this->generateReferenceId();
+    }
+
+    public function closeCreatePanel()
+    {
+        $this->showCreatePanel = false;
+        $this->editingPayableId = null;
+        $this->resetForm();
+    }
+
+    private function resetForm()
+    {
+        $this->reset(['supplier', 'purchase_order', 'purchase_order_id', 'party', 'date', 'due_date', 'amount', 'balance', 'payment_method', 'status', 'remarks']);
+        $this->status = 'pending';
+        $this->date = now()->format('Y-m-d');
+        $this->balance = '';
     }
 
     private function generateReferenceId()
@@ -120,6 +143,7 @@ class Payables extends Component
             'remarks' => $this->remarks,
         ]);
         session()->flash('success', 'Payable saved successfully!');
+        $this->closeCreatePanel();
         $this->reset(['reference_id', 'supplier', 'purchase_order', 'purchase_order_id', 'party', 'date', 'due_date', 'amount', 'balance', 'payment_method', 'status', 'remarks']);
         $this->generateReferenceId();
     }
@@ -145,7 +169,7 @@ class Payables extends Component
         $po = PurchaseOrder::where('po_num', $payable->purchase_order)->first();
         $this->purchase_order_id = $po ? $po->id : null;
 
-        $this->showEditModal = true;
+        $this->showCreatePanel = true;
     }
 
     public function update()
@@ -168,19 +192,19 @@ class Payables extends Component
             'remarks' => $this->remarks,
         ]);
         session()->flash('success', 'Payable updated successfully!');
-        $this->resetEditState();
+        $this->closeCreatePanel();
         $this->generateReferenceId();
     }
 
     public function cancel()
     {
-        $this->resetEditState();
+        $this->closeCreatePanel();
     }
 
     private function resetEditState()
     {
         $this->editingPayableId = null;
-        $this->showEditModal = false;
+        $this->showCreatePanel = false;
         $this->reset(['type', 'reference_id', 'supplier', 'purchase_order', 'purchase_order_id', 'party', 'date', 'due_date', 'amount', 'balance', 'payment_method', 'status', 'remarks']);
     }
 

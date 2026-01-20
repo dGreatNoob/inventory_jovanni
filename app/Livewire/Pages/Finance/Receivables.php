@@ -23,6 +23,7 @@ class Receivables extends Component
     public $search = '';
     public $perPage = 10;
     public $editingReceivableId = null;
+    public $showCreatePanel = false;
     public $showEditModal = false;
     public $showDeleteModal = false;
     public $receivableToDelete = null;
@@ -51,6 +52,26 @@ class Receivables extends Component
     {
         $this->generateReferenceId();
         // Initialize available agents as empty collection
+        $this->availableAgents = collect();
+    }
+
+    public function openCreatePanel()
+    {
+        $this->showCreatePanel = true;
+        $this->resetForm();
+        $this->generateReferenceId();
+    }
+
+    public function closeCreatePanel()
+    {
+        $this->showCreatePanel = false;
+        $this->editingReceivableId = null;
+        $this->resetForm();
+    }
+
+    private function resetForm()
+    {
+        $this->reset(['reference_id', 'branch_id', 'amount_due', 'due_date', 'payment_status', 'remarks']);
         $this->availableAgents = collect();
     }
 
@@ -146,8 +167,7 @@ class Receivables extends Component
             'remarks' => $this->remarks,
         ]);
         session()->flash('success', 'Receivable saved successfully!');
-        $this->reset(['reference_id', 'branch_id', 'amount_due', 'due_date', 'payment_status', 'remarks']);
-        $this->availableAgents = collect();
+        $this->closeCreatePanel();
         $this->generateReferenceId(); // <-- Only generate after saving a new record
     }
 
@@ -167,7 +187,7 @@ class Receivables extends Component
             $this->loadAvailableAgents();
         }
 
-        $this->showEditModal = true;
+        $this->showCreatePanel = true;
     }
 
     public function update()
@@ -195,20 +215,20 @@ class Receivables extends Component
             'remarks' => $this->remarks,
         ]);
         session()->flash('success', 'Receivable updated successfully!');
-        $this->resetEditState();
+        $this->closeCreatePanel();
         $this->generateReferenceId(); // <-- Generate new invoice number after updating
     }
 
     public function cancel()
     {
-        $this->resetEditState();
+        $this->closeCreatePanel();
         $this->generateReferenceId(); // <-- Generate new invoice number after closing edit modal
     }
 
     private function resetEditState()
     {
         $this->editingReceivableId = null;
-        $this->showEditModal = false;
+        $this->showCreatePanel = false;
         $this->availableAgents = collect();
         $this->reset(['branch_id', 'amount_due', 'due_date', 'payment_status', 'remarks']); // <-- Do NOT reset reference_id here
         // Do not generateReferenceId here, only after cancel or update

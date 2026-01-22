@@ -135,8 +135,8 @@
                                         <tbody>
                                             @foreach($getSalesOrderDetails->items as $order)
                                             <tr class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700">
-                                                <td class="px-6 py-4 font-mono">{{ $order->product->supply_sku ?? 'N/A' }}</td>
-                                                <td class="px-6 py-4">{{ $order->product->supply_description ?? 'N/A' }}</td>
+                                                <td class="px-6 py-4 font-mono">{{ $order->product ? ($order->product->sku ?? 'N/A') : 'N/A' }}</td>
+                                                <td class="px-6 py-4">{{ $order->product ? ($order->product->name ?? 'N/A') : 'N/A' }}</td>
                                                 <td class="px-6 py-4">{{ number_format($order->quantity, 2) }}</td>
                                                 <td class="px-6 py-4">₱{{ number_format($order->unit_price, 2) }}</td>
                                                 <td class="px-6 py-4 font-semibold">₱{{ number_format($order->quantity * $order->unit_price, 2) }}</td>
@@ -152,7 +152,7 @@
                         <div class="flex items-center justify-end p-6 space-x-2 border-t border-gray-200 rounded-b dark:border-gray-600">
                             <x-button type="button" wire:click="closeQrModal" variant="secondary">Close</x-button>
                             @if($getSalesOrderDetails)
-                            <x-button type="button" onclick="window.open('/purchase-order/print/{{ $getSalesOrderDetails->sales_order_number }}', '_blank', 'width=500,height=600')" variant="primary">
+                            <x-button type="button" onclick="window.open('/sales-order/print/{{ $getSalesOrderDetails->sales_order_number }}', '_blank', 'width=500,height=600')" variant="primary">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
                                 </svg>
@@ -189,198 +189,126 @@
                             
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 <div>
-                                    <x-dropdown 
-                                        wire:model.defer="status" 
-                                        name="status" 
-                                        label="Order Status" 
-                                        :options="[
-                                            'pending' => 'Pending',
-                                            'confirmed' => 'Confirmed', 
-                                            'processing' => 'Processing',
-                                            'shipped' => 'Shipped',
-                                            'delivered' => 'Delivered',
-                                            'cancelled' => 'Cancelled',
-                                            'returned' => 'Returned',
-                                            'on hold' => 'On Hold'
-                                        ]"
-                                        placeholder="Select Status"
+                                    <x-dropdown
+                                        wire:model.live="customerSelected"
+                                        name="customerSelected"
+                                        label="Branch"
+                                        :options="$company_results"
+                                        placeholder="Select Branch"
+                                        multiselect
                                         class="w-full"
                                     />
+                                    @error('customerSelected')
+                                        <span class="text-sm text-red-600">{{ $message }}</span>
+                                    @enderror
                                 </div>
-                                
+
                                 <div>
-                                    <x-dropdown 
-                                        wire:model.live="customerSelected" 
-                                        name="customerSelected" 
-                                        label="Customer" 
-                                        :options="$company_results" 
-                                        placeholder="Select Customer"
+                                    <x-dropdown
+                                        wire:model.live="subclassSelected"
+                                        name="subclassSelected"
+                                        label="Subclass Branch"
+                                        :options="$subclass_results"
+                                        placeholder="Select Subclass Branch"
+                                        multiselect
                                         class="w-full"
                                     />
+                                    @error('subclassSelected')
+                                        <span class="text-sm text-red-600">{{ $message }}</span>
+                                    @enderror
                                 </div>
-                                
-                                <div>
-                                    <x-input 
-                                        type="text" 
-                                        wire:model.defer="customerReference" 
-                                        name="customerReference" 
-                                        label="Customer Reference #" 
-                                        placeholder="Enter reference number"
-                                        class="w-full"
-                                    />
-                                </div>
+
+
                             </div>
                             
-                            <!-- Customer Information Display -->
-                            @if(!empty($customerData))
+                            <!-- Branch Information Display -->
+                            @if(!empty($customerSelected))
                             <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                                 <h4 class="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2 flex items-center">
                                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                     </svg>
-                                    Selected Customer Information
+                                    Selected Branch Information
                                 </h4>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                                    <div>
-                                        <span class="text-blue-700 dark:text-blue-300 font-medium">Name:</span>
-                                        <span class="text-blue-900 dark:text-blue-100 ml-1">{{ $customerData['name'] ?? 'N/A' }}</span>
-                                    </div>
-                                    <div>
-                                        <span class="text-blue-700 dark:text-blue-300 font-medium">Contact:</span>
-                                        <span class="text-blue-900 dark:text-blue-100 ml-1">{{ $customerData['contact_num'] ?? 'N/A' }}</span>
-                                    </div>
-                                    <div>
-                                        <span class="text-blue-700 dark:text-blue-300 font-medium">TIN:</span>
-                                        <span class="text-blue-900 dark:text-blue-100 ml-1">{{ $customerData['tin_num'] ?? 'N/A' }}</span>
-                                    </div>
-                                    <div class="md:col-span-2">
-                                        <span class="text-blue-700 dark:text-blue-300 font-medium">Address:</span>
-                                        <span class="text-blue-900 dark:text-blue-100 ml-1">{{ $customerData['address'] ?? 'N/A' }}</span>
+                                @php
+                                    $branches = \App\Models\Branch::whereIn('id', $customerSelected)->get();
+                                @endphp
+                                @foreach($branches as $branch)
+                                <div class="mb-4 p-3 bg-white dark:bg-gray-800 rounded border">
+                                    <h5 class="font-medium text-blue-900 dark:text-blue-100 mb-2">{{ $branch->name }}</h5>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                                        <div>
+                                            <span class="text-blue-700 dark:text-blue-300 font-medium">Contact:</span>
+                                            <span class="text-blue-900 dark:text-blue-100 ml-1">{{ $branch->contact_num ?? 'N/A' }}</span>
+                                        </div>
+                                        <div>
+                                            <span class="text-blue-700 dark:text-blue-300 font-medium">Manager:</span>
+                                            <span class="text-blue-900 dark:text-blue-100 ml-1">{{ $branch->manager_name ?? 'N/A' }}</span>
+                                        </div>
+                                        <div class="md:col-span-2">
+                                            <span class="text-blue-700 dark:text-blue-300 font-medium">Address:</span>
+                                            <span class="text-blue-900 dark:text-blue-100 ml-1">{{ $branch->address ?? 'N/A' }}</span>
+                                        </div>
+                                        @if(!empty($subclassSelected))
+                                        <div class="md:col-span-2">
+                                            <span class="text-blue-700 dark:text-blue-300 font-medium">Agents in Selected Subclasses:</span>
+                                            <div class="mt-1">
+                                                @php
+                                                    $agentsInSubclasses = \App\Models\Agent::whereHas('branchAssignments', function($query) use ($branch, $subclassSelected) {
+                                                        $query->where('branch_id', $branch->id)
+                                                              ->whereIn('subclass', $subclassSelected)
+                                                              ->whereNull('released_at');
+                                                    })->pluck('name')->toArray();
+                                                @endphp
+                                                @if(!empty($agentsInSubclasses))
+                                                    <span class="text-blue-900 dark:text-blue-100">{{ implode(', ', $agentsInSubclasses) }}</span>
+                                                @else
+                                                    <span class="text-gray-500">No agents found</span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                        @endif
                                     </div>
                                 </div>
+                                @endforeach
                             </div>
                             @endif
                         </div>
 
-                        <!-- Customer Information Section -->
+
+                        <!-- Delivery Details Section -->
                         <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-                                <svg class="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                <svg class="w-5 h-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
                                 </svg>
-                                Customer Information
+                                Delivery Details
                             </h3>
-                            
+
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <x-input 
-                                    type="text" 
-                                    wire:model.defer="contactPersonName" 
-                                    name="contactPersonName" 
-                                    label="Contact Person Name" 
-                                    placeholder="Enter contact person name"
+                                <x-dropdown
+                                    wire:model.defer="shippingMethod"
+                                    name="shippingMethod"
+                                    label="Delivery Method"
+                                    :options="$shippingMethodDropDown"
+                                    placeholder="Select Delivery Method"
                                 />
-                                
-                                <x-input 
-                                    type="tel" 
-                                    wire:model.defer="phone" 
-                                    name="phone" 
-                                    label="Phone Number" 
-                                    placeholder="Enter phone number"
-                                />
-                                
-                                <x-input 
-                                    type="email" 
-                                    wire:model.defer="email" 
-                                    name="email" 
-                                    label="Email Address" 
-                                    placeholder="Enter email address"
-                                />
-                                
+
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                         Delivery Date
                                     </label>
-                                    <input 
-                                        type="date" 
+                                    <input
+                                        type="date"
                                         wire:model.defer="deliveryDate"
                                         name="deliveryDate"
                                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                         min="{{ date('Y-m-d') }}"
                                     >
-                                    @error('deliveryDate') 
+                                    @error('deliveryDate')
                                         <span class="text-sm text-red-600">{{ $message }}</span>
                                     @enderror
                                 </div>
-                            </div>
-                            
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                        Billing Address
-                                    </label>
-                                    <textarea 
-                                        wire:model.defer="billingAddress" 
-                                        name="billingAddress" 
-                                        rows="3"
-                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                        placeholder="Enter billing address"
-                                    ></textarea>
-                                    @error('billingAddress') 
-                                        <span class="text-sm text-red-600">{{ $message }}</span>
-                                    @enderror
-                                </div>
-                                
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                        Shipping Address
-                                    </label>
-                                    <textarea 
-                                        wire:model.defer="shippingAddress" 
-                                        name="shippingAddress" 
-                                        rows="3"
-                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                        placeholder="Enter shipping address"
-                                    ></textarea>
-                                    @error('shippingAddress') 
-                                        <span class="text-sm text-red-600">{{ $message }}</span>
-                                    @enderror
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Payment & Shipping Section -->
-                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-                                <svg class="w-5 h-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
-                                </svg>
-                                Payment & Shipping
-                            </h3>
-                            
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <x-dropdown 
-                                    wire:model.defer="paymentMethod" 
-                                    name="paymentMethod" 
-                                    label="Payment Method" 
-                                    :options="$paymentMethodDropdown" 
-                                    placeholder="Select Payment Method"
-                                />
-                                
-                                <x-dropdown 
-                                    wire:model.defer="shippingMethod" 
-                                    name="shippingMethod" 
-                                    label="Shipping Method" 
-                                    :options="$shippingMethodDropDown" 
-                                    placeholder="Select Shipping Method"
-                                />
-                                
-                                <x-dropdown 
-                                    wire:model.defer="paymentTerms" 
-                                    name="paymentTerms" 
-                                    label="Payment Terms" 
-                                    :options="$paymentTermsDropdown" 
-                                    placeholder="Select Payment Terms"
-                                />
                             </div>
                         </div>
 
@@ -451,17 +379,17 @@
                                                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm"
                                                 >
                                                     <option value="">Select Product</option>
-                                                    @foreach($product_list ?? [] as $key => $supply)
-                                                        @php
-                                                            $product = \App\Models\SupplyProfile::find($key);
-                                                        @endphp
-                                                        <option value="{{ $key }}">
-                                                            {{ $supply }} 
-                                                            @if($product)
-                                                                (SKU: {{ $product->supply_sku }}, Stock: {{ $product->supply_qty }} {{ $product->supply_uom }})
-                                                            @endif
-                                                        </option>
-                                                    @endforeach
+                                                    @foreach($product_list ?? [] as $key => $product)
+                                                            @php
+                                                                $productModel = \App\Models\Product::find($key);
+                                                            @endphp
+                                                            <option value="{{ $key }}">
+                                                                {{ $product }}
+                                                                @if($productModel)
+                                                                    (SKU: {{ $productModel->sku }}, Stock: {{ $productModel->stock_quantity }} {{ $productModel->unit }})
+                                                                @endif
+                                                            </option>
+                                                        @endforeach
                                                 </select>
                                                 @error("items.{$index}.product_id") 
                                                     <span class="text-xs text-red-600">{{ $message }}</span>
@@ -470,14 +398,14 @@
                                             <td class="px-4 py-3 text-sm">
                                                 @if($item['product_id'])
                                                     @php
-                                                        $product = \App\Models\SupplyProfile::find($item['product_id']);
+                                                        $product = \App\Models\Product::find($item['product_id']);
                                                     @endphp
                                                     @if($product)
                                                         <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
-                                                            @if($product->supply_qty > 50) bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300
-                                                            @elseif($product->supply_qty > 10) bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300
+                                                            @if($product->stock_quantity > 50) bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300
+                                                            @elseif($product->stock_quantity > 10) bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300
                                                             @else bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300 @endif">
-                                                            {{ $product->supply_qty }} {{ $product->supply_uom }}
+                                                            {{ $product->stock_quantity }} {{ $product->unit }}
                                                         </span>
                                                     @else
                                                         <span class="text-gray-500 dark:text-gray-400">-</span>
@@ -556,7 +484,7 @@
                                     <div>
                                         <span class="text-gray-600 dark:text-gray-400">Total Amount:</span>
                                         <span class="font-bold text-lg text-blue-600 dark:text-blue-400 ml-2">
-                                            ₱{{ number_format(array_sum(array_map(fn($item) => ($item['quantity'] ?? 0) * ($item['unit_price'] ?? 0), $items)), 2) }}
+                                            ₱{{ number_format(array_sum(array_map(fn($item) => (float)($item['quantity'] ?? 0) * (float)($item['unit_price'] ?? 0), $items)), 2) }}
                                         </span>
                                     </div>
                                 </div>
@@ -654,20 +582,11 @@
                                         SO#
                                     </th>
                                     <th scope="col" class="px-6 py-3">
-                                        Customer
+                                        Branch Selected
                                     </th>
                                      <th scope="col" class="px-6 py-3">
                                         Status
                                     </th>                                  
-                                    <th scope="col" class="px-6 py-3">
-                                        Email
-                                    </th>                                    
-                                    <th scope="col" class="px-6 py-3">
-                                        Shipping address
-                                    </th>
-                                    <th scope="col" class="px-6 py-3">
-                                        Payment method
-                                    </th>
                                     <th scope="col" class="px-6 py-3">
                                         Action
                                     </th>
@@ -688,8 +607,8 @@
                                         </th>  
                                         <th scope="row"
                                             class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                                            {{ ucfirst($data->customer->name) }}
-                                        </th>                                      
+                                            {{ $data->customers->pluck('name')->join(', ') }}
+                                        </th>
                                         <td class="px-6 py-4">
                                             <span
                                                 class="
@@ -701,15 +620,6 @@
                                                 {{ ucfirst($data->status) }}
                                             </span>
                                         </td>                                       
-                                        <td class="px-6 py-4">
-                                            {{$data->email}}
-                                        </td>
-                                        <td class="px-6 py-4">
-                                           {{ $data->shipping_address }}
-                                        </td>   
-                                        <td class="px-6 py-4">
-                                           {{ $shippingMethodDropDown[$data->shipping_method] ?? ''}}
-                                        </td>                                   
                                         <td class="px-6 py-4">                                            
                                             <button wire:click="edit({{ $data->id }})">Edit</button>
                                             <a href="{{ route('salesorder.view',$data->id) }}"
@@ -720,7 +630,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="6" class="text-center py-4">
+                                        <td colspan="4" class="text-center py-4">
                                             No request sales orders found.
                                         </td>
                                     </tr>

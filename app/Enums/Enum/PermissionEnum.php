@@ -4,20 +4,6 @@ namespace App\Enums\Enum;
 
 enum PermissionEnum: string
 {
-    // 🛒 Purchase-related
-    case CREATE_SUPPLY_PURCHASE_ORDER = 'create supply purchase order';
-    case APPROVE_SUPPLY_PURCHASE_ORDER = 'approve supply purchase order';
-    case VIEW_SUPPLY_PURCHASE_ORDER = 'view supply purchase order';
-
-    case CREATE_RAWMAT_PURCHASE_ORDER = 'create rawmat purchase order';
-    case APPROVE_RAWMAT_PURCHASE_ORDER = 'approve rawmat purchase order';
-    case VIEW_RAWMAT_PURCHASE_ORDER = 'view rawmat purchase order';
-
-    // 📄 Request Slip-related
-    case VIEW_REQUEST_SLIP = 'view request slip';
-    case APPROVE_REQUEST_SLIP = 'approve request slip';
-    case CREATE_REQUEST_SLIP = 'create request slip';
-    case DELETE_REQUEST_SLIP = 'delete request slip';
 
     // 📦 Product Management
     case PRODUCT_VIEW = 'product view';
@@ -76,24 +62,35 @@ enum PermissionEnum: string
     case ROLE_DELETE = 'role delete';
     case PERMISSION_MANAGE = 'permission manage';
 
+    // Allocation Management
+    case ALLOCATION_WAREHOUSE_TRANSFER = 'allocation warehouse transfer';
+    case ALLOCATION_BRANCH_TRANSFER = 'allocation branch transfer';
+    case ALLOCATION_SALES_RETURN = 'allocation sales return';
+
+    // Shipment Management
+    case SHIPMENT_VIEW = 'shipment view';
+
+    // Finance
+    case FINANCE_RECEIVABLES = 'finance receivables';
+    case FINANCE_PAYABLES = 'finance payables';
+    case FINANCE_EXPENSES = 'finance expenses';
+    case FINANCE_PAYMENTS = 'finance payments';
+
+    // Warehouse Staff
+    case WAREHOUSE_STOCK_IN = 'warehouse stock in';
+    case WAREHOUSE_STOCK_OUT = 'warehouse stock out';
+
+    // Reports
+    case REPORT_PRODUCT_INVENTORY = 'report product inventory';
+    case REPORT_PURCHASE_ORDERS = 'report purchase orders';
+    case REPORT_BRANCH_INVENTORY = 'report branch inventory';
+    case REPORT_WAREHOUSE_ALLOCATION = 'report warehouse allocation';
+
     // 🏷️ Human-readable Labels
     public function label(): string
     {
         return match ($this) {
-            // Purchase
-            static::CREATE_SUPPLY_PURCHASE_ORDER => 'Create Supply Purchase Order',
-            static::APPROVE_SUPPLY_PURCHASE_ORDER => 'Approve Supply Purchase Order',
-            static::VIEW_SUPPLY_PURCHASE_ORDER => 'View Supply Purchase Order',
-
-            static::CREATE_RAWMAT_PURCHASE_ORDER => 'Create Raw Material Purchase Order',
-            static::APPROVE_RAWMAT_PURCHASE_ORDER => 'Approve Raw Material Purchase Order',
-            static::VIEW_RAWMAT_PURCHASE_ORDER => 'View Raw Material Purchase Order',
-
-            // Request Slip
-            static::CREATE_REQUEST_SLIP => 'Create Request Slip',
-            static::APPROVE_REQUEST_SLIP => 'Approve Request Slip',
-            static::VIEW_REQUEST_SLIP => 'View Request Slip',
-            static::DELETE_REQUEST_SLIP => 'Delete Request Slip',
+            
 
             // Product
             static::PRODUCT_VIEW => 'View Products',
@@ -152,6 +149,30 @@ enum PermissionEnum: string
             static::ROLE_EDIT => 'Edit Role',
             static::ROLE_DELETE => 'Delete Role',
             static::PERMISSION_MANAGE => 'Manage Permission Definitions',
+
+            // Allocation
+            static::ALLOCATION_WAREHOUSE_TRANSFER => 'Warehouse Transfer',
+            static::ALLOCATION_BRANCH_TRANSFER => 'Branch Transfer',
+            static::ALLOCATION_SALES_RETURN => 'Sales Return',
+
+            // Shipment
+            static::SHIPMENT_VIEW => 'View Shipments',
+
+            // Finance
+            static::FINANCE_RECEIVABLES => 'View Receivables',
+            static::FINANCE_PAYABLES => 'View Payables',
+            static::FINANCE_EXPENSES => 'View Expenses',
+            static::FINANCE_PAYMENTS => 'View Payments',
+
+            // Warehouse Staff
+            static::WAREHOUSE_STOCK_IN => 'Stock In',
+            static::WAREHOUSE_STOCK_OUT => 'Stock Out',
+
+            // Reports
+            static::REPORT_PRODUCT_INVENTORY => 'Product Inventory Report',
+            static::REPORT_PURCHASE_ORDERS => 'Purchase Orders Report',
+            static::REPORT_BRANCH_INVENTORY => 'Branch Inventory Report',
+            static::REPORT_WAREHOUSE_ALLOCATION => 'Warehouse Allocation Report',
         };
     }
 
@@ -159,19 +180,7 @@ enum PermissionEnum: string
     public function category(): string
     {
         return match ($this) {
-            // Purchase Management
-            static::CREATE_SUPPLY_PURCHASE_ORDER,
-            static::APPROVE_SUPPLY_PURCHASE_ORDER,
-            static::VIEW_SUPPLY_PURCHASE_ORDER,
-            static::CREATE_RAWMAT_PURCHASE_ORDER,
-            static::APPROVE_RAWMAT_PURCHASE_ORDER,
-            static::VIEW_RAWMAT_PURCHASE_ORDER => 'Purchase Management',
-
-            // Request Slip Management
-            static::CREATE_REQUEST_SLIP,
-            static::APPROVE_REQUEST_SLIP,
-            static::VIEW_REQUEST_SLIP,
-            static::DELETE_REQUEST_SLIP => 'Request Slip Management',
+          
 
             // Product Management
             static::PRODUCT_VIEW,
@@ -227,6 +236,30 @@ enum PermissionEnum: string
             static::ROLE_EDIT,
             static::ROLE_DELETE,
             static::PERMISSION_MANAGE => 'User & Role Management',
+
+            // Allocation Management
+            static::ALLOCATION_WAREHOUSE_TRANSFER,
+            static::ALLOCATION_BRANCH_TRANSFER,
+            static::ALLOCATION_SALES_RETURN => 'Allocation Management',
+
+            // Shipment Management
+            static::SHIPMENT_VIEW => 'Shipment Management',
+
+            // Finance
+            static::FINANCE_RECEIVABLES,
+            static::FINANCE_PAYABLES,
+            static::FINANCE_EXPENSES,
+            static::FINANCE_PAYMENTS => 'Finance',
+
+            // Warehouse Staff
+            static::WAREHOUSE_STOCK_IN,
+            static::WAREHOUSE_STOCK_OUT => 'Warehouse Staff',
+
+            // Reports
+            static::REPORT_PRODUCT_INVENTORY,
+            static::REPORT_PURCHASE_ORDERS,
+            static::REPORT_BRANCH_INVENTORY,
+            static::REPORT_WAREHOUSE_ALLOCATION => 'Reports',
         };
     }
 

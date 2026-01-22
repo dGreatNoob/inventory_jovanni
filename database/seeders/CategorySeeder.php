@@ -66,15 +66,18 @@ class CategorySeeder extends Seeder
         ];
 
         foreach ($categories as $categoryData) {
-            $category = Category::create([
-                'entity_id' => 1,
-                'name' => $categoryData['name'],
-                'description' => $categoryData['description'],
-                'parent_id' => $categoryData['parent_id'],
-                'sort_order' => $categoryData['sort_order'],
-                'slug' => Str::slug($categoryData['name']),
-                'is_active' => true,
-            ]);
+            $slug = Str::slug($categoryData['name']);
+            $category = Category::updateOrCreate(
+                ['slug' => $slug],
+                [
+                    'entity_id' => 1,
+                    'name' => $categoryData['name'],
+                    'description' => $categoryData['description'],
+                    'parent_id' => $categoryData['parent_id'],
+                    'sort_order' => $categoryData['sort_order'],
+                    'is_active' => true,
+                ]
+            );
 
             // Add subcategories for main categories
             if ($categoryData['name'] === 'Handbags') {
@@ -85,15 +88,18 @@ class CategorySeeder extends Seeder
                 ];
 
                 foreach ($handbagSubcategories as $subData) {
-                    Category::create([
-                        'entity_id' => 1,
-                        'name' => $subData['name'],
-                        'description' => $subData['description'],
-                        'parent_id' => $category->id,
-                        'sort_order' => $subData['sort_order'],
-                        'slug' => Str::slug($subData['name']),
-                        'is_active' => true,
-                    ]);
+                    $subSlug = Str::slug($subData['name']);
+                    Category::updateOrCreate(
+                        ['slug' => $subSlug],
+                        [
+                            'entity_id' => 1,
+                            'name' => $subData['name'],
+                            'description' => $subData['description'],
+                            'parent_id' => $category->id,
+                            'sort_order' => $subData['sort_order'],
+                            'is_active' => true,
+                        ]
+                    );
                 }
             }
 
@@ -105,15 +111,18 @@ class CategorySeeder extends Seeder
                 ];
 
                 foreach ($backpackSubcategories as $subData) {
-                    Category::create([
-                        'entity_id' => 1,
-                        'name' => $subData['name'],
-                        'description' => $subData['description'],
-                        'parent_id' => $category->id,
-                        'sort_order' => $subData['sort_order'],
-                        'slug' => Str::slug($subData['name']),
-                        'is_active' => true,
-                    ]);
+                    $subSlug = Str::slug($subData['name']);
+                    Category::updateOrCreate(
+                        ['slug' => $subSlug],
+                        [
+                            'entity_id' => 1,
+                            'name' => $subData['name'],
+                            'description' => $subData['description'],
+                            'parent_id' => $category->id,
+                            'sort_order' => $subData['sort_order'],
+                            'is_active' => true,
+                        ]
+                    );
                 }
             }
         }

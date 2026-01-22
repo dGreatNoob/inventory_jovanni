@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
 
 class ProductImage extends Model
 {
@@ -50,13 +51,25 @@ class ProductImage extends Model
     // Accessors
     public function getUrlAttribute(): string
     {
+        if (empty($this->filename)) {
+            return asset('images/placeholder.png');
+        }
+        
+        // Use asset() directly for consistency with grid/table views that work
+        // This matches the pattern used in products-grid.blade.php and products-table.blade.php
         return asset('storage/photos/' . $this->filename);
     }
 
     public function getThumbnailUrlAttribute(): string
     {
+        if (empty($this->filename)) {
+            return asset('images/placeholder.png');
+        }
+        
         $pathInfo = pathinfo($this->filename);
         $thumbnailName = $pathInfo['filename'] . '_thumb.' . $pathInfo['extension'];
+        
+        // Use asset() directly for consistency
         return asset('storage/photos/thumbnails/' . $thumbnailName);
     }
 

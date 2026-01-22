@@ -76,10 +76,13 @@ class InventoryLocationSeeder extends Seeder
         ];
 
         foreach ($locations as $locationData) {
-            InventoryLocation::create([
-                'entity_id' => 1,
-                ...$locationData
-            ]);
+            InventoryLocation::updateOrCreate(
+                ['code' => $locationData['code']],
+                [
+                    'entity_id' => 1,
+                    ...$locationData
+                ]
+            );
         }
     }
 }

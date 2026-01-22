@@ -98,107 +98,128 @@
             </div>
         </section>
 
-        <!-- Profiling -->
-        <x-collapsible-card title="Supplier Information" open="false" size="full">
-                <section class="mb-8">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-x-10 gap-y-10">
-
-                        <!-- Company Name -->
-                        <div class="pb-4">
-                            <div class="flex items-center space-x-2 mb-2 text-gray-600 dark:text-gray-400">
-                            <svg class="w-[28px] h-[28px] text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 4h12M6 4v16M6 4H5m13 0v16m0-16h1m-1 16H6m12 0h1M6 20H5M9 7h1v1H9V7Zm5 0h1v1h-1V7Zm-5 4h1v1H9v-1Zm5 0h1v1h-1v-1Zm-3 4h2a1 1 0 0 1 1 1v4h-4v-4a1 1 0 0 1 1-1Z"/>
+        <!-- Supplier Profile Information -->
+        <section class="mb-8">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Company Information -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                        <h3 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wide flex items-center gap-2">
+                            <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
                             </svg>
-
-                            <p class="text-base font-bold tracking-wide">Company Name</p>
-                            </div>
-                            <p class="block mb-2 text-m font-medium text-gray-900 dark:text-white">{{ $supplier_name }}</p>
-                        </div>
-
-                        <!-- Supplier Code -->
-                        <div class="pb-4">
-                            <div class="flex items-center space-x-2 mb-2 text-gray-600 dark:text-gray-400">
-                            <svg class="w-[28px] h-[28px] text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 4h12M6 4v16M6 4H5m13 0v16m0-16h1m-1 16H6m12 0h1M6 20H5M9 7h1v1H9V7Zm5 0h1v1h-1V7Zm-5 4h1v1H9v-1Zm5 0h1v1h-1v-1Zm-3 4h2a1 1 0 0 1 1 1v4h-4v-4a1 1 0 0 1 1-1Z"/>
+                            Company Information
+                        </h3>
+                    </div>
+                    <div class="p-6 space-y-5">
+                        <div class="flex items-start gap-3">
+                            <svg class="w-5 h-5 text-gray-400 dark:text-gray-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 4h12M6 4v16M6 4H5m13 0v16m0-16h1m-1 16H6m12 0h1M6 20H5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
                             </svg>
-                            <p class="text-base font-bold tracking-wide">Supplier Code</p>
+                            <div class="flex-1">
+                                <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Supplier Name</dt>
+                                <dd class="text-base font-medium text-gray-900 dark:text-white">{{ $supplier_name ?? 'Not provided' }}</dd>
                             </div>
-                            <p class="block mb-2 text-m font-medium text-gray-900 dark:text-white">{{ $supplier_code }}</p>
                         </div>
-
-                        <!-- Address -->
-                        <div class="pb-4">
-                            <div class="flex items-center space-x-2 mb-2 text-gray-600 dark:text-gray-400">
-                            <svg class="w-[28px] h-[28px] text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
-                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.8 13.938h-.011a7 7 0 1 0-11.464.144h-.016l.14.171c.1.127.2.251.3.371L12 21l5.13-6.248c.194-.209.374-.429.54-.659l.13-.155Z"/>
+                        <div class="flex items-start gap-3">
+                            <svg class="w-5 h-5 text-gray-400 dark:text-gray-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"></path>
                             </svg>
-                            <p class="text-base font-bold tracking-wide">Address</p>
+                            <div class="flex-1">
+                                <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Supplier Code</dt>
+                                <dd class="text-base font-mono font-medium text-gray-900 dark:text-white">{{ $supplier_code ?? 'Not provided' }}</dd>
                             </div>
-                            <p class="block mb-2 text-m font-medium text-gray-900 dark:text-white">{{ $supplier_address }}</p>
                         </div>
-
-                        <!-- Contact Person -->
-                        <div class="pb-4">
-                            <div class="flex items-center space-x-2 mb-2 text-gray-600 dark:text-gray-400">
-                            <svg class="w-[28px] h-[28px] text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0 0a8.949 8.949 0 0 0 4.951-1.488A3.987 3.987 0 0 0 13 16h-2a3.987 3.987 0 0 0-3.951 3.512A8.948 8.948 0 0 0 12 21Zm3-11a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
+                        <div class="flex items-start gap-3">
+                            <svg class="w-5 h-5 text-gray-400 dark:text-gray-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
                             </svg>
-                            <p class="text-base font-bold tracking-wide">Contact Person</p>
+                            <div class="flex-1">
+                                <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Address</dt>
+                                <dd class="text-base text-gray-900 dark:text-white">{{ $supplier_address ?? 'Not provided' }}</dd>
                             </div>
-                            <p class="block mb-2 text-m font-medium text-gray-900 dark:text-white">{{ $contact_person }}</p>
                         </div>
+                    </div>
+                </div>
 
-                        <!-- Contact Number -->
-                        <div class="pb-4">
-                            <div class="flex items-center space-x-2 mb-2 text-gray-600 dark:text-gray-400">
-                            <svg class="w-[28px] h-[28px] text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.427 14.768 17.2 13.542a1.733 1.733 0 0 0-2.45 0l-.613.613a1.732 1.732 0 0 1-2.45 0l-1.838-1.84a1.735 1.735 0 0 1 0-2.452l.612-.613a1.735 1.735 0 0 0 0-2.452L9.237 5.572a1.6 1.6 0 0 0-2.45 0c-3.223 3.2-1.702 6.896 1.519 10.117 3.22 3.221 6.914 4.745 10.12 1.535a1.601 1.601 0 0 0 0-2.456Z"/>
+                <!-- Contact Information -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                        <h3 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wide flex items-center gap-2">
+                            <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
                             </svg>
-                            <p class="text-base font-bold tracking-wide">Contact Number</p>
+                            Contact Information
+                        </h3>
+                    </div>
+                    <div class="p-6 space-y-5">
+                        <div class="flex items-start gap-3">
+                            <svg class="w-5 h-5 text-gray-400 dark:text-gray-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                            </svg>
+                            <div class="flex-1">
+                                <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Contact Person</dt>
+                                <dd class="text-base font-medium text-gray-900 dark:text-white">{{ $contact_person ?? 'Not provided' }}</dd>
                             </div>
-                            <p class="block mb-2 text-m font-medium text-gray-900 dark:text-white">{{ $contact_num }}</p>
                         </div>
+                        <div class="flex items-start gap-3">
+                            <svg class="w-5 h-5 text-gray-400 dark:text-gray-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                            </svg>
+                            <div class="flex-1">
+                                <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Contact Number</dt>
+                                <dd class="text-base font-mono font-medium text-gray-900 dark:text-white">{{ $contact_num ?? 'Not provided' }}</dd>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <svg class="w-5 h-5 text-gray-400 dark:text-gray-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                            </svg>
+                            <div class="flex-1">
+                                <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Email Address</dt>
+                                <dd class="text-base text-gray-900 dark:text-white">{{ $email ?? 'Not provided' }}</dd>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                        <!-- Email -->
-                        <div class="pb-4">
-                            <div class="flex items-center space-x-2 mb-2 text-gray-600 dark:text-gray-400">
-                            <svg class="w-[28px] h-[28px] text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                                <path stroke="currentColor" stroke-linecap="round" stroke-width="2" d="m3.5 5.5 7.893 6.036a1 1 0 0 0 1.214 0L20.5 5.5M4 19h16a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1Z"/>
+                <!-- Status -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                        <h3 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wide flex items-center gap-2">
+                            <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
-                            <p class="text-base font-bold tracking-wide">Email</p>
-                            </div>
-                            <p class="block mb-2 text-m font-medium text-gray-900 dark:text-white">{{ $email }}</p>
+                            Status
+                        </h3>
+                    </div>
+                    <div class="p-6">
+                        <div>
+                            <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">Account Status</dt>
+                            <dd>
+                                @if($status === 'active')
+                                <span class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300 border border-green-200 dark:border-green-800/50">
+                                    <span class="w-2 h-2 rounded-full bg-green-500 dark:bg-green-400"></span>
+                                    Active
+                                </span>
+                                @elseif($status === 'inactive')
+                                <span class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300 border border-red-200 dark:border-red-800/50">
+                                    <span class="w-2 h-2 rounded-full bg-red-500 dark:bg-red-400"></span>
+                                    Inactive
+                                </span>
+                                @else
+                                <span class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-yellow-50 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 border border-yellow-200 dark:border-yellow-800/50">
+                                    <span class="w-2 h-2 rounded-full bg-yellow-500 dark:bg-yellow-400"></span>
+                                    Pending
+                                </span>
+                                @endif
+                            </dd>
                         </div>
-
-                        <!-- Status -->
-                        <div class="pb-4">
-                            <div class="flex items-center space-x-2 mb-2 text-gray-600 dark:text-gray-400">
-                            <svg class="w-[28px] h-[28px] text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.5 11.5 11 14l4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
-                            </svg>
-                            <p class="text-base font-bold tracking-wide">Status</p>
-                            </div>
-                            @if($status === 'active')
-                            <span class="ml-6 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[12px] font-semibold bg-green-100 text-green-800 dark:bg-green-800/30 dark:text-green-300">
-                                <span class="w-2 h-2 rounded-full bg-green-500 dark:bg-green-400"></span>
-                                Active
-                            </span>
-                            @elseif($status === 'inactive')
-                            <span class="ml-6 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[12px] font-semibold bg-red-100 text-red-800 dark:bg-red-800/30 dark:text-red-300">
-                                <span class="w-2 h-2 rounded-full bg-red-500 dark:bg-red-400"></span>
-                                Inactive
-                            </span>
-                            @else
-                            <span class="ml-6 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[12px] font-semibold bg-yellow-100 text-yellow-800 dark:bg-yellow-800/30 dark:text-yellow-300">
-                                <span class="w-2 h-2 rounded-full bg-yellow-500 dark:bg-yellow-400"></span>
-                                Pending
-                            </span>
-                            @endif
-                        </div>
-                        </div>
-                </section>
-        </x-collapsible-card>
+                    </div>
+                </div>
+            </div>
+        </section>
 
 
 

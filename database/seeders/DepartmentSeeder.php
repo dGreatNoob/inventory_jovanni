@@ -15,16 +15,17 @@ class DepartmentSeeder extends Seeder
         $departments = [
             ['name' => 'Admin Department', 'description' => 'Manages overall flow of the company.'],
             ['name' => 'Purchase Department', 'description' => 'Handles purchase orders and vendor management.'],
-            ['name' => 'Supply Department', 'description' => 'Handles procurement and supply chain management.'],
-            ['name' => 'Raw Materials Department', 'description' => 'Handles Paper Roll Warehouse and Distribution'],
-            ['name' => 'Engineering Department', 'description' => 'Manages supply orders and inventory control.'], 
-            ['name' => 'Bodegero Department', 'description' => 'Scans Stock Ins of Rawmat and Supply.'],
+            ['name' => 'Engineering Department', 'description' => 'Manages product orders and inventory control.'], 
+            ['name' => 'Warehouse Department', 'description' => 'Manages inventory and stock operations.'],
             
             
         ];
 
         foreach ($departments as $department) {
-            \App\Models\Department::create($department);
+            \App\Models\Department::updateOrCreate(
+                ['name' => $department['name']],
+                $department
+            );
         }
     }
 }

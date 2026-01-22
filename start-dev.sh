@@ -86,28 +86,33 @@ echo -e "${GREEN}═════════════════════
 echo -e "${GREEN}✅ Development Environment Started Successfully!${NC}"
 echo -e "${GREEN}═══════════════════════════════════════════════════════════${NC}"
 echo ""
-echo -e "${GREEN}📍 Service URLs (Local):${NC}"
-echo -e "   • Laravel App:    ${GREEN}http://localhost:8000${NC}"
-echo -e "   • phpMyAdmin:     ${GREEN}http://localhost:8081${NC}"
-echo ""
 if [ ! -z "$LOCAL_IP" ]; then
-    echo -e "${GREEN}🌐 Service URLs (Network Access):${NC}"
+    echo -e "${GREEN}🌐 Access from Windows Browser (WSL2):${NC}"
     echo -e "   • Laravel App:    ${GREEN}http://${LOCAL_IP}:8000${NC}"
     echo -e "   • phpMyAdmin:     ${GREEN}http://${LOCAL_IP}:8081${NC}"
     echo ""
+    echo -e "${YELLOW}💡 Tip: If the IP above doesn't work, try localhost:8000${NC}"
+    echo ""
 fi
+echo -e "${GREEN}📍 Service URLs (WSL/Linux):${NC}"
+echo -e "   • Laravel App:    ${GREEN}http://localhost:8000${NC}"
+echo -e "   • phpMyAdmin:     ${GREEN}http://localhost:8081${NC}"
+echo ""
 echo -e "${GREEN}🗄️  Database Info:${NC}"
 echo -e "   • MySQL:          ${GREEN}localhost:3307${NC}"
 echo -e "   • Redis:          ${GREEN}localhost:6380${NC}"
 echo ""
-if [ ! -z "$LOCAL_IP" ]; then
-    echo -e "${YELLOW}📱 Network Access: Other devices can connect using the IP above${NC}"
-fi
 echo ""
 echo -e "${YELLOW}💡 Starting Laravel development server...${NC}"
+echo ""
+if [ ! -z "$LOCAL_IP" ]; then
+    echo -e "${YELLOW}📌 To access from Windows browser, run port forwarding:${NC}"
+    echo -e "   ${YELLOW}PowerShell (Admin): .\\wsl-port-forward.ps1${NC}"
+    echo -e "   ${YELLOW}Or use WSL IP directly: http://${LOCAL_IP}:8000${NC}"
+    echo ""
+fi
 echo -e "${YELLOW}Press Ctrl+C to stop${NC}"
 echo ""
 
 # Start Laravel development server
 php artisan serve --host=0.0.0.0 --port=8000
-

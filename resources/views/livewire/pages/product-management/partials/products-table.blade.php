@@ -11,7 +11,8 @@
                     </th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         <button wire:click="sortBy('name')" class="group inline-flex">
-                            Product
+                            <button wire:click="sortBy('remarks')" class="group inline-flex">
+                            Description
                             @if($sortBy === 'name')
                                 @if($sortDirection === 'asc')
                                     <svg class="ml-2 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -94,7 +95,7 @@
                                     @endif
                                 </div>
                                 <div class="ml-4">
-                                    <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $product->name }}</div>
+                                    <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $product->remarks ?? $product->name }}</div>
                                     <div class="text-sm text-gray-500 dark:text-gray-400">SKU: {{ $product->sku }}</div>
                                 </div>
                             </div>
@@ -104,6 +105,7 @@
                                 <div class="flex justify-center">
                                     <x-barcode-display 
                                         :barcode="$product->barcode"
+                                        :product="$product"
                                         size="sm"
                                         :showLabel="false"
                                         :showText="true"
@@ -165,19 +167,17 @@
                                     </flux:button>
                                 </flux:modal.trigger>
 
-                                <flux:modal.trigger name="create-edit-product">
-                                    <flux:button 
-                                        wire:click="editProduct({{ $product->id }})" 
-                                        variant="ghost" 
-                                        size="sm"
-                                        class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
-                                        title="Edit"
-                                    >
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                        </svg>
-                                    </flux:button>
-                                </flux:modal.trigger>
+                                <flux:button 
+                                    wire:click="editProduct({{ $product->id }})" 
+                                    variant="ghost" 
+                                    size="sm"
+                                    class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
+                                    title="Edit"
+                                >
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                    </svg>
+                                </flux:button>
                                 <flux:modal.trigger name="delete-product">
                                     <flux:button 
                                         wire:click="deleteProduct({{ $product->id }})" 

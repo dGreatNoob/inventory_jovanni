@@ -3,7 +3,7 @@
 namespace App\Livewire\Pages\Reports;
 
 use Livewire\Component;
-use App\Models\SupplyProfile;
+use App\Models\Product;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Layout;
 

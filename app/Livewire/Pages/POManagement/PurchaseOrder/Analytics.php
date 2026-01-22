@@ -44,7 +44,7 @@ class Analytics extends Component
     private function getOutstandingPOs()
     {
         $query = PurchaseOrder::query()
-            ->whereIn('status', ['pending', 'approved', 'for_delivery', 'delivered'])
+            ->whereIn('status', ['pending', 'approved', 'to_receive', 'received'])
             ->with(['supplier', 'department'])
             ->orderBy('order_date', 'desc');
 

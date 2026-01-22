@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('inventory_locations')) {
+            return;
+        }
+
         Schema::create('inventory_locations', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('entity_id')->default(1); // Multi-tenant support

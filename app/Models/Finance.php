@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Finance extends Model
 {
@@ -25,5 +26,18 @@ class Finance extends Model
         'payment_method',
         'status',
         'remarks',
+        'file_path',
+        'branch_id',
+        'agent_id',
     ];
-} 
+
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
+    public function agent()
+    {
+        return $this->belongsTo(Agent::class);
+    }
+}

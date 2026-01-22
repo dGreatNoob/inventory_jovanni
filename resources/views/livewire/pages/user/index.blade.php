@@ -20,7 +20,7 @@
                             :options="$this->departments->pluck('name', 'id')->toArray()" />
                     </div>
                     <div>
-                        <x-dropdown label="Role(s)" name="roles" wire:model="selectedRole" :options="$roles->pluck('name', 'id')->toArray()"  multiselect
+                        <x-dropdown label="Role" name="role" wire:model="selectedRole" :options="$roles->pluck('name', 'id')->toArray()"
                             class="{{ $errors->has('selectedRole') ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : '' }}"
                         />
                         @error('selectedRole')
@@ -161,8 +161,8 @@
                                     @enderror
                                 </div>
                                 <div>
-                                    <x-dropdown label="Role(s)" name="roles" wire:model="selectedRole"
-                                        :options="$roles->pluck('name', 'id')->toArray()" multiselect />
+                                    <x-dropdown label="Role" name="role" wire:model="selectedRole"
+                                        :options="$roles->pluck('name', 'id')->toArray()" />
                                     @error('selectedRole')
                                         <span class="text-red-500 text-sm">{{ $message }}</span>
                                     @enderror

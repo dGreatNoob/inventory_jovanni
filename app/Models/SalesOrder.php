@@ -13,14 +13,13 @@ class SalesOrder extends Model
     use HasFactory, LogsActivity;
     protected $fillable = [
         'status',
-        'customer_id',
+        'customer_ids',
         'product_id',
         'contact_person_name',
         'phone',
         'email',
         'billing_address',
         'shipping_address',
-        'customer_reference',
         'product',
         'product_code',
         'quantity',
@@ -34,6 +33,7 @@ class SalesOrder extends Model
 
     protected $casts = [
         'delivery_date' => 'date',
+        'customer_ids' => 'array',
     ];
 
     // Static method to access dropdown options
@@ -93,10 +93,27 @@ class SalesOrder extends Model
 
     protected static function boot()
     {
-        parent::boot();       
-        static::creating(function ($salesOrder) {            
-            $salesOrder->sales_order_number = 'SO-' . strtoupper(uniqid());
-        });   
+        parent::boot();
+        static::creating(function ($salesOrder) {
+            $salesOrder->sales_order_number = self::generateSalesOrderNumber();
+        });
+    }
+
+    public static function generateSalesOrderNumber(): string
+    {
+        $date = now()->format('Ym');
+        $lastRecord = self::where('sales_order_number', 'like', "SLS-{$date}-%")
+                          ->orderBy('id', 'desc')
+                          ->first();
+
+        if ($lastRecord) {
+            $lastNumber = (int) substr($lastRecord->sales_order_number, -4);
+            $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+        } else {
+            $newNumber = '0001';
+        }
+
+        return "SLS-{$date}-{$newNumber}";
     }
 
     public function scopeSearch($query, $search)
@@ -107,25 +124,34 @@ class SalesOrder extends Model
             ->orWhere('shipping_method', 'like', "%{$search}%");
     }
 
-    public function salesReturns()
-    {        
-        return $this->hasMany(SalesReturn::class, 'sales_order_id');
+    // salesReturns() relationship removed - SalesReturn module has been removed
+
+    public function customers()
+    {
+        return $this->belongsToMany(Branch::class, 'sales_order_branches', 'sales_order_id', 'branch_id');
     }
 
     public function customer()
     {
-        return $this->belongsTo(Customer::class);
+        return $this->belongsTo(Branch::class, 'customer_id');
+    }
+
+    public function agents()
+    {
+        return $this->belongsToMany(\App\Models\Agent::class, 'sales_order_agents', 'sales_order_id', 'agent_id');
     }
 
     public function product()
     {
-        return $this->belongsTo(SupplyProfile::class, 'product_id');
+        return $this->belongsTo(Product::class, 'product_id');
     }
 
     public function items()
     {
         return $this->hasMany(SalesOrderItem::class, 'sales_order_id');
     }
+
+    // branchItems() relationship removed - SalesOrderBranchItem module has been removed
 
     public function shipments()
     {
@@ -150,12 +176,12 @@ class SalesOrder extends Model
                         })->implode('<br>');
                 }
                 
-                $getCustomer = \App\Models\Customer::find($this->customer_id);
+                $getBranch = \App\Models\Branch::find($this->customer_id);
                 $customerName = '';
-                
-                if($getCustomer){
-                    $customerName = $getCustomer->name;
-                }                          
+
+                if($getBranch){
+                    $customerName = $getBranch->name;
+                }
                 
                 $fields =  [                 
                     'status' => $this->status ?? 'N/A',
@@ -165,7 +191,6 @@ class SalesOrder extends Model
                     'email'=> $this->email ?? 'N/A',
                     'billing_address'=> $this->billing_address ?? 'N/A',
                     'shipping_address'=> $this->shipping_address ?? 'N/A',
-                    'customer_reference'=> $this->customer_reference ?? 'N/A',                
                     'payment_method'=> $this->payment_method ?? 'N/A',
                     'shipping_method'=> $this->shipping_method ?? 'N/A',
                     'payment_terms'=> $this->payment_terms ?? 'N/A',

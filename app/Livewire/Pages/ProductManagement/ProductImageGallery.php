@@ -354,7 +354,8 @@ class ProductImageGallery extends Component
                 }
             }
         }
-        $this->viewingImage = ProductImage::find($this->viewerImages[$this->viewerIndex] ?? null);
+        $currentId = $this->viewerImages[$this->viewerIndex] ?? null;
+        $this->viewingImage = $currentId ? ProductImage::with('product')->find($currentId) : null;
     }
 
     public function viewerPrev()
@@ -364,7 +365,8 @@ class ProductImageGallery extends Component
         }
         $count = count($this->viewerImages);
         $this->viewerIndex = ($this->viewerIndex - 1 + $count) % $count;
-        $this->viewingImage = ProductImage::find($this->viewerImages[$this->viewerIndex]);
+        $currentId = $this->viewerImages[$this->viewerIndex] ?? null;
+        $this->viewingImage = $currentId ? ProductImage::with('product')->find($currentId) : null;
     }
 
     public function viewerNext()
@@ -374,7 +376,8 @@ class ProductImageGallery extends Component
         }
         $count = count($this->viewerImages);
         $this->viewerIndex = ($this->viewerIndex + 1) % $count;
-        $this->viewingImage = ProductImage::find($this->viewerImages[$this->viewerIndex]);
+        $currentId = $this->viewerImages[$this->viewerIndex] ?? null;
+        $this->viewingImage = $currentId ? ProductImage::with('product')->find($currentId) : null;
     }
 
     public function selectAllCurrentProducts()
@@ -387,6 +390,15 @@ class ProductImageGallery extends Component
             }
         }
         $this->selectedImages = $ids;
+    }
+
+    public function getViewingImageUrlProperty(): ?string
+    {
+        if (!$this->viewingImage || empty($this->viewingImage->filename)) {
+            return null;
+        }
+        
+        return asset('storage/photos/' . $this->viewingImage->filename);
     }
 
     public function saveImage()

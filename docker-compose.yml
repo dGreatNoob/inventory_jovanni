@@ -7,11 +7,12 @@ services:
       - "3307:3306"
     environment:
       MYSQL_DATABASE: inventory_jovanni
-      MYSQL_USER: jovanni
-      MYSQL_PASSWORD: secret
+      MYSQL_USER: root
+      MYSQL_PASSWORD: password
       MYSQL_ROOT_PASSWORD: rootsecret
     volumes:
       - dbdata:/var/lib/mysql
+      - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     networks:
       - app-network
     healthcheck:

@@ -18,10 +18,28 @@ class SetSpatieTeamContext
     public function handle(Request $request, Closure $next): Response
     {
        if (Auth::check()) {
-            app(PermissionRegistrar::class)->setPermissionsTeamId(Auth::user()->department_id);
+            // Ensure department_id is properly encoded before passing to Spatie
+            $departmentId = Auth::user()->department_id;
+
+            // Convert to string and ensure UTF-8 encoding
+            if ($departmentId !== null) {
+                $departmentId = (string) $departmentId;
+
+                // Handle different encodings
+                if (!mb_check_encoding($departmentId, 'UTF-8')) {
+                    $encoding = mb_detect_encoding($departmentId, ['UTF-8', 'ISO-8859-1', 'Windows-1252'], true);
+                    if ($encoding && $encoding !== 'UTF-8') {
+                        $departmentId = mb_convert_encoding($departmentId, 'UTF-8', $encoding);
+                    } else {
+                        $departmentId = mb_convert_encoding($departmentId, 'UTF-8', 'UTF-8');
+                    }
+                }
+            }
+
+            app(PermissionRegistrar::class)->setPermissionsTeamId($departmentId);
         }
 
         return $next($request);
- 
+
     }
 }

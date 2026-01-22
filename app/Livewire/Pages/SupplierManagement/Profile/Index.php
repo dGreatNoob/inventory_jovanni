@@ -32,10 +32,15 @@ class Index extends Component
     public $perPage = 10;
     public $search = '';
     
+    // Filter properties
+    public $statusFilter = '';
+    public $categoryFilter = '';
+    
     // Modal states
     public $showDeleteModal = false;
     public $showEditModal = false;
     public $showViewModal = false;
+    public $showCreatePanel = false;
     
     // Selected item tracking
     public $deleteId = null;
@@ -43,6 +48,8 @@ class Index extends Component
 
     protected $queryString = [
         'search' => ['except' => ''],
+        'statusFilter' => ['except' => ''],
+        'categoryFilter' => ['except' => ''],
     ];
 
     /**
@@ -84,6 +91,32 @@ class Index extends Component
      */
     public function updatedPerPage()
     {
+        $this->resetPage();
+    }
+
+    /**
+     * Reset pagination when filters are updated
+     */
+    public function updatedStatusFilter()
+    {
+        $this->resetPage();
+    }
+
+    public function updatedCategoryFilter()
+    {
+        $this->resetPage();
+    }
+
+    /**
+     * Reset all filters
+     */
+    public function resetFilters()
+    {
+        $this->reset([
+            'search',
+            'statusFilter',
+            'categoryFilter',
+        ]);
         $this->resetPage();
     }
 
@@ -139,7 +172,7 @@ class Index extends Component
                 'edit_address' => 'required|string|max:500',
                 'edit_contact_person' => 'required|string|max:255',
                 'edit_contact_num' => ['required', 'regex:/^[0-9+\-\(\)\s]+$/'],
-                'edit_email' => 'required|email|unique:suppliers,email,' . $this->selectedItemId,
+                'edit_email' => 'required|email',
                 'edit_tin_num' => 'nullable|string|max:255',
                 'edit_status' => 'required|string|in:active,inactive,pending',
             ];
@@ -152,7 +185,7 @@ class Index extends Component
             'supplier_address' => 'required|string|max:500',
             'contact_person' => 'required|string|max:255',
             'contact_num' => ['required', 'regex:/^[0-9+\-\(\)\s]+$/'],
-            'email' => 'required|email|unique:suppliers,email',
+            'email' => 'required|email',
             'tin_num' => 'nullable|string|max:255',
         ];
     }
@@ -187,6 +220,7 @@ class Index extends Component
             'contact_num',
             'email',
             'tin_num',
+            'showCreatePanel',
         ]);
 
         // Refresh dashboard metrics
@@ -233,10 +267,9 @@ class Index extends Component
             'status' => $this->edit_status,
         ]);
 
-        $this->showEditModal = false;
         session()->flash('message', 'Supplier profile updated successfully.');
         
-        // Reset edit form
+        // Reset edit form and close panel
         $this->reset([
             'selectedItemId',
             'edit_name',
@@ -247,6 +280,7 @@ class Index extends Component
             'edit_email',
             'edit_tin_num',
             'edit_status',
+            'showEditModal',
         ]);
 
         // Refresh dashboard metrics
@@ -280,6 +314,41 @@ class Index extends Component
         }
 
         $this->cancel();
+    }
+
+    /**
+     * Close the create panel
+     */
+    public function closeCreatePanel()
+    {
+        $this->resetValidation();
+        $this->reset([
+            'showCreatePanel',
+            'supplier_name',
+            'supplier_code',
+            'supplier_address',
+            'contact_person',
+            'contact_num',
+            'email',
+            'tin_num',
+        ]);
+    }
+
+    /**
+     * Reset the create form
+     */
+    public function resetForm()
+    {
+        $this->resetValidation();
+        $this->reset([
+            'supplier_name',
+            'supplier_code',
+            'supplier_address',
+            'contact_person',
+            'contact_num',
+            'email',
+            'tin_num',
+        ]);
     }
 
     /**
@@ -355,6 +424,19 @@ class Index extends Component
                     ->orWhere('status', 'like', "%{$search}%");
             });
         })
+        ->when($this->statusFilter, function ($query) {
+            $query->where('status', $this->statusFilter);
+        })
+        ->when($this->categoryFilter, function ($query) {
+            $query->where(function ($q) {
+                // Filter by direct supplier categories (JSON field) - check if category ID or name exists in JSON
+                $q->whereJsonContains('categories', $this->categoryFilter)
+                  // Or filter by products that have this category
+                  ->orWhereHas('products', function ($productQuery) {
+                      $productQuery->where('category_id', $this->categoryFilter);
+                  });
+            });
+        })
         ->with([
             'products' => function($query) {
                 $query->select('id', 'supplier_id', 'category_id')
@@ -371,6 +453,14 @@ class Index extends Component
         ->latest()
         ->paginate($this->perPage);
 
-        return view('livewire.pages.supplier-management.profile.index', compact('items'));
+        // Get all categories for the filter dropdown
+        $categories = Category::active()
+            ->orderBy('name')
+            ->get()
+            ->mapWithKeys(function ($category) {
+                return [$category->id => $category->name];
+            });
+
+        return view('livewire.pages.supplier-management.profile.index', compact('items', 'categories'));
     }
 }

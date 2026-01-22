@@ -311,6 +311,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/reports/finance', \App\Livewire\Pages\Reports\FinanceReport::class)
         ->name('reports.finance');
 
+    Route::get('/reports/promo', \App\Livewire\Pages\Reports\PromoReport::class)
+        ->name('reports.promo');
+
     Route::get('/reports/stock-movement', \App\Livewire\Pages\Reports\StockMovement::class)
         ->name('reports.stock-movement');
         

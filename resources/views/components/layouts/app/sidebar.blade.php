@@ -155,14 +155,6 @@
                         wire:navigate>{{ __('Promo Creation') }}
                         </flux:navlist.item>
 
-                        <flux:navlist.item 
-                            icon="chart-bar" 
-                            href="{{ route('product-management.dashboard') }}" 
-                            :current="request()->routeIs('product-management.dashboard')" 
-                            wire:navigate
-                        >
-                            {{ __('Analytics') }}
-                        </flux:navlist.item>
                     </flux:navlist.group>
                 @endif
 
@@ -191,9 +183,14 @@
                 
 
                 {{-- Allocation --}}
+                @if(Auth::user()->hasAnyPermission([
+                    'allocation warehouse transfer',
+                    'allocation branch transfer',
+                    'allocation sales return'
+                ]))
                 <flux:navlist.group
                     expandable
-                    :expanded="request()->routeIs('allocation.*')"
+                    :expanded="request()->routeIs('allocation.*') || request()->routeIs('sales-return.*')"
                     :heading="__('Allocation Management')"
                     class="lg:grid"
                 >
@@ -207,33 +204,22 @@
                         </flux:navlist.item>
 
                          <flux:navlist.item
-                            icon="building-storefront"
-                            href="#"
-                            :current="false"
-                            wire:navigate
-                        >
-                            {{ __('Branch Transfer') }}
-                        </flux:navlist.item>
+                           icon="building-storefront"
+                           href="{{ route('branch.stockTransfer') }}"
+                           :current="request()->routeIs('branch.stockTransfer')"
+                           wire:navigate
+                       >
+                           {{ __('Branch Transfer') }}
+                       </flux:navlist.item>
 
-                        <flux:navlist.item
-                            icon="chart-bar"
-                            href="{{ route('allocation.sales') }}"
-                            :current="request()->routeIs('allocation.sales')"
-                            wire:navigate
-                        >
-                            {{ __('Sales Tracking') }}
-                        </flux:navlist.item>
-                </flux:navlist.group>
+                        <flux:navlist.item icon="arrow-path" href="{{ route('sales-return.index') }}"
+                        :current="request()->routeIs('sales-return.index')" wire:navigate>{{ __('Sales Return') }}
+                    </flux:navlist.item>
+            </flux:navlist.group>
+            @endif
 
-                {{-- Shipment Management --}}
-                @php
-                    $shipmentRoutes = [
-                        'shipment.index',
-                        'shipment.qrscanner',
-                    ];
-                    $hasShipmentRoutes = collect($shipmentRoutes)->some(fn ($name) => Route::has($name));
-                @endphp
-                @if ($hasShipmentRoutes)
+            {{-- Shipment Management --}}
+                @if(Auth::user()->hasAnyPermission(['shipment view']))
                     <flux:navlist.group expandable :expanded="request()->routeIs('shipment.*')"
                         :heading="__('Shipment Management')" class="lg:grid">
                         @if (Route::has('shipment.index'))
@@ -250,18 +236,13 @@
                 @endif
 
                 {{-- Finance --}}
-                @php
-                    $financeRoutes = [
-                        'finance.receivables',
-                        'finance.payables',
-                        'finance.expenses',
-                        'finance.payments',
-                        // 'finance.currency-conversion',
-                    ];
-                    $hasFinanceRoutes = collect($financeRoutes)->some(fn ($name) => Route::has($name));
-                @endphp
-                @if ($hasFinanceRoutes)
-                    <flux:navlist.group expandable :expanded="request()->routeIs('finance.*')" :heading="__('Finance')"
+                @if(Auth::user()->hasAnyPermission([
+                    'finance receivables',
+                    'finance payables',
+                    'finance expenses',
+                    'finance payments'
+                ]))
+                    <flux:navlist.group expandable :expanded="request()->routeIs('finance.*')" :heading="__('Finance Management')"
                         class="lg:grid">
                         @if (Route::has('finance.receivables'))
                             <flux:navlist.item icon="banknotes" href="{{ route('finance.receivables') }}"
@@ -293,14 +274,10 @@
                 
 
                 {{-- Warehouse Staff --}}
-                @php
-                    $warehouseRoutes = [
-                        'warehousestaff.stockin',
-                        'warehousestaff.stockout',
-                    ];
-                    $hasWarehouseRoutes = collect($warehouseRoutes)->some(fn ($name) => Route::has($name));
-                @endphp
-                @if ($hasWarehouseRoutes)
+                @if(Auth::user()->hasAnyPermission([
+                    'warehouse stock in',
+                    'warehouse stock out'
+                ]))
                     <flux:navlist.group expandable :expanded="request()->routeIs('warehousestaff.*')"
                         :heading="__('Warehouse Staff')" class="lg:grid">
                         @if (Route::has('warehousestaff.stockin'))
@@ -316,11 +293,68 @@
                     </flux:navlist.group>
                 @endif
 
+                {{-- Reports --}}
+                @if(Auth::user()->hasAnyPermission([
+                    'report product inventory',
+                    'report purchase orders',
+                    'report branch inventory',
+                    'report warehouse allocation'
+                ]))
+                <flux:navlist.group expandable :expanded="request()->routeIs('reports.stock-available') || request()->routeIs('reports.purchase-orders') || request()->routeIs('reports.branch-inventory') || request()->routeIs('reports.warehouse-allocation') || request()->routeIs('reports.finance')" :heading="__('Reports')"
+                    class="lg:grid">
+                    <flux:navlist.item
+                        icon="clipboard-document-list"
+                        href="{{ route('reports.stock-available') }}"
+                        :current="request()->routeIs('reports.stock-available')"
+                        wire:navigate
+                    >
+                        {{ __('Product Inventory') }}
+                    </flux:navlist.item>
+
+                    <flux:navlist.item
+                        icon="clipboard-document-list"
+                        href="{{ route('reports.purchase-orders') }}"
+                        :current="request()->routeIs('reports.purchase-orders')"
+                        wire:navigate
+                    >
+                        {{ __('Purchase Orders') }}
+                    </flux:navlist.item>
+
+                    <flux:navlist.item
+                        icon="clipboard-document-list"
+                        href="{{ route('reports.branch-inventory') }}"
+                        :current="request()->routeIs('reports.branch-inventory')"
+                        wire:navigate
+                    >
+                        {{ __('Branch Inventory') }}
+                    </flux:navlist.item>
+
+                    <flux:navlist.item
+                        icon="clipboard-document-list"
+                        href="{{ route('reports.warehouse-allocation') }}"
+                        :current="request()->routeIs('reports.warehouse-allocation')"
+                        wire:navigate
+                    >
+                        {{ __('Warehouse Allocation') }}
+                    </flux:navlist.item>
+
+                    <flux:navlist.item
+                        icon="clipboard-document-list"
+                        href="{{ route('reports.finance') }}"
+                        :current="request()->routeIs('reports.finance')"
+                        wire:navigate
+                    >
+                        {{ __('Finance Report') }}
+                    </flux:navlist.item>
+                </flux:navlist.group>
+                @endif
+
                 {{-- Activity Logs --}}
                 <flux:navlist.item icon="clipboard-document-list" href="{{ route('activity.logs') }}"
                     :current="request()->routeIs('activity.logs')" wire:navigate>
                     {{ __('Activity Logs') }}
                 </flux:navlist.item>
+
 
                 {{-- ==========================================
                      HIDDEN/COMMENTED OUT MENU ITEMS
@@ -371,24 +405,25 @@
                         :current="request()->routeIs('pomanagement.deliveries')" wire:navigate>
                         {{ __('Deliveries') }}
                     </flux:navlist.item>
-                </flux:navlist.group>
-                @endif --}}
+            </flux:navlist.group>
+            {{-- @endif --}}
+            {{-- @endif --}}
 
                 {{-- Sales Management --}}
                 {{-- <flux:navlist.group expandable
-                    :expanded="request()->routeIs('salesorder.*') || request()->routeIs('salesreturn.*') || request()->routeIs('sales-price.*')"
+                    :expanded="request()->routeIs('salesorder.*') || request()->routeIs('sales-return.*') || request()->routeIs('sales-price.*')"
                     :heading="__('Sales Management')" class="lg:grid text-left">
                     <flux:navlist.item icon="inbox-stack" href="{{ route('salesorder.index') }}"
                         :current="request()->routeIs('salesorder.index')" wire:navigate>{{ __('Sales Order') }}
                     </flux:navlist.item>
-                    @if (Route::has('salesorder.return'))
-                        <flux:navlist.item icon="inbox-stack" href="{{ route('salesorder.return') }}"
-                            :current="request()->routeIs('salesorder.return')" wire:navigate>{{ __('Sales Return') }}
+                    <flux:navlist.item icon="arrow-path" href="{{ route('sales-return.index') }}"
+                        :current="request()->routeIs('sales-return.index')" wire:navigate>{{ __('Sales Return') }}
+                    </flux:navlist.item>
+                    @if (Route::has('sales-price.index'))
+                        <flux:navlist.item icon="tag" href="{{ route('sales-price.index') }}"
+                            :current="request()->routeIs('sales-price.*')" wire:navigate>{{ __('Sales Price') }}
                         </flux:navlist.item>
                     @endif
-                    <flux:navlist.item icon="tag" href="{{ route('sales-price.index') }}"
-                        :current="request()->routeIs('sales-price.*')" wire:navigate>{{ __('Sales Price') }}
-                    </flux:navlist.item>
                 </flux:navlist.group> --}}
 
                 {{-- Allocation --}}

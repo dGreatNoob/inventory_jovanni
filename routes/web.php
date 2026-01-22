@@ -38,6 +38,7 @@ use App\Livewire\Pages\SalesManagement\Index as SalesManagementIndex;
 use App\Livewire\Pages\SalesManagement\View as Viewsalesorder;
 use App\Livewire\Pages\SalesManagement\SalesPromo as SalesManagementPromo;
 use App\Livewire\Pages\SalesManagement\PromoView;
+use App\Livewire\SalesManagement\SalesReturn;
 
 
 
@@ -47,6 +48,7 @@ use App\Livewire\Pages\Shipment\QrScannder as ShipmentQrScannder;
 use App\Models\Branch;
 use App\Livewire\Pages\Branch\BranchInventory;
 use App\Livewire\Pages\Branch\SalesTracker;
+use App\Livewire\Pages\Branch\BranchTransfer;
 
 
 
@@ -122,6 +124,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/branch-sales-tracker', SalesTracker::class)
         ->name('branch.salesTrack');
 
+    Route::get('/branch-transfer', BranchTransfer::class)
+        ->name('branch.stockTransfer');
+
 
 
     //Route::get('/warehouseguy/stockin', BodegeroStockIn::class)
@@ -174,6 +179,9 @@ Route::middleware(['auth'])->group(function () {
     // VDR Excel Export Route
     Route::get('/allocation/vdr/excel/{batchId}', [\App\Http\Controllers\VDRExcelController::class, 'exportVDR'])->name('allocation.vdr.excel');
 
+    // DR Excel Export Route
+    Route::get('/allocation/dr/excel/{batchId}', [\App\Http\Controllers\DRExcelController::class, 'exportDR'])->name('allocation.dr.excel');
+
     // Receipt PDF and Excel Export Routes
     Route::get('/allocation/receipt/pdf/{receiptId}', [\App\Http\Controllers\ReceiptController::class, 'exportPDF'])->name('allocation.receipt.pdf');
     Route::get('/allocation/receipt/excel/{receiptId}', [\App\Http\Controllers\ReceiptController::class, 'exportExcel'])->name('allocation.receipt.excel');
@@ -189,6 +197,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/sales-order/{salesOrderId}', Viewsalesorder::class)->name('salesorder.view');
     Route::get('/sales-promo', SalesManagementPromo::class)->name('sales.promo');
     Route::get('/promo/view/{id}', \App\Livewire\Pages\SalesManagement\PromoView::class)->name('promo.view');
+    Route::get('/sales-return', SalesReturn::class)->name('sales-return.index');
 
     // Allocation Management
     Route::prefix('allocation')->name('allocation.')->group(function () {
@@ -214,7 +223,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/suppliers', \App\Livewire\Pages\SupplierManagement\Profile\Index::class)->name('suppliers');
         Route::get('/locations', \App\Livewire\Pages\ProductManagement\InventoryLocationManagement::class)->name('locations');
         Route::get('/images', \App\Livewire\Pages\ProductManagement\ProductImageGallery::class)->name('images');
-        Route::get('/dashboard', \App\Livewire\Pages\ProductManagement\InventoryDashboard::class)->name('dashboard');
+        // Analytics dashboard removed from Product Management
         Route::get('/print-catalog', function() {
             $products = \App\Models\Product::with(['images' => function($q){
                 $q->orderByDesc('is_primary')->orderBy('sort_order')->orderBy('created_at', 'desc');
@@ -287,12 +296,21 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/reports/sales-orders', \App\Livewire\Pages\Reports\SalesOrders::class)
         ->name('reports.sales-orders');
         
-    Route::get('/reports/stock-available', \App\Livewire\Pages\Reports\StockAvailable::class)
+    Route::get('/reports/stock-available', \App\Livewire\Pages\Reports\ProductInventoryReport::class)
         ->name('reports.stock-available');
         
     Route::get('/reports/purchase-orders', \App\Livewire\Pages\Reports\PurchaseOrders::class)
         ->name('reports.purchase-orders');
-        
+
+    Route::get('/reports/branch-inventory', \App\Livewire\Pages\Reports\BranchInventoryReport::class)
+        ->name('reports.branch-inventory');
+
+    Route::get('/reports/warehouse-allocation', \App\Livewire\Pages\Reports\WarehouseAllocationReport::class)
+        ->name('reports.warehouse-allocation');
+
+    Route::get('/reports/finance', \App\Livewire\Pages\Reports\FinanceReport::class)
+        ->name('reports.finance');
+
     Route::get('/reports/stock-movement', \App\Livewire\Pages\Reports\StockMovement::class)
         ->name('reports.stock-movement');
         

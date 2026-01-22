@@ -300,10 +300,29 @@ class Warehouse extends Component
 
         $totalScannedQuantities = 0;
         foreach ($this->currentBatch->branchAllocations as $branchAllocation) {
-            // Sum scanned quantities from items that have been scanned into boxes
-            $totalScannedQuantities += BranchAllocationItem::where('branch_allocation_id', $branchAllocation->id)
-                ->whereNotNull('box_id')
-                ->sum('scanned_quantity');
+            // Only check original allocation items (without box_id)
+            $originalItems = $branchAllocation->items()->whereNull('box_id')->get();
+            foreach ($originalItems as $item) {
+                // Check if this product has been quantity edited AFTER the batch was created
+                $hasBeenEdited = \Spatie\Activitylog\Models\Activity::where('log_name', 'branch_inventory')
+                    ->where('properties->barcode', $item->product->barcode ?? '')
+                    ->where('properties->branch_id', $branchAllocation->branch_id)
+                    ->where('description', 'like', 'Updated allocated quantity%')
+                    ->where('created_at', '>', $this->currentBatch->created_at)
+                    ->exists();
+
+                if ($hasBeenEdited) {
+                    // If edited, consider it fully scanned
+                    $totalScannedQuantities += $item->quantity;
+                } else {
+                    // Calculate actual scanned quantity for this product across all boxes
+                    $productScannedQty = BranchAllocationItem::where('branch_allocation_id', $branchAllocation->id)
+                        ->where('product_id', $item->product_id)
+                        ->whereNotNull('box_id')
+                        ->sum('scanned_quantity');
+                    $totalScannedQuantities += $productScannedQty;
+                }
+            }
         }
 
         return $totalScannedQuantities;
@@ -353,14 +372,27 @@ class Warehouse extends Component
         // Only check original allocation items (without box_id)
         $originalItems = $branchAllocation->items()->whereNull('box_id')->get();
         foreach ($originalItems as $item) {
-            // Calculate total scanned quantity for this product across all boxes
-            $totalScannedQty = BranchAllocationItem::where('branch_allocation_id', $branchAllocation->id)
-                ->where('product_id', $item->product_id)
-                ->whereNotNull('box_id')
-                ->sum('scanned_quantity');
+            // Check if this item has been quantity edited AFTER the batch was created
+            $hasBeenEdited = \Spatie\Activitylog\Models\Activity::where('log_name', 'branch_inventory')
+                ->where('properties->barcode', $item->product->barcode ?? '')
+                ->where('properties->branch_id', $branchAllocation->branch_id)
+                ->where('description', 'like', 'Updated allocated quantity%')
+                ->where('created_at', '>', $this->currentBatch->created_at)
+                ->exists();
 
-            if ($totalScannedQty < $item->quantity) {
-                return false;
+            if ($hasBeenEdited) {
+                // If edited, consider it fully scanned
+                continue;
+            } else {
+                // Calculate total scanned quantity for this product across all boxes
+                $totalScannedQty = BranchAllocationItem::where('branch_allocation_id', $branchAllocation->id)
+                    ->where('product_id', $item->product_id)
+                    ->whereNotNull('box_id')
+                    ->sum('scanned_quantity');
+
+                if ($totalScannedQty < $item->quantity) {
+                    return false;
+                }
             }
         }
 
@@ -385,7 +417,7 @@ class Warehouse extends Component
                     ->where('product_id', $item->product_id)
                     ->whereNotNull('box_id')
                     ->sum('scanned_quantity');
-
+    
                 if ($totalScannedQty < $item->quantity) {
                     return false;
                 }
@@ -2401,6 +2433,26 @@ class Warehouse extends Component
             session()->flash('message', 'Opening allocation matrix PDF in new window...');
         } catch (\Exception $e) {
             session()->flash('error', 'Failed to export allocation to PDF: ' . $e->getMessage());
+        }
+    }
+
+    public function generateDR()
+    {
+        if (!$this->currentBatch) {
+            session()->flash('error', 'No batch selected for DR export.');
+            return;
+        }
+
+        try {
+            // Open DR Excel export in new window (this will trigger download)
+            $drUrl = route('allocation.dr.excel', [
+                'batchId' => $this->currentBatch->id
+            ]);
+
+            $this->dispatch('open-excel-download', url: $drUrl);
+            session()->flash('message', 'Opening DR Excel export in new window...');
+        } catch (\Exception $e) {
+            session()->flash('error', 'Failed to export DR to Excel: ' . $e->getMessage());
         }
     }
 

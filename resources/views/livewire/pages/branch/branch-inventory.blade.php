@@ -229,6 +229,7 @@
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Remaining</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Unit Price</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Total Value</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Promo Type</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Actions</th>
                                 </tr>
                             </thead>
@@ -265,6 +266,9 @@
                                         </td>
                                         <td class="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
                                             ₱{{ number_format($product['total_value'], 2) }}
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                                            {{ $product['promo_name'] }}
                                         </td>
                                         <td class="px-4 py-3 text-sm">
                                             <button wire:click="viewProductDetails({{ $product['id'] }})"
@@ -320,55 +324,148 @@
                         </div>
                     </div>
 
-                    <!-- History -->
+                    <!-- History Tabs -->
                     <div class="mb-6">
-                        <h4 class="font-semibold text-gray-900 dark:text-white mb-4">Upload History</h4>
+                        <div class="border-b border-gray-200 dark:border-gray-700 mb-4">
+                            <nav class="-mb-px flex space-x-8">
+                                <button wire:click="setActiveHistoryTab('upload_history')"
+                                        class="py-2 px-1 border-b-2 font-medium text-sm {{ $activeHistoryTab == 'upload_history' ? 'border-blue-500 text-blue-600 dark:text-blue-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300' }}">
+                                    Upload History
+                                </button>
+                                <button wire:click="setActiveHistoryTab('quantity_edits')"
+                                        class="py-2 px-1 border-b-2 font-medium text-sm {{ $activeHistoryTab == 'quantity_edits' ? 'border-blue-500 text-blue-600 dark:text-blue-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300' }}">
+                                    Quantity Edits
+                                </button>
+                                <button wire:click="setActiveHistoryTab('synced_similar')"
+                                        class="py-2 px-1 border-b-2 font-medium text-sm {{ $activeHistoryTab == 'synced_similar' ? 'border-blue-500 text-blue-600 dark:text-blue-400' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300' }}">
+                                    Synced Similar Barcodes
+                                </button>
+                            </nav>
+                        </div>
+
                         <div class="space-y-2 max-h-48 overflow-y-auto">
                             @php
-                                // Get recent activities for this product
                                 $currentBarcode = $selectedProductDetails['barcode'];
-
-                                $histories = \Spatie\Activitylog\Models\Activity::where('log_name', 'branch_inventory')
-                                    ->where('properties->barcode', $currentBarcode)
-                                    ->where('properties->branch_id', $selectedBranchId)
-                                    ->where('properties->uploaded_file', true)
-                                    ->orderBy('created_at', 'desc')
-                                    ->limit(10)
-                                    ->get();
-
-                                $processedHistories = [];
-
-                                foreach ($histories as $history) {
-                                    $properties = $history->properties;
-
-                                    // Get the quantity sold from the activity properties
-                                    $quantitySold = $properties['quantity_sold'] ?? 1;
-
-                                    $isDuplicate = $quantitySold > 1;
-
-                                    $processedHistories[] = [
-                                        'quantity' => $quantitySold,
-                                        'time' => $history->created_at,
-                                        'is_duplicate' => $isDuplicate
-                                    ];
-                                }
                             @endphp
-                            @forelse($processedHistories as $historyItem)
-                                <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-                                    <div class="text-sm text-blue-900 dark:text-blue-100">
-                                        @if($historyItem['is_duplicate'])
-                                            {{ $historyItem['quantity'] }} barcodes scanned to this product and {{ $historyItem['quantity'] }} sold of this upload
-                                        @else
-                                            Scanned 1 barcode for this product 1 sold of this upload
-                                        @endif
+
+                            @if($activeHistoryTab == 'upload_history')
+                                @php
+                                    $histories = \Spatie\Activitylog\Models\Activity::where('log_name', 'branch_inventory')
+                                        ->where('properties->barcode', $currentBarcode)
+                                        ->where('properties->branch_id', $selectedBranchId)
+                                        ->where('properties->uploaded_file', true)
+                                        ->orderBy('created_at', 'desc')
+                                        ->limit(10)
+                                        ->get();
+
+                                    $processedHistories = [];
+
+                                    foreach ($histories as $history) {
+                                        $properties = $history->properties;
+                                        $quantitySold = $properties['quantity_sold'] ?? 1;
+                                        $isDuplicate = $quantitySold > 1;
+
+                                        $processedHistories[] = [
+                                            'quantity' => $quantitySold,
+                                            'time' => $history->created_at,
+                                            'is_duplicate' => $isDuplicate
+                                        ];
+                                    }
+                                @endphp
+                                @forelse($processedHistories as $historyItem)
+                                    <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                                        <div class="text-sm text-blue-900 dark:text-blue-100">
+                                            @if($historyItem['is_duplicate'])
+                                                {{ $historyItem['quantity'] }} barcodes scanned to this product and {{ $historyItem['quantity'] }} sold of this upload
+                                            @else
+                                                Scanned 1 barcode for this product 1 sold of this upload
+                                            @endif
+                                        </div>
+                                        <div class="text-xs text-blue-600 dark:text-blue-300 mt-1">
+                                            {{ $historyItem['time']->format('M d, Y H:i') }}
+                                        </div>
                                     </div>
-                                    <div class="text-xs text-blue-600 dark:text-blue-300 mt-1">
-                                        {{ $historyItem['time']->format('M d, Y H:i') }}
+                                @empty
+                                    <div class="text-sm text-gray-500 dark:text-gray-400">No upload history found.</div>
+                                @endforelse
+
+                            @elseif($activeHistoryTab == 'quantity_edits')
+                                @php
+                                    $quantityEdits = \Spatie\Activitylog\Models\Activity::where('log_name', 'branch_inventory')
+                                        ->where('properties->barcode', $currentBarcode)
+                                        ->where('properties->branch_id', $selectedBranchId)
+                                        ->where('description', 'like', 'Updated allocated quantity%')
+                                        ->orderBy('created_at', 'desc')
+                                        ->limit(10)
+                                        ->get();
+
+                                    $processedEdits = [];
+
+                                    foreach ($quantityEdits as $edit) {
+                                        $properties = $edit->properties;
+                                        $oldQty = $properties['old_quantity'] ?? 0;
+                                        $newQty = $properties['new_quantity'] ?? 0;
+                                        $shipmentNum = $properties['shipment_id'] ? \App\Models\Shipment::find($properties['shipment_id'])->shipping_plan_num ?? 'Unknown' : 'Unknown';
+
+                                        $processedEdits[] = [
+                                            'old_quantity' => $oldQty,
+                                            'new_quantity' => $newQty,
+                                            'shipment' => $shipmentNum,
+                                            'time' => $edit->created_at,
+                                            'change' => $newQty - $oldQty
+                                        ];
+                                    }
+                                @endphp
+                                @forelse($processedEdits as $editItem)
+                                    <div class="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3">
+                                        <div class="text-sm text-orange-900 dark:text-orange-100">
+                                            Previous quantity: {{ $editItem['old_quantity'] }}, Quantity added/changed: {{ $editItem['change'] > 0 ? '+' : '' }}{{ $editItem['change'] }} (new total: {{ $editItem['new_quantity'] }}) in shipment {{ $editItem['shipment'] }}
+                                        </div>
+                                        <div class="text-xs text-orange-600 dark:text-orange-300 mt-1">
+                                            {{ $editItem['time']->format('M d, Y H:i') }}
+                                        </div>
                                     </div>
-                                </div>
-                            @empty
-                                <div class="text-sm text-gray-500 dark:text-gray-400">No upload history found.</div>
-                            @endforelse
+                                @empty
+                                    <div class="text-sm text-gray-500 dark:text-gray-400">No quantity edit history found.</div>
+                                @endforelse
+
+                            @elseif($activeHistoryTab == 'synced_similar')
+                                @php
+                                    $syncedHistories = \Spatie\Activitylog\Models\Activity::where('log_name', 'branch_inventory')
+                                        ->where('properties->barcode', $currentBarcode)
+                                        ->where('properties->branch_id', $selectedBranchId)
+                                        ->where('properties->synced_similar', true)
+                                        ->orderBy('created_at', 'desc')
+                                        ->limit(10)
+                                        ->get();
+
+                                    $processedSynced = [];
+
+                                    foreach ($syncedHistories as $sync) {
+                                        $properties = $sync->properties;
+                                        $uploadedBarcode = $properties['uploaded_barcode'] ?? 'Unknown';
+                                        $quantitySold = $properties['quantity_sold'] ?? 1;
+
+                                        $processedSynced[] = [
+                                            'uploaded_barcode' => $uploadedBarcode,
+                                            'quantity' => $quantitySold,
+                                            'time' => $sync->created_at
+                                        ];
+                                    }
+                                @endphp
+                                @forelse($processedSynced as $syncItem)
+                                    <div class="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-3">
+                                        <div class="text-sm text-purple-900 dark:text-purple-100">
+                                            Synced {{ $syncItem['quantity'] }} quantity from uploaded barcode {{ $syncItem['uploaded_barcode'] }} to this product
+                                        </div>
+                                        <div class="text-xs text-purple-600 dark:text-purple-300 mt-1">
+                                            {{ $syncItem['time']->format('M d, Y H:i') }}
+                                        </div>
+                                    </div>
+                                @empty
+                                    <div class="text-sm text-gray-500 dark:text-gray-400">No synced similar barcodes history found.</div>
+                                @endforelse
+                            @endif
                         </div>
                     </div>
 

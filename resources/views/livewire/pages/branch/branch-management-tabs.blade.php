@@ -36,14 +36,14 @@
         </a> --}}
 
         <!-- Tab: Stock Transfer -->
-        <!-- <a href="#"
+        <a href="{{ route('branch.stockTransfer') }}"
            class="flex items-center px-6 py-4 text-sm font-medium
            {{ request()->routeIs('branch.stockTransfer') ? 'border-b-2 border-blue-600 text-blue-600 dark:text-blue-400' : 'border-b-2 border-transparent text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100' }}
            transition-colors">
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-5h6v5"/>
             </svg>
-            Stock Transfer
-        </a> -->
+            Branch Transfer
+        </a>
     </div>
 </div>

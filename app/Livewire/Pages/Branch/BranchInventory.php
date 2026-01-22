@@ -8,6 +8,7 @@ use App\Models\Branch;
 use App\Models\Shipment;
 use App\Models\BranchAllocation;
 use App\Models\BranchAllocationItem;
+use App\Models\Promo;
 use Spatie\Activitylog\Models\Activity;
 
 class BranchInventory extends Component
@@ -52,6 +53,17 @@ class BranchInventory extends Component
     // Inline editing properties
     public $editingShipmentId = null;
     public $editingAllocatedQuantity = 0;
+
+    // Modal tab properties
+    public $activeHistoryTab = 'upload_history';
+
+    /**
+     * Set the active history tab
+     */
+    public function setActiveHistoryTab($tab)
+    {
+        $this->activeHistoryTab = $tab;
+    }
 
     public function mount()
     {
@@ -218,6 +230,7 @@ class BranchInventory extends Component
                     'carrier_name' => $shipment->carrier_name ?: 'N/A',
                     'delivery_method' => $shipment->delivery_method ?: 'N/A',
                     'allocation_reference' => $allocation->batchAllocation->ref_no ?? 'N/A',
+                    'batch_allocation_id' => $allocation->batchAllocation->id ?? null,
                     'barcode' => $item->getDisplayBarcodeAttribute(),
                     'allocated_quantity' => $item->quantity,
                     'sold_quantity' => $item->sold_quantity,
@@ -242,6 +255,27 @@ class BranchInventory extends Component
                 'shipments' => $shipments,
             ];
         })->values();
+
+        // Add promo information to each product
+        $this->branchProducts = $this->branchProducts->map(function ($product) {
+            $productId = $product['id'];
+            $batchAllocationIds = collect($product['shipments'])->pluck('batch_allocation_id')->filter()->unique();
+
+            $promo = Promo::where('product', 'like', '%' . (string)$productId . '%')
+                ->where(function($q) use ($batchAllocationIds) {
+                    $q->where(function($sub) use ($batchAllocationIds) {
+                        foreach ($batchAllocationIds as $id) {
+                            $sub->orWhere('branch', 'like', '%' . (string)$id . '%');
+                        }
+                    });
+                })
+                ->where('startDate', '<=', now())
+                ->where('endDate', '>=', now())
+                ->first();
+
+            $product['promo_name'] = $promo ? $promo->name : 'none';
+            return $product;
+        });
     }
 
 
@@ -289,6 +323,7 @@ class BranchInventory extends Component
         $this->selectedProductDetails = null;
         $this->editingShipmentId = null;
         $this->editingAllocatedQuantity = 0;
+        $this->activeHistoryTab = 'upload_history';
     }
 
     /**
@@ -351,6 +386,9 @@ class BranchInventory extends Component
                 return;
             }
 
+            // Store old quantity before update
+            $oldQuantity = $allocationItem->quantity;
+
             // Update the quantity
             $allocationItem->update([
                 'quantity' => $this->editingAllocatedQuantity
@@ -369,7 +407,7 @@ class BranchInventory extends Component
                     'product_name' => $this->selectedProductDetails['name'],
                     'barcode' => $this->selectedProductDetails['barcode'],
                     'shipment_id' => $this->editingShipmentId,
-                    'old_quantity' => $allocationItem->getOriginal('quantity'),
+                    'old_quantity' => $oldQuantity,
                     'new_quantity' => $this->editingAllocatedQuantity,
                     'branch_id' => $this->selectedBranchId,
                 ],
@@ -481,11 +519,17 @@ class BranchInventory extends Component
         try {
             // Save only the valid barcodes, distributing the quantity across available items
             foreach ($this->validBarcodes as $barcode => $result) {
-                $items = \App\Models\BranchAllocationItem::whereHas('product', function($q) use ($barcode) {
-                    $q->where('barcode', $barcode);
+                $items = \App\Models\BranchAllocationItem::where(function($q) use ($barcode) {
+                    $q->where('product_snapshot_barcode', $barcode)
+                      ->orWhereHas('product', function($sub) use ($barcode) {
+                          $sub->where('barcode', $barcode);
+                      });
                 })
                 ->whereHas('branchAllocation', function($q) {
                     $q->where('branch_id', $this->selectedBranchId);
+                })
+                ->whereHas('branchAllocation.shipments', function ($q) {
+                    $q->where('shipping_status', 'completed');
                 })
                 ->where('box_id', null) // Only unpacked items
                 ->orderBy('id')
@@ -557,11 +601,17 @@ class BranchInventory extends Component
                 $barcode = $item['existing_barcode'];
                 $quantitySold = $item['quantity_sold'];
 
-                $items = \App\Models\BranchAllocationItem::whereHas('product', function($q) use ($barcode) {
-                    $q->where('barcode', $barcode);
+                $items = \App\Models\BranchAllocationItem::where(function($q) use ($barcode) {
+                    $q->where('product_snapshot_barcode', $barcode)
+                      ->orWhereHas('product', function($sub) use ($barcode) {
+                          $sub->where('barcode', $barcode);
+                      });
                 })
                 ->whereHas('branchAllocation', function($q) {
                     $q->where('branch_id', $this->selectedBranchId);
+                })
+                ->whereHas('branchAllocation.shipments', function ($q) {
+                    $q->where('shipping_status', 'completed');
                 })
                 ->where('box_id', null)
                 ->orderBy('id')
@@ -762,11 +812,17 @@ class BranchInventory extends Component
 
         foreach ($matches as $barcode => $result) {
             $items = \App\Models\BranchAllocationItem::with('product')
-                ->whereHas('product', function($q) use ($barcode) {
-                    $q->where('barcode', $barcode);
+                ->where(function($q) use ($barcode) {
+                    $q->where('product_snapshot_barcode', $barcode)
+                      ->orWhereHas('product', function($sub) use ($barcode) {
+                          $sub->where('barcode', $barcode);
+                      });
                 })
                 ->whereHas('branchAllocation', function($q) {
                     $q->where('branch_id', $this->selectedBranchId);
+                })
+                ->whereHas('branchAllocation.shipments', function ($q) {
+                    $q->where('shipping_status', 'completed');
                 })
                 ->where('box_id', null) // Only unpacked items
                 ->get();

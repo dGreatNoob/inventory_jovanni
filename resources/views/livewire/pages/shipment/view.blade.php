@@ -143,7 +143,7 @@
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
                             @foreach($shipment_view->branchAllocation->items->where('box_id', null) as $item)
-                            <tr @key($item->id)>
+                            <tr>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     @if($item->product && $item->product->images && $item->product->images->first())
                                         <img src="{{ $item->product->images->first()->url }}"

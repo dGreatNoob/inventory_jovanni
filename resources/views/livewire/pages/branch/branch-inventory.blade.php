@@ -229,7 +229,7 @@
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Remaining</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Unit Price</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Total Value</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Promo Type</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Active Promos</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Actions</th>
                                 </tr>
                             </thead>
@@ -268,7 +268,7 @@
                                             ₱{{ number_format($product['total_value'], 2) }}
                                         </td>
                                         <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
-                                            {{ $product['promo_name'] }}
+                                            {{ $product['active_promos_count'] }} Active Promos
                                         </td>
                                         <td class="px-4 py-3 text-sm">
                                             <button wire:click="viewProductDetails({{ $product['id'] }})"
@@ -521,6 +521,36 @@
                                     <div class="text-sm text-gray-600 dark:text-gray-400">
                                         Allocation: {{ $shipment['allocation_reference'] }} • Barcode: {{ $shipment['barcode'] }}
                                     </div>
+                                    @php
+                                        $productId = $selectedProductDetails['id'];
+                                        $batchAllocationId = $shipment['batch_allocation_id'];
+                                        $promo = \App\Models\Promo::where('product', 'like', '%' . (string)$productId . '%')
+                                            ->where('branch', 'like', '%' . (string)$batchAllocationId . '%')
+                                            ->where('startDate', '<=', now())
+                                            ->where('endDate', '>=', now())
+                                            ->first();
+                                        if ($promo) {
+                                            $discount = 0;
+                                            if($promo->type == 'Buy one Take one') {
+                                                $discount = 0.5;
+                                            } elseif($promo->type == '70% Discount') {
+                                                $discount = 0.7;
+                                            } elseif($promo->type == '60% Discount') {
+                                                $discount = 0.6;
+                                            } elseif($promo->type == '50% Discount') {
+                                                $discount = 0.5;
+                                            }
+                                            $discounted_price = $shipment['price'] * (1 - $discount);
+                                            $total_discounted_value = $discounted_price * $shipment['allocated_quantity'];
+                                        }
+                                    @endphp
+                                    @if($promo)
+                                        <div class="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                                            <strong>Discounted Price:</strong> ₱{{ number_format($discounted_price, 2) }} |
+                                            <strong>Total Discounted Value:</strong> ₱{{ number_format($total_discounted_value, 2) }} |
+                                            <strong>Promo Type:</strong> {{ $promo->name }} ({{ $promo->type }})
+                                        </div>
+                                    @endif
                                 </div>
                             @endforeach
                         </div>

@@ -256,12 +256,12 @@ class BranchInventory extends Component
             ];
         })->values();
 
-        // Add promo information to each product
+        // Add active promos count to each product
         $this->branchProducts = $this->branchProducts->map(function ($product) {
             $productId = $product['id'];
             $batchAllocationIds = collect($product['shipments'])->pluck('batch_allocation_id')->filter()->unique();
 
-            $promo = Promo::where('product', 'like', '%' . (string)$productId . '%')
+            $activePromosCount = Promo::where('product', 'like', '%' . (string)$productId . '%')
                 ->where(function($q) use ($batchAllocationIds) {
                     $q->where(function($sub) use ($batchAllocationIds) {
                         foreach ($batchAllocationIds as $id) {
@@ -271,9 +271,9 @@ class BranchInventory extends Component
                 })
                 ->where('startDate', '<=', now())
                 ->where('endDate', '>=', now())
-                ->first();
+                ->count();
 
-            $product['promo_name'] = $promo ? $promo->name : 'none';
+            $product['active_promos_count'] = $activePromosCount;
             return $product;
         });
     }

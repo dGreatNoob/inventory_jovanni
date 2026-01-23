@@ -135,6 +135,11 @@ class PromoView extends Component
         }
     }
 
+    public function exportPromo()
+    {
+        return redirect()->away(route('promo.print', $this->promoId));
+    }
+
     public function goBack()
     {
         return redirect()->route('sales.promo'); // Adjust to your actual route

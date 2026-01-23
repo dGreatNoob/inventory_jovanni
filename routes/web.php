@@ -197,6 +197,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/sales-order/{salesOrderId}', Viewsalesorder::class)->name('salesorder.view');
     Route::get('/sales-promo', SalesManagementPromo::class)->name('sales.promo');
     Route::get('/promo/view/{id}', \App\Livewire\Pages\SalesManagement\PromoView::class)->name('promo.view');
+    Route::get('/promo/print/{id}', function($id) {
+        $promo = \App\Models\Promo::findOrFail($id);
+        $products = \App\Models\Product::whereIn('id', json_decode($promo->product, true) ?? [])->with(['images' => function($q){
+            $q->orderByDesc('is_primary')->orderBy('sort_order')->orderBy('created_at', 'desc');
+        }])->orderBy('name')->get();
+        return view('livewire.pages.sales-management.print-promo', compact('promo', 'products'));
+    })->name('promo.print');
     Route::get('/sales-return', SalesReturn::class)->name('sales-return.index');
 
     // Allocation Management

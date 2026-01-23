@@ -203,14 +203,14 @@
                             {{ __('Warehouse Transfer') }}
                         </flux:navlist.item>
 
-                    <flux:navlist.item
+                    <!-- <flux:navlist.item
                             icon="chart-bar"
                             href="{{ route('allocation.sales') }}"
                             :current="request()->routeIs('allocation.sales')"
                             wire:navigate
                         >
                             {{ __('Sales Allocation') }}
-                        </flux:navlist.item>
+                        </flux:navlist.item> -->
 
                          <flux:navlist.item
                            icon="building-storefront"

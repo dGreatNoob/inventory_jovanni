@@ -173,6 +173,22 @@
                                                     </div>
 
                                                     <div>
+                                                        <label for="type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                            Type
+                                                        </label>
+                                                        <select
+                                                            id="type"
+                                                            wire:model="type"
+                                                            class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-green-500 focus:outline-none focus:ring-green-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                        >
+                                                            <option value="">Select Type</option>
+                                                            <option value="Payable">Payable</option>
+                                                            <option value="Receivable">Receivable</option>
+                                                        </select>
+                                                        @error('type') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                                    </div>
+
+                                                    <div>
                                                         <label for="remarks" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                                             Remarks
                                                         </label>

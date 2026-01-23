@@ -101,7 +101,7 @@
                                             <section class="space-y-4">
                                                 <div>
                                                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Payment Details</h3>
-                                                    <p class="text-sm text-gray-500 dark:text-gray-400">Basic information about the payment.</p>
+                                                    <p class="text-sm text-gray-500 dark:text-gray-400">Enter the payment information below.</p>
                                                 </div>
 
                                                 <div class="space-y-4">
@@ -121,25 +121,6 @@
                                                         </div>
 
                                                         <div>
-                                                            <label for="finance_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                                                Linked Record
-                                                            </label>
-                                                            <select
-                                                                id="finance_id"
-                                                                wire:model="finance_id"
-                                                                class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-green-500 focus:outline-none focus:ring-green-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
-                                                            >
-                                                                <option value="">Select Payable or Receivable</option>
-                                                                @foreach($availableFinances as $finance)
-                                                                    <option value="{{ $finance['id'] }}">{{ $finance['label'] }}</option>
-                                                                @endforeach
-                                                            </select>
-                                                            @error('finance_id') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                                                        </div>
-                                                    </div>
-
-                                                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                                        <div>
                                                             <label for="amount" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                                                 Payment Amount
                                                             </label>
@@ -153,7 +134,9 @@
                                                             />
                                                             @error('amount') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                                         </div>
+                                                    </div>
 
+                                                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                                         <div>
                                                             <label for="payment_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                                                 Payment Date
@@ -166,60 +149,42 @@
                                                             />
                                                             @error('payment_date') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                                         </div>
+
+                                                        <div>
+                                                            <label for="payment_method" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                                Payment Method
+                                                            </label>
+                                                            <select
+                                                                id="payment_method"
+                                                                wire:model="payment_method"
+                                                                class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-green-500 focus:outline-none focus:ring-green-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                            >
+                                                                <option value="">Select payment method</option>
+                                                                <option value="Cash">Cash</option>
+                                                                <option value="Bank Transfer">Bank Transfer</option>
+                                                                <option value="Credit Card">Credit Card</option>
+                                                                <option value="Check">Check</option>
+                                                                <option value="GCash">GCash</option>
+                                                                <option value="Maya">Maya</option>
+                                                                <option value="Others">Others</option>
+                                                            </select>
+                                                            @error('payment_method') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </section>
 
-                                            <!-- Payment Information -->
-                                            <section class="space-y-4">
-                                                <div>
-                                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Payment Information</h3>
-                                                    <p class="text-sm text-gray-500 dark:text-gray-400">Payment method and details.</p>
-                                                </div>
-
-                                                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                                     <div>
-                                                        <label for="payment_method" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                                            Payment Method
+                                                        <label for="remarks" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                            Remarks
                                                         </label>
-                                                        <select
-                                                            id="payment_method"
-                                                            wire:model="payment_method"
-                                                            class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-green-500 focus:outline-none focus:ring-green-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
-                                                        >
-                                                            <option value="">Select payment method</option>
-                                                            <option value="Cash">Cash</option>
-                                                            <option value="Bank Transfer">Bank Transfer</option>
-                                                            <option value="Credit Card">Credit Card</option>
-                                                            <option value="Check">Check</option>
-                                                            <option value="GCash">GCash</option>
-                                                            <option value="Maya">Maya</option>
-                                                            <option value="Others">Others</option>
-                                                        </select>
-                                                        @error('payment_method') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                                        <textarea
+                                                            id="remarks"
+                                                            wire:model="remarks"
+                                                            class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-green-500 focus:outline-none focus:ring-green-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm resize-y"
+                                                            style="min-height: 80px;"
+                                                            placeholder="Additional notes or details"
+                                                        ></textarea>
+                                                        @error('remarks') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                                     </div>
-                                                </div>
-                                            </section>
-
-                                            <!-- Description & Remarks -->
-                                            <section class="space-y-4">
-                                                <div>
-                                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Description & Remarks</h3>
-                                                    <p class="text-sm text-gray-500 dark:text-gray-400">Additional details about this payment.</p>
-                                                </div>
-
-                                                <div>
-                                                    <label for="remarks" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                                        Remarks
-                                                    </label>
-                                                    <textarea
-                                                        id="remarks"
-                                                        wire:model="remarks"
-                                                        class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-green-500 focus:outline-none focus:ring-green-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm resize-y"
-                                                        style="min-height: 80px;"
-                                                        placeholder="Additional notes or details"
-                                                    ></textarea>
-                                                    @error('remarks') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                                 </div>
                                             </section>
                                         </div>
@@ -312,12 +277,9 @@
                     <thead class="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                         <tr>
                             <th class="px-2 py-2 whitespace-nowrap">Payment Ref</th>
-                            <th class="px-2 py-2 whitespace-nowrap">Linked To</th>
-                            <th class="px-2 py-2 whitespace-nowrap">Type</th>
                             <th class="px-2 py-2 whitespace-nowrap">Amount</th>
                             <th class="px-2 py-2 whitespace-nowrap">Payment Date</th>
                             <th class="px-2 py-2 whitespace-nowrap">Payment Method</th>
-                            <th class="px-2 py-2 whitespace-nowrap">Status</th>
                             <th class="px-2 py-2 whitespace-nowrap">Remarks</th>
                             <th class="px-2 py-2 whitespace-nowrap">Action</th>
                         </tr>
@@ -326,29 +288,9 @@
                         @forelse($payments as $payment)
                         <tr class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700 border-gray-200 text-xs">
                             <td class="px-2 py-2 whitespace-nowrap">{{ $payment->payment_ref }}</td>
-                            <td class="px-2 py-2 whitespace-nowrap">{{ $payment->finance->reference_id ?? 'N/A' }}</td>
-                            <td class="px-2 py-2 whitespace-nowrap">
-                                <span class="px-2 py-1 rounded text-xs font-semibold {{ $payment->finance->type === 'payable' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800' }}">
-                                    {{ ucfirst($payment->finance->type ?? 'N/A') }}
-                                </span>
-                            </td>
                             <td class="px-2 py-2 whitespace-nowrap">{{ number_format($payment->amount, 2) }}</td>
                             <td class="px-2 py-2 whitespace-nowrap">{{ \Carbon\Carbon::parse($payment->payment_date)->format('Y-m-d') }}</td>
                             <td class="px-2 py-2 whitespace-nowrap">{{ $payment->payment_method }}</td>
-                            <td class="px-2 py-2 whitespace-nowrap">
-                                @php
-                                    $statusColor = match($payment->status) {
-                                        'not_paid' => 'bg-yellow-100 text-yellow-800',
-                                        'overdue' => 'bg-red-100 text-red-800',
-                                        'partially_paid' => 'bg-blue-100 text-blue-800',
-                                        'fully_paid' => 'bg-green-100 text-green-800',
-                                        default => 'bg-gray-100 text-gray-800',
-                                    };
-                                @endphp
-                                <span class="px-2 py-1 rounded text-xs font-semibold {{ $statusColor }}">
-                                    {{ str_replace('_', ' ', ucwords($payment->status, '_')) }}
-                                </span>
-                            </td>
                             <td class="px-2 py-2 whitespace-nowrap">{{ $payment->remarks ?? '-' }}</td>
                             <td class="px-2 py-2 whitespace-nowrap">
                                 <div class="flex space-x-2">
@@ -359,7 +301,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="9" class="px-2 py-2 text-center text-gray-500 whitespace-nowrap">No payments found.</td>
+                            <td colspan="6" class="px-2 py-2 text-center text-gray-500 whitespace-nowrap">No payments found.</td>
                         </tr>
                         @endforelse
                     </tbody>

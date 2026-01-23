@@ -42,7 +42,7 @@ class Payments extends Component
         'amount' => 'required|numeric|min:0.01',
         'payment_date' => 'required|date',
         'payment_method' => 'nullable|string|max:255',
-        'finance_id' => 'required|exists:finances,id',
+        'finance_id' => 'nullable|exists:finances,id',
         'remarks' => 'nullable|string',
     ];
 
@@ -121,9 +121,13 @@ class Payments extends Component
     {
         $this->validate();
 
-        // Determine status based on amount vs balance
-        $finance = Finance::find($this->finance_id);
-        $this->status = $this->calculatePaymentStatus($finance, $this->amount);
+        // Determine status based on amount vs balance if finance is linked
+        if ($this->finance_id) {
+            $finance = Finance::find($this->finance_id);
+            $this->status = $this->calculatePaymentStatus($finance, $this->amount);
+        } else {
+            $this->status = 'fully_paid'; // Default status if no finance linked
+        }
 
         Payment::create([
             'payment_ref' => $this->payment_ref,
@@ -135,9 +139,11 @@ class Payments extends Component
             'remarks' => $this->remarks,
         ]);
 
-        // Update finance balance
-        $finance->balance -= $this->amount;
-        $finance->save();
+        // Update finance balance if linked
+        if ($this->finance_id) {
+            $finance->balance -= $this->amount;
+            $finance->save();
+        }
 
         session()->flash('success', 'Payment recorded successfully!');
         $this->closeCreatePanel();
@@ -154,7 +160,7 @@ class Payments extends Component
         $this->finance_id = $payment->finance_id;
         $this->status = $payment->status;
         $this->remarks = $payment->remarks;
-        $this->selectedFinanceBalance = $payment->finance->balance + $payment->amount; // Add back original payment
+        $this->selectedFinanceBalance = $payment->finance ? $payment->finance->balance + $payment->amount : 0; // Add back original payment
         $this->showCreatePanel = true;
     }
 
@@ -163,13 +169,23 @@ class Payments extends Component
         $this->validate();
 
         $payment = Payment::findOrFail($this->editingPaymentId);
-        $finance = Finance::find($this->finance_id);
 
-        // Restore original balance
-        $finance->balance += $payment->amount;
+        // Handle finance balance restoration if previously linked
+        if ($payment->finance_id) {
+            $oldFinance = Finance::find($payment->finance_id);
+            if ($oldFinance) {
+                $oldFinance->balance += $payment->amount;
+                $oldFinance->save();
+            }
+        }
 
         // Determine status
-        $this->status = $this->calculatePaymentStatus($finance, $this->amount);
+        if ($this->finance_id) {
+            $finance = Finance::find($this->finance_id);
+            $this->status = $this->calculatePaymentStatus($finance, $this->amount);
+        } else {
+            $this->status = 'fully_paid';
+        }
 
         $payment->update([
             'payment_ref' => $this->payment_ref,
@@ -181,9 +197,11 @@ class Payments extends Component
             'remarks' => $this->remarks,
         ]);
 
-        // Update finance balance
-        $finance->balance -= $this->amount;
-        $finance->save();
+        // Update finance balance if linked
+        if ($this->finance_id) {
+            $finance->balance -= $this->amount;
+            $finance->save();
+        }
 
         session()->flash('success', 'Payment updated successfully!');
         $this->closeCreatePanel();
@@ -198,16 +216,18 @@ class Payments extends Component
     public function delete()
     {
         $payment = Payment::findOrFail($this->paymentToDelete);
-        
-        // Restore balance to finance record
-        $finance = Finance::find($payment->finance_id);
-        if ($finance) {
-            $finance->balance += $payment->amount;
-            $finance->save();
+
+        // Restore balance to finance record if linked
+        if ($payment->finance_id) {
+            $finance = Finance::find($payment->finance_id);
+            if ($finance) {
+                $finance->balance += $payment->amount;
+                $finance->save();
+            }
         }
-        
+
         $payment->delete();
-        
+
         session()->flash('success', 'Payment deleted successfully!');
         $this->showDeleteModal = false;
         $this->paymentToDelete = null;

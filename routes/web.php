@@ -314,6 +314,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/reports/promo', \App\Livewire\Pages\Reports\PromoReport::class)
         ->name('reports.promo');
 
+    Route::get('/reports/shipment', \App\Livewire\Pages\Reports\Shipment::class)
+        ->name('reports.shipment');
+
     Route::get('/reports/stock-movement', \App\Livewire\Pages\Reports\StockMovement::class)
         ->name('reports.stock-movement');
         

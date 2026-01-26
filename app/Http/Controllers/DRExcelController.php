@@ -15,12 +15,19 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 
 class DRExcelController extends Controller
 {
-    public function exportDR(Request $request, $batchId)
+    public function exportDR(Request $request, $batchId, $branchId = null)
     {
         $batch = BatchAllocation::with([
             'branchAllocations.branch',
             'branchAllocations.items.product'
         ])->findOrFail($batchId);
+
+        // If branchId is provided, filter to only that branch
+        if ($branchId) {
+            $batch->branchAllocations = $batch->branchAllocations->filter(function ($branchAllocation) use ($branchId) {
+                return $branchAllocation->id == $branchId;
+            });
+        }
 
         try {
             // Create new Spreadsheet object

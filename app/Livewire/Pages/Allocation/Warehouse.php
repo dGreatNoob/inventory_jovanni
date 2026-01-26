@@ -417,9 +417,47 @@ class Warehouse extends Component
                     ->where('product_id', $item->product_id)
                     ->whereNotNull('box_id')
                     ->sum('scanned_quantity');
-    
+
                 if ($totalScannedQty < $item->quantity) {
                     return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    public function isBatchFullyScanned($batch)
+    {
+        if (!$batch) {
+            return false;
+        }
+
+        foreach ($batch->branchAllocations as $branchAllocation) {
+            // Only check original allocation items (without box_id)
+            $originalItems = $branchAllocation->items()->whereNull('box_id')->get();
+            foreach ($originalItems as $item) {
+                // Check if this product has been quantity edited AFTER the batch was created
+                $hasBeenEdited = \Spatie\Activitylog\Models\Activity::where('log_name', 'branch_inventory')
+                    ->where('properties->barcode', $item->product->barcode ?? '')
+                    ->where('properties->branch_id', $branchAllocation->branch_id)
+                    ->where('description', 'like', 'Updated allocated quantity%')
+                    ->where('created_at', '>', $batch->created_at)
+                    ->exists();
+
+                if ($hasBeenEdited) {
+                    // If edited, consider it fully scanned
+                    continue;
+                } else {
+                    // Calculate total scanned quantity for this product across all boxes
+                    $totalScannedQty = BranchAllocationItem::where('branch_allocation_id', $branchAllocation->id)
+                        ->where('product_id', $item->product_id)
+                        ->whereNotNull('box_id')
+                        ->sum('scanned_quantity');
+
+                    if ($totalScannedQty < $item->quantity) {
+                        return false;
+                    }
                 }
             }
         }
@@ -1578,9 +1616,9 @@ class Warehouse extends Component
             return;
         }
 
-        // Validate batch status
-        if ($this->currentBatch->status !== 'draft') {
-            session()->flash('error', 'Only draft batches can be dispatched.');
+        // Allow dispatching again for continuation/finalization
+        if ($this->currentBatch->status !== 'draft' && $this->currentBatch->status !== 'dispatched') {
+            session()->flash('error', 'Invalid batch status for dispatch.');
             return;
         }
 
@@ -1609,18 +1647,28 @@ class Warehouse extends Component
                 'workflow_step' => 4, // Mark workflow as complete
             ]);
 
-            // Create sales receipts for each branch
+            // Create or update sales receipts for each branch
             foreach ($this->currentBatch->branchAllocations as $branchAllocation) {
-                // Create sales receipt
-                $salesReceipt = \App\Models\SalesReceipt::create([
-                    'batch_allocation_id' => $this->currentBatch->id,
-                    'branch_id' => $branchAllocation->branch_id,
-                    'status' => 'pending',
-                    'created_by' => auth()->id(), // Track who dispatched
-                    'dispatched_at' => now(), // Track when dispatched
-                ]);
+                // Check if sales receipt already exists
+                $salesReceipt = \App\Models\SalesReceipt::where('batch_allocation_id', $this->currentBatch->id)
+                    ->where('branch_id', $branchAllocation->branch_id)
+                    ->first();
 
-                // Create sales receipt items (only for original allocation items)
+                if (!$salesReceipt) {
+                    // Create sales receipt
+                    $salesReceipt = \App\Models\SalesReceipt::create([
+                        'batch_allocation_id' => $this->currentBatch->id,
+                        'branch_id' => $branchAllocation->branch_id,
+                        'status' => 'pending',
+                        'created_by' => auth()->id(), // Track who dispatched
+                        'dispatched_at' => now(), // Track when dispatched
+                    ]);
+                } else {
+                    // Update dispatched_at for continuation
+                    $salesReceipt->update(['dispatched_at' => now()]);
+                }
+
+                // Create or update sales receipt items (only for original allocation items)
                 $originalItems = $branchAllocation->items()->whereNull('box_id')->get();
                 foreach ($originalItems as $item) {
                     // Calculate scanned quantity for this product
@@ -1628,18 +1676,28 @@ class Warehouse extends Component
                         ->where('product_id', $item->product_id)
                         ->whereNotNull('box_id')
                         ->sum('scanned_quantity');
-                    
-                    \App\Models\SalesReceiptItem::create([
-                        'sales_receipt_id' => $salesReceipt->id,
-                        'product_id' => $item->product_id,
-                        'allocated_qty' => $item->quantity,
-                        'scanned_qty' => $scannedQty, // Save actual scanned quantity
-                        'received_qty' => 0,
-                        'damaged_qty' => 0,
-                        'missing_qty' => 0,
-                        'sold_qty' => 0,
-                        'status' => 'pending',
-                    ]);
+
+                    $existingItem = \App\Models\SalesReceiptItem::where('sales_receipt_id', $salesReceipt->id)
+                        ->where('product_id', $item->product_id)
+                        ->first();
+
+                    if ($existingItem) {
+                        // Update scanned quantity
+                        $existingItem->update(['scanned_qty' => $scannedQty]);
+                    } else {
+                        // Create new item
+                        \App\Models\SalesReceiptItem::create([
+                            'sales_receipt_id' => $salesReceipt->id,
+                            'product_id' => $item->product_id,
+                            'allocated_qty' => $item->quantity,
+                            'scanned_qty' => $scannedQty, // Save actual scanned quantity
+                            'received_qty' => 0,
+                            'damaged_qty' => 0,
+                            'missing_qty' => 0,
+                            'sold_qty' => 0,
+                            'status' => 'pending',
+                        ]);
+                    }
                 }
             }
 
@@ -2453,6 +2511,38 @@ class Warehouse extends Component
             session()->flash('message', 'Opening DR Excel export in new window...');
         } catch (\Exception $e) {
             session()->flash('error', 'Failed to export DR to Excel: ' . $e->getMessage());
+        }
+    }
+
+    public function generateDRForBranch()
+    {
+        if (!$this->activeBranchId) {
+            session()->flash('error', 'Please select a branch first.');
+            return;
+        }
+
+        if (!$this->currentBatch) {
+            session()->flash('error', 'No batch selected.');
+            return;
+        }
+
+        $branchAllocation = $this->currentBatch->branchAllocations->find($this->activeBranchId);
+        if (!$branchAllocation) {
+            session()->flash('error', 'Branch allocation not found.');
+            return;
+        }
+
+        try {
+            // Open DR Excel export for the specific branch
+            $drUrl = route('allocation.dr.excel', [
+                'batchId' => $this->currentBatch->id,
+                'branchId' => $this->activeBranchId
+            ]);
+
+            $this->dispatch('open-excel-download', url: $drUrl);
+            session()->flash('message', 'Opening DR Excel export for ' . $branchAllocation->branch->name . '...');
+        } catch (\Exception $e) {
+            session()->flash('error', 'Failed to generate DR for branch: ' . $e->getMessage());
         }
     }
 

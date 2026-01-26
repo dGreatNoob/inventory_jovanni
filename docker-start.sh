@@ -77,7 +77,9 @@ if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
     echo "  $0 --prod               # Start with production config"
     echo "  $0 --prod --rebuild     # Clean and rebuild production from scratch"
     echo ""
-    echo "For complete cleanup, use: ./docker-cleanup.sh"
+    echo "Other Scripts:"
+    echo "  ./docker-cleanup.sh     # Complete cleanup and rebuild"
+    echo "  ./docker-update-code.sh # Update code and reload changes"
     exit 0
 elif [ "$1" = "--prod" ] || [ "$1" = "--production" ]; then
     COMPOSE_FILE="docker-compose.prod.yml"

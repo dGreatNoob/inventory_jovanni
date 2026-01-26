@@ -1071,6 +1071,7 @@
                                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Items</th>
                                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Status</th>
                                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">DR Status</th>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Dispatch Status</th>
                                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Action</th>
                                                 </thead>
                                                 <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
@@ -1102,6 +1103,15 @@
                                                                     </span>
                                                                 @else
                                                                     <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-200">No DR</span>
+                                                                @endif
+                                                            </td>
+                                                            <td class="px-4 py-3 whitespace-nowrap text-sm">
+                                                                @if ($box->dispatched_at)
+                                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300">
+                                                                        Dispatched {{ $box->dispatched_at->format('M d, Y H:i') }}
+                                                                    </span>
+                                                                @else
+                                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-200">Pending</span>
                                                                 @endif
                                                             </td>
                                                             <td class="px-4 py-3 whitespace-nowrap text-sm">

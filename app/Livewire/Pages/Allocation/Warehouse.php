@@ -843,10 +843,11 @@ class Warehouse extends Component
 
         $branchAllocation = $box->branchAllocation;
 
-        // Check if this is the first box for this branch (mother DR)
+        // Check if this is the first box for this branch (mother DR) or if the branch has already dispatched boxes (allow multiple mothers for continuing scans)
         $existingBoxesCount = Box::where('branch_allocation_id', $branchAllocation->id)->count();
+        $hasDispatchedBoxes = Box::where('branch_allocation_id', $branchAllocation->id)->whereNotNull('dispatched_at')->exists();
 
-        $isMother = $existingBoxesCount === 1; // First box is mother
+        $isMother = $existingBoxesCount === 1 || $hasDispatchedBoxes; // First box is mother, or any box if branch has dispatched boxes
 
         // Generate DR number
         $drNumber = 'DR-' . $branchAllocation->branch->code . '-' . now()->format('YmdHis');
@@ -1649,6 +1650,18 @@ class Warehouse extends Component
                 'status' => 'dispatched',
                 'workflow_step' => 4, // Mark workflow as complete
             ]);
+
+            // Update dispatched_at for boxes in this batch that don't have it yet
+            Box::whereNull('dispatched_at')
+                ->whereHas('branchAllocation', function($q) {
+                    $q->where('batch_allocation_id', $this->currentBatch->id);
+                })
+                ->update(['dispatched_at' => now()]);
+
+            // Reload available boxes if a branch is selected
+            if ($this->activeBranchId) {
+                $this->loadAvailableBoxes($this->activeBranchId);
+            }
 
             // Create or update sales receipts for each branch
             foreach ($this->currentBatch->branchAllocations as $branchAllocation) {

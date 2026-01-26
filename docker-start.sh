@@ -37,9 +37,24 @@ if [ ! -f .env ]; then
     fi
 fi
 
-# Set permissions
-echo "📁 Setting permissions..."
+# Set permissions on host (before containers start)
+echo "📁 Setting permissions on host..."
+# Create necessary directories if they don't exist
+mkdir -p storage/framework/cache/data 2>/dev/null || true
+mkdir -p storage/framework/sessions 2>/dev/null || true
+mkdir -p storage/framework/views 2>/dev/null || true
+mkdir -p storage/logs 2>/dev/null || true
+mkdir -p storage/app/public 2>/dev/null || true
+mkdir -p bootstrap/cache 2>/dev/null || true
+
+# Set permissions for storage and cache directories
 chmod -R 775 storage bootstrap/cache 2>/dev/null || true
+# Ensure storage subdirectories have correct permissions
+find storage -type d -exec chmod 775 {} \; 2>/dev/null || true
+find storage -type f -exec chmod 664 {} \; 2>/dev/null || true
+find bootstrap/cache -type d -exec chmod 775 {} \; 2>/dev/null || true
+find bootstrap/cache -type f -exec chmod 664 {} \; 2>/dev/null || true
+echo "      ✅ Host permissions set"
 
 # Determine deployment type from arguments or default to development
 COMPOSE_FILE="docker-compose.yml"
@@ -115,44 +130,78 @@ else
     echo "      ✅ Application key already exists"
 fi
 
-# Run migrations
+# Run migrations with better error handling
 echo "  2️⃣  Running database migrations..."
-if $DOCKER_COMPOSE_CMD -f $COMPOSE_FILE exec -T app php artisan migrate --force > /dev/null 2>&1; then
-    echo "      ✅ Migrations completed"
-    
-    # Run seeders only if database is empty (first run)
-    echo "  2️⃣.1️⃣  Checking if seeders are needed..."
-    USER_COUNT=$($DOCKER_COMPOSE_CMD -f $COMPOSE_FILE exec -T app php artisan tinker --execute="echo App\Models\User::count();" 2>/dev/null | tail -1 | tr -d '\r\n' || echo "0")
-    if [ "$USER_COUNT" = "0" ] || [ -z "$USER_COUNT" ]; then
-        echo "      Running database seeders..."
-        $DOCKER_COMPOSE_CMD -f $COMPOSE_FILE exec -T app php artisan db:seed --force > /dev/null 2>&1 || echo "      ⚠️  Seeding may have issues"
-        echo "      ✅ Seeders completed"
+# Wait a bit more for database to be fully ready
+sleep 3
+# Check database connection first
+if $DOCKER_COMPOSE_CMD -f $COMPOSE_FILE exec -T app php artisan db:show > /dev/null 2>&1; then
+    # Run migrations
+    if $DOCKER_COMPOSE_CMD -f $COMPOSE_FILE exec -T app php artisan migrate --force > /dev/null 2>&1; then
+        echo "      ✅ Migrations completed"
+        
+        # Run seeders only if database is empty (first run)
+        echo "  2️⃣.1️⃣  Checking if seeders are needed..."
+        USER_COUNT=$($DOCKER_COMPOSE_CMD -f $COMPOSE_FILE exec -T app php artisan tinker --execute="echo App\Models\User::count();" 2>/dev/null | tail -1 | tr -d '\r\n' || echo "0")
+        if [ "$USER_COUNT" = "0" ] || [ -z "$USER_COUNT" ] || [ "$USER_COUNT" = "" ]; then
+            echo "      Running database seeders..."
+            $DOCKER_COMPOSE_CMD -f $COMPOSE_FILE exec -T app php artisan db:seed --force > /dev/null 2>&1 || echo "      ⚠️  Seeding may have issues"
+            echo "      ✅ Seeders completed"
+        else
+            echo "      ⏭️  Database already seeded (users exist)"
+        fi
     else
-        echo "      ⏭️  Database already seeded (users exist)"
+        echo "      ⚠️  Migration may have failed or already run. Check logs if needed."
     fi
 else
-    echo "      ⚠️  Migration may have failed or already run. Check logs if needed."
+    echo "      ⚠️  Cannot connect to database. Please check database configuration."
 fi
 
+# Create storage link and ensure proper setup
+echo "  3️⃣  Creating storage symlink and ensuring directories exist..."
+# Remove existing symlink if it's broken or incorrect
+$DOCKER_COMPOSE_CMD -f $COMPOSE_FILE exec -T app rm -f /var/www/public/storage > /dev/null 2>&1 || true
 # Create storage link
-echo "  3️⃣  Creating storage symlink..."
 $DOCKER_COMPOSE_CMD -f $COMPOSE_FILE exec -T app php artisan storage:link > /dev/null 2>&1 || true
-echo "      ✅ Storage link created"
+# Ensure storage subdirectories exist
+$DOCKER_COMPOSE_CMD -f $COMPOSE_FILE exec -T app mkdir -p /var/www/storage/framework/cache/data > /dev/null 2>&1 || true
+$DOCKER_COMPOSE_CMD -f $COMPOSE_FILE exec -T app mkdir -p /var/www/storage/framework/sessions > /dev/null 2>&1 || true
+$DOCKER_COMPOSE_CMD -f $COMPOSE_FILE exec -T app mkdir -p /var/www/storage/framework/views > /dev/null 2>&1 || true
+$DOCKER_COMPOSE_CMD -f $COMPOSE_FILE exec -T app mkdir -p /var/www/storage/logs > /dev/null 2>&1 || true
+$DOCKER_COMPOSE_CMD -f $COMPOSE_FILE exec -T app mkdir -p /var/www/storage/app/public > /dev/null 2>&1 || true
+echo "      ✅ Storage link and directories created"
 
 # Build assets if not present
 echo "  4️⃣  Checking and building assets..."
-if [ ! -f "public/build/manifest.json" ]; then
+# Check if manifest exists in container
+MANIFEST_EXISTS=$($DOCKER_COMPOSE_CMD -f $COMPOSE_FILE exec -T app test -f /var/www/public/build/manifest.json && echo "yes" || echo "no")
+if [ "$MANIFEST_EXISTS" != "yes" ] && [ ! -f "public/build/manifest.json" ]; then
     echo "      Building frontend assets..."
+    # Ensure node_modules exists (check in container)
+    if ! $DOCKER_COMPOSE_CMD -f $COMPOSE_FILE exec -T app test -d /var/www/node_modules > /dev/null 2>&1; then
+        echo "      Installing npm dependencies..."
+        $DOCKER_COMPOSE_CMD -f $COMPOSE_FILE exec -T app npm ci --only=production > /dev/null 2>&1 || true
+    fi
     $DOCKER_COMPOSE_CMD -f $COMPOSE_FILE exec -T app npm run build > /dev/null 2>&1 || echo "      ⚠️  Asset build may have issues"
+    echo "      ✅ Assets built"
 else
     echo "      ✅ Assets already built"
 fi
 
-# Set proper permissions
-echo "  5️⃣  Setting file permissions..."
-$DOCKER_COMPOSE_CMD -f $COMPOSE_FILE exec -T app chown -R www-data:www-data storage bootstrap/cache > /dev/null 2>&1 || true
-$DOCKER_COMPOSE_CMD -f $COMPOSE_FILE exec -T app chmod -R 775 storage bootstrap/cache > /dev/null 2>&1 || true
-echo "      ✅ Permissions set"
+# Set proper permissions inside container
+echo "  5️⃣  Setting file permissions inside container..."
+# Set ownership for all storage and cache directories
+$DOCKER_COMPOSE_CMD -f $COMPOSE_FILE exec -T app chown -R www-data:www-data /var/www/storage > /dev/null 2>&1 || true
+$DOCKER_COMPOSE_CMD -f $COMPOSE_FILE exec -T app chown -R www-data:www-data /var/www/bootstrap/cache > /dev/null 2>&1 || true
+# Set directory permissions
+$DOCKER_COMPOSE_CMD -f $COMPOSE_FILE exec -T app find /var/www/storage -type d -exec chmod 775 {} \; > /dev/null 2>&1 || true
+$DOCKER_COMPOSE_CMD -f $COMPOSE_FILE exec -T app find /var/www/bootstrap/cache -type d -exec chmod 775 {} \; > /dev/null 2>&1 || true
+# Set file permissions
+$DOCKER_COMPOSE_CMD -f $COMPOSE_FILE exec -T app find /var/www/storage -type f -exec chmod 664 {} \; > /dev/null 2>&1 || true
+$DOCKER_COMPOSE_CMD -f $COMPOSE_FILE exec -T app find /var/www/bootstrap/cache -type f -exec chmod 664 {} \; > /dev/null 2>&1 || true
+# Ensure public/storage symlink has correct permissions if it exists
+$DOCKER_COMPOSE_CMD -f $COMPOSE_FILE exec -T app chown -h www-data:www-data /var/www/public/storage > /dev/null 2>&1 || true
+echo "      ✅ Container permissions set"
 
 # Cache configuration (only after ensuring APP_URL is correct)
 echo "  6️⃣  Caching configuration..."

@@ -74,9 +74,16 @@ class Index extends Component
     {
         $this->availableBatches = BatchAllocation::with(['branchAllocations.branch'])
             ->where('status', 'dispatched')
-            ->whereDoesntHave('branchAllocations', function($query) {
-                $query->whereHas('shipments', function($query) {
-                    $query->whereIn('shipping_status', ['completed', 'cancelled', 'delivered']);
+            ->whereHas('branchAllocations', function($query) {
+                // Check if branch allocation has dispatched mother DRs that haven't been shipped
+                $query->whereHas('deliveryReceipts', function($drQuery) {
+                    $drQuery->where('type', 'mother')
+                            ->whereHas('box', function($boxQuery) {
+                                $boxQuery->whereNotNull('dispatched_at');
+                            })
+                            ->whereDoesntHave('shipments', function($shipmentQuery) {
+                                $shipmentQuery->whereIn('shipping_status', ['completed', 'cancelled', 'delivered']);
+                            });
                 });
             })
             ->orderBy('created_at', 'desc')
@@ -107,8 +114,16 @@ class Index extends Component
             $this->availableBranches = [];
             return;
         }
+
+        // Only show branches that have dispatched mother DRs
         $this->availableBranches = BranchAllocation::with('branch')
             ->where('batch_allocation_id', $this->selectedBatchId)
+            ->whereHas('deliveryReceipts', function($query) {
+                $query->where('type', 'mother')
+                      ->whereHas('box', function($boxQuery) {
+                          $boxQuery->where('dispatched_at', '!=', null);
+                      });
+            })
             ->get()
             ->all();
     }
@@ -151,31 +166,64 @@ class Index extends Component
             }],
             'delivery_method'     => 'required|string|max:255',
             'vehicle_plate_number'=> 'nullable|string|max:255',
-            'selectedBranchId'    => ['required', 'exists:branch_allocations,id', function ($attribute, $value, $fail) {
-                $existingShipment = Shipment::where('branch_allocation_id', $value)->first();
-                if ($existingShipment) {
-                    $fail('A shipment has already been created for this branch allocation.');
-                }
-            }],
+            'selectedBranchId'    => ['required', 'exists:branch_allocations,id'],
         ]);
 
         DB::beginTransaction();
 
         try {
             if (is_null($this->editValue)) {
-                // Create new shipment for the selected branch allocation
+                // Create shipments for each mother DR in the selected branch allocation
                 $branchAllocation = BranchAllocation::find($this->selectedBranchId);
 
-                Shipment::create([
-                    'shipping_plan_num'    => $this->shipping_plan_num,
-                    'sales_order_id'       => null,
-                    'batch_allocation_id'  => $branchAllocation->batch_allocation_id,
-                    'branch_allocation_id' => $this->selectedBranchId,
-                    'customer_id'          => null,
-                    'scheduled_ship_date'  => $this->scheduled_ship_date,
-                    'delivery_method'      => $this->delivery_method,
-                    'vehicle_plate_number' => $this->vehicle_plate_number,
-                ]);
+                // Get all mother DRs for this branch allocation
+                $motherDRs = \App\Models\DeliveryReceipt::where('branch_allocation_id', $this->selectedBranchId)
+                    ->where('type', 'mother')
+                    ->whereHas('box', function($query) {
+                        $query->where('dispatched_at', '!=', null);
+                    })
+                    ->orderBy('created_at')
+                    ->get();
+
+                if ($motherDRs->isEmpty()) {
+                    throw new \Exception('No dispatched mother DRs found for this branch allocation.');
+                }
+
+                $createdShipments = 0;
+                foreach ($motherDRs as $index => $motherDR) {
+                    // Check if shipment already exists for this DR
+                    $existingShipment = Shipment::where('delivery_receipt_id', $motherDR->id)->first();
+                    if ($existingShipment) {
+                        continue; // Skip if already exists
+                    }
+
+                    // Generate unique shipping plan number for each DR
+                    $drSequence = $index + 1;
+                    $shippingPlanNum = $this->shipping_plan_num . '-' . str_pad($drSequence, 2, '0', STR_PAD_LEFT);
+
+                    Shipment::create([
+                        'shipping_plan_num'    => $shippingPlanNum,
+                        'sales_order_id'       => null,
+                        'batch_allocation_id'  => $branchAllocation->batch_allocation_id,
+                        'branch_allocation_id' => $this->selectedBranchId,
+                        'delivery_receipt_id'  => $motherDR->id,
+                        'customer_id'          => null,
+                        'scheduled_ship_date'  => $this->scheduled_ship_date,
+                        'delivery_method'      => $this->delivery_method,
+                        'vehicle_plate_number' => $this->vehicle_plate_number,
+                    ]);
+
+                    $createdShipments++;
+                }
+
+                if ($createdShipments === 0) {
+                    throw new \Exception('All shipments for this branch have already been created.');
+                }
+
+                $message = $createdShipments === 1
+                    ? 'Shipment created successfully.'
+                    : "{$createdShipments} shipments created successfully for different DRs.";
+
             } else {
                 $shipment = Shipment::find($this->editValue);
                 $branchAllocation = BranchAllocation::find($this->selectedBranchId);
@@ -190,19 +238,18 @@ class Index extends Component
                     'vehicle_plate_number' => $this->vehicle_plate_number,
                 ];
                 $shipment->update($shipmentData);
+                $message = 'Shipment updated successfully.';
             }
 
             DB::commit();
 
-            session()->flash('success', 'Shipment created successfully.');
+            session()->flash('success', $message);
             $this->resetForm();
 
         } catch (\Exception $e) {
             DB::rollBack();
             $this->addError('shipment_error', $e->getMessage());
         }
-
-        // You may want further logic here for each branch allocation if needed.
     }
 
     protected function resetForm()
@@ -245,7 +292,7 @@ class Index extends Component
 
     public function render()
     {
-        $query = Shipment::with('customer');
+        $query = Shipment::with(['customer', 'branchAllocation.branch', 'deliveryReceipt']);
 
         return view('livewire.pages.shipment.index', [
             'shipments' => $query->search($this->search)

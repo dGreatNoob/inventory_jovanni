@@ -61,17 +61,23 @@ COMPOSE_FILE="docker-compose.yml"
 DEPLOYMENT_TYPE="development"
 
 if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
-    echo "Usage: $0 [OPTIONS]"
+    echo "Usage: $0 [OPTIONS] [--rebuild|--clean]"
     echo ""
     echo "Options:"
     echo "  --dev, --development    Use development configuration (default)"
     echo "  --prod, --production   Use production configuration"
     echo "  --help, -h              Show this help message"
     echo ""
+    echo "Additional Options:"
+    echo "  --rebuild, --clean     Remove old containers/images before building"
+    echo ""
     echo "Examples:"
     echo "  $0                      # Start with development config"
     echo "  $0 --dev                # Start with development config"
     echo "  $0 --prod               # Start with production config"
+    echo "  $0 --prod --rebuild     # Clean and rebuild production from scratch"
+    echo ""
+    echo "For complete cleanup, use: ./docker-cleanup.sh"
     exit 0
 elif [ "$1" = "--prod" ] || [ "$1" = "--production" ]; then
     COMPOSE_FILE="docker-compose.prod.yml"
@@ -96,6 +102,15 @@ if [ -n "$APP_URL" ] && [ "$APP_URL" != "localhost" ]; then
     export APP_URL
     export ASSET_URL
 fi
+
+# Check if user wants to rebuild from scratch
+if [ "$2" = "--rebuild" ] || [ "$2" = "--clean" ]; then
+    echo "   🧹 Cleaning up old containers and images..."
+    $DOCKER_COMPOSE_CMD -f $COMPOSE_FILE down 2>/dev/null || true
+    docker images | grep "inventory_jovanni" | awk '{print $3}' | xargs -r docker rmi -f 2>/dev/null || true
+    echo "   ✅ Cleanup complete"
+fi
+
 if ! $DOCKER_COMPOSE_CMD -f $COMPOSE_FILE up -d --build; then
     echo "❌ Failed to start containers. Check the error messages above."
     exit 1

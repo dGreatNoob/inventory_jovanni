@@ -933,10 +933,13 @@ class Warehouse extends Component
             $this->selectedProductIdsForAllocation,
             $this->temporarySelectedProducts
         ));
-        
+
         // Clear temporary selection
         $this->temporarySelectedProducts = [];
-        
+
+        // Load the matrix with default quantities
+        $this->loadMatrix();
+
         session()->flash('message', 'Products added to allocation list!');
     }
 
@@ -1506,7 +1509,7 @@ class Warehouse extends Component
                 foreach ($this->selectedProductIdsForAllocation as $productId) {
                     // Find existing allocation for this product and branch
                     $existingItem = $branchAllocation->items->where('product_id', $productId)->first();
-                    $this->matrixQuantities[$branchAllocation->id][$productId] = $existingItem ? $existingItem->quantity : 0;
+                    $this->matrixQuantities[$branchAllocation->id][$productId] = $existingItem ? $existingItem->quantity : 4;
                 }
             }
         }

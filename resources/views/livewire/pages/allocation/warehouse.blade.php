@@ -788,12 +788,13 @@
                                                             </td>
                                                             @foreach ($filteredProductsForMatrix as $product)
                                                                 <td
-                                                                    class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-center bg-white dark:bg-gray-800">
-                                                                    <input type="number"
-                                                                        wire:model.blur="matrixQuantities.{{ $branchAllocation->id }}.{{ $product->id }}"
-                                                                        min="0" placeholder="0"
-                                                                        class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white text-center">
-                                                                </td>
+                                                                        class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-center bg-white dark:bg-gray-800">
+                                                                        <input type="number"
+                                                                            wire:model.blur="matrixQuantities.{{ $branchAllocation->id }}.{{ $product->id }}"
+                                                                            value="{{ $matrixQuantities[$branchAllocation->id][$product->id] ?? 4 }}"
+                                                                            min="0" placeholder="4"
+                                                                            class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white text-center">
+                                                                    </td>
                                                             @endforeach
                                                         </tr>
                                                     @endforeach

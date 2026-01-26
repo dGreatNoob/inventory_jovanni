@@ -48,24 +48,20 @@
 
                     <!-- Barcode Display -->
                     @if($product->barcode)
-                        <div class="bg-white w-full py-3">
-                            <div class="flex flex-col items-center justify-center px-4">
-                                @php
-                                    $generator = new Picqer\Barcode\BarcodeGeneratorHTML();
-                                    $barcodeHtml = $generator->getBarcode($product->barcode, $generator::TYPE_CODE_128, 2, 30);
-                                @endphp
-                                <div class="barcode-container mb-2">
-                                    {!! $barcodeHtml !!}
-                                </div>
-                                <p class="text-xs font-mono text-gray-800 text-center">{{ $product->barcode }}</p>
+                        @php $isSale = str(\Illuminate\Support\Str::upper((string) $product->price_note))->startsWith('SAL'); @endphp
+                        <div class="h-24 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center space-y-1 px-3">
+                            <div class="px-2 py-1 rounded border {{ $isSale ? 'bg-red-600 border-red-600 shadow-lg' : 'bg-white border-gray-200 dark:border-gray-600' }}">
+                                <img src="{{ app(\App\Services\BarcodeService::class)->generateBarcodePNG($product->barcode, 1, 42) }}"
+                                     alt="Barcode {{ $product->barcode }}" class="h-10" style="image-rendering: pixelated;">
                             </div>
+                            <p class="text-xs font-mono {{ $isSale ? 'text-red-700 dark:text-red-300' : 'text-gray-800 dark:text-gray-200' }}">{{ $product->barcode }}</p>
                         </div>
                     @endif
 
                     <!-- Product Info -->
                     <div class="p-3">
                         <h3 class="text-sm font-medium text-gray-900 dark:text-white truncate">
-                            {{ $product->name }}
+                            {{ $product->remarks ?? $product->name }}
                         </h3>
                         <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                             SKU: {{ $product->sku }}
@@ -86,20 +82,21 @@
                                 </p>
                             </div>
                             <div class="flex space-x-1">
-                                <flux:modal.trigger name="create-edit-product">
-                                    <flux:button 
-                                        wire:click="editProduct({{ $product->id }})" 
-                                        variant="ghost"
-                                        size="sm"
-                                        class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
-                                        title="Edit"
-                                    >
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                        </svg>
-                                    </flux:button>
-                                </flux:modal.trigger>
+                                @can('product edit')
+                                <flux:button 
+                                    wire:click="editProduct({{ $product->id }})" 
+                                    variant="ghost"
+                                    size="sm"
+                                    class="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
+                                    title="Edit"
+                                >
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                    </svg>
+                                </flux:button>
+                                @endcan
                                 <flux:modal.trigger name="delete-product">
+                                    @can ('product delete')
                                     <flux:button 
                                         wire:click="deleteProduct({{ $product->id }})" 
                                         variant="ghost"
@@ -111,6 +108,7 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                         </svg>
                                     </flux:button>
+                                    @endcan
                                 </flux:modal.trigger>
                             </div>
                         </div>

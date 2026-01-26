@@ -14,6 +14,8 @@ class View extends Component
     public $company_results;
     public $product_results;
     public $shippingMethodDropDown = [];
+    public $editingItemId = null;
+    public $editQuantities = [];
     
     public function mount($shipmentId)
     {
@@ -25,30 +27,16 @@ class View extends Component
 
     }
 
-    public function approveSalesOrder()
+    public function completeShipment()
     {
-        // if (!Auth::user()->can(PermissionEnum::APPROVE_REQUEST_SLIP->value)) {
-
-        //     abort(403, 'You do not have permission to approve this request slip.');
-
-        // } else {
-        //     $this->request_slip->update([
-        //         'status' => 'approved',
-        //         'approver' => Auth::user()->id,
-
-        //     ]);
-        //     session()->flash('message', 'Request Slip approved successfully.');
-        //     return redirect()->route('requisition.requestslip');
-        // }
-
         // Only update if the current shipping status is 'pending' to prevent bypassing the intended flow
         if ($this->ShipmentResult->shipping_status === 'pending') {
-            $this->ShipmentResult->shipping_status = 'approved';
+            $this->ShipmentResult->shipping_status = 'completed';
             $this->ShipmentResult->approver_id = Auth::id(); // shorter version of Auth::user()->id
             $this->ShipmentResult->save();
         }
 
-        session()->flash('message', 'Shipment has been approved successfully.');
+        session()->flash('message', 'Shipment has been completed successfully.');
         return redirect()->route('shipment.index');
     }
 
@@ -67,19 +55,68 @@ class View extends Component
         //     session()->flash('message', 'Request Slip Rejected.');
         //     return redirect()->route('requisition.requestslip');
         // }
-               
-        $this->ShipmentResult->shipping_status = 'cancelled'; 
-        $this->ShipmentResult->approver_id = Auth::user()->id; 
+
+        $this->ShipmentResult->shipping_status = 'cancelled';
+        $this->ShipmentResult->approver_id = Auth::user()->id;
         $this->ShipmentResult->save();
-       
+
         session()->flash('message', 'Shipment has been cancelled successfully.');
         return redirect()->route('shipment.index');
     }
 
+    public function startEdit($itemId)
+    {
+        $this->editingItemId = $itemId;
+        $item = \App\Models\BranchAllocationItem::find($itemId);
+        $this->editQuantities[$itemId] = $item->quantity;
+    }
+
+    public function saveEdit($itemId)
+    {
+        $this->validate([
+            'editQuantities.' . $itemId => 'required|integer|min:0',
+        ]);
+
+        $item = \App\Models\BranchAllocationItem::find($itemId);
+        $oldQuantity = $item->quantity;
+        $item->quantity = $this->editQuantities[$itemId];
+        $item->save();
+
+        // Log activity
+        \Spatie\Activitylog\Models\Activity::create([
+            'log_name' => 'branch_inventory',
+            'description' => "Updated allocated quantity for product {$item->getDisplayBarcodeAttribute()} in shipment {$this->ShipmentResult->shipping_plan_num}",
+            'subject_type' => \App\Models\BranchAllocationItem::class,
+            'subject_id' => $item->id,
+            'causer_type' => null,
+            'causer_id' => null,
+            'properties' => [
+                'product_id' => $item->product_id,
+                'product_name' => $item->getDisplayNameAttribute(),
+                'barcode' => $item->getDisplayBarcodeAttribute(),
+                'shipment_id' => $this->ShipmentResult->id,
+                'old_quantity' => $oldQuantity,
+                'new_quantity' => $this->editQuantities[$itemId],
+                'branch_id' => $this->ShipmentResult->branchAllocation->branch_id ?? null,
+            ],
+        ]);
+
+        $this->editingItemId = null;
+        unset($this->editQuantities[$itemId]);
+
+        session()->flash('message', 'Product quantity updated successfully.');
+    }
+
+    public function cancelEdit()
+    {
+        $this->editingItemId = null;
+        $this->editQuantities = [];
+    }
+
     public function render()
-    {               
+    {
         return view('livewire.pages.shipment.view', [
-            'shipment_view' => Shipment::with(['salesOrder'])->find($this->shipmentId),
+            'shipment_view' => Shipment::with(['salesOrder', 'branchAllocation.items.product'])->find($this->shipmentId),
         ]);
     }
 }

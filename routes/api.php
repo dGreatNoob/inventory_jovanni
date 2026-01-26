@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\InventoryLocationController;
 use App\Http\Controllers\Api\ProductImageController;
 use App\Http\Controllers\Api\InventoryMovementController;
 use App\Http\Controllers\Api\BarcodeController;
+use App\Http\Controllers\Api\PaymentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -144,4 +145,17 @@ Route::prefix('barcodes')->group(function () {
     Route::post('/validate', [BarcodeController::class, 'validate']);
     Route::post('/check-exists', [BarcodeController::class, 'checkExists']);
     Route::post('/bulk-generate', [BarcodeController::class, 'bulkGenerate']);
+});
+
+// Payment Management API Routes
+Route::prefix('payments')->group(function () {
+    Route::get('/', [PaymentController::class, 'index']);
+    Route::post('/', [PaymentController::class, 'store']);
+    Route::get('/stats', [PaymentController::class, 'stats']);
+    
+    Route::prefix('{id}')->group(function () {
+        Route::get('/', [PaymentController::class, 'show']);
+        Route::put('/', [PaymentController::class, 'update']);
+        Route::delete('/', [PaymentController::class, 'destroy']);
+    });
 });

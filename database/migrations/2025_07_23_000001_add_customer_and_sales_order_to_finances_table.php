@@ -12,8 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('finances', function (Blueprint $table) {
-            $table->string('customer')->nullable()->after('purchase_order'); // <-- ADDED FOR RECEIVABLES
-            $table->string('sales_order')->nullable()->after('customer'); // <-- ADDED FOR RECEIVABLES
+            // Only add columns if they don't already exist
+            if (!Schema::hasColumn('finances', 'customer')) {
+                $table->string('customer')->nullable()->after('purchase_order'); // <-- ADDED FOR RECEIVABLES
+            }
+            if (!Schema::hasColumn('finances', 'sales_order')) {
+                $table->string('sales_order')->nullable()->after('customer'); // <-- ADDED FOR RECEIVABLES
+            }
         });
     }
 

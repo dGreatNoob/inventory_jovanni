@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('agent_branch_assignments')) {
+            return;
+        }
+
         Schema::create('agent_branch_assignments', function (Blueprint $table) {
             $table->id();
             

@@ -80,11 +80,6 @@ class CategoryService
                 throw new \Exception('Cannot delete category with existing products');
             }
 
-            // Check if category has children
-            if ($category->children()->count() > 0) {
-                throw new \Exception('Cannot delete category with subcategories');
-            }
-
             // Soft delete the category
             $category->delete();
 
@@ -178,8 +173,6 @@ class CategoryService
         $totalCategories = Category::count();
         $activeCategories = Category::active()->count();
         $inactiveCategories = $totalCategories - $activeCategories;
-        $rootCategories = Category::whereNull('parent_id')->count();
-        $subCategories = Category::whereNotNull('parent_id')->count();
 
         // Get categories with most products
         $topCategories = Category::withCount('products')
@@ -191,8 +184,6 @@ class CategoryService
             'total_categories' => $totalCategories,
             'active_categories' => $activeCategories,
             'inactive_categories' => $inactiveCategories,
-            'root_categories' => $rootCategories,
-            'sub_categories' => $subCategories,
             'top_categories' => $topCategories,
         ];
     }

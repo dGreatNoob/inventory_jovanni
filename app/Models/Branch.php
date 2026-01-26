@@ -177,4 +177,26 @@ class Branch extends Model
             }
         });
     }
+    public function products()
+    {
+        // If you have a pivot table "branch_product"
+        return $this->belongsToMany(Product::class, 'branch_product')
+                    ->withPivot('stock'); // Add other fields from pivot if any
+    }
+
+    /**
+     * Get all branch allocations for this branch.
+     */
+    public function branchAllocations()
+    {
+        return $this->hasMany(BranchAllocation::class);
+    }
+
+    /**
+     * Get all shipments for this branch through branch allocations.
+     */
+    public function shipments()
+    {
+        return $this->hasManyThrough(Shipment::class, BranchAllocation::class, 'branch_id', 'branch_allocation_id');
+    }
 }

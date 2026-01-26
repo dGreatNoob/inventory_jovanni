@@ -53,7 +53,7 @@
                         </svg>
                         Dashboard
                     </a>
-                </div>
+                    </div>
             </div>
 
             <!-- Mobile menu button -->

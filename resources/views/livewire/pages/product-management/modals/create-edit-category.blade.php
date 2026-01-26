@@ -5,19 +5,15 @@
             <flux:heading size="lg" class="text-gray-900 dark:text-white">
                 @if($editingCategory)
                     Edit Category
-                @elseif($creationMode === 'root')
-                    Create New Root Category
                 @else
-                    Create New Subcategory
+                    Create New Category
                 @endif
             </flux:heading>
             <flux:subheading class="text-gray-600 dark:text-gray-400">
                 @if($editingCategory)
                     Update the category information below.
-                @elseif($creationMode === 'root')
-                    Fill in the root category information to organize your products.
                 @else
-                    Fill in the subcategory information to organize your products.
+                    Fill in the category information to organize your products.
                 @endif
             </flux:subheading>
         </div>
@@ -48,25 +44,6 @@
                     <flux:error>{{ $message }}</flux:error>
                 @enderror
             </flux:field>
-
-            @if($creationMode === 'subcategory')
-            <flux:field>
-                <flux:label>Parent Category</flux:label>
-                <flux:select 
-                    wire:model="form.parent_id" 
-                    placeholder="Select parent category"
-                    class="dark:bg-gray-700 dark:text-white dark:border-gray-600"
-                >
-                    <option value="">No Parent (Root Category)</option>
-                    @foreach($parentCategories as $category)
-                        <option value="{{ $category->id }}">{{ $category->name }}</option>
-                    @endforeach
-                </flux:select>
-                @error('form.parent_id') 
-                    <flux:error>{{ $message }}</flux:error>
-                @enderror
-            </flux:field>
-            @endif
 
             <flux:field>
                 <flux:label>Sort Order</flux:label>
@@ -115,10 +92,8 @@
                 >
                     @if($editingCategory)
                         Update Category
-                    @elseif($creationMode === 'root')
-                        Create Root Category
                     @else
-                        Create Subcategory
+                        Create Category
                     @endif
                 </flux:button>
             </div>

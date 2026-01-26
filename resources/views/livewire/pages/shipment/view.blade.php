@@ -1,125 +1,209 @@
 <div class="mb-14">
     <x-collapsible-card title="Shipment Details" open="true" size="full">
-        <form x-show="open" x-transition>   
-            <div class="grid gap-6 mb-2 md:grid-cols-2">         
-                <x-dropdown 
-                    wire:model.defer="status"
-                    value="{{ $shipment_view->shipping_status }}" 
-                    name="status" 
-                    label="Status" 
-                    :options="[
-                        'ready' => 'ready', 
-                        'shipped' => 'shipped', 
-                        'delivered' => 'delivered', 
-                        'cancelled' => 'cancelled'
-                    ]"
-                    placeholder="Select a Status" 
-                    readonly 
-                    disabled  
-                />
+        <form x-show="open" x-transition>
+            <!-- Shipment Information Section -->
+            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    Shipment Information
+                </h3>
 
-               <x-input 
-                    type="text" 
-                    value="{{$shipment_view->scheduled_ship_date}}" 
-                    name="scheduled_ship_date" 
-                    label="Scheduled Ship Date" 
-                    readonly 
-                    disabled   
-                />  
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div>
+                        <x-input
+                            type="text"
+                            value="{{$shipment_view->shipping_plan_num}}"
+                            name="shipping_plan_num"
+                            label="Shipment Reference Number"
+                            readonly
+                            disabled
+                        />
+                    </div>
+
+                    <div>
+                        <x-input
+                            type="text"
+                            value="{{$shipment_view->scheduled_ship_date}}"
+                            name="scheduled_ship_date"
+                            label="Scheduled Ship Date"
+                            readonly
+                            disabled
+                        />
+                    </div>
+
+                    <div>
+                        <x-input
+                            type="text"
+                            value="{{$shipment_view->vehicle_plate_number}}"
+                            name="vehicle_plate_number"
+                            label="Vehicle Plate Number"
+                            readonly
+                            disabled
+                        />
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <x-input
+                        type="text"
+                        value="{{$shipment_view->delivery_method}}"
+                        name="delivery_method"
+                        label="Delivery Method"
+                        readonly
+                        disabled
+                    />
+                </div>
             </div>
 
-            <div class="grid gap-6 mb-2 md:grid-cols-2">
-                <x-dropdown 
-                    readonly 
-                    disabled 
-                    value="{{$shipment_view->carrier_name}}" 
-                    name="carrier_name" 
-                    label="Carrier Name"  
-                    :options="$company_results" 
-                    placeholder="Carrier Name"
-                />
-                <x-input 
-                    type="text" 
-                    rows="8" 
-                    value="{{$shipment_view->vehicle_plate_number}}" 
-                    name="vehicle_plate_number" 
-                    label="Vehicle Plate Number" 
-                    readonly 
-                    disabled   
-                />
-            </div>
-              
-            <div class="grid gap-6 mb-2 md:grid-cols-2">
-                <x-input 
-                    type="textarea" 
-                    value="{{$shipment_view->special_handling_notes}}" 
-                    rows="8" 
-                    name="special_handling_notes" 
-                    label="Special Handling Notes" 
-                    readonly 
-                    disabled 
-                />
-                <x-input 
-                    type="text" 
-                    value="{{$shipment_view->customer_name}}" 
-                    rows="8" 
-                    name="customer_name" 
-                    label="Customer Name" 
-                    readonly 
-                    disabled 
-                />
+            <!-- Status Information -->
+            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Status Information
+                </h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Shipping Status</label>
+                        <span class="inline-block px-3 py-2 text-sm font-semibold rounded-full
+                            @if ($shipment_view->shipping_status === 'pending') bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300
+                            @elseif($shipment_view->shipping_status === 'approved') bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300
+                            @elseif($shipment_view->shipping_status === 'in_transit') bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300
+                            @elseif($shipment_view->shipping_status === 'completed') bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300
+                            @elseif($shipment_view->shipping_status === 'cancelled') bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300
+                            @elseif($shipment_view->shipping_status === 'damaged') bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300
+                            @elseif($shipment_view->shipping_status === 'incomplete') bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300
+                            @else bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300 @endif">
+                            {{ ucfirst(str_replace('_', ' ', $shipment_view->shipping_status)) }}
+                        </span>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Created At</label>
+                        <p class="text-sm text-gray-900 dark:text-white">
+                            {{ $shipment_view->created_at->format('M d, Y h:i A') }}
+                        </p>
+                    </div>
+                </div>
             </div>
 
-            <div class="grid gap-6 mb-2 md:grid-cols-2">
-                <x-input 
-                    type="text" 
-                    value="{{$shipment_view->customer_phone}}" 
-                    rows="8" 
-                    name="phone" 
-                    label="Phone" 
-                    readonly 
-                    disabled 
-                />
-                <x-input 
-                    type="text" 
-                    value="{{$shipment_view->customer_email}}" 
-                    rows="8" 
-                    name="Email"
-                    label="Email" 
-                    readonly 
-                    disabled 
-                />
+            <!-- Branch Information -->
+            @if($shipment_view->branchAllocation && $shipment_view->branchAllocation->branch)
+            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                    </svg>
+                    Branch Information
+                </h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Branch Name</label>
+                        <p class="text-sm text-gray-900 dark:text-white font-medium">
+                            {{ $shipment_view->branchAllocation->branch->name }}
+                        </p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Branch Address</label>
+                        <p class="text-sm text-gray-900 dark:text-white">
+                            {{ $shipment_view->branchAllocation->branch->address ?? 'N/A' }}
+                        </p>
+                    </div>
+                </div>
             </div>
+            @endif
 
+            <!-- Product Information -->
+            @if($shipment_view->branchAllocation && $shipment_view->branchAllocation->items)
+            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                    </svg>
+                    Product Information
+                </h3>
 
-            <div class="grid gap-6 mb-2 md:grid-cols-2">
-                <x-input 
-                    type="text" 
-                    value="{{$shipment_view->delivery_method}}" 
-                    rows="2" 
-                    name="delivery_method" 
-                    label="Delivery Method" 
-                    readonly 
-                    disabled   
-                />
-                
-                <x-input 
-                    type="text" 
-                    value="{{$shipment_view->shipping_priority}}" 
-                    rows="2" 
-                    name="shipping_priority" 
-                    label="Shipping Priority" 
-                    readonly 
-                    disabled   
-                />  
-            </div>      
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
+                        <thead class="bg-gray-100 dark:bg-gray-800">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Product Image</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Product Name</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Barcode</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">SKU</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Quantity</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
+                            @foreach($shipment_view->branchAllocation->items->where('box_id', null) as $item)
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    @if($item->product && $item->product->images && $item->product->images->first())
+                                        <img src="{{ $item->product->images->first()->url }}"
+                                             alt="{{ $item->product->name }}"
+                                             class="w-16 h-16 object-cover rounded">
+                                    @else
+                                        <div class="w-16 h-16 bg-gray-200 dark:bg-gray-600 rounded flex items-center justify-center">
+                                            <span class="text-xs text-gray-500 dark:text-gray-400">No Image</span>
+                                        </div>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                        {{ $item->product->name ?? 'N/A' }}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-500 dark:text-gray-300">
+                                        {{ $item->product->barcode ?? 'N/A' }}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-500 dark:text-gray-300">
+                                        {{ $item->product->sku ?? 'N/A' }}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    @if($editingItemId == $item->id)
+                                        <div class="flex items-center space-x-2">
+                                            <input type="number" wire:model="editQuantities.{{ $item->id }}" min="0" class="w-20 px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                                            <button type="button" wire:click.stop="saveEdit({{ $item->id }})" class="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700">Save</button>
+                                            <button type="button" wire:click.stop="cancelEdit" class="px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700">Cancel</button>
+                                        </div>
+                                        @error('editQuantities.' . $item->id)
+                                            <span class="text-red-500 text-xs">{{ $message }}</span>
+                                        @enderror
+                                    @else
+                                        <div class="text-sm text-gray-500 dark:text-gray-300">
+                                            {{ $item->quantity }}
+                                        </div>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    @if($editingItemId != $item->id)
+                                        <button type="button" wire:click.stop="startEdit({{ $item->id }})" class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200 text-sm">Edit</button>
+                                    @endif
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            @endif
+
         </form>
-
     </x-collapsible-card>
 
-    <div
-        class="ml-15 fixed bottom-0 right-0 p-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 w-full">
-
+    <!-- Action Buttons -->
+    <div class="fixed bottom-0 right-0 p-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 w-full">
         <div class="flex justify-end space-x-4">
             <a href="{{ route('shipment.index') }}"
                 class="text-gray-500 bg-white hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-blue-300 rounded-lg border border-gray-200 text-sm font-medium px-5 py-2.5 hover:text-gray-900 focus:z-10 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-500 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-600">
@@ -130,26 +214,22 @@
                 use App\Enums\Enum\PermissionEnum;
             @endphp
 
-            {{-- @can(PermissionEnum::APPROVE_REQUEST_SLIP->value)              --}}
-            {{-- @if($shipment_view->shipment_status !=='released' && $shipment_view->shipment_status !=='partially released') --}}
-                <x-button 
-                    type="button" 
-                    wire:click="approveSalesOrder" 
-                    :disabled="$shipment_view->shipping_status !== 'pending'" 
-                    class="flex justify-end space-x-4">
-                    Approve Shipment
-                </x-button>
-                <x-button 
-                    type="button" 
-                    wire:click="rejectSalesOrder" 
-                    variant="danger" 
-                    :disabled="$shipment_view->shipping_status === 'cancelled'" 
-                    class="flex justify-end space-x-4">
-                    Cancel Shipment
-                </x-button>
-            {{-- @endif --}}
-            {{-- @endcan --}}
+            <x-button
+                type="button"
+                wire:click="completeShipment"
+                :disabled="$shipment_view->shipping_status !== 'pending'"
+                class="flex justify-end space-x-4">
+                Complete Shipment
+            </x-button>
 
+            <x-button
+                type="button"
+                wire:click="rejectSalesOrder"
+                variant="danger"
+                :disabled="$shipment_view->shipping_status === 'cancelled'"
+                class="flex justify-end space-x-4">
+                Cancel Shipment
+            </x-button>
         </div>
     </div>
 </div>

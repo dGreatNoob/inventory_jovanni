@@ -33,7 +33,9 @@
                             </svg>
                         </flux:button>
                     @endif
+                    
                     <flux:modal.trigger name="edit-image">
+                        @can('image edit')
                         <flux:button 
                             wire:click="openEditModal({{ $viewingImage->id }})" 
                             variant="ghost"
@@ -45,8 +47,10 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                             </svg>
                         </flux:button>
+                        @endcan
                     </flux:modal.trigger>
                     <flux:modal.trigger name="delete-image">
+                        @can('image delete')
                         <flux:button 
                             wire:click="deleteImage({{ $viewingImage->id }})" 
                             variant="ghost"
@@ -58,6 +62,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                             </svg>
                         </flux:button>
+                        @endcan
                     </flux:modal.trigger>
                 @endif
             </div>
@@ -71,9 +76,10 @@
                     <button type="button" wire:click="viewerPrev" class="absolute left-2 top-1/2 -translate-y-1/2 bg-white/70 dark:bg-gray-800/70 hover:bg-white dark:hover:bg-gray-800 rounded-full p-2 shadow">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                     </button>
-                    <img src="{{ $viewingImage->url }}" 
-                         alt="{{ $viewingImage->alt_text ?: $viewingImage->product->name }}"
-                         class="max-w-full max-h-96 mx-auto rounded-lg shadow-lg object-contain">
+                    <img src="{{ $this->viewingImageUrl ?? ($viewingImage->url ?? asset('storage/photos/' . $viewingImage->filename)) }}" 
+                         alt="{{ $viewingImage->alt_text ?: ($viewingImage->product->name ?? 'Product image') }}"
+                         class="max-w-full max-h-96 mx-auto rounded-lg shadow-lg object-contain"
+                         onerror="this.src='{{ asset('images/placeholder.png') }}'; this.onerror=null;">
                     <button type="button" wire:click="viewerNext" class="absolute right-2 top-1/2 -translate-y-1/2 bg-white/70 dark:bg-gray-800/70 hover:bg-white dark:hover:bg-gray-800 rounded-full p-2 shadow">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                     </button>

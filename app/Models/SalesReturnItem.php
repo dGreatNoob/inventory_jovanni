@@ -3,18 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class SalesReturnItem extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
         'sales_return_id',
-        'product_id',
+        'branch_allocation_item_id',
         'quantity',
-        'unit_price',
-        'total_price',
+        'reason',
     ];
 
     public function salesReturn()
@@ -22,10 +18,8 @@ class SalesReturnItem extends Model
         return $this->belongsTo(SalesReturn::class);
     }
 
-    public function product()
+    public function branchAllocationItem()
     {
-        return $this->belongsTo(SupplyProfile::class);
+        return $this->belongsTo(BranchAllocationItem::class);
     }
-
-
 }

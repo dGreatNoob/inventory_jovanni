@@ -1,5 +1,5 @@
 # Laravel + Livewire Dockerfile
-FROM php:8.2-fpm
+FROM php:8.3-fpm
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -29,7 +29,17 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 # Set working directory
 WORKDIR /var/www
 
-# Copy application code
+# Copy package files first for better layer caching
+COPY package*.json ./
+COPY composer.json composer.lock ./
+
+# Install Node dependencies (cached layer if package.json doesn't change)
+RUN npm ci --only=production
+
+# Install PHP dependencies (cached layer if composer.json doesn't change)
+RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-scripts
+
+# Copy application code (this layer changes most frequently)
 COPY . .
 
 # Create necessary directories
@@ -40,11 +50,8 @@ RUN mkdir -p storage/framework/cache/data \
     storage/app/public \
     bootstrap/cache
 
-# Install PHP dependencies
-RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader --no-scripts
-
-# Install Node dependencies and build assets
-RUN npm install && npm run build
+# Build assets during image creation
+RUN npm run build
 
 # Run post-install scripts
 RUN php artisan package:discover --ansi
@@ -80,17 +87,28 @@ if [ -z "$APP_KEY" ] || [ "$APP_KEY" = "" ]; then\n\
     php artisan key:generate --force\n\
 fi\n\
 \n\
-# Run migrations\n\
-echo "📊 Running database migrations..."\n\
-php artisan migrate --force\n\
+# Run migrations (only if RUN_MIGRATIONS is set to true)\n\
+if [ "$RUN_MIGRATIONS" = "true" ]; then\n\
+    echo "📊 Running database migrations..."\n\
+    php artisan migrate --force\n\
+else\n\
+    echo "⏭️  Skipping migrations (set RUN_MIGRATIONS=true to run)"\n\
+fi\n\
 \n\
 # Create storage link\n\
 echo "🔗 Creating storage link..."\n\
 php artisan storage:link\n\
 \n\
-# Clear and cache config\n\
+# Build assets if manifest doesn't exist\n\
+if [ ! -f "public/build/manifest.json" ]; then\n\
+    echo "📦 Building frontend assets..."\n\
+    npm run build || echo "⚠️  Asset build failed, but continuing..."\n\
+fi\n\
+\n\
+# Clear config cache to ensure fresh read from .env\n\
 echo "⚡ Optimizing application..."\n\
-php artisan config:cache\n\
+php artisan config:clear || true\n\
+# Don't cache config here - let it be done by deployment script after .env is set\n\
 php artisan route:cache\n\
 php artisan view:cache\n\
 \n\

@@ -17,5 +17,18 @@ export default defineConfig({
     },
     build: {
         chunkSizeWarningLimit: 1000,
+        // Use relative base for assets to work with any domain
+        base: '/',
+        // Manual chunking for better caching
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    'vendor': ['axios'],
+                    'charts': ['apexcharts'],
+                    'ui': ['flowbite', 'sweetalert2'],
+                    'qrcode': ['html5-qrcode'],
+                },
+            },
+        },
     },
 });

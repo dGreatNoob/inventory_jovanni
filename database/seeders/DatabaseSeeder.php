@@ -11,22 +11,34 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Only seed user and role/permission data
-        $this->call([
-            DepartmentSeeder::class,
-            RoleAndPermissionSeeder::class,
-            SuperAdminSeeder::class,
-            ProductColorSeeder::class,
-            CategorySeeder::class,
-            SupplierSeeder::class,
-            ProductSeeder::class,
-            BranchSeeder::class,
-            AgentSeeder::class,
-            AgentBranchAssignmentSeeder::class,
-            PurchaseOrderSeeder::class,
-            InventoryLocationSeeder::class,
-            FinanceSeeder::class,
-            PromoSeeder::class,
-        ]);
+        // Production environment: Only seed essential data
+        if (app()->environment('production')) {
+            $this->call([
+                DepartmentSeeder::class,
+                RoleAndPermissionSeeder::class,
+                SuperAdminSeeder::class,
+                ProductColorSeeder::class,
+                CategorySeeder::class,
+                SupplierSeeder::class,
+            ]);
+        } else {
+            // Development/Testing: Seed all data
+            $this->call([
+                DepartmentSeeder::class,
+                RoleAndPermissionSeeder::class,
+                SuperAdminSeeder::class,
+                ProductColorSeeder::class,
+                CategorySeeder::class,
+                SupplierSeeder::class,
+                ProductSeeder::class,
+                BranchSeeder::class,
+                AgentSeeder::class,
+                AgentBranchAssignmentSeeder::class,
+                PurchaseOrderSeeder::class,
+                InventoryLocationSeeder::class,
+                FinanceSeeder::class,
+                PromoSeeder::class,
+            ]);
+        }
     }
 }

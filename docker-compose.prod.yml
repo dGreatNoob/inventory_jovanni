@@ -1,3 +1,6 @@
+# Production Docker Compose Configuration
+# Usage: docker-compose -f docker-compose.prod.yml up -d
+
 services:
   # PHP Application Service
   app:
@@ -5,7 +8,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: inventory-jovanni-app
-    restart: unless-stopped
+    restart: always
     working_dir: /var/www
     volumes:
       - ./:/var/www
@@ -19,10 +22,10 @@ services:
       redis:
         condition: service_healthy
     environment:
-      - APP_ENV=${APP_ENV:-production}
-      - APP_DEBUG=${APP_DEBUG:-false}
-      # Set ASSET_URL to ensure assets load correctly (uses server IP if available)
-      - ASSET_URL=${ASSET_URL:-}
+      - APP_ENV=production
+      - APP_DEBUG=false
+      # Read APP_URL from .env file (set via docker-start.sh script)
+      - APP_URL=${APP_URL:-}
       - DB_HOST=db
       - DB_DATABASE=${DB_DATABASE:-inventory_jovanni}
       - DB_USERNAME=${DB_USERNAME:-root}
@@ -32,12 +35,18 @@ services:
       - CACHE_DRIVER=redis
       - SESSION_DRIVER=redis
       - QUEUE_CONNECTION=redis
+      - RUN_MIGRATIONS=${RUN_MIGRATIONS:-false}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # Nginx Web Server
   nginx:
     image: nginx:alpine
     container_name: inventory-jovanni-nginx
-    restart: unless-stopped
+    restart: always
     ports:
       - "80:80"
       - "443:443"
@@ -50,12 +59,17 @@ services:
       - app-network
     depends_on:
       - app
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # MySQL Database
   db:
     image: mysql:8.0
     container_name: inventory-jovanni-db
-    restart: unless-stopped
+    restart: always
     ports:
       - "3307:3306"
     environment:
@@ -74,12 +88,17 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # Redis Cache
   redis:
     image: redis:7-alpine
     container_name: inventory-jovanni-redis
-    restart: unless-stopped
+    restart: always
     ports:
       - "6380:6379"
     volumes:
@@ -92,24 +111,11 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
-
-  # phpMyAdmin (Optional - for database management)
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin:latest
-    container_name: inventory-jovanni-phpmyadmin
-    restart: unless-stopped
-    ports:
-      - "8081:80"
-    environment:
-      PMA_HOST: db
-      PMA_PORT: 3306
-      PMA_USER: ${DB_USERNAME:-root}
-      PMA_PASSWORD: ${DB_PASSWORD:-rootsecret}
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootsecret}
-    depends_on:
-      - db
-    networks:
-      - app-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   dbdata:

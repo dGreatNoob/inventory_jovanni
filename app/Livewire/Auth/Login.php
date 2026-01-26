@@ -43,7 +43,8 @@ class Login extends Component
         RateLimiter::clear($this->throttleKey());
         Session::regenerate();
 
-        $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
+        // Use standard redirect instead of Livewire navigate to avoid hanging issues
+        $this->redirect(route('dashboard', absolute: false), navigate: false);
     }
 
     /**

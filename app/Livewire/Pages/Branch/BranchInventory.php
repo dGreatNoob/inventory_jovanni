@@ -56,6 +56,9 @@ class BranchInventory extends Component
     public $extraItems = [];        // Scanned but not allocated
     public $quantityVariances = []; // Quantity mismatches
     public $auditDate = null;
+    public ?int $existingAuditIdForDay = null;
+    public ?string $existingAuditCreatedAtForDay = null;
+    public ?string $existingAuditDay = null;
 
     // Inline editing properties
     public $editingShipmentId = null;
@@ -524,6 +527,29 @@ class BranchInventory extends Component
         }
 
         try {
+            // Prevent duplicates: only one audit per branch per calendar day
+            $auditDay = $this->auditDate ? $this->auditDate->toDateString() : now()->toDateString();
+            $existing = Activity::query()
+                ->where('log_name', 'inventory_audit')
+                ->where('subject_type', Branch::class)
+                ->where('subject_id', $this->selectedBranchId)
+                ->whereDate('created_at', $auditDay)
+                ->latest('created_at')
+                ->first();
+
+            if ($existing) {
+                $this->existingAuditIdForDay = $existing->id;
+                $this->existingAuditCreatedAtForDay = optional($existing->created_at)->toDateTimeString();
+                $this->existingAuditDay = $auditDay;
+
+                $this->addError(
+                    'audit',
+                    "An audit is already saved for this branch on {$auditDay} (saved at {$this->existingAuditCreatedAtForDay})."
+                );
+
+                return;
+            }
+
             // Save audit record to activity logs
             Activity::create([
                 'log_name' => 'inventory_audit',
@@ -580,6 +606,25 @@ class BranchInventory extends Component
         }
     }
 
+    /**
+     * Shortcut: open today's audit in reports (if exists).
+     */
+    public function viewTodaysAudit()
+    {
+        if (!$this->selectedBranchId) {
+            return;
+        }
+
+        $auditDay = $this->existingAuditDay
+            ?? ($this->auditDate ? $this->auditDate->toDateString() : now()->toDateString());
+
+        return redirect()->to(route('reports.branch-inventory', [
+            'selectedBranch' => $this->selectedBranchId,
+            'dateFrom' => $auditDay,
+            'dateTo' => $auditDay,
+        ]));
+    }
+
 
     /**
      * Close the results modal
@@ -591,6 +636,10 @@ class BranchInventory extends Component
         $this->extraItems = [];
         $this->quantityVariances = [];
         $this->auditResults = [];
+        $this->existingAuditIdForDay = null;
+        $this->existingAuditCreatedAtForDay = null;
+        $this->existingAuditDay = null;
+        $this->resetErrorBag('audit');
     }
 
     /**

@@ -28,8 +28,19 @@ class BranchInventoryReport extends Component
 
     public function mount()
     {
-        $this->dateTo = now()->format('Y-m-d');
-        $this->dateFrom = now()->subDays(30)->format('Y-m-d');
+        // Allow deep links via query params (used by "View Today's Audit" shortcut)
+        $this->dateFrom = (string) request()->query('dateFrom', '');
+        $this->dateTo = (string) request()->query('dateTo', '');
+        $selectedBranch = request()->query('selectedBranch', '');
+        $this->selectedBranch = $selectedBranch !== '' ? (int) $selectedBranch : null;
+
+        // Defaults
+        if (!$this->dateTo) {
+            $this->dateTo = now()->format('Y-m-d');
+        }
+        if (!$this->dateFrom) {
+            $this->dateFrom = now()->subDays(30)->format('Y-m-d');
+        }
     }
 
     public function updating($name, $value)

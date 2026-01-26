@@ -42,7 +42,8 @@ class Index extends Component
     public $availableBatches = [];
     public $selectedBatchId = null;
     public $availableBranches = [];
-    public $selectedBranchIds = [];
+    public $selectedBranchId = null;
+    public $selectedBranchAllocation = null;
     public $branchReferenceNumbers = [];
 
     public $deliveryMethods = [
@@ -86,11 +87,17 @@ class Index extends Component
     {
         $this->selectedBatchId = $value ?? $this->selectedBatchId;
         $this->loadAvailableBranches();
-        // Automatically select all branch Allocations for this batch
-        $this->selectedBranchIds = collect($this->availableBranches)->pluck('id')->toArray();
-        // Optionally auto-fill branch reference numbers if needed
-        foreach ($this->availableBranches as $branchAlloc) {
-            $this->branchReferenceNumbers[$branchAlloc->id] = $branchAlloc->reference_number ?? null;
+        $this->selectedBranchId = null; // Reset branch selection when batch changes
+        $this->selectedBranchAllocation = null;
+    }
+
+    public function updatedSelectedBranchId($value = null)
+    {
+        $this->selectedBranchId = $value ?? $this->selectedBranchId;
+        if ($this->selectedBranchId) {
+            $this->selectedBranchAllocation = BranchAllocation::with('branch', 'items.product')->find($this->selectedBranchId);
+        } else {
+            $this->selectedBranchAllocation = null;
         }
     }
 
@@ -120,7 +127,7 @@ class Index extends Component
 
                 // Branch selection for edit
                 $this->selectedBatchId      = $result->batch_allocation_id;
-                $this->selectedBranchIds    = [$result->branch_allocation_id];
+                $this->selectedBranchId     = $result->branch_allocation_id;
                 $this->loadAvailableBranches();
             } else {
                 session()->flash('error', 'You can only edit shipments that are in pending status.');
@@ -144,37 +151,39 @@ class Index extends Component
             }],
             'delivery_method'     => 'required|string|max:255',
             'vehicle_plate_number'=> 'nullable|string|max:255',
-            'selectedBranchIds'   => 'required|array|min:1',
-            'selectedBranchIds.*' => 'exists:branch_allocations,id',
+            'selectedBranchId'    => ['required', 'exists:branch_allocations,id', function ($attribute, $value, $fail) {
+                $existingShipment = Shipment::where('branch_allocation_id', $value)->first();
+                if ($existingShipment) {
+                    $fail('A shipment has already been created for this branch allocation.');
+                }
+            }],
         ]);
 
         DB::beginTransaction();
 
         try {
             if (is_null($this->editValue)) {
-                // Create new shipments for each branch allocation
-                foreach ($this->selectedBranchIds as $branchAllocId) {
-                    $branchAllocation = BranchAllocation::find($branchAllocId);
+                // Create new shipment for the selected branch allocation
+                $branchAllocation = BranchAllocation::find($this->selectedBranchId);
 
-                    Shipment::create([
-                        'shipping_plan_num'    => $this->branchReferenceNumbers[$branchAllocId] ?? $this->shipping_plan_num,
-                        'sales_order_id'       => null,
-                        'batch_allocation_id'  => $branchAllocation->batch_allocation_id,
-                        'branch_allocation_id' => $branchAllocId,
-                        'customer_id'          => null,
-                        'scheduled_ship_date'  => $this->scheduled_ship_date,
-                        'delivery_method'      => $this->delivery_method,
-                        'vehicle_plate_number' => $this->vehicle_plate_number,
-                    ]);
-                }
+                Shipment::create([
+                    'shipping_plan_num'    => $this->shipping_plan_num,
+                    'sales_order_id'       => null,
+                    'batch_allocation_id'  => $branchAllocation->batch_allocation_id,
+                    'branch_allocation_id' => $this->selectedBranchId,
+                    'customer_id'          => null,
+                    'scheduled_ship_date'  => $this->scheduled_ship_date,
+                    'delivery_method'      => $this->delivery_method,
+                    'vehicle_plate_number' => $this->vehicle_plate_number,
+                ]);
             } else {
                 $shipment = Shipment::find($this->editValue);
-                $branchAllocation = BranchAllocation::find($this->selectedBranchIds[0] ?? null);
+                $branchAllocation = BranchAllocation::find($this->selectedBranchId);
                 $shipmentData = [
                     'shipping_plan_num'    => $this->shipping_plan_num,
                     'sales_order_id'       => null,
                     'batch_allocation_id'  => $branchAllocation?->batch_allocation_id,
-                    'branch_allocation_id' => $this->selectedBranchIds[0] ?? null,
+                    'branch_allocation_id' => $this->selectedBranchId,
                     'customer_id'          => null,
                     'scheduled_ship_date'  => $this->scheduled_ship_date,
                     'delivery_method'      => $this->delivery_method,
@@ -205,7 +214,8 @@ class Index extends Component
             'vehicle_plate_number',
             'editValue',
             'selectedBatchId',
-            'selectedBranchIds',
+            'selectedBranchId',
+            'selectedBranchAllocation',
             'branchReferenceNumbers',
             'availableBranches'
         ]);

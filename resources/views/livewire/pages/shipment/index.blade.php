@@ -73,7 +73,7 @@
                                 <!-- Batch Selection -->
                                 <div>
                                     <label for="selectedBatchId" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
-                                        Select Batch Reference
+                                        Select Batch Allocation
                                     </label>
                                     <select id="selectedBatchId"
                                             wire:model.live="selectedBatchId"
@@ -84,38 +84,65 @@
                                         @endforeach
                                     </select>
                                 </div>
+
+                                <!-- Branch Selection -->
+                                <div>
+                                    <label for="selectedBranchId" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                                        Select Branch
+                                    </label>
+                                    <select id="selectedBranchId"
+                                            wire:model.live="selectedBranchId"
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                                        <option value="">Select a branch...</option>
+                                        @foreach($availableBranches as $branchAlloc)
+                                            <option value="{{ $branchAlloc->id }}">{{ $branchAlloc->branch->name ?? 'Branch #' . $branchAlloc->id }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
                             </div>
-                            <!-- Branch Selection -->
+
+                            <!-- Allocation Dispatch -->
+                            @if($selectedBranchAllocation)
+                            @php
+                                $scannedItems = $selectedBranchAllocation->items->where('scanned_quantity', '>', 0)->groupBy('product_id')->map(function ($items) {
+                                    $firstItem = $items->first();
+                                    $totalQuantity = $items->sum('scanned_quantity');
+                                    return [
+                                        'product' => $firstItem->product,
+                                        'quantity' => $totalQuantity,
+                                    ];
+                                });
+                            @endphp
                             <div>
-                                <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                                    All branches from the selected batch have been automatically added to this allocation.
-                                </p>
+                                <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                                    <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                                    </svg>
+                                    Allocation Dispatch for {{ $selectedBranchAllocation->branch->name }}
+                                </h4>
                                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-64 overflow-y-auto mb-6">
-                                    @forelse($availableBranches as $branchAlloc)
-                                        <div class="flex items-center p-3 border border-gray-200 dark:border-gray-600 rounded-lg">
-                                            <div class="flex-1">
-                                                <div class="text-sm font-medium text-gray-900 dark:text-white">
-                                                    {{ $branchAlloc->branch->name ?? 'Branch #' . $branchAlloc->id }}
-                                                </div>
-                                                @if($branchAlloc->branch->address ?? false)
-                                                    <div class="text-sm text-gray-500 dark:text-gray-400">
-                                                        {{ $branchAlloc->branch->address }}
-                                                    </div>
-                                                @endif
+                                    @forelse($scannedItems as $item)
+                                        <div class="p-3 border border-gray-200 dark:border-gray-600 rounded-lg">
+                                            <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                                {{ $item['product']->name }}
                                             </div>
-                                            <span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300 rounded-full ml-3">
-                                                Auto-added
-                                            </span>
+                                            <div class="text-sm text-gray-500 dark:text-gray-400">
+                                                SKU: {{ $item['product']->sku }}
+                                            </div>
+                                            <div class="text-sm text-gray-500 dark:text-gray-400">
+                                                Scanned Quantity: {{ $item['quantity'] }}
+                                            </div>
                                         </div>
                                     @empty
                                         <div class="text-center py-8 col-span-full">
                                             <p class="text-gray-500 dark:text-gray-400">
-                                                No branches found for this batch.
+                                                No scanned items found for this branch.
                                             </p>
                                         </div>
                                     @endforelse
                                 </div>
                             </div>
+                            @endif
                         </div>
                         
                         <!-- Form Actions -->
@@ -128,7 +155,7 @@
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                                     </svg>
-                                    {{ ($editValue) ? 'Update Shipment' : 'Create Shippment' }}
+                                    {{ ($editValue) ? 'Update Shipment' : 'Create Shipment' }}
                                 </x-button>
                           
                         </div>

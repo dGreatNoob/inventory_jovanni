@@ -109,12 +109,13 @@ fi\n\
 echo "⚡ Optimizing application..."\n\
 php artisan config:clear || true\n\
 # Don't cache config here - let it be done by deployment script after .env is set\n\
-php artisan route:cache\n\
-php artisan view:cache\n\
+php artisan route:cache || true\n\
+php artisan view:cache || true\n\
 \n\
 echo "✅ Laravel application ready!"\n\
 \n\
-exec "$@"' > /usr/local/bin/entrypoint.sh
+# Start PHP-FPM in foreground (required for Docker)\n\
+exec php-fpm -F' > /usr/local/bin/entrypoint.sh
 
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
@@ -124,5 +125,4 @@ EXPOSE 9000
 # Use entrypoint script
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
-# Start PHP-FPM
-CMD ["php-fpm"]
+# No CMD needed - entrypoint handles php-fpm startup with -F flag

@@ -6,10 +6,10 @@
 /storage/*.key
 /storage/pail
 /vendor
-# .env files are tracked in git for easier deployment
-# .env
-# .env.backup
-# .env.production
+.env
+.env.backup
+.env.production
+.env.local
 
 # Database backups
 /backups/

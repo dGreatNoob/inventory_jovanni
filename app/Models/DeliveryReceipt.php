@@ -47,6 +47,11 @@ class DeliveryReceipt extends Model
         return $this->hasMany(BranchAllocationItem::class);
     }
 
+    public function shipments()
+    {
+        return $this->hasMany(Shipment::class);
+    }
+
     public function isMother()
     {
         return $this->type === 'mother';

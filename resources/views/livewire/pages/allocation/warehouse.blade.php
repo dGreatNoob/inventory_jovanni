@@ -788,12 +788,13 @@
                                                             </td>
                                                             @foreach ($filteredProductsForMatrix as $product)
                                                                 <td
-                                                                    class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-center bg-white dark:bg-gray-800">
-                                                                    <input type="number"
-                                                                        wire:model.blur="matrixQuantities.{{ $branchAllocation->id }}.{{ $product->id }}"
-                                                                        min="0" placeholder="0"
-                                                                        class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white text-center">
-                                                                </td>
+                                                                        class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-center bg-white dark:bg-gray-800">
+                                                                        <input type="number"
+                                                                            wire:model.blur="matrixQuantities.{{ $branchAllocation->id }}.{{ $product->id }}"
+                                                                            value="{{ $matrixQuantities[$branchAllocation->id][$product->id] ?? 4 }}"
+                                                                            min="0" placeholder="4"
+                                                                            class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white text-center">
+                                                                    </td>
                                                             @endforeach
                                                         </tr>
                                                     @endforeach
@@ -938,13 +939,6 @@
                         <div>
                             <!-- Export Allocation Matrix Button -->
                             <div class="mb-6 flex justify-end space-x-3">
-                                <button wire:click="generateDR"
-                                    class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
-                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                    </svg>
-                                    Generate DR
-                                </button>
                                 <button wire:click="exportAllocationToPDF"
                                     class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
                                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1049,14 +1043,22 @@
                                         Create or select boxes and manage delivery receipts for scanning products.
                                     </p>
 
-                                    <!-- Create New Box Button -->
-                                    <div class="mb-4">
+                                    <!-- Create New Box and Generate DR Buttons -->
+                                    <div class="mb-4 flex justify-between items-center">
                                         <button wire:click="createNewBox"
                                             class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
                                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                                             </svg>
                                             Create New Box
+                                        </button>
+
+                                        <button wire:click="generateDRForBranch"
+                                            class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                            </svg>
+                                            Generate DR
                                         </button>
                                     </div>
 
@@ -1069,6 +1071,7 @@
                                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Items</th>
                                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Status</th>
                                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">DR Status</th>
+                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Dispatch Status</th>
                                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Action</th>
                                                 </thead>
                                                 <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
@@ -1100,6 +1103,15 @@
                                                                     </span>
                                                                 @else
                                                                     <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-200">No DR</span>
+                                                                @endif
+                                                            </td>
+                                                            <td class="px-4 py-3 whitespace-nowrap text-sm">
+                                                                @if ($box->dispatched_at)
+                                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300">
+                                                                        Dispatched {{ $box->dispatched_at->format('M d, Y H:i') }}
+                                                                    </span>
+                                                                @else
+                                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-200">Pending</span>
                                                                 @endif
                                                             </td>
                                                             <td class="px-4 py-3 whitespace-nowrap text-sm">
@@ -1456,9 +1468,9 @@
                         Back
                     </button>
                     <button type="button" wire:click="dispatchBatchFromStepper"
-                        wire:confirm="Are you sure you want to dispatch this batch? This action cannot be undone."
+                        wire:confirm="Are you sure you want to {{ $currentBatch->status === 'dispatched' ? 'update' : 'dispatch' }} this batch? This action cannot be undone."
                         class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                        ✓ Dispatch Batch
+                        ✓ {{ $currentBatch->status === 'dispatched' ? 'Update Dispatch' : 'Dispatch Batch' }}
                     </button>
                 </div>
             </div>
@@ -2154,10 +2166,17 @@
                     <td class="px-4 py-2 text-sm">
                         <div class="flex items-center justify-center space-x-2"
                             style="min-width: 150px; min-height:42px;">
-                            <button wire:click="editRecord({{ $record->id }})"
-                                class="px-3 py-1 text-xs font-medium text-white rounded bg-blue-600 hover:bg-blue-700">
-                                View
-                            </button>
+                            @if ($record->status === 'dispatched' && !$this->isBatchFullyScanned($record))
+                                <button wire:click="editRecord({{ $record->id }})"
+                                    class="px-3 py-1 text-xs font-medium text-white rounded bg-green-600 hover:bg-green-700">
+                                    Continue Scanning
+                                </button>
+                            @else
+                                <button wire:click="editRecord({{ $record->id }})"
+                                    class="px-3 py-1 text-xs font-medium text-white rounded bg-blue-600 hover:bg-blue-700">
+                                    View
+                                </button>
+                            @endif
                             <button wire:click="removeBatch({{ $record->id }})"
                                 class="px-3 py-1 text-xs font-medium text-white bg-red-600 rounded hover:bg-red-700">
                                 Delete

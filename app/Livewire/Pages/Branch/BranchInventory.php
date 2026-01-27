@@ -37,7 +37,16 @@ class BranchInventory extends Component
     public $showUploadModal = false;
     public $showResultsModal = false;
     public $showSuccessModal = false;
+    public $showCustomerSalesModal = false;
     public $successMessage = '';
+
+    // Customer sales properties
+    public $salesBarcodeInput = '';
+    public $selectedSalesProduct = null;
+    public $salesQuantity = 1;
+    public $salesItems = [];
+    public $selectedAgentId = null;
+    public $availableAgents = [];
 
     // File upload properties
     public $textFile;
@@ -68,6 +77,7 @@ class BranchInventory extends Component
     public function mount()
     {
         $this->loadBatches();
+        $this->loadAgents();
     }
 
     /**
@@ -105,6 +115,14 @@ class BranchInventory extends Component
                 'last_shipment_date' => $this->getLastShipmentDateForBatch($batchName),
             ];
         });
+    }
+
+    /**
+     * Load all available agents
+     */
+    protected function loadAgents()
+    {
+        $this->availableAgents = \App\Models\Agent::orderBy('name')->get();
     }
 
     /**
@@ -256,12 +274,12 @@ class BranchInventory extends Component
             ];
         })->values();
 
-        // Add promo information to each product
+        // Add active promos count to each product
         $this->branchProducts = $this->branchProducts->map(function ($product) {
             $productId = $product['id'];
             $batchAllocationIds = collect($product['shipments'])->pluck('batch_allocation_id')->filter()->unique();
 
-            $promo = Promo::where('product', 'like', '%' . (string)$productId . '%')
+            $activePromosCount = Promo::where('product', 'like', '%' . (string)$productId . '%')
                 ->where(function($q) use ($batchAllocationIds) {
                     $q->where(function($sub) use ($batchAllocationIds) {
                         foreach ($batchAllocationIds as $id) {
@@ -271,9 +289,9 @@ class BranchInventory extends Component
                 })
                 ->where('startDate', '<=', now())
                 ->where('endDate', '>=', now())
-                ->first();
+                ->count();
 
-            $product['promo_name'] = $promo ? $promo->name : 'none';
+            $product['active_promos_count'] = $activePromosCount;
             return $product;
         });
     }
@@ -855,6 +873,186 @@ class BranchInventory extends Component
                 $product['total_sold'] += $matches[$product['barcode']]['quantity_sold'];
                 $product['remaining_quantity'] = $product['total_quantity'] - $product['total_sold'];
             }
+        }
+    }
+
+    /**
+     * Open customer sales modal
+     */
+    public function openCustomerSalesModal()
+    {
+        $this->showCustomerSalesModal = true;
+        $this->resetSalesModal();
+    }
+
+    /**
+     * Close customer sales modal
+     */
+    public function closeCustomerSalesModal()
+    {
+        $this->showCustomerSalesModal = false;
+        $this->resetSalesModal();
+    }
+
+    /**
+     * Reset sales modal properties
+     */
+    protected function resetSalesModal()
+    {
+        $this->salesBarcodeInput = '';
+        $this->selectedSalesProduct = null;
+        $this->salesQuantity = 1;
+        $this->salesItems = [];
+        $this->selectedAgentId = null;
+    }
+
+    /**
+     * Process sales barcode input changes
+     */
+    public function updatedSalesBarcodeInput()
+    {
+        $barcode = trim($this->salesBarcodeInput);
+        if (empty($barcode)) {
+            $this->selectedSalesProduct = null;
+            return;
+        }
+
+        // Find product by barcode in current branch products
+        $product = collect($this->branchProducts)->first(function ($product) use ($barcode) {
+            return $product['barcode'] === $barcode;
+        });
+
+        if ($product) {
+            $this->selectedSalesProduct = $product;
+        } else {
+            $this->selectedSalesProduct = null;
+        }
+    }
+
+    /**
+     * Add sales item to the transaction
+     */
+    public function addSalesItem()
+    {
+        if (!$this->selectedSalesProduct || !$this->salesQuantity || $this->salesQuantity < 1) {
+            return;
+        }
+
+        // Check if quantity exceeds available
+        if ($this->salesQuantity > $this->selectedSalesProduct['remaining_quantity']) {
+            session()->flash('error', 'Quantity exceeds available stock.');
+            return;
+        }
+
+        $item = [
+            'id' => $this->selectedSalesProduct['id'],
+            'name' => $this->selectedSalesProduct['name'],
+            'barcode' => $this->selectedSalesProduct['barcode'],
+            'quantity' => $this->salesQuantity,
+            'unit_price' => $this->selectedSalesProduct['unit_price'],
+            'total' => $this->salesQuantity * $this->selectedSalesProduct['unit_price'],
+        ];
+
+        $this->salesItems[] = $item;
+
+        // Reset for next item
+        $this->salesBarcodeInput = '';
+        $this->selectedSalesProduct = null;
+        $this->salesQuantity = 1;
+    }
+
+    /**
+     * Remove sales item from transaction
+     */
+    public function removeSalesItem($index)
+    {
+        if (isset($this->salesItems[$index])) {
+            unset($this->salesItems[$index]);
+            $this->salesItems = array_values($this->salesItems); // Reindex array
+        }
+    }
+
+    /**
+     * Clear all sales items
+     */
+    public function clearSalesItems()
+    {
+        $this->salesItems = [];
+    }
+
+    /**
+     * Save customer sales transaction
+     */
+    public function saveCustomerSales()
+    {
+        if (empty($this->salesItems)) {
+            return;
+        }
+
+        try {
+            // Process each sales item
+            foreach ($this->salesItems as $item) {
+                // Find and update the corresponding branch allocation items
+                $allocationItems = BranchAllocationItem::whereHas('product', function($q) use ($item) {
+                    $q->where('id', $item['id']);
+                })
+                ->whereHas('branchAllocation', function($q) {
+                    $q->where('branch_id', $this->selectedBranchId);
+                })
+                ->whereHas('branchAllocation.shipments', function ($q) {
+                    $q->where('shipping_status', 'completed');
+                })
+                ->where('box_id', null) // Only unpacked items
+                ->orderBy('id')
+                ->get();
+
+                $remainingQuantity = $item['quantity'];
+                foreach ($allocationItems as $allocationItem) {
+                    $available = $allocationItem->quantity - $allocationItem->sold_quantity;
+                    if ($available > 0 && $remainingQuantity > 0) {
+                        $increment = min($remainingQuantity, $available);
+                        $allocationItem->increment('sold_quantity', $increment);
+                        $remainingQuantity -= $increment;
+                    }
+                    if ($remainingQuantity <= 0) break;
+                }
+            }
+
+            // Log activity
+            $agent = $this->selectedAgentId ? \App\Models\Agent::find($this->selectedAgentId) : null;
+            foreach ($this->salesItems as $item) {
+                Activity::create([
+                    'log_name' => 'branch_inventory',
+                    'description' => "Customer sale recorded for product {$item['barcode']} in branch {$this->selectedBranchId}" . ($agent ? " by agent {$agent->name}" : ""),
+                    'subject_type' => BranchAllocationItem::class,
+                    'subject_id' => null,
+                    'causer_type' => null,
+                    'causer_id' => null,
+                    'properties' => [
+                        'product_id' => $item['id'],
+                        'product_name' => $item['name'],
+                        'barcode' => $item['barcode'],
+                        'quantity_sold' => $item['quantity'],
+                        'unit_price' => $item['unit_price'],
+                        'total_amount' => $item['total'],
+                        'branch_id' => $this->selectedBranchId,
+                        'agent_id' => $this->selectedAgentId,
+                        'agent_name' => $agent ? $agent->name : null,
+                        'customer_sale' => true,
+                    ],
+                ]);
+            }
+
+            // Refresh data
+            $this->loadBranchProducts();
+
+            // Close modal and show success
+            $this->closeCustomerSalesModal();
+            $this->successMessage = 'Customer sales recorded successfully!';
+            $this->showSuccessModal = true;
+
+        } catch (\Exception $e) {
+            session()->flash('error', 'Error recording sales: ' . $e->getMessage());
         }
     }
 

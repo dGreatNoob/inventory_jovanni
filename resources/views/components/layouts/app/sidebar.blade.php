@@ -307,9 +307,10 @@
                     'report product inventory',
                     'report purchase orders',
                     'report branch inventory',
-                    'report warehouse allocation'
+                    'report warehouse allocation',
+                    'report shipment'
                 ]))
-                <flux:navlist.group expandable :expanded="request()->routeIs('reports.stock-available') || request()->routeIs('reports.purchase-orders') || request()->routeIs('reports.branch-inventory') || request()->routeIs('reports.warehouse-allocation') || request()->routeIs('reports.finance')" :heading="__('Reports')"
+                <flux:navlist.group expandable :expanded="request()->routeIs('reports.stock-available') || request()->routeIs('reports.purchase-orders') || request()->routeIs('reports.branch-inventory') || request()->routeIs('reports.warehouse-allocation') || request()->routeIs('reports.finance') || request()->routeIs('reports.promo')" :heading="__('Reports')"
                     class="lg:grid">
                     <flux:navlist.item
                         icon="clipboard-document-list"
@@ -354,6 +355,24 @@
                         wire:navigate
                     >
                         {{ __('Finance Report') }}
+                    </flux:navlist.item>
+
+                    <flux:navlist.item
+                        icon="clipboard-document-list"
+                        href="{{ route('reports.promo') }}"
+                        :current="request()->routeIs('reports.promo')"
+                        wire:navigate
+                    >
+                        {{ __('Promo Report') }}
+                    </flux:navlist.item>
+
+                    <flux:navlist.item
+                        icon="clipboard-document-list"
+                        href="{{ route('reports.shipment') }}"
+                        :current="request()->routeIs('reports.shipment')"
+                        wire:navigate
+                    >
+                        {{ __('Shipment Report') }}
                     </flux:navlist.item>
                 </flux:navlist.group>
                 @endif

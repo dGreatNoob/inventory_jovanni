@@ -1,90 +1,336 @@
-<x-slot:header>Payables</x-slot:header>
-<x-slot:subheader>Payable Management</x-slot:subheader>
 
 <div class="">
-    <!-- Under Revision Notice -->
-    <div class="mb-6 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
-        <div class="flex items-start">
-            <div class="flex-shrink-0">
-                <svg class="h-5 w-5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
-                </svg>
-            </div>
-            <div class="ml-3">
-                <h3 class="text-sm font-medium text-amber-800 dark:text-amber-200">
-                    Module Under Revision
-                </h3>
-                <div class="mt-2 text-sm text-amber-700 dark:text-amber-300">
-                    <p>The Finance module is currently under revision and may not be fully functional. Some features may be incomplete or unavailable. Please use the Product Management module for core inventory operations.</p>
+    <div class="">
+        <!-- Header Section -->
+        <div class="mb-6">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div class="flex-1">
+                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Payables Management</h1>
+                    <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Record and track payable entries</p>
+                </div>
+                <div class="flex flex-row items-center space-x-3">
+                    <flux:button
+                        wire:click="openCreatePanel"
+                        variant="primary"
+                        class="flex items-center gap-2 whitespace-nowrap min-w-fit"
+                        type="button"
+                    >
+                        <svg class="inline w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        <span>Add Payable</span>
+                    </flux:button>
                 </div>
             </div>
         </div>
-    </div>
-    
-    <div class="">
-       <x-collapsible-card title="Add Payable" open="true" size="full">
-            <form wire:submit.prevent="save">
-                <div class="grid gap-6 mb-6 md:grid-cols-2">
-                    <div>
-                        <x-input type="text" wire:model="reference_id" name="reference_id" label="Invoice Number" placeholder="Enter invoice number" readonly class="bg-gray-100 cursor-not-allowed"/>
-                        @error('reference_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                    </div>
-                    <div>
-                        <x-input type="text" wire:model="supplier" name="supplier" label="Supplier" placeholder="Supplier Name" />
-                        @error('supplier') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                    </div>
-                    <div>
-                        <x-select wire:model.live="purchase_order_id" name="purchase_order_id" label="Purchase Order">
-                            <option value="">Select Purchase Order</option>
-                            @foreach($purchaseOrders as $po)
-                                <option value="{{ $po->id }}">{{ $po->po_num }}</option>
-                            @endforeach
-                        </x-select>
-                        @error('purchase_order_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                    </div>
-                    <div>
-                        <x-input type="text" wire:model="purchase_order" name="purchase_order" label="PO Number" placeholder="PO Number" />
-                        @error('purchase_order') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                    </div>
-                    <div>
-                        <x-input type="text" wire:model="party" name="party" label="Description" placeholder="Enter Description" />
-                        @error('party') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                    </div>
-                    <div>
-                        <x-input type="date" wire:model="date" name="date" label="Date" />
-                        @error('date') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                    </div>
-                    <div>
-                        <x-input type="date" wire:model="due_date" name="due_date" label="Due Date" />
-                        @error('due_date') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                    </div>
-                    <div>
-                        <x-input type="number" step="0.01" wire:model="amount" name="amount" label="Amount" placeholder="Enter amount" />
-                        @error('amount') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                    </div>
-                    <div>
-                        <x-select wire:model="payment_method" name="payment_method" label="Payment Method">
-                            <option value="">Select payment method</option>
-                            <option value="Cash">Cash</option>
-                            <option value="Bank Transfer">Bank Transfer</option>
-                            <option value="Credit Card">Credit Card</option>
-                            <option value="Check">Check</option>
-                            <option value="GCash">GCash</option>
-                            <option value="Maya">Maya</option>
-                            <option value="Others">Others</option>
-                        </x-select>
-                        @error('payment_method') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                    </div>
-                    <div class="md:col-span-2">
-                        <x-input type="textarea" wire:model="remarks" name="remarks" label="Remarks" placeholder="Enter remarks" />
-                        @error('remarks') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                    </div>
+
+        <!-- Flash Message -->
+        @if (session()->has('success'))
+            <div class="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded dark:bg-green-900 dark:border-green-600 dark:text-green-300">
+                {{ session('success') }}
+            </div>
+        @endif
+
+        <!-- Add/Edit Payable Slide-in Panel -->
+        <div
+            x-data="{ open: @entangle('showCreatePanel').live }"
+            x-cloak
+            x-on:keydown.escape.window="if (open) { open = false; $wire.closeCreatePanel(); }"
+        >
+            <template x-teleport="body">
+                <div
+                    x-show="open"
+                    x-transition.opacity
+                    class="fixed inset-0 z-50 flex"
+                >
+                    <div
+                        x-show="open"
+                        x-transition.opacity
+                        class="fixed inset-0 bg-neutral-900/30 dark:bg-neutral-900/50"
+                        @click="open = false; $wire.closeCreatePanel()"
+                    ></div>
+
+                    <section
+                        x-show="open"
+                        x-transition:enter="transform transition ease-in-out duration-300"
+                        x-transition:enter-start="translate-x-full"
+                        x-transition:enter-end="translate-x-0"
+                        x-transition:leave="transform transition ease-in-out duration-300"
+                        x-transition:leave-start="translate-x-0"
+                        x-transition:leave-end="translate-x-full"
+                        class="relative ml-auto flex h-full w-full max-w-4xl"
+                    >
+                        <div class="absolute left-0 top-0 bottom-0 w-1 bg-red-500 dark:bg-red-400"></div>
+
+                        <div class="ml-[0.25rem] flex h-full w-full flex-col bg-white shadow-xl dark:bg-zinc-900">
+                            <header class="flex items-start justify-between border-b border-gray-200 px-6 py-5 dark:border-zinc-700">
+                                <div class="flex items-start gap-3">
+                                    <div class="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-300">
+                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+                                            {{ $editingPayableId ? 'Edit Payable' : 'Add New Payable' }}
+                                        </h2>
+                                        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                                            {{ $editingPayableId ? 'Update payable details.' : 'Record a new payable entry.' }}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    class="rounded-full p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-red-500 dark:text-gray-500 dark:hover:bg-zinc-800 dark:hover:text-gray-200"
+                                    @click="open = false; $wire.closeCreatePanel()"
+                                    aria-label="Close payable panel"
+                                >
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                </button>
+                            </header>
+
+                            <div class="flex-1 overflow-hidden">
+                                <form wire:submit.prevent="{{ $editingPayableId ? 'update' : 'save' }}" class="flex h-full flex-col">
+                                    <div class="flex-1 overflow-y-auto px-6 py-6">
+                                        <div class="space-y-8">
+                                            <!-- Payable Details -->
+                                            <section class="space-y-4">
+                                                <div>
+                                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Payable Details</h3>
+                                                    <p class="text-sm text-gray-500 dark:text-gray-400">Basic information about the payable.</p>
+                                                </div>
+
+                                                <div class="space-y-4">
+                                                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                                        <div>
+                                                            <label for="reference_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                                Invoice Number
+                                                            </label>
+                                                            <input
+                                                                type="text"
+                                                                id="reference_id"
+                                                                wire:model="reference_id"
+                                                                class="block w-full rounded-md border border-gray-300 bg-gray-100 px-3 py-2 text-gray-900 shadow-sm focus:border-red-500 focus:outline-none focus:ring-red-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white cursor-not-allowed"
+                                                                readonly
+                                                            />
+                                                            @error('reference_id') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                                        </div>
+
+                                                        <div>
+                                                            <label for="supplier" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                                Supplier
+                                                            </label>
+                                                            <input
+                                                                type="text"
+                                                                id="supplier"
+                                                                wire:model="supplier"
+                                                                class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-red-500 focus:outline-none focus:ring-red-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                                placeholder="Supplier Name"
+                                                            />
+                                                            @error('supplier') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                                        <div>
+                                                            <label for="purchase_order_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                                Purchase Order
+                                                            </label>
+                                                            <select
+                                                                id="purchase_order_id"
+                                                                wire:model.live="purchase_order_id"
+                                                                class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-red-500 focus:outline-none focus:ring-red-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                            >
+                                                                <option value="">Select Purchase Order</option>
+                                                                @foreach($purchaseOrders as $po)
+                                                                    <option value="{{ $po->id }}">{{ $po->po_num }}</option>
+                                                                @endforeach
+                                                            </select>
+                                                            @error('purchase_order_id') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                                        </div>
+
+                                                        <div>
+                                                            <label for="purchase_order" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                                PO Number
+                                                            </label>
+                                                            <input
+                                                                type="text"
+                                                                id="purchase_order"
+                                                                wire:model="purchase_order"
+                                                                class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-red-500 focus:outline-none focus:ring-red-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                                placeholder="PO Number"
+                                                            />
+                                                            @error('purchase_order') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                                        <div>
+                                                            <label for="party" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                                Description
+                                                            </label>
+                                                            <input
+                                                                type="text"
+                                                                id="party"
+                                                                wire:model="party"
+                                                                class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-red-500 focus:outline-none focus:ring-red-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                                placeholder="Enter Description"
+                                                            />
+                                                            @error('party') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                                        </div>
+
+                                                        <div>
+                                                            <label for="amount" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                                Amount
+                                                            </label>
+                                                            <input
+                                                                type="number"
+                                                                step="0.01"
+                                                                id="amount"
+                                                                wire:model="amount"
+                                                                class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-red-500 focus:outline-none focus:ring-red-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                                placeholder="0.00"
+                                                            />
+                                                            @error('amount') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                                        <div>
+                                                            <label for="date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                                Date
+                                                            </label>
+                                                            <input
+                                                                type="date"
+                                                                id="date"
+                                                                wire:model="date"
+                                                                class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-red-500 focus:outline-none focus:ring-red-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                            />
+                                                            @error('date') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                                        </div>
+
+                                                        <div>
+                                                            <label for="due_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                                Due Date
+                                                            </label>
+                                                            <input
+                                                                type="date"
+                                                                id="due_date"
+                                                                wire:model="due_date"
+                                                                class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-red-500 focus:outline-none focus:ring-red-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                            />
+                                                            @error('due_date') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </section>
+
+                                            <!-- Payment Information -->
+                                            <section class="space-y-4">
+                                                <div>
+                                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Payment Information</h3>
+                                                    <p class="text-sm text-gray-500 dark:text-gray-400">Payment method and status.</p>
+                                                </div>
+
+                                                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                                    <div>
+                                                        <label for="payment_method" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                            Payment Method
+                                                        </label>
+                                                        <select
+                                                            id="payment_method"
+                                                            wire:model="payment_method"
+                                                            class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-red-500 focus:outline-none focus:ring-red-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                        >
+                                                            <option value="">Select payment method</option>
+                                                            <option value="Cash">Cash</option>
+                                                            <option value="Bank Transfer">Bank Transfer</option>
+                                                            <option value="Credit Card">Credit Card</option>
+                                                            <option value="Check">Check</option>
+                                                            <option value="GCash">GCash</option>
+                                                            <option value="Maya">Maya</option>
+                                                            <option value="Others">Others</option>
+                                                        </select>
+                                                        @error('payment_method') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                                    </div>
+
+                                                    <div>
+                                                        <label for="status" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                            Status
+                                                        </label>
+                                                        <select
+                                                            id="status"
+                                                            wire:model="status"
+                                                            class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-red-500 focus:outline-none focus:ring-red-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                        >
+                                                            <option value="pending">Pending</option>
+                                                            <option value="paid">Paid</option>
+                                                            <option value="cancelled">Cancelled</option>
+                                                            <option value="partial">Partial</option>
+                                                            <option value="overdue">Overdue</option>
+                                                        </select>
+                                                        @error('status') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                                    </div>
+                                                </div>
+                                            </section>
+
+                                            <!-- Description & Remarks -->
+                                            <section class="space-y-4">
+                                                <div>
+                                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Description & Remarks</h3>
+                                                    <p class="text-sm text-gray-500 dark:text-gray-400">Additional details about this payable.</p>
+                                                </div>
+
+                                                <div>
+                                                    <label for="remarks" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                        Remarks
+                                                    </label>
+                                                    <textarea
+                                                        id="remarks"
+                                                        wire:model="remarks"
+                                                        class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-red-500 focus:outline-none focus:ring-red-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm resize-y"
+                                                        style="min-height: 80px;"
+                                                        placeholder="Additional notes or details"
+                                                    ></textarea>
+                                                    @error('remarks') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                                </div>
+                                            </section>
+                                        </div>
+                                    </div>
+
+                                    <div class="border-t border-gray-200 bg-white px-6 py-4 dark:border-zinc-700 dark:bg-zinc-900">
+                                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                            <div class="text-sm text-gray-500 dark:text-gray-400">
+                                                Review details before {{ $editingPayableId ? 'updating' : 'recording' }} the payable.
+                                            </div>
+                                            <div class="flex items-center gap-3">
+                                                <flux:button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    wire:click="cancel"
+                                                >
+                                                    Cancel
+                                                </flux:button>
+
+                                                <flux:button
+                                                    type="submit"
+                                                    variant="primary"
+                                                >
+                                                    {{ $editingPayableId ? 'Update Payable' : 'Record Payable' }}
+                                                </flux:button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </section>
                 </div>
-                <div class="flex justify-end">
-                    <x-button type="submit" variant="primary">Submit</x-button>
-                </div>
-            </form>
-        </x-collapsible-card>
+            </template>
+        </div>
 
         @if (session('success'))
             <div
@@ -185,101 +431,6 @@
             </div>
         </x-collapsible-card>
 
-        <!-- Edit Modal -->
-        <div x-data="{ show: @entangle('showEditModal') }" x-show="show" x-cloak class="fixed top-0 left-0 right-0 z-50 w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] max-h-full flex items-center justify-center">
-            <div class="relative w-full max-w-2xl max-h-full">
-                <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
-                    <div class="flex items-start justify-between p-4 border-b rounded-t dark:border-gray-600">
-                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
-                            Edit Payable
-                        </h3>
-                        <button type="button" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ml-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white" wire:click="cancel">
-                            <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
-                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
-                            </svg>
-                            <span class="sr-only">Close modal</span>
-                        </button>
-                    </div>
-                    <form wire:submit.prevent="update">
-                        <div class="p-6 space-y-6">
-                            <div class="grid gap-6 mb-6 md:grid-cols-2">
-                                <div>
-                                    <x-input type="text" wire:model="reference_id" name="reference_id" label="Invoice Number" placeholder="Enter Invoice Number" />
-                                    @error('reference_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                                </div>
-                                <div>
-                                    <x-input type="text" wire:model="supplier" name="supplier" label="Supplier" placeholder="Enter supplier" />
-                                    @error('supplier') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                                </div>
-                                <div>
-                                    <x-select wire:model="purchase_order_id" name="purchase_order_id" label="Purchase Order">
-                                        <option value="">Select Purchase Order</option>
-                                        @foreach($purchaseOrders as $po)
-                                            <option value="{{ $po->id }}">{{ $po->po_num }}</option>
-                                        @endforeach
-                                    </x-select>
-                                    @error('purchase_order_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                                </div>
-                                <div>
-                                    <x-input type="text" wire:model="party" name="party" label="Description" placeholder="Enter description" />
-                                    @error('party') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                                </div>
-                                <div>
-                                    <x-input type="date" wire:model="date" name="date" label="Date" />
-                                    @error('date') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                                </div>
-                                <div>
-                                    <x-input type="date" wire:model="due_date" name="due_date" label="Due Date" />
-                                    @error('due_date') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                                </div>
-                                <div>
-                                    <x-input type="number" step="0.01" wire:model="amount" name="amount" label="Amount" placeholder="Enter amount" />
-                                    @error('amount') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                                </div>
-                                <div>
-                                    <x-input type="number" step="0.01" wire:model="balance" name="balance" label="Balance" placeholder="Enter balance" />
-                                    @error('balance') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                                </div>
-                                <div>
-                                    @if($balance == 0)
-                                        <x-input type="text" name="status" label="Status" value="Paid" readonly class="bg-gray-100 cursor-not-allowed" />
-                                    @else
-                                        <x-select wire:model="status" name="status" label="Status">
-                                            <option value="pending" @if($balance == $amount) selected @endif>Pending</option>
-                                            <option value="partial" @if($balance < $amount && $balance > 0) selected @endif>Partial</option>
-                                            <option value="cancelled" @if($status == 'cancelled') selected @endif>Cancelled</option>
-                                            <option value="overdue" @if($status == 'overdue') selected @endif>Overdue</option>
-                                        </x-select>
-                                    @endif
-                                    @error('status') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                                </div>
-                                <div>
-                                    <x-select wire:model="payment_method" name="payment_method" label="Payment Method">
-                                        <option value="">Select payment method</option>
-                                        <option value="Cash">Cash</option>
-                                        <option value="Bank Transfer">Bank Transfer</option>
-                                        <option value="Credit Card">Credit Card</option>
-                                        <option value="Check">Check</option>
-                                        <option value="GCash">GCash</option>
-                                        <option value="Maya">Maya</option>
-                                        <option value="Others">Others</option>
-                                    </x-select>
-                                    @error('payment_method') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                                </div>
-                                <div class="md:col-span-2">
-                                    <x-input type="textarea" wire:model="remarks" name="remarks" label="Remarks" placeholder="Enter remarks" />
-                                    @error('remarks') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                                </div>
-                            </div>
-                        </div>
-                        <div class="flex items-center p-6 space-x-2 border-t border-gray-200 rounded-b dark:border-gray-600">
-                            <x-button type="submit" variant="primary">Save changes</x-button>
-                            <x-button type="button" wire:click="cancel" variant="secondary">Cancel</x-button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
 
         <!-- Delete Confirmation Modal -->
         <div x-data="{ show: @entangle('showDeleteModal') }" x-show="show" x-cloak class="fixed top-0 left-0 right-0 z-50 w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] max-h-full flex items-center justify-center">

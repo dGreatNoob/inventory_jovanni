@@ -105,15 +105,23 @@ jobs:
 
       - name: Build Assets
         run: |
+          echo "📦 Building frontend assets..."
           mkdir -p public/build
+          echo "Running: npm run build"
           npm run build
+          echo "Checking for manifest.json..."
           if [ ! -f "public/build/manifest.json" ]; then
-            echo "⚠️ Warning: manifest.json not found after build"
-            ls -la public/build/ || echo "Build directory exists but is empty"
+            echo "❌ ERROR: manifest.json not found after build!"
+            echo "Build directory contents:"
+            ls -la public/build/ || echo "Build directory is empty or doesn't exist"
+            echo "Checking if build command succeeded..."
             exit 1
           fi
           echo "✅ Assets built successfully"
+          echo "Manifest file details:"
           ls -lh public/build/manifest.json
+          echo "Manifest file size:"
+          wc -l public/build/manifest.json || echo "Could not read manifest"
 
       - name: Run Tests
         run: ./vendor/bin/pest --stop-on-failure

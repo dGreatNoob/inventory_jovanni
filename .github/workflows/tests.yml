@@ -69,13 +69,19 @@ jobs:
           echo "DB_USERNAME=root" >> .env
           echo "DB_PASSWORD=root" >> .env
           # Update phpunit.xml for CI/CD (override local credentials)
-          sed -i 's|<env name="DB_PORT" value="3307"/>|<env name="DB_PORT" value="3306"/>|g' phpunit.xml
-          sed -i 's|<env name="DB_USERNAME" value="jovanni"/>|<env name="DB_USERNAME" value="root"/>|g' phpunit.xml
-          sed -i 's|<env name="DB_PASSWORD" value="secret"/>|<env name="DB_PASSWORD" value="root"/>|g' phpunit.xml
+          sed -i 's|<env name="DB_PORT" value="3307"/>|<env name="DB_PORT" value="3306"/>|g' phpunit.xml || true
+          sed -i 's|<env name="DB_USERNAME" value="jovanni"/>|<env name="DB_USERNAME" value="root"/>|g' phpunit.xml || true
+          sed -i 's|<env name="DB_PASSWORD" value="secret"/>|<env name="DB_PASSWORD" value="root"/>|g' phpunit.xml || true
+          echo "Updated phpunit.xml for CI/CD"
+
+      - name: Install MySQL Client
+        run: sudo apt-get update && sudo apt-get install -y default-mysql-client
 
       - name: Wait for MySQL to be ready
         run: |
           timeout 60 bash -c 'until mysqladmin ping -h 127.0.0.1 -u root -proot --silent; do sleep 2; done'
+          echo "MySQL is ready!"
+          mysqladmin ping -h 127.0.0.1 -u root -proot
 
       - name: Run Database Migrations
         run: php artisan migrate --force
@@ -83,8 +89,29 @@ jobs:
       - name: Run Database Seeding
         run: php artisan db:seed --force
 
+      - name: Clear Configuration Cache
+        run: php artisan config:clear
+
+      - name: Verify Database Connection
+        run: |
+          php artisan tinker --execute="DB::connection()->getPdo(); echo 'Database connection successful!';"
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: inventory_jovanni_test
+          DB_USERNAME: root
+          DB_PASSWORD: root
+
       - name: Build Assets
         run: npm run build
 
       - name: Run Tests
-        run: ./vendor/bin/pest
+        run: ./vendor/bin/pest --stop-on-failure
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: inventory_jovanni_test
+          DB_USERNAME: root
+          DB_PASSWORD: root

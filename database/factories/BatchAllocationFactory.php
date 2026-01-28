@@ -16,9 +16,10 @@ class BatchAllocationFactory extends Factory
     public function definition(): array
     {
         return [
-            'purchase_order_id' => PurchaseOrder::factory(),
+            // 'purchase_order_id' => PurchaseOrder::factory(), // Column doesn't exist in batch_allocations table
             'ref_no' => 'REF-' . $this->faker->unique()->numerify('######'),
-            'status' => $this->faker->randomElement(['pending', 'approved', 'completed']),
+            'status' => $this->faker->randomElement(['draft', 'dispatched', 'completed']),
+            'workflow_step' => 1,
         ];
     }
 }

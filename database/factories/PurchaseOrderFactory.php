@@ -25,8 +25,7 @@ class PurchaseOrderFactory extends Factory
             'del_to' => \App\Models\Department::inRandomOrder()->first()?->id,
             'supplier_id' => \App\Models\Supplier::inRandomOrder()->first()?->id ?? \App\Models\Supplier::factory(),
             'payment_terms' => $this->faker->randomElement(['15 days', '30 days']),
-            'quotation' => $this->faker->word(),
-            
+            // 'quotation' => null, // Removed - field doesn't exist in test database
             // 'po_type' => $this->faker->randomElement(['raw_mats', 'supply']),
             'total_qty' => $this->faker->numberBetween(1, 100),
             'ordered_by' => \App\Models\User::inRandomOrder()->first()?->id ?? \App\Models\User::factory(),

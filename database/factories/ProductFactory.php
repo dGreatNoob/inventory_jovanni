@@ -26,6 +26,7 @@ class ProductFactory extends Factory
             'cost' => $this->faker->randomFloat(2, 5, 500),
             'uom' => $this->faker->randomElement(['pcs', 'box', 'pack']),
             'disabled' => false,
+            'created_by' => \App\Models\User::factory(),
         ];
     }
 }

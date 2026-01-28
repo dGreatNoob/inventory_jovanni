@@ -39,6 +39,7 @@ test('product can be updated', function () {
         'category_id' => $category->id,
         'supplier_id' => $supplier->id,
         'price' => 100.00,
+        'cost' => 50.00,
         'created_by' => $user->id,
     ]);
 
@@ -64,6 +65,7 @@ test('product can be retrieved', function () {
         'category_id' => $category->id,
         'supplier_id' => $supplier->id,
         'price' => 100.00,
+        'cost' => 50.00,
         'created_by' => $user->id,
     ]);
 
@@ -85,6 +87,7 @@ test('product can be soft deleted', function () {
         'category_id' => $category->id,
         'supplier_id' => $supplier->id,
         'price' => 100.00,
+        'cost' => 50.00,
         'created_by' => $user->id,
     ]);
 

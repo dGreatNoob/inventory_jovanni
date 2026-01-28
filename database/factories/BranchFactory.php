@@ -20,6 +20,7 @@ class BranchFactory extends Factory
             'address' => $this->faker->address(),
             'contact_num' => $this->faker->phoneNumber(),
             'batch' => 'BATCH-' . $this->faker->numerify('####'),
+            'category' => $this->faker->randomElement(['Retail', 'Wholesale', 'Online', 'Warehouse']),
         ];
     }
 }

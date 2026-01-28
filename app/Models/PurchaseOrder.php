@@ -88,6 +88,11 @@ class PurchaseOrder extends Model
         return $this->hasMany(ProductOrder::class);
     }
 
+    public function items()
+    {
+        return $this->hasMany(PurchaseOrderItem::class);
+    }
+
     public function approvalLogs(): HasMany
     {
         return $this->hasMany(PurchaseOrderApprovalLog::class)->orderBy('created_at', 'desc');

@@ -229,68 +229,12 @@
                                                 </div>
                                             </section>
 
-                                            <!-- Branch & Product Selection -->
+                                            <!-- Product Selection -->
                                             <section class="space-y-4">
                                                 <div>
-                                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Batch & Product Selection</h3>
-                                                    <p class="text-sm text-gray-500 dark:text-gray-400">Choose where and what products are included in the promo.</p>
+                                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Product Selection</h3>
+                                                    <p class="text-sm text-gray-500 dark:text-gray-400">Choose products to include in the promo.</p>
                                                 </div>
-
-                                                <!-- Batch Allocation Selector -->
-                                                <div>
-    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-        Batch
-    </label>
-    <div class="relative" wire:click.outside="$set('batchDropdown', false)">
-        <div wire:click="$toggle('batchDropdown')" 
-            class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm cursor-pointer flex justify-between items-center">
-            <span class="flex flex-wrap gap-1">
-                @if(empty($selected_batches))
-                    <span class="text-gray-400">Select Batch</span>
-                @else
-                    @foreach($batchAllocations as $batchAllocation)
-                        @if(in_array($batchAllocation->id, $selected_batches))
-                            <span class="inline-flex items-center gap-1.5 bg-indigo-100 text-indigo-800 text-xs font-medium px-2.5 py-1 rounded-full dark:bg-indigo-900/30 dark:text-indigo-300">
-                                <span class="font-semibold">{{ $batchAllocation->ref_no }}</span>
-                                @if($batchAllocation->batch_number)
-                                    <span class="text-gray-500 dark:text-gray-400">•</span>
-                                    <span class="text-gray-700 dark:text-gray-300 font-normal">Batch: {{ $batchAllocation->batch_number }}</span>
-                                @endif
-                            </span>
-                        @endif
-                    @endforeach
-                @endif
-            </span>
-            <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-            </svg>
-        </div>
-
-        @if($batchDropdown)
-        <div class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto dark:bg-gray-700 dark:border-gray-600">
-            @foreach($batchAllocations as $batchAllocation)
-                <label class="flex items-center p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600 last:border-b-0">
-                    <input type="checkbox" value="{{ $batchAllocation->id }}" wire:model="selected_batches"
-                        class="form-checkbox h-4 w-4 accent-blue-600 text-blue-600 focus:ring-blue-500 border-gray-300 rounded dark:accent-blue-400 dark:text-blue-400">
-                    <div class="ml-3 flex-1">
-                        <div class="text-sm font-medium text-gray-900 dark:text-white">
-                            {{ $batchAllocation->ref_no }}
-                        </div>
-                        @if($batchAllocation->batch_number)
-                            <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                                Batch Number: <span class="font-semibold text-gray-700 dark:text-gray-300">{{ $batchAllocation->batch_number }}</span>
-                            </div>
-                        @endif
-                    </div>
-                </label>
-            @endforeach
-        </div>
-        @endif
-        @error('selected_batches')
-            <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
-        @enderror
-    </div>
-</div>
 
                                                 <!-- Product Selection -->
                                                 <div class="grid gap-4">
@@ -303,15 +247,9 @@
                                                                 <div class="flex flex-wrap gap-1 items-center">
                                                                     @if(!$productDropdown)
                                                                         @if(empty($selected_products))
-                                                                            <span class="text-gray-400">
-                                                                                @if(empty($selected_batches))
-                                                                                    Select batch allocation first
-                                                                                @else
-                                                                                    Select Product
-                                                                                @endif
-                                                                            </span>
+                                                                            <span class="text-gray-400">Select Product</span>
                                                                         @else
-                                                                            @foreach($this->availableProductsForBatches as $product)
+                                                                            @foreach($this->availableProducts as $product)
                                                                                 @if(in_array($product->id, $selected_products))
                                                                                     <span class="inline-flex items-center bg-gray-600 text-white text-xs font-medium px-2 py-0.5 rounded-full">
                                                                                         {{ $product->name }}
@@ -321,13 +259,7 @@
                                                                             @endforeach
                                                                         @endif
                                                                     @else
-                                                                        <span class="text-gray-400">
-                                                                            @if(empty($selected_batches))
-                                                                                Select batch allocation first
-                                                                            @else
-                                                                                Select Product
-                                                                            @endif
-                                                                        </span>
+                                                                        <span class="text-gray-400">Select Product</span>
                                                                     @endif
                                                                 </div>
                                                                 <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -335,10 +267,10 @@
                                                                 </svg>
                                                             </div>
 
-                                                            @if($productDropdown && !empty($selected_batches))
+                                                            @if($productDropdown)
                                                                 <div class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto dark:bg-gray-700 dark:border-gray-600">
-                                                                    @if($this->availableProductsForBatches->count() > 0)
-                                                                        @foreach($this->availableProductsForBatches as $product)
+                                                                    @if($this->availableProducts->count() > 0)
+                                                                        @foreach($this->availableProducts as $product)
                                                                             <label class="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600 last:border-b-0 {{ $product->isDisabled ?? false ? 'opacity-50 cursor-not-allowed' : '' }}">
                                                                                 <div class="flex items-center space-x-3">
                                                                                     <input type="checkbox"
@@ -361,7 +293,7 @@
                                                                         @endforeach
                                                                     @else
                                                                         <div class="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
-                                                                            No products available in selected batch allocations
+                                                                            No products available
                                                                         </div>
                                                                     @endif
                                                                 </div>

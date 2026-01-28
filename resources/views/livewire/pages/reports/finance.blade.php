@@ -2,15 +2,32 @@
 <x-slot:subheader>Comprehensive overview of expenses, receivables, payables, and payments</x-slot:subheader>
 
 <div class="space-y-6">
-    <!-- Filters -->
-    <div class="p-4 bg-gray-50 rounded-lg dark:bg-gray-800/50 grid gap-4 md:grid-cols-2">
-        <div>
-            <label for="dateFrom" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">From Date</label>
-            <input type="date" id="dateFrom" wire:model.live="dateFrom" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+    <!-- Time Period Filter -->
+    <div class="bg-white dark:bg-gray-800 shadow rounded-lg p-6 mb-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0 mb-4">
+            <div>
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white">Time Period</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Select the time range for analytics</p>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Quick Select</label>
+                <select wire:model.live="timePeriod" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 sm:text-sm rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                    <option value="7">Last 7 days</option>
+                    <option value="30">Last 30 days</option>
+                    <option value="90">Last 90 days</option>
+                    <option value="365">Last year</option>
+                </select>
+            </div>
         </div>
-        <div>
-            <label for="dateTo" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">To Date</label>
-            <input type="date" id="dateTo" wire:model.live="dateTo" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+        <div class="grid gap-4 md:grid-cols-2">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">From Date</label>
+                <input type="date" wire:model.live="dateFrom" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 sm:text-sm rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">To Date</label>
+                <input type="date" wire:model.live="dateTo" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 sm:text-sm rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+            </div>
         </div>
     </div>
 

@@ -5,8 +5,7 @@ set -e
 # This script is run by the GitHub Actions self-hosted runner
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
-PROJECT_DIR="$(dirname "$PROJECT_DIR")"  # Go up from scripts/deployment
+PROJECT_DIR="/home/biiieem/repos/inventory_jovanni"
 
 cd "$PROJECT_DIR" || exit 1
 

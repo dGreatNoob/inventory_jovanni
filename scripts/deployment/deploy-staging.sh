@@ -46,7 +46,7 @@ fi
 # Step 3: Install PHP dependencies inside the app service (uses image extensions)
 echo ""
 echo "🧩 Step 3: Installing PHP dependencies via app container (Composer)..."
-docker compose -f "$COMPOSE_FILE" run --rm app \
+docker compose -f "$COMPOSE_FILE" run --rm --entrypoint "" app \
   bash -lc "git config --global --add safe.directory /var/www && \
             composer install --no-dev --optimize-autoloader" || {
     echo "❌ Composer install failed inside app container. Aborting deployment."

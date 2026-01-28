@@ -29,7 +29,8 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
+          # Try install first, update lock if needed
+          composer install --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist || composer update --lock --no-interaction --no-scripts --no-progress --prefer-dist
           npm install
 
       - name: Run Pint

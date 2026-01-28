@@ -11,10 +11,12 @@ class Box extends Model
         'box_number',
         'status',
         'current_count',
+        'dispatched_at',
     ];
 
     protected $casts = [
         'current_count' => 'integer',
+        'dispatched_at' => 'datetime',
     ];
 
     public function branchAllocation()

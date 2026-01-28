@@ -1,0 +1,1333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Branch Management Modules - User Acceptance Testing (UAT)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        h2 {
+            color: #4CAF50;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 18px;
+        }
+        .module-header {
+            background-color: #2196F3;
+            color: white;
+            padding: 15px;
+            margin: 30px 0 10px 0;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+            vertical-align: top;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .scenario-title {
+            font-weight: bold;
+            color: #333;
+            width: 20%;
+        }
+        .test-steps {
+            width: 40%;
+        }
+        .expected-result {
+            width: 40%;
+        }
+        .step-number {
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        ul {
+            margin: 5px 0;
+            padding-left: 20px;
+        }
+        li {
+            margin-bottom: 5px;
+        }
+        .sub-step {
+            margin-left: 20px;
+            font-style: italic;
+        }
+        .highlight {
+            background-color: #fff3cd;
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+        .code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Branch Management & Related Modules</h1>
+    <h2>User Acceptance Testing (UAT) - Happy Path Scenarios</h2>
+
+    <!-- AGENTS MANAGEMENT MODULE -->
+    <div class="module-header">MODULE 1: AGENTS MANAGEMENT</div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Scenario Title</th>
+                <th>Test Steps</th>
+                <th>Expected Outcome</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- UAT-AG-001 -->
+            <tr>
+                <td class="scenario-title">UAT-AG-001:<br>Create New Sales Agent</td>
+                <td class="test-steps">
+                    <ol>
+                        <li>Navigate to <span class="code">Agent Management</span> (Route: <span class="code">/agentmanagement/profile</span>)</li>
+                        <li>Click <strong>"Add New Agent"</strong> button</li>
+                        <li>Enter Agent Code (e.g., <span class="code">AG-001</span>)</li>
+                        <li>Enter Agent Name (e.g., "Juan Dela Cruz")</li>
+                        <li>Enter Complete Address</li>
+                        <li>Enter Contact Number (11-digit format)</li>
+                        <li>Enter TIN Number</li>
+                        <li>Set Status as <strong>"Active"</strong></li>
+                        <li>Click <strong>"Save"</strong> button</li>
+                    </ol>
+                </td>
+                <td class="expected-result">
+                    <ul>
+                        <li>Agent is successfully created and saved to database</li>
+                        <li>Success notification message appears</li>
+                        <li>New agent appears in the agents list</li>
+                        <li>Agent status shows as <span class="highlight">"Active"</span></li>
+                        <li>All entered information is displayed correctly</li>
+                        <li>Agent code is unique and validated</li>
+                    </ul>
+                </td>
+            </tr>
+
+            <!-- UAT-AG-002 -->
+            <tr>
+                <td class="scenario-title">UAT-AG-002:<br>Deploy Agent to Branch with Subclass</td>
+                <td class="test-steps">
+                    <ol>
+                        <li>Navigate to Agent Management page</li>
+                        <li>Locate an active (non-deployed) agent in the list</li>
+                        <li>Click <strong>"Deploy"</strong> button for the selected agent</li>
+                        <li>Assignment modal opens</li>
+                        <li>Select target branch from dropdown (e.g., "Manila Branch")</li>
+                        <li>System displays subclass options for the selected branch</li>
+                        <li>Select appropriate subclass (e.g., "Subclass 1")</li>
+                        <li>Click <strong>"Assign"</strong> button to confirm</li>
+                    </ol>
+                </td>
+                <td class="expected-result">
+                    <ul>
+                        <li>Agent status changes from "Active" to <span class="highlight">"Deployed"</span></li>
+                        <li>Assignment is saved with current timestamp</li>
+                        <li>Agent's deployment badge shows the branch name</li>
+                        <li><span class="code">agent_branch_assignments</span> table creates new record with:
+                            <ul>
+                                <li>Selected branch ID</li>
+                                <li>Selected subclass</li>
+                                <li>Assignment timestamp</li>
+                                <li>NULL <span class="code">released_at</span> (indicating active assignment)</li>
+                            </ul>
+                        </li>
+                        <li>Agent can only be assigned to <strong>ONE</strong> branch at a time</li>
+                        <li>Success notification confirms assignment</li>
+                    </ul>
+                </td>
+            </tr>
+
+            <!-- UAT-AG-003 -->
+            <tr>
+                <td class="scenario-title">UAT-AG-003:<br>Release Agent from Branch Assignment</td>
+                <td class="test-steps">
+                    <ol>
+                        <li>Navigate to Agent Management page</li>
+                        <li>Filter view to show <strong>"Deployed"</strong> agents only</li>
+                        <li>Locate a deployed agent</li>
+                        <li>Click <strong>"Release"</strong> button for the agent</li>
+                        <li>Confirm the release action in the confirmation dialog</li>
+                    </ol>
+                </td>
+                <td class="expected-result">
+                    <ul>
+                        <li>Agent status changes from "Deployed" to <span class="highlight">"Active"</span></li>
+                        <li>Release timestamp is recorded in <span class="code">released_at</span> field</li>
+                        <li>Agent deployment badge is removed</li>
+                        <li>Agent is now available for new assignments</li>
+                        <li>Assignment history is preserved in database</li>
+                        <li>Success notification confirms the release</li>
+                    </ul>
+                </td>
+            </tr>
+
+            <!-- UAT-AG-004 -->
+            <tr>
+                <td class="scenario-title">UAT-AG-004:<br>Reassign Agent to Different Branch</td>
+                <td class="test-steps">
+                    <ol>
+                        <li>Navigate to Agent Management page</li>
+                        <li>Locate an agent currently deployed to "Branch A"</li>
+                        <li>Click <strong>"Deploy"</strong> button (even though already deployed)</li>
+                        <li>Select new branch "Branch B" from dropdown</li>
+                        <li>Select appropriate subclass for Branch B</li>
+                        <li>Click <strong>"Assign"</strong> button</li>
+                    </ol>
+                </td>
+                <td class="expected-result">
+                    <ul>
+                        <li>Previous assignment to Branch A is <strong>automatically released</strong> (timestamp added to <span class="code">released_at</span>)</li>
+                        <li>New assignment to Branch B is created</li>
+                        <li>Agent continues to show as "Deployed" status</li>
+                        <li>Deployment badge updates to show "Branch B"</li>
+                        <li>Assignment history shows both assignments:
+                            <ul>
+                                <li>Branch A assignment has <span class="code">released_at</span> timestamp</li>
+                                <li>Branch B assignment has NULL <span class="code">released_at</span></li>
+                            </ul>
+                        </li>
+                        <li>No duplicate active assignments exist for the same agent</li>
+                    </ul>
+                </td>
+            </tr>
+
+            <!-- UAT-AG-005 -->
+            <tr>
+                <td class="scenario-title">UAT-AG-005:<br>View Agent Assignment History</td>
+                <td class="test-steps">
+                    <ol>
+                        <li>Navigate to Agent Management page</li>
+                        <li>Select an agent who has been assigned to multiple branches over time</li>
+                        <li>Click <strong>"View Details"</strong> or <strong>"Assignment History"</strong> button</li>
+                        <li>Review the assignment history panel</li>
+                    </ol>
+                </td>
+                <td class="expected-result">
+                    <ul>
+                        <li>History displays all previous and current assignments</li>
+                        <li>Each assignment shows:
+                            <ul>
+                                <li>Branch name</li>
+                                <li>Subclass assigned</li>
+                                <li>Assignment date (when deployed)</li>
+                                <li>Release date (when released, or "Current" if NULL)</li>
+                            </ul>
+                        </li>
+                        <li>Records are sorted by date (most recent first)</li>
+                        <li>Current assignment is clearly marked/highlighted</li>
+                        <li>Historical data is preserved and accurate</li>
+                    </ul>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- BRANCH INVENTORY MODULE -->
+    <div class="module-header">MODULE 2: BRANCH INVENTORY MANAGEMENT</div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Scenario Title</th>
+                <th>Test Steps</th>
+                <th>Expected Outcome</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- UAT-BI-001 -->
+            <tr>
+                <td class="scenario-title">UAT-BI-001:<br>Navigate Branch Inventory Hierarchy</td>
+                <td class="test-steps">
+                    <ol>
+                        <li>Navigate to <span class="code">Branch Inventory</span> (Route: <span class="code">/branch-inventory</span>)</li>
+                        <li>System displays list of batches (e.g., "Batch 1", "Batch 2")</li>
+                        <li>Click on <strong>"Batch 1"</strong> to expand</li>
+                        <li>System displays all branches within Batch 1 with shipment counts</li>
+                        <li>Click on a specific branch (e.g., "Quezon City Branch")</li>
+                        <li>System displays all products allocated to that branch</li>
+                        <li>Review product list showing quantities and values</li>
+                    </ol>
+                </td>
+                <td class="expected-result">
+                    <ul>
+                        <li>Batch list loads successfully with counts</li>
+                        <li>Each batch shows number of branches</li>
+                        <li>Branch list displays with accurate shipment counts</li>
+                        <li>Product list shows for selected branch with:
+                            <ul>
+                                <li>Product name and SKU</li>
+                                <li>Total allocated quantity</li>
+                                <li>Total sold quantity</li>
+                                <li>Remaining quantity (allocated - sold)</li>
+                                <li>Unit price</li>
+                                <li>Total value</li>
+                                <li>Promo information (if applicable)</li>
+                            </ul>
+                        </li>
+                        <li>Navigation breadcrumbs show: <span class="code">Batch → Branch → Products</span></li>
+                    </ul>
+                </td>
+            </tr>
+
+            <!-- UAT-BI-002 -->
+            <tr>
+                <td class="scenario-title">UAT-BI-002:<br>View Product Shipment Details</td>
+                <td class="test-steps">
+                    <ol>
+                        <li>Navigate to Branch Inventory</li>
+                        <li>Select Batch → Select Branch → View Products</li>
+                        <li>Click on a specific product from the list</li>
+                        <li>Product detail modal opens showing shipment breakdown</li>
+                        <li>Review the shipment details table</li>
+                    </ol>
+                </td>
+                <td class="expected-result">
+                    <ul>
+                        <li>Modal displays product information header:
+                            <ul>
+                                <li>Product name</li>
+                                <li>SKU and barcode</li>
+                                <li>Total quantities</li>
+                            </ul>
+                        </li>
+                        <li>Shipment table shows:
+                            <ul>
+                                <li>Shipping plan number</li>
+                                <li>Shipment date</li>
+                                <li>Carrier name</li>
+                                <li>Delivery method</li>
+                                <li>Allocated quantity per shipment</li>
+                                <li>Sold quantity per shipment</li>
+                                <li>Actions (edit allocated quantity)</li>
+                            </ul>
+                        </li>
+                        <li>All shipments for this product at this branch are listed</li>
+                        <li>Totals match the summary view</li>
+                        <li>Data is accurate and up-to-date</li>
+                    </ul>
+                </td>
+            </tr>
+
+            <!-- UAT-BI-003 -->
+            <tr>
+                <td class="scenario-title">UAT-BI-003:<br>Upload Barcode File to Record Sales</td>
+                <td class="test-steps">
+                    <ol>
+                        <li>Navigate to Branch Inventory</li>
+                        <li>Select batch and branch</li>
+                        <li>Prepare a text file (.txt) containing sold item barcodes (one per line)<br>
+                        <span class="sub-step">Example: 1234567890123456</span><br>
+                        <span class="sub-step">Example: 1234567890234567</span></li>
+                        <li>Click <strong>"Upload Barcodes"</strong> button</li>
+                        <li>Select the prepared text file</li>
+                        <li>Click <strong>"Upload"</strong> to submit</li>
+                        <li>System processes the file and shows validation results</li>
+                        <li>Review results showing:
+                            <ul>
+                                <li>Valid barcodes (matched to products)</li>
+                                <li>Invalid barcodes (not found)</li>
+                                <li>Similar barcodes (partial matches)</li>
+                            </ul>
+                        </li>
+                        <li>Verify quantities don't exceed available stock</li>
+                        <li>Click <strong>"Confirm"</strong> to save valid barcodes</li>
+                    </ol>
+                </td>
+                <td class="expected-result">
+                    <ul>
+                        <li>File is successfully uploaded and parsed</li>
+                        <li>System extracts all barcodes from the file</li>
+                        <li>Validation process completes:
+                            <ul>
+                                <li>Valid barcodes matched to products in branch inventory</li>
+                                <li>Invalid barcodes flagged with reason</li>
+                                <li>Similar barcodes detected (same first 10 digits)</li>
+                            </ul>
+                        </li>
+                        <li>Quantity validation passes:
+                            <ul>
+                                <li>Sold quantities don't exceed allocated quantities</li>
+                                <li>Warning shown if attempting to exceed stock</li>
+                            </ul>
+                        </li>
+                        <li>Upon confirmation:
+                            <ul>
+                                <li><span class="code">sold_quantity</span> updated in <span class="code">branch_allocation_items</span></li>
+                                <li>Upload logged in upload history</li>
+                                <li>Activity log records the transaction</li>
+                                <li>Product list refreshes with updated sold quantities</li>
+                            </ul>
+                        </li>
+                        <li>Success notification displays count of processed barcodes</li>
+                    </ul>
+                </td>
+            </tr>
+
+            <!-- UAT-BI-004 -->
+            <tr>
+                <td class="scenario-title">UAT-BI-004:<br>Handle Similar Barcode Detection</td>
+                <td class="test-steps">
+                    <ol>
+                        <li>Navigate to Branch Inventory</li>
+                        <li>Upload barcode file containing similar barcodes<br>
+                        <span class="sub-step">Example: Uploaded <span class="code">1234567890111111</span></span><br>
+                        <span class="sub-step">Existing product has <span class="code">1234567890222222</span></span></li>
+                        <li>System shows similar barcodes in results with warning</li>
+                        <li>Review similar barcode section showing:
+                            <ul>
+                                <li>Uploaded barcode</li>
+                                <li>Existing product barcode</li>
+                                <li>Product name</li>
+                                <li>Match percentage</li>
+                            </ul>
+                        </li>
+                        <li>Select similar barcodes to sync</li>
+                        <li>Click <strong>"Sync Selected"</strong> button</li>
+                        <li>Confirm the sync action</li>
+                    </ol>
+                </td>
+                <td class="expected-result">
+                    <ul>
+                        <li>System detects barcodes with matching first 10 digits</li>
+                        <li>Similar barcodes are clearly separated from invalid barcodes</li>
+                        <li>Each similar barcode shows:
+                            <ul>
+                                <li>The uploaded barcode value</li>
+                                <li>Suggested product match</li>
+                                <li>Confidence indicator</li>
+                            </ul>
+                        </li>
+                        <li>User can select which ones to sync</li>
+                        <li>Upon sync confirmation:
+                            <ul>
+                                <li>Selected barcodes are treated as valid</li>
+                                <li>Sold quantity updated for matched products</li>
+                                <li>Sync recorded in activity log</li>
+                                <li>Upload history shows the barcode variation</li>
+                            </ul>
+                        </li>
+                        <li>Product inventory updates correctly</li>
+                        <li>Success message confirms sync completion</li>
+                    </ul>
+                </td>
+            </tr>
+
+            <!-- UAT-BI-005 -->
+            <tr>
+                <td class="scenario-title">UAT-BI-005:<br>Edit Allocated Quantity for Shipment</td>
+                <td class="test-steps">
+                    <ol>
+                        <li>Navigate to Branch Inventory</li>
+                        <li>Select batch → branch → product</li>
+                        <li>Open product detail modal showing shipments</li>
+                        <li>Locate a shipment with allocated quantity (e.g., 100 units, 20 sold)</li>
+                        <li>Click <strong>"Edit"</strong> icon next to allocated quantity</li>
+                        <li>Input field becomes editable</li>
+                        <li>Enter new allocated quantity: <strong>120 units</strong></li>
+                        <li>Click <strong>"Save"</strong> button</li>
+                    </ol>
+                </td>
+                <td class="expected-result">
+                    <ul>
+                        <li>Edit mode activates for the specific shipment row</li>
+                        <li>Current quantity is pre-filled in the input field</li>
+                        <li>Validation rules apply:
+                            <ul>
+                                <li>New quantity cannot be less than sold quantity</li>
+                                <li>Must be a positive number</li>
+                            </ul>
+                        </li>
+                        <li>If validation fails, error message displays</li>
+                        <li>Upon successful save:
+                            <ul>
+                                <li>Allocated quantity updates in database</li>
+                                <li>Remaining quantity recalculates (allocated - sold)</li>
+                                <li>Activity log records:
+                                    <ul>
+                                        <li>Product barcode</li>
+                                        <li>Old quantity (100) → New quantity (120)</li>
+                                        <li>Branch ID, Shipment ID</li>
+                                        <li>User who made the change</li>
+                                        <li>Timestamp</li>
+                                    </ul>
+                                </li>
+                                <li>Edit mode closes</li>
+                                <li>Success notification appears</li>
+                            </ul>
+                        </li>
+                        <li>Product summary totals update automatically</li>
+                    </ul>
+                </td>
+            </tr>
+
+            <!-- UAT-BI-006 -->
+            <tr>
+                <td class="scenario-title">UAT-BI-006:<br>View Upload History for Product</td>
+                <td class="test-steps">
+                    <ol>
+                        <li>Navigate to Branch Inventory</li>
+                        <li>Select batch → branch → product</li>
+                        <li>Open product detail modal</li>
+                        <li>Click <strong>"Upload History"</strong> tab</li>
+                        <li>Review the upload history table</li>
+                    </ol>
+                </td>
+                <td class="expected-result">
+                    <ul>
+                        <li>Upload history tab displays all past barcode uploads for this product</li>
+                        <li>Each upload record shows:
+                            <ul>
+                                <li>Upload date and time</li>
+                                <li>Uploaded by (user name)</li>
+                                <li>Number of barcodes processed</li>
+                                <li>Quantity sold in that upload</li>
+                                <li>Valid/invalid barcode counts</li>
+                                <li>Upload status</li>
+                            </ul>
+                        </li>
+                        <li>Records are sorted chronologically (newest first)</li>
+                        <li>Clicking on an upload shows detailed breakdown:
+                            <ul>
+                                <li>Individual barcodes uploaded</li>
+                                <li>Match results</li>
+                                <li>Any similar barcode syncs performed</li>
+                            </ul>
+                        </li>
+                        <li>History is permanent and cannot be deleted</li>
+                        <li>Pagination available for products with many uploads</li>
+                    </ul>
+                </td>
+            </tr>
+
+            <!-- UAT-BI-007 -->
+            <tr>
+                <td class="scenario-title">UAT-BI-007:<br>Validate Barcode Quantity Exceeds Stock</td>
+                <td class="test-steps">
+                    <ol>
+                        <li>Navigate to Branch Inventory</li>
+                        <li>Identify a product with:
+                            <ul>
+                                <li>Allocated: 50 units</li>
+                                <li>Sold: 30 units</li>
+                                <li>Remaining: 20 units</li>
+                            </ul>
+                        </li>
+                        <li>Prepare barcode file with <strong>25 units</strong> of that product (exceeds 20 remaining)</li>
+                        <li>Upload the barcode file</li>
+                        <li>Review validation results</li>
+                    </ol>
+                </td>
+                <td class="expected-result">
+                    <ul>
+                        <li>System processes all barcodes</li>
+                        <li>Validation detects quantity overflow:
+                            <ul>
+                                <li>Attempting to sell 25 units</li>
+                                <li>Only 20 units available</li>
+                            </ul>
+                        </li>
+                        <li>Warning/error message displays:
+                            <ul>
+                                <li><span class="highlight">"Quantity exceeds available stock for [Product Name]"</span></li>
+                                <li>"Available: 20 units, Attempting to sell: 25 units"</li>
+                                <li>"Please verify barcode file and resubmit"</li>
+                            </ul>
+                        </li>
+                        <li>Barcodes are marked as invalid due to quantity constraint</li>
+                        <li>User cannot proceed with save/confirm action</li>
+                        <li>No database updates occur</li>
+                        <li>Option provided to:
+                            <ul>
+                                <li>Edit barcode file and re-upload</li>
+                                <li>Manually adjust allocated quantity first (if legitimate)</li>
+                                <li>Review shipment details to verify available stock</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- INVENTORY AUDITING MODULE -->
+    <div class="module-header">MODULE 3: INVENTORY AUDITING (Branch Inventory Comparison)</div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Scenario Title</th>
+                <th>Test Steps</th>
+                <th>Expected Outcome</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- UAT-AUD-001 -->
+            <tr>
+                <td class="scenario-title">UAT-AUD-001:<br>Upload Physical Inventory Barcode File for Audit</td>
+                <td class="test-steps">
+                    <ol>
+                        <li>Navigate to Branch Inventory (Route: <span class="code">/branch-inventory</span>)</li>
+                        <li>Select batch and branch to audit</li>
+                        <li>Branch staff conducts physical count and scans all items on hand</li>
+                        <li>Prepare text file (.txt) with all physical inventory barcodes (one per line)<br>
+                        <span class="sub-step">This represents what's actually in the branch</span></li>
+                        <li>Click <strong>"Upload Barcodes"</strong> or <strong>"Audit Inventory"</strong> button</li>
+                        <li>Select the barcode file containing physical count</li>
+                        <li>Click <strong>"Upload"</strong> to compare</li>
+                        <li>System compares uploaded barcodes against allocated inventory</li>
+                        <li>Review comparison results</li>
+                    </ol>
+                </td>
+                <td class="expected-result">
+                    <ul>
+                        <li>File is successfully uploaded and parsed</li>
+                        <li>System extracts all barcodes from physical count file</li>
+                        <li>Comparison process completes showing:
+                            <ul>
+                                <li><strong>Matched Items:</strong> Barcodes found in both physical count and allocated inventory</li>
+                                <li><strong>Missing Items:</strong> Items allocated but not found in physical count (potential shrinkage)</li>
+                                <li><strong>Extra Items:</strong> Items in physical count but not in allocation records (potential data error)</li>
+                                <li><strong>Quantity Variances:</strong> Items where physical count differs from allocated - sold</li>
+                            </ul>
+                        </li>
+                        <li>Audit summary displays:
+                            <ul>
+                                <li>Total allocated items</li>
+                                <li>Total physical items counted</li>
+                                <li>Match percentage</li>
+                                <li>Variance count</li>
+                            </ul>
+                        </li>
+                        <li>Discrepancy report generated for review</li>
+                    </ul>
+                </td>
+            </tr>
+
+            <!-- UAT-AUD-002 -->
+            <tr>
+                <td class="scenario-title">UAT-AUD-002:<br>Identify Missing Items (Shrinkage Detection)</td>
+                <td class="test-steps">
+                    <ol>
+                        <li>Upload physical inventory barcode file for a branch</li>
+                        <li>System completes comparison against allocated inventory</li>
+                        <li>Navigate to <strong>"Missing Items"</strong> section in results</li>
+                        <li>Review list of items that were allocated but not found in physical count</li>
+                        <li>Each missing item shows:
+                            <ul>
+                                <li>Product name, SKU, barcode</li>
+                                <li>Allocated quantity</li>
+                                <li>Previously recorded sold quantity</li>
+                                <li>Expected remaining quantity</li>
+                                <li>Physical count: 0 (not found)</li>
+                            </ul>
+                        </li>
+                        <li>Export missing items report</li>
+                    </ol>
+                </td>
+                <td class="expected-result">
+                    <ul>
+                        <li>Missing items section clearly displays all items not found in physical count</li>
+                        <li>Each item shows expected vs actual quantities</li>
+                        <li>System flags potential issues:
+                            <ul>
+                                <li><span class="highlight">Shrinkage</span> - Items allocated but missing</li>
+                                <li><span class="highlight">Theft/Loss</span> - High-value items missing</li>
+                                <li><span class="highlight">Recording Error</span> - Items sold but not recorded via barcode</li>
+                            </ul>
+                        </li>
+                        <li>Missing items report can be exported (Excel/PDF) for investigation</li>
+                        <li>Report includes:
+                            <ul>
+                                <li>Branch name and audit date</li>
+                                <li>Complete list of missing items</li>
+                                <li>Total value of missing inventory</li>
+                                <li>Percentage of allocated inventory missing</li>
+                            </ul>
+                        </li>
+                        <li>Branch manager notified of discrepancies</li>
+                        <li>Investigation workflow can be initiated</li>
+                    </ul>
+                </td>
+            </tr>
+
+            <!-- UAT-AUD-003 -->
+            <tr>
+                <td class="scenario-title">UAT-AUD-003:<br>Identify Extra Items (Unallocated Inventory)</td>
+                <td class="test-steps">
+                    <ol>
+                        <li>Upload physical inventory barcode file for a branch</li>
+                        <li>System completes comparison</li>
+                        <li>Navigate to <strong>"Extra Items"</strong> or <strong>"Unmatched Items"</strong> section</li>
+                        <li>Review list of barcodes found in physical count but not in allocation records</li>
+                        <li>Investigate each extra item:
+                            <ul>
+                                <li>Is it from a different batch?</li>
+                                <li>Is it from another branch (transfer not recorded)?</li>
+                                <li>Is it a data entry error?</li>
+                                <li>Is the barcode incorrect/damaged?</li>
+                            </ul>
+                        </li>
+                    </ol>
+                </td>
+                <td class="expected-result">
+                    <ul>
+                        <li>Extra items section displays all barcodes not matching allocation records</li>
+                        <li>Each extra item shows:
+                            <ul>
+                                <li>Barcode scanned</li>
+                                <li>Product name (if identifiable from master product list)</li>
+                                <li>"Not Allocated to This Branch" status</li>
+                                <li>Potential source (if system can identify)</li>
+                            </ul>
+                        </li>
+                        <li>System provides suggestions:
+                            <ul>
+                                <li>"Found in Batch X" - item allocated to different batch</li>
+                                <li>"Allocated to [Other Branch]" - potential transfer issue</li>
+                                <li>"Similar barcode exists" - potential scanning error</li>
+                                <li>"Unknown barcode" - not in system at all</li>
+                            </ul>
+                        </li>
+                        <li>Options to resolve:
+                            <ul>
+                                <li>Sync to similar barcode</li>
+                                <li>Create manual allocation entry</li>
+                                <li>Mark for return to warehouse</li>
+                                <li>Flag for investigation</li>
+                            </ul>
+                        </li>
+                        <li>Extra items report exportable for reconciliation</li>
+                    </ul>
+                </td>
+            </tr>
+
+            <!-- UAT-AUD-004 -->
+            <tr>
+                <td class="scenario-title">UAT-AUD-004:<br>Reconcile Quantity Variances</td>
+                <td class="test-steps">
+                    <ol>
+                        <li>Upload physical inventory barcode file</li>
+                        <li>System identifies items where physical count differs from system records</li>
+                        <li>Navigate to <strong>"Quantity Variances"</strong> section</li>
+                        <li>Review items with discrepancies:
+                            <ul>
+                                <li>Expected: Allocated - Sold = Remaining</li>
+                                <li>Actual: Physical count from barcode file</li>
+                                <li>Variance: Actual - Expected</li>
+                            </ul>
+                        </li>
+                        <li>For each variance, determine cause:
+                            <ul>
+                                <li>Sales not recorded (missing barcode scans)</li>
+                                <li>Returns not entered</li>
+                                <li>Damaged items not reported</li>
+                                <li>Theft/loss</li>
+                            </ul>
+                        </li>
+                        <li>Make corrections or adjustments as needed</li>
+                        <li>Document reasons for variances</li>
+                    </ol>
+                </td>
+                <td class="expected-result">
+                    <ul>
+                        <li>Quantity variance report shows all items with count differences</li>
+                        <li>Each variance entry displays:
+                            <ul>
+                                <li>Product name, SKU, barcode</li>
+                                <li>Allocated quantity: [number]</li>
+                                <li>Sold quantity (system): [number]</li>
+                                <li>Expected remaining: [allocated - sold]</li>
+                                <li>Physical count: [number]</li>
+                                <li>Variance: <span class="highlight">[+/-] [difference]</span></li>
+                                <li>Variance % : [(variance / expected) × 100]</li>
+                            </ul>
+                        </li>
+                        <li>Variances categorized by severity:
+                            <ul>
+                                <li><strong>Critical:</strong> Variance > 10% or high-value items</li>
+                                <li><strong>Moderate:</strong> Variance 5-10%</li>
+                                <li><strong>Minor:</strong> Variance < 5%</li>
+                            </ul>
+                        </li>
+                        <li>For each variance, user can:
+                            <ul>
+                                <li>Accept and adjust system records to match physical</li>
+                                <li>Add notes explaining the discrepancy</li>
+                                <li>Flag for investigation</li>
+                                <li>Request recount</li>
+                            </ul>
+                        </li>
+                        <li>All adjustments logged in activity log with justification</li>
+                        <li>Variance report exportable with comments</li>
+                    </ul>
+                </td>
+            </tr>
+
+            <!-- UAT-AUD-005 -->
+            <tr>
+                <td class="scenario-title">UAT-AUD-005:<br>Generate Complete Audit Report</td>
+                <td class="test-steps">
+                    <ol>
+                        <li>Complete physical inventory barcode upload and comparison</li>
+                        <li>Review all sections: Matched, Missing, Extra, Variances</li>
+                        <li>Document reasons for major discrepancies</li>
+                        <li>Click <strong>"Generate Audit Report"</strong> button</li>
+                        <li>Select report format (Excel or PDF)</li>
+                        <li>System compiles comprehensive audit report</li>
+                        <li>Download and review report</li>
+                        <li>Share with management for approval</li>
+                    </ol>
+                </td>
+                <td class="expected-result">
+                    <ul>
+                        <li>Comprehensive audit report generated containing:
+                            <ul>
+                                <li><strong>Executive Summary:</strong>
+                                    <ul>
+                                        <li>Branch name and date of audit</li>
+                                        <li>Audited by (user name)</li>
+                                        <li>Total items allocated: [count]</li>
+                                        <li>Total items physically counted: [count]</li>
+                                        <li>Match rate: [percentage]</li>
+                                        <li>Discrepancy rate: [percentage]</li>
+                                        <li>Total value of variances: [amount]</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Detailed Findings:</strong>
+                                    <ul>
+                                        <li>Complete list of matched items with quantities</li>
+                                        <li>Missing items section with expected vs actual</li>
+                                        <li>Extra items section with unmatched barcodes</li>
+                                        <li>Quantity variances with explanations</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Recommendations:</strong>
+                                    <ul>
+                                        <li>Actions needed to resolve discrepancies</li>
+                                        <li>Items requiring investigation</li>
+                                        <li>Process improvements suggested</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Audit Trail:</strong>
+                                    <ul>
+                                        <li>Upload timestamp</li>
+                                        <li>User who conducted audit</li>
+                                        <li>Number of barcodes processed</li>
+                                        <li>Adjustments made</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                        <li>Report is properly formatted and professional</li>
+                        <li>Can be exported to Excel (for further analysis) or PDF (for approvals)</li>
+                        <li>Report saved in system audit history</li>
+                        <li>Audit logged in activity log for compliance</li>
+                    </ul>
+                </td>
+            </tr>
+
+            <!-- UAT-AUD-006 -->
+            <tr>
+                <td class="scenario-title">UAT-AUD-006:<br>Compare Multiple Audit Periods</td>
+                <td class="test-steps">
+                    <ol>
+                        <li>Navigate to Branch Inventory audit history</li>
+                        <li>Select a branch that has multiple audit records</li>
+                        <li>View audit history showing:
+                            <ul>
+                                <li>Date of each audit</li>
+                                <li>Audited by (user)</li>
+                                <li>Match rate %</li>
+                                <li>Variance count</li>
+                                <li>Total value of discrepancies</li>
+                            </ul>
+                        </li>
+                        <li>Select two audit periods to compare (e.g., Week 1 vs Week 2)</li>
+                        <li>Click <strong>"Compare Audits"</strong> button</li>
+                        <li>Review comparison report showing trends</li>
+                    </ol>
+                </td>
+                <td class="expected-result">
+                    <ul>
+                        <li>Audit comparison report displays side-by-side analysis:
+                            <ul>
+                                <li><strong>Period 1:</strong> [Date] - Match rate: [%], Discrepancies: [count]</li>
+                                <li><strong>Period 2:</strong> [Date] - Match rate: [%], Discrepancies: [count]</li>
+                                <li><strong>Trend:</strong> Improving / Declining / Stable</li>
+                            </ul>
+                        </li>
+                        <li>Identifies recurring issues:
+                            <ul>
+                                <li>Products that are consistently missing</li>
+                                <li>Products with frequent variances</li>
+                                <li>Patterns in shrinkage</li>
+                            </ul>
+                        </li>
+                        <li>Performance metrics:
+                            <ul>
+                                <li>Branch accuracy score over time</li>
+                                <li>Value of unresolved discrepancies</li>
+                                <li>Most problematic product categories</li>
+                            </ul>
+                        </li>
+                        <li>Visual charts/graphs showing:
+                            <ul>
+                                <li>Match rate trend line</li>
+                                <li>Variance value over time</li>
+                                <li>Top 10 products with variances</li>
+                            </ul>
+                        </li>
+                        <li>Helps identify:
+                            <ul>
+                                <li>Branch performance improvements or declines</li>
+                                <li>Training needs</li>
+                                <li>Process gaps</li>
+                                <li>Potential fraud patterns</li>
+                            </ul>
+                        </li>
+                        <li>Comparison report exportable for management review</li>
+                    </ul>
+                </td>
+            </tr>
+
+            <!-- UAT-AUD-007 -->
+            <tr>
+                <td class="scenario-title">UAT-AUD-007:<br>Adjust System Records Based on Audit Findings</td>
+                <td class="test-steps">
+                    <ol>
+                        <li>Complete physical inventory audit with identified variances</li>
+                        <li>Review variance report and confirm physical count is accurate</li>
+                        <li>For items with confirmed variances, click <strong>"Adjust System Records"</strong></li>
+                        <li>System presents adjustment form for each variance:
+                            <ul>
+                                <li>Current system quantity: [number]</li>
+                                <li>Physical count: [number]</li>
+                                <li>Proposed adjustment: [+/- difference]</li>
+                            </ul>
+                        </li>
+                        <li>Add justification notes for each adjustment</li>
+                        <li>Select adjustment reason from dropdown:
+                            <ul>
+                                <li>Physical count discrepancy</li>
+                                <li>Sales not recorded</li>
+                                <li>Damaged items</li>
+                                <li>Theft/loss</li>
+                                <li>Data entry error</li>
+                                <li>Other (specify)</li>
+                            </ul>
+                        </li>
+                        <li>Review summary of all adjustments</li>
+                        <li>Require manager approval for high-value adjustments</li>
+                        <li>Click <strong>"Apply Adjustments"</strong></li>
+                        <li>System updates inventory records</li>
+                    </ol>
+                </td>
+                <td class="expected-result">
+                    <ul>
+                        <li>Adjustment process is controlled and auditable</li>
+                        <li>Each adjustment requires:
+                            <ul>
+                                <li>Justification notes (mandatory)</li>
+                                <li>Reason code selection</li>
+                                <li>Manager approval (for adjustments > threshold value)</li>
+                            </ul>
+                        </li>
+                        <li>Upon applying adjustments:
+                            <ul>
+                                <li>System inventory updated to match physical count</li>
+                                <li>Allocated or sold quantities adjusted accordingly</li>
+                                <li>Adjustment creates new record in activity log with:
+                                    <ul>
+                                        <li>Product details</li>
+                                        <li>Old quantity → New quantity</li>
+                                        <li>Adjustment reason</li>
+                                        <li>Justification notes</li>
+                                        <li>User who made adjustment</li>
+                                        <li>Approver (if required)</li>
+                                        <li>Timestamp</li>
+                                        <li>Audit reference number</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                        <li>Audit status changes to "Completed - Adjusted"</li>
+                        <li>Branch inventory now reflects accurate physical count</li>
+                        <li>All adjustments are permanently logged and cannot be deleted</li>
+                        <li>Adjustment report generated showing before/after quantities</li>
+                        <li>System prevents unauthorized adjustments (role-based access)</li>
+                        <li>Dashboard updates to show reconciled inventory</li>
+                    </ul>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- MODULE INTEGRATION -->
+    <div class="module-header">MODULE INTEGRATION: END-TO-END WORKFLOWS</div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Scenario Title</th>
+                <th>Test Steps</th>
+                <th>Expected Outcome</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- UAT-INT-001 -->
+            <tr>
+                <td class="scenario-title">UAT-INT-001:<br>Complete Agent-to-Branch-to-Sales Flow</td>
+                <td class="test-steps">
+                    <strong>1. AGENT ASSIGNMENT:</strong>
+                    <ul>
+                        <li>Navigate to Agent Management</li>
+                        <li>Create new agent "Pedro Reyes" with code "AG-100"</li>
+                        <li>Deploy agent to "Cebu Branch" with "Subclass 2"</li>
+                        <li>Verify deployment successful</li>
+                    </ul>
+                    <strong>2. WAREHOUSE ALLOCATION:</strong>
+                    <ul>
+                        <li>Navigate to Warehouse Allocation</li>
+                        <li>Create new batch allocation for "Batch 3"</li>
+                        <li>Add Cebu Branch to allocation</li>
+                        <li>Allocate products:
+                            <ul>
+                                <li>Product A: 100 units @ ₱500.00 each</li>
+                                <li>Product B: 50 units @ ₱750.00 each</li>
+                            </ul>
+                        </li>
+                        <li>Scan items into boxes</li>
+                        <li>Create delivery receipt</li>
+                        <li>Dispatch batch</li>
+                    </ul>
+                    <strong>3. BRANCH RECEIPT:</strong>
+                    <ul>
+                        <li>Navigate to Allocation → Sales</li>
+                        <li>Locate Cebu Branch sales receipt</li>
+                        <li>Confirm receipt:
+                            <ul>
+                                <li>Product A: Received 100 units (0 damaged, 0 missing)</li>
+                                <li>Product B: Received 48 units (2 damaged, 0 missing)</li>
+                            </ul>
+                        </li>
+                        <li>Save confirmation</li>
+                    </ul>
+                    <strong>4. BRANCH INVENTORY CHECK:</strong>
+                    <ul>
+                        <li>Navigate to Branch Inventory</li>
+                        <li>Select Batch 3 → Cebu Branch</li>
+                        <li>Verify products appear with correct quantities</li>
+                    </ul>
+                    <strong>5. SALES TRACKING:</strong>
+                    <ul>
+                        <li>Prepare barcode file with sold items:
+                            <ul>
+                                <li>25 units of Product A</li>
+                                <li>10 units of Product B</li>
+                            </ul>
+                        </li>
+                        <li>Upload barcode file for Cebu Branch</li>
+                        <li>Confirm upload successful</li>
+                    </ul>
+                    <strong>6. AUDIT VERIFICATION:</strong>
+                    <ul>
+                        <li>Navigate to Activity Logs</li>
+                        <li>Filter for Cebu Branch activities</li>
+                        <li>Verify complete audit trail exists</li>
+                    </ul>
+                </td>
+                <td class="expected-result">
+                    <ul>
+                        <li>Complete end-to-end workflow executes successfully</li>
+                        <li>All modules integrate seamlessly:
+                            <ul>
+                                <li>✓ Agent assigned to branch</li>
+                                <li>✓ Inventory allocated to branch with assigned agent</li>
+                                <li>✓ Sales receipt confirms physical receipt</li>
+                                <li>✓ Variances handled (2 damaged units)</li>
+                                <li>✓ Branch inventory reflects accurate allocation:
+                                    <ul>
+                                        <li>Product A: 100 allocated, 25 sold, 75 remaining</li>
+                                        <li>Product B: 48 allocated, 10 sold, 38 remaining</li>
+                                    </ul>
+                                </li>
+                                <li>✓ Sales tracked via barcode upload</li>
+                                <li>✓ Quantities update correctly across all views</li>
+                                <li>✓ Audit trail complete and accurate</li>
+                            </ul>
+                        </li>
+                        <li>Data consistency maintained across modules</li>
+                        <li>No orphaned records or data integrity issues</li>
+                        <li>Business rules enforced at each step</li>
+                        <li>User actions properly attributed in logs</li>
+                    </ul>
+                </td>
+            </tr>
+
+            <!-- UAT-INT-002 -->
+            <tr>
+                <td class="scenario-title">UAT-INT-002:<br>Branch Transfer with Audit Trail</td>
+                <td class="test-steps">
+                    <strong>1. INITIAL STATE:</strong>
+                    <ul>
+                        <li>Navigate to Branch Inventory</li>
+                        <li>Check Manila Branch: Product X (200 allocated, 50 sold, 150 remaining)</li>
+                        <li>Check Quezon City Branch: Product X (100 allocated, 20 sold, 80 remaining)</li>
+                    </ul>
+                    <strong>2. INITIATE TRANSFER:</strong>
+                    <ul>
+                        <li>Navigate to Branch Transfer</li>
+                        <li>Open transfer stepper</li>
+                        <li>Step 1: Select source branch (Manila Branch)</li>
+                        <li>Step 2: Select Product X</li>
+                        <li>Step 3: Select destination branch (Quezon City Branch)</li>
+                        <li>Step 4: Enter transfer quantity (50 units)</li>
+                        <li>Review transfer summary</li>
+                        <li>Execute transfer</li>
+                    </ul>
+                    <strong>3. VERIFY INVENTORY UPDATES:</strong>
+                    <ul>
+                        <li>Navigate to Branch Inventory</li>
+                        <li>Check Manila Branch: Product X quantities</li>
+                        <li>Check Quezon City Branch: Product X quantities</li>
+                    </ul>
+                    <strong>4. AUDIT TRAIL VERIFICATION:</strong>
+                    <ul>
+                        <li>Navigate to Activity Logs</li>
+                        <li>Filter by Subject Type: BranchTransfer</li>
+                        <li>Review transfer activities</li>
+                    </ul>
+                    <strong>5. TRANSFER HISTORY:</strong>
+                    <ul>
+                        <li>Navigate to Branch Transfer module</li>
+                        <li>Click "Transfer History"</li>
+                        <li>Verify transfer record exists</li>
+                    </ul>
+                </td>
+                <td class="expected-result">
+                    <ul>
+                        <li>Transfer executes successfully without errors</li>
+                        <li>Inventory updates correctly at both branches:
+                            <ul>
+                                <li>Manila Branch: 150 allocated, 50 sold, 100 remaining</li>
+                                <li>Quezon City Branch: 150 allocated, 20 sold, 130 remaining</li>
+                                <li>Total system inventory remains constant</li>
+                            </ul>
+                        </li>
+                        <li>Business rules enforced:
+                            <ul>
+                                <li>Cannot transfer more than available quantity</li>
+                                <li>Cannot transfer from remaining (must be from allocated)</li>
+                                <li>Transfer only affects allocated, not sold quantities</li>
+                            </ul>
+                        </li>
+                        <li>Audit trail is complete:
+                            <ul>
+                                <li>Transfer action logged</li>
+                                <li>Both branch updates logged</li>
+                                <li>User attribution clear</li>
+                                <li>Timestamp accurate</li>
+                            </ul>
+                        </li>
+                        <li>Transfer history shows:
+                            <ul>
+                                <li>Source: Manila Branch</li>
+                                <li>Destination: Quezon City Branch</li>
+                                <li>Product: Product X, Quantity: 50 units</li>
+                                <li>Date, time, executed by, status: Completed</li>
+                            </ul>
+                        </li>
+                        <li>Transfer is reversible (can transfer back if needed)</li>
+                        <li>No data loss or corruption</li>
+                    </ul>
+                </td>
+            </tr>
+
+            <!-- UAT-INT-003 -->
+            <tr>
+                <td class="scenario-title">UAT-INT-003:<br>Multi-User Activity Audit Across Modules</td>
+                <td class="test-steps">
+                    <strong>USER 1 - AGENT MANAGER (Maria):</strong>
+                    <ul>
+                        <li>Login as Maria</li>
+                        <li>Deploy 3 agents to different branches</li>
+                        <li>Release 1 agent from previous assignment</li>
+                        <li>Logout</li>
+                    </ul>
+                    <strong>USER 2 - WAREHOUSE STAFF (Juan):</strong>
+                    <ul>
+                        <li>Login as Juan</li>
+                        <li>Create batch allocation for 5 branches</li>
+                        <li>Allocate 10 products across branches</li>
+                        <li>Scan items into boxes</li>
+                        <li>Dispatch batch</li>
+                        <li>Logout</li>
+                    </ul>
+                    <strong>USER 3 - BRANCH MANAGER (Pedro):</strong>
+                    <ul>
+                        <li>Login as Pedro</li>
+                        <li>Confirm sales receipt for branch</li>
+                        <li>Upload barcode file with 50 sold items</li>
+                        <li>Manually adjust allocated quantity for 2 products</li>
+                        <li>Logout</li>
+                    </ul>
+                    <strong>AUDITOR REVIEW:</strong>
+                    <ul>
+                        <li>Login as Auditor</li>
+                        <li>Navigate to Activity Logs</li>
+                        <li>Review activities from all three users</li>
+                        <li>Filter by each user separately</li>
+                        <li>Filter by time range covering all activities</li>
+                        <li>Export comprehensive audit report</li>
+                    </ul>
+                </td>
+                <td class="expected-result">
+                    <ul>
+                        <li>All user activities are logged independently</li>
+                        <li><strong>Maria's activities:</strong>
+                            <ul>
+                                <li>3 agent deployments (Created AgentBranchAssignment)</li>
+                                <li>1 agent release (Updated AgentBranchAssignment)</li>
+                                <li>All with Maria's user ID and timestamp</li>
+                            </ul>
+                        </li>
+                        <li><strong>Juan's activities:</strong>
+                            <ul>
+                                <li>Batch allocation created</li>
+                                <li>50 branch allocation items created (5 branches × 10 products)</li>
+                                <li>Box scanning activities</li>
+                                <li>Batch dispatch action</li>
+                                <li>All with Juan's user ID and timestamp</li>
+                            </ul>
+                        </li>
+                        <li><strong>Pedro's activities:</strong>
+                            <ul>
+                                <li>Sales receipt confirmation (Updated SalesReceipt)</li>
+                                <li>Barcode upload (multiple BranchAllocationItem updates)</li>
+                                <li>2 manual quantity adjustments</li>
+                                <li>All with Pedro's user ID and timestamp</li>
+                            </ul>
+                        </li>
+                        <li>No activity attribution errors (each action tied to correct user)</li>
+                        <li>Concurrent activities don't interfere with each other</li>
+                        <li>Timestamps are accurate and sequential</li>
+                        <li>Filters work correctly:
+                            <ul>
+                                <li>By user: Shows only that user's actions</li>
+                                <li>By subject type: Shows only that module's activities</li>
+                                <li>By date range: Includes all within range</li>
+                            </ul>
+                        </li>
+                        <li>Exported report contains all activities with proper attribution</li>
+                        <li>Can reconstruct complete timeline of events</li>
+                        <li>Useful for performance review, compliance audits, issue investigation, training assessment</li>
+                    </ul>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- FOOTER -->
+    <div style="margin-top: 40px; padding: 20px; background-color: white; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h3 style="color: #333; margin-top: 0;">NOTES FOR QA TEAM</h3>
+
+        <h4 style="color: #4CAF50;">Prerequisites for Testing:</h4>
+        <ul>
+            <li><strong>System must have:</strong>
+                <ul>
+                    <li>At least 2 batches configured</li>
+                    <li>At least 5 branches with different subclasses</li>
+                    <li>At least 20 products in inventory</li>
+                    <li>Multiple user accounts with different roles</li>
+                </ul>
+            </li>
+            <li><strong>Test data should include:</strong>
+                <ul>
+                    <li>Agents in various states (active, deployed, released)</li>
+                    <li>Existing allocations with partial sales</li>
+                    <li>Historical activity logs</li>
+                </ul>
+            </li>
+            <li><strong>Test files needed:</strong>
+                <ul>
+                    <li>Valid barcode text file (50+ barcodes)</li>
+                    <li>Invalid barcode text file (non-existent barcodes)</li>
+                    <li>Mixed barcode file (valid + invalid + similar)</li>
+                    <li>Large barcode file (500+ barcodes for performance testing)</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h4 style="color: #4CAF50;">User Roles Required:</h4>
+        <ul>
+            <li><strong>Admin</strong> - Full system access</li>
+            <li><strong>Agent Manager</strong> - Agent module access</li>
+            <li><strong>Warehouse Manager</strong> - Allocation and dispatch access</li>
+            <li><strong>Branch Manager</strong> - Branch inventory and receipt access</li>
+            <li><strong>Auditor</strong> - Read-only access to activity logs</li>
+        </ul>
+
+        <h4 style="color: #4CAF50;">Expected Test Duration:</h4>
+        <ul>
+            <li>Module 1 (Agents): <strong>2-3 hours</strong></li>
+            <li>Module 2 (Branch Inventory): <strong>4-5 hours</strong></li>
+            <li>Module 3 (Auditing): <strong>2-3 hours</strong></li>
+            <li>Integration Tests: <strong>3-4 hours</strong></li>
+            <li><strong>Total:</strong> Approximately <span class="highlight">2 business days</span> for complete UAT</li>
+        </ul>
+
+        <h4 style="color: #4CAF50;">Success Criteria:</h4>
+        <ul>
+            <li>All happy path scenarios pass without errors</li>
+            <li>Data integrity maintained across modules</li>
+            <li>Audit trail complete and accurate</li>
+            <li>Business rules properly enforced</li>
+            <li>User experience is intuitive and performant</li>
+            <li>No security vulnerabilities exposed</li>
+            <li>System handles expected data volumes</li>
+        </ul>
+
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #ddd; text-align: center; color: #666;">
+            <p><strong>Document Version:</strong> 1.0 | <strong>Last Updated:</strong> 2026-01-23</p>
+            <p><strong>Prepared By:</strong> Senior QA Engineering Team | <strong>Status:</strong> Ready for UAT Execution</p>
+        </div>
+    </div>
+</body>
+</html>

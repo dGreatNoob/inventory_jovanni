@@ -73,7 +73,7 @@
                                 <!-- Batch Selection -->
                                 <div>
                                     <label for="selectedBatchId" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
-                                        Select Batch Reference
+                                        Select Batch Allocation
                                     </label>
                                     <select id="selectedBatchId"
                                             wire:model.live="selectedBatchId"
@@ -84,38 +84,130 @@
                                         @endforeach
                                     </select>
                                 </div>
-                            </div>
-                            <!-- Branch Selection -->
-                            <div>
-                                <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                                    All branches from the selected batch have been automatically added to this allocation.
-                                </p>
-                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-64 overflow-y-auto mb-6">
-                                    @forelse($availableBranches as $branchAlloc)
-                                        <div class="flex items-center p-3 border border-gray-200 dark:border-gray-600 rounded-lg">
-                                            <div class="flex-1">
-                                                <div class="text-sm font-medium text-gray-900 dark:text-white">
-                                                    {{ $branchAlloc->branch->name ?? 'Branch #' . $branchAlloc->id }}
-                                                </div>
-                                                @if($branchAlloc->branch->address ?? false)
-                                                    <div class="text-sm text-gray-500 dark:text-gray-400">
-                                                        {{ $branchAlloc->branch->address }}
-                                                    </div>
-                                                @endif
-                                            </div>
-                                            <span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300 rounded-full ml-3">
-                                                Auto-added
-                                            </span>
-                                        </div>
-                                    @empty
-                                        <div class="text-center py-8 col-span-full">
-                                            <p class="text-gray-500 dark:text-gray-400">
-                                                No branches found for this batch.
-                                            </p>
-                                        </div>
-                                    @endforelse
+
+                                <!-- Branch Selection -->
+                                <div>
+                                    <label for="selectedBranchId" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                                        Select Branch
+                                    </label>
+                                    <select id="selectedBranchId"
+                                            wire:model.live="selectedBranchId"
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                                        <option value="">Select a branch...</option>
+                                        @foreach($availableBranches as $branchAlloc)
+                                            <option value="{{ $branchAlloc->id }}">{{ $branchAlloc->branch->name ?? 'Branch #' . $branchAlloc->id }}</option>
+                                        @endforeach
+                                    </select>
                                 </div>
                             </div>
+
+                            <!-- Dispatched Boxes Preview -->
+                            @if($selectedBranchAllocation)
+                            @php
+                                // Get all dispatched mother DRs for this branch
+                                $dispatchedMotherDRs = \App\Models\DeliveryReceipt::where('branch_allocation_id', $selectedBranchAllocation->id)
+                                    ->where('type', 'mother')
+                                    ->whereHas('box', function($query) {
+                                        $query->where('dispatched_at', '!=', null);
+                                    })
+                                    ->with('box')
+                                    ->orderBy('created_at')
+                                    ->get();
+
+                                $totalScannedItems = 0;
+                                $uniqueProducts = collect();
+                            @endphp
+                            <div>
+                                <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+                                    <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                                    </svg>
+                                    Dispatched Boxes for {{ $selectedBranchAllocation->branch->name }}
+                                </h4>
+
+                                @if($dispatchedMotherDRs->count() > 0)
+                                    <div class="mb-4">
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">
+                                            {{ $dispatchedMotherDRs->count() }} shipment{{ $dispatchedMotherDRs->count() > 1 ? 's' : '' }} will be created for different DRs
+                                        </p>
+                                    </div>
+
+                                    <div class="space-y-4 max-h-64 overflow-y-auto">
+                                        @foreach($dispatchedMotherDRs as $index => $motherDR)
+                                            @php
+                                                // Get all boxes for this DR chain
+                                                $drIds = [$motherDR->id];
+                                                $childDRs = \App\Models\DeliveryReceipt::where('parent_dr_id', $motherDR->id)->get();
+                                                $drIds = array_merge($drIds, $childDRs->pluck('id')->toArray());
+
+                                                // Get scanned items for this DR chain
+                                                $drScannedItems = \App\Models\BranchAllocationItem::whereIn('delivery_receipt_id', $drIds)
+                                                    ->where('scanned_quantity', '>', 0)
+                                                    ->with('product')
+                                                    ->get();
+
+                                                $drTotalItems = $drScannedItems->sum('scanned_quantity');
+                                                $drUniqueProducts = $drScannedItems->unique('product_id')->count();
+                                                $totalScannedItems += $drTotalItems;
+                                            @endphp
+
+                                            <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                                                <div class="flex justify-between items-start mb-2">
+                                                    <div>
+                                                        <h5 class="font-medium text-gray-900 dark:text-white">
+                                                            Shipment {{ $index + 1 }}: {{ $this->shipping_plan_num }}-{{ str_pad($index + 1, 2, '0', STR_PAD_LEFT) }}
+                                                        </h5>
+                                                        <p class="text-sm text-gray-600 dark:text-gray-400">
+                                                            DR: {{ $motherDR->dr_number }}
+                                                        </p>
+                                                    </div>
+                                                    <div class="text-right">
+                                                        <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                                            {{ $drTotalItems }} items
+                                                        </div>
+                                                        <div class="text-xs text-gray-500 dark:text-gray-400">
+                                                            {{ $drUniqueProducts }} unique products
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                                                    @foreach($drScannedItems->take(3) as $item)
+                                                        <div class="flex justify-between">
+                                                            <span class="text-gray-600 dark:text-gray-400">{{ $item->product->name }}</span>
+                                                            <span class="font-medium text-gray-900 dark:text-white">{{ $item->scanned_quantity }}</span>
+                                                        </div>
+                                                    @endforeach
+                                                    @if($drScannedItems->count() > 3)
+                                                        <div class="text-gray-500 dark:text-gray-400 italic">
+                                                            +{{ $drScannedItems->count() - 3 }} more products
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+
+                                    <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-sm font-medium text-blue-900 dark:text-blue-100">Total Summary:</span>
+                                            <span class="text-sm font-bold text-blue-900 dark:text-blue-100">
+                                                {{ $totalScannedItems }} items across {{ $dispatchedMotherDRs->count() }} shipment{{ $dispatchedMotherDRs->count() > 1 ? 's' : '' }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                @else
+                                    <div class="text-center py-8 border border-gray-200 dark:border-gray-600 rounded-lg">
+                                        <p class="text-gray-500 dark:text-gray-400 mb-2">
+                                            No dispatched boxes found for this branch.
+                                        </p>
+                                        <p class="text-sm text-gray-400 dark:text-gray-500">
+                                            Boxes must be dispatched from warehouse allocation before creating shipments.
+                                        </p>
+                                    </div>
+                                @endif
+                            </div>
+                            @endif
                         </div>
                         
                         <!-- Form Actions -->
@@ -128,7 +220,7 @@
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                                     </svg>
-                                    {{ ($editValue) ? 'Update Shipment' : 'Create Shippment' }}
+                                    {{ ($editValue) ? 'Update Shipment' : 'Create Shipment' }}
                                 </x-button>
                           
                         </div>
@@ -192,6 +284,7 @@
                                 <thead class="text-sm text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                                     <tr>
                                         <th scope="col" class="px-6 py-3">Shipment Reference Number</th>
+                                        <th scope="col" class="px-6 py-3">DR Number</th>
                                         <th scope="col" class="px-6 py-3">Branch</th>
                                         <th scope="col" class="px-6 py-3">Shipping Date</th>
                                         <th scope="col" class="px-6 py-3">Status</th>
@@ -206,6 +299,9 @@
                                             <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                                                 {{ ucfirst($data->shipping_plan_num) }}
                                             </th>
+                                            <td class="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                                                {{ $data->deliveryReceipt->dr_number ?? '—' }}
+                                            </td>
                                             <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                                                 {{ $data->branchAllocation->branch->name ?? '—' }}
                                             </th>
@@ -246,7 +342,7 @@
                                         </tr>
                                     @empty
                                     <tr>
-                                        <td colspan="5" class="text-center py-4">
+                                        <td colspan="6" class="text-center py-4">
                                             No shipping request found.
                                         </td>
                                     </tr>

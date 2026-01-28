@@ -180,7 +180,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/allocation/vdr/excel/{batchId}', [\App\Http\Controllers\VDRExcelController::class, 'exportVDR'])->name('allocation.vdr.excel');
 
     // DR Excel Export Route
-    Route::get('/allocation/dr/excel/{batchId}', [\App\Http\Controllers\DRExcelController::class, 'exportDR'])->name('allocation.dr.excel');
+    Route::get('/allocation/dr/excel/{batchId}/{branchId?}', [\App\Http\Controllers\DRExcelController::class, 'exportDR'])->name('allocation.dr.excel');
 
     // Receipt PDF and Excel Export Routes
     Route::get('/allocation/receipt/pdf/{receiptId}', [\App\Http\Controllers\ReceiptController::class, 'exportPDF'])->name('allocation.receipt.pdf');
@@ -197,6 +197,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/sales-order/{salesOrderId}', Viewsalesorder::class)->name('salesorder.view');
     Route::get('/sales-promo', SalesManagementPromo::class)->name('sales.promo');
     Route::get('/promo/view/{id}', \App\Livewire\Pages\SalesManagement\PromoView::class)->name('promo.view');
+    Route::get('/promo/print/{id}', function($id) {
+        $promo = \App\Models\Promo::findOrFail($id);
+        $products = \App\Models\Product::whereIn('id', json_decode($promo->product, true) ?? [])->with(['images' => function($q){
+            $q->orderByDesc('is_primary')->orderBy('sort_order')->orderBy('created_at', 'desc');
+        }])->orderBy('name')->get();
+        return view('livewire.pages.sales-management.print-promo', compact('promo', 'products'));
+    })->name('promo.print');
     Route::get('/sales-return', SalesReturn::class)->name('sales-return.index');
 
     // Allocation Management
@@ -310,6 +317,12 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/reports/finance', \App\Livewire\Pages\Reports\FinanceReport::class)
         ->name('reports.finance');
+
+    Route::get('/reports/promo', \App\Livewire\Pages\Reports\PromoReport::class)
+        ->name('reports.promo');
+
+    Route::get('/reports/shipment', \App\Livewire\Pages\Reports\Shipment::class)
+        ->name('reports.shipment');
 
     Route::get('/reports/stock-movement', \App\Livewire\Pages\Reports\StockMovement::class)
         ->name('reports.stock-movement');

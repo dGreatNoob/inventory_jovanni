@@ -117,6 +117,18 @@ jobs:
           DB_USERNAME: root
           DB_PASSWORD: root
 
+      - name: Build Assets
+        run: |
+          mkdir -p public/build
+          npm run build
+          if [ ! -f "public/build/manifest.json" ]; then
+            echo "⚠️ Warning: manifest.json not found after build"
+            ls -la public/build/ || echo "Build directory exists but is empty"
+            exit 1
+          fi
+          echo "✅ Assets built successfully"
+          ls -lh public/build/manifest.json
+
       - name: Run Tests
         if: ${{ github.event.inputs.skip_tests != 'true' }}
         run: ./vendor/bin/pest --stop-on-failure

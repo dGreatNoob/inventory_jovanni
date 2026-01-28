@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shipment Management - User Acceptance Testing (UAT)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+            vertical-align: top;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .scenario-title {
+            font-weight: bold;
+            color: #333;
+            width: 20%;
+        }
+        .test-steps {
+            width: 40%;
+        }
+        .expected-result {
+            width: 40%;
+        }
+        .step-number {
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        ul {
+            margin: 5px 0;
+            padding-left: 20px;
+        }
+        li {
+            margin-bottom: 5px;
+        }
+        .sub-step {
+            margin-left: 20px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <h1>Shipment Management - User Acceptance Testing (UAT)</h1>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Scenario Title</th>
+                <th>Test Steps</th>
+                <th>Expected Result</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="scenario-title">Create New Shipment from Batch Allocation</td>
+                <td class="test-steps">
+                    1. Navigate to Shipment page<br>
+                    2. Select a Batch Allocation with status "dispatched"<br>
+                    3. System auto-loads available Branch Allocations<br>
+                    4. Enter Shipping Reference Number (or use auto-generated)<br>
+                    5. Select Scheduled Ship Date (future date)<br>
+                    6. Select Delivery Method from dropdown<br>
+                    7. Enter Vehicle Plate Number (optional)<br>
+                    8. Select one or more branches from the list<br>
+                    9. Click "Create Shipment" button
+                </td>
+                <td class="expected-result">
+                    - Shipment is created successfully<br>
+                    - Auto-generated reference number format: SHIP-YYYYMMDD-###<br>
+                    - Shipment status is set to "pending"<br>
+                    - One shipment record created per selected branch<br>
+                    - Success notification displayed<br>
+                    - New shipment appears in the shipment list<br>
+                    - Activity log records the shipment creation
+                </td>
+            </tr>
+
+            <tr>
+                <td class="scenario-title">View Shipment Details</td>
+                <td class="test-steps">
+                    1. Navigate to Shipment page<br>
+                    2. Locate a shipment from the list<br>
+                    3. Click "View" button on the shipment row
+                </td>
+                <td class="expected-result">
+                    - Shipment details page opens<br>
+                    - Displays Shipment Information section (reference number, date, vehicle plate, delivery method)<br>
+                    - Shows Status & Timeline section<br>
+                    - Displays Branch Information<br>
+                    - Shows Customer Details (if applicable)<br>
+                    - Lists all Allocated Items with quantities<br>
+                    - Action buttons visible: Complete Shipment, Cancel Shipment<br>
+                    - All data matches the created shipment
+                </td>
+            </tr>
+
+            <tr>
+                <td class="scenario-title">Edit Pending Shipment</td>
+                <td class="test-steps">
+                    1. Navigate to Shipment page<br>
+                    2. Locate a shipment with status "pending"<br>
+                    3. Click "Edit" button<br>
+                    4. Modify Shipping Reference Number<br>
+                    5. Change Scheduled Ship Date to a different future date<br>
+                    6. Update Delivery Method<br>
+                    7. Update Vehicle Plate Number<br>
+                    8. Click "Update Shipment" button
+                </td>
+                <td class="expected-result">
+                    - Validation passes for all fields<br>
+                    - Shipment details are updated successfully<br>
+                    - Status remains "pending"<br>
+                    - Success notification displayed<br>
+                    - Updated values reflect in the shipment list<br>
+                    - Activity log records the changes<br>
+                    - Edit button remains available (status still pending)
+                </td>
+            </tr>
+
+            <tr>
+                <td class="scenario-title">Complete Shipment from View Page</td>
+                <td class="test-steps">
+                    1. Navigate to Shipment page<br>
+                    2. Click "View" on any shipment<br>
+                    3. Review all shipment details and allocated items<br>
+                    4. Click "Complete Shipment" button<br>
+                    5. Confirm the action in the confirmation dialog
+                </td>
+                <td class="expected-result">
+                    - Shipment status changes to "completed"<br>
+                    - Completed timestamp is recorded<br>
+                    - Current user is set as approver<br>
+                    - Complete button becomes disabled<br>
+                    - Success notification displayed<br>
+                    - Status badge updates to "Completed"<br>
+                    - Activity log records the completion
+                </td>
+            </tr>
+
+            <tr>
+                <td class="scenario-title">Receive Shipment - Step 1: Select Shipment</td>
+                <td class="test-steps">
+                    1. Navigate to Shipment QR Scanner page (/Shipment/scan)<br>
+                    2. View available shipments dropdown (status: approved or in_transit)<br>
+                    3. Select a shipment from dropdown<br>
+                    <span style="margin-left: 20px; font-style: italic;">OR</span><br>
+                    4. Enter shipment reference number manually in text field<br>
+                    5. Click "Next" button
+                </td>
+                <td class="expected-result">
+                    - Dropdown shows only shipments with status "approved" or "in_transit"<br>
+                    - Selected shipment loads successfully<br>
+                    - System validates shipment has branch allocation with items<br>
+                    - Wizard advances to Step 2<br>
+                    - Shipment reference number is displayed at the top
+                </td>
+            </tr>
+
+            <tr>
+                <td class="scenario-title">Receive Shipment - Step 2: Review Items</td>
+                <td class="test-steps">
+                    1. System displays all branch allocation items<br>
+                    2. For each item in the list:<br>
+                    <span style="margin-left: 30px;">a. Review product details (name, SKU, barcode, quantity)</span><br>
+                    <span style="margin-left: 30px;">b. Select receiving status: "Good"</span><br>
+                    <span style="margin-left: 30px;">c. Add remarks (optional)</span><br>
+                    3. Add general remarks for the shipment (optional)<br>
+                    4. Click "Next" button
+                </td>
+                <td class="expected-result">
+                    - All allocated items are displayed<br>
+                    - Product snapshot data shows correctly (name, SKU, barcode, specs, price, UOM)<br>
+                    - Receiving status dropdown available for each item<br>
+                    - Remarks field editable for each item<br>
+                    - Validation ensures all items have receiving status selected<br>
+                    - Wizard advances to Step 3<br>
+                    - Shipment status updates to "approved"
+                </td>
+            </tr>
+
+            <tr>
+                <td class="scenario-title">Receive Shipment - Step 3: Submit Report</td>
+                <td class="test-steps">
+                    1. Review summary of all items and their receiving status<br>
+                    2. Verify general remarks<br>
+                    3. Click "Submit Report" button<br>
+                    4. System processes the receiving
+                </td>
+                <td class="expected-result">
+                    - For each item with status "good":<br>
+                    <span style="margin-left: 30px;">• Branch inventory (branch_product pivot) increases by item quantity</span><br>
+                    <span style="margin-left: 30px;">• Central ProductInventory decreases by item quantity</span><br>
+                    <span style="margin-left: 30px;">• Activity log records the stock movement</span><br>
+                    - BranchAllocationItem updated with receiving_status and receiving_remarks<br>
+                    - Shipment status changes to "completed" (all items good)<br>
+                    - Review remarks saved to shipment record<br>
+                    - Success notification displayed<br>
+                    - Wizard advances to Step 4
+                </td>
+            </tr>
+
+            <tr>
+                <td class="scenario-title">Receive Shipment - Step 4: Finish</td>
+                <td class="test-steps">
+                    1. View completion confirmation screen<br>
+                    2. Review summary of received shipment<br>
+                    3. Click "Return to Step 1" to receive another shipment<br>
+                    <span style="margin-left: 20px; font-style: italic;">OR</span><br>
+                    4. Navigate away from the page
+                </td>
+                <td class="expected-result">
+                    - Confirmation screen shows shipment reference and status<br>
+                    - Summary displays total items received<br>
+                    - "Return to Step 1" button returns user to shipment selection<br>
+                    - Branch inventory reflects updated quantities<br>
+                    - Shipment marked as completed in main shipment list<br>
+                    - All changes are persisted in database
+                </td>
+            </tr>
+
+            <tr>
+                <td class="scenario-title">View Branch Inventory After Receiving</td>
+                <td class="test-steps">
+                    1. Navigate to Branch Inventory page<br>
+                    2. Select a Batch from the batch selector<br>
+                    3. Select a Branch from the branch selector<br>
+                    4. View the product inventory table
+                </td>
+                <td class="expected-result">
+                    - Product table displays all items for selected batch and branch<br>
+                    - Shows allocated quantity per product<br>
+                    - Shows scanned quantity (received quantity)<br>
+                    - Shows sold quantity (if any sales made)<br>
+                    - Receiving status column shows "good" for successfully received items<br>
+                    - History tab shows receiving activity<br>
+                    - Stock quantities match the received shipment quantities
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</body>
+</html>

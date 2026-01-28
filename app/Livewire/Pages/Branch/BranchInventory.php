@@ -595,39 +595,53 @@ class BranchInventory extends Component
             $this->showResultsModal = false;
             $this->loadBranchProducts();
 
-            // Prepare success message based on audit findings
-            $hasVariances = count($this->missingItems) > 0 || count($this->extraItems) > 0 || count($this->quantityVariances) > 0;
-            if ($hasVariances) {
-                $this->successMessage = "Audit saved successfully! Found " . 
-                    (count($this->missingItems) + count($this->extraItems) + count($this->quantityVariances)) . 
-                    " variance(s).";
+            // Prepare success message
+            $totalVariances = count($this->missingItems) + count($this->extraItems) + count($this->quantityVariances);
+            $message = "Inventory audit saved successfully! ";
+            
+            if ($totalVariances > 0) {
+                $message .= "Found {$totalVariances} variance(s): ";
+                $parts = [];
+                if (count($this->missingItems) > 0) {
+                    $parts[] = count($this->missingItems) . " missing";
+                }
+                if (count($this->extraItems) > 0) {
+                    $parts[] = count($this->extraItems) . " extra";
+                }
+                if (count($this->quantityVariances) > 0) {
+                    $parts[] = count($this->quantityVariances) . " quantity mismatch(es)";
+                }
+                $message .= implode(", ", $parts) . ".";
             } else {
-                $this->successMessage = "Audit saved successfully! No variances found - inventory matches allocation.";
+                $message .= "No variances found - inventory matches allocation.";
             }
 
             $this->showSuccessModal = true;
 
         } catch (\Exception $e) {
-            $this->addError('audit', 'Error saving audit: ' . $e->getMessage());
+            $this->addError('save', 'Error saving audit data: ' . $e->getMessage());
         }
     }
 
     /**
-     * View today's audit for the selected branch
+     * Shortcut: open today's audit in reports (if exists).
      */
     public function viewTodaysAudit()
     {
-        if (!$this->selectedBranchId || !$this->existingAuditIdForDay) {
+        if (!$this->selectedBranchId) {
             return;
         }
 
-        // Redirect to reports page with filters
-        return redirect()->route('reports.branch-inventory', [
+        $auditDay = $this->existingAuditDay
+            ?? ($this->auditDate ? $this->auditDate->toDateString() : now()->toDateString());
+
+        return redirect()->to(route('reports.branch-inventory', [
             'selectedBranch' => $this->selectedBranchId,
-            'dateFrom' => $this->existingAuditDay,
-            'dateTo' => $this->existingAuditDay,
-        ]);
+            'dateFrom' => $auditDay,
+            'dateTo' => $auditDay,
+        ]));
     }
+
 
     /**
      * Close the results modal
@@ -740,6 +754,7 @@ class BranchInventory extends Component
                 $allocatedProducts[$barcode]['allocated_quantity'] += $item->quantity;
             }
         }
+    }
 
         // Count scanned barcodes
         $scannedBarcodeCount = array_count_values($uploadedBarcodes);
@@ -787,6 +802,17 @@ class BranchInventory extends Component
                     'scanned_quantity' => $scannedCount,
                 ];
             }
+
+            // Refresh data
+            $this->loadBranchProducts();
+
+            // Close modal and show success
+            $this->closeCustomerSalesModal();
+            $this->successMessage = 'Customer sales recorded successfully!';
+            $this->showSuccessModal = true;
+
+        } catch (\Exception $e) {
+            session()->flash('error', 'Error recording sales: ' . $e->getMessage());
         }
 
         // Build audit results summary
@@ -806,185 +832,6 @@ class BranchInventory extends Component
         $this->uploadResults = [];
     }
 
-    /**
-     * Open customer sales modal
-     */
-    public function openCustomerSalesModal()
-    {
-        $this->showCustomerSalesModal = true;
-        $this->resetSalesModal();
-    }
-
-    /**
-     * Close customer sales modal
-     */
-    public function closeCustomerSalesModal()
-    {
-        $this->showCustomerSalesModal = false;
-        $this->resetSalesModal();
-    }
-
-    /**
-     * Reset sales modal properties
-     */
-    protected function resetSalesModal()
-    {
-        $this->salesBarcodeInput = '';
-        $this->selectedSalesProduct = null;
-        $this->salesQuantity = 1;
-        $this->salesItems = [];
-        $this->selectedAgentId = null;
-    }
-
-    /**
-     * Process sales barcode input changes
-     */
-    public function updatedSalesBarcodeInput()
-    {
-        $barcode = trim($this->salesBarcodeInput);
-        if (empty($barcode)) {
-            $this->selectedSalesProduct = null;
-            return;
-        }
-
-        // Find product by barcode in current branch products
-        $product = collect($this->branchProducts)->first(function ($product) use ($barcode) {
-            return $product['barcode'] === $barcode;
-        });
-
-        if ($product) {
-            $this->selectedSalesProduct = $product;
-        } else {
-            $this->selectedSalesProduct = null;
-        }
-    }
-
-    /**
-     * Add sales item to the transaction
-     */
-    public function addSalesItem()
-    {
-        if (!$this->selectedSalesProduct || !$this->salesQuantity || $this->salesQuantity < 1) {
-            return;
-        }
-
-        // Check if quantity exceeds available
-        if ($this->salesQuantity > $this->selectedSalesProduct['remaining_quantity']) {
-            session()->flash('error', 'Quantity exceeds available stock.');
-            return;
-        }
-
-        $item = [
-            'id' => $this->selectedSalesProduct['id'],
-            'name' => $this->selectedSalesProduct['name'],
-            'barcode' => $this->selectedSalesProduct['barcode'],
-            'quantity' => $this->salesQuantity,
-            'unit_price' => $this->selectedSalesProduct['unit_price'],
-            'total' => $this->salesQuantity * $this->selectedSalesProduct['unit_price'],
-        ];
-
-        $this->salesItems[] = $item;
-
-        // Reset for next item
-        $this->salesBarcodeInput = '';
-        $this->selectedSalesProduct = null;
-        $this->salesQuantity = 1;
-    }
-
-    /**
-     * Remove sales item from transaction
-     */
-    public function removeSalesItem($index)
-    {
-        if (isset($this->salesItems[$index])) {
-            unset($this->salesItems[$index]);
-            $this->salesItems = array_values($this->salesItems); // Reindex array
-        }
-    }
-
-    /**
-     * Clear all sales items
-     */
-    public function clearSalesItems()
-    {
-        $this->salesItems = [];
-    }
-
-    /**
-     * Save customer sales transaction
-     */
-    public function saveCustomerSales()
-    {
-        if (empty($this->salesItems)) {
-            return;
-        }
-
-        try {
-            // Process each sales item
-            foreach ($this->salesItems as $item) {
-                // Find and update the corresponding branch allocation items
-                $allocationItems = BranchAllocationItem::whereHas('product', function($q) use ($item) {
-                    $q->where('id', $item['id']);
-                })
-                ->whereHas('branchAllocation', function($q) {
-                    $q->where('branch_id', $this->selectedBranchId);
-                })
-                ->whereHas('branchAllocation.shipments', function ($q) {
-                    $q->where('shipping_status', 'completed');
-                })
-                ->where('box_id', null) // Only unpacked items
-                ->orderBy('id')
-                ->get();
-
-                $remainingQuantity = $item['quantity'];
-                foreach ($allocationItems as $allocationItem) {
-                    $available = $allocationItem->quantity - $allocationItem->sold_quantity;
-                    if ($available > 0 && $remainingQuantity > 0) {
-                        $increment = min($remainingQuantity, $available);
-                        $allocationItem->increment('sold_quantity', $increment);
-                        $remainingQuantity -= $increment;
-                    }
-                    if ($remainingQuantity <= 0) break;
-                }
-            }
-
-            // Log activity
-            $agent = $this->selectedAgentId ? \App\Models\Agent::find($this->selectedAgentId) : null;
-            foreach ($this->salesItems as $item) {
-                Activity::create([
-                    'log_name' => 'branch_inventory',
-                    'description' => "Customer sale recorded for product {$item['barcode']} in branch {$this->selectedBranchId}" . ($agent ? " by agent {$agent->name}" : ""),
-                    'subject_type' => BranchAllocationItem::class,
-                    'subject_id' => null,
-                    'causer_type' => null,
-                    'causer_id' => null,
-                    'properties' => [
-                        'product_id' => $item['id'],
-                        'product_name' => $item['name'],
-                        'barcode' => $item['barcode'],
-                        'quantity_sold' => $item['quantity'],
-                        'unit_price' => $item['unit_price'],
-                        'total_amount' => $item['total'],
-                        'branch_id' => $this->selectedBranchId,
-                        'agent_id' => $this->selectedAgentId,
-                        'agent_name' => $agent ? $agent->name : null,
-                        'customer_sale' => true,
-                    ],
-                ]);
-            }
-
-            // Refresh data
-            $this->loadBranchProducts();
-
-            // Close modal and show success
-            $this->closeCustomerSalesModal();
-            $this->successMessage = 'Customer sales recorded successfully!';
-            $this->showSuccessModal = true;
-
-        } catch (\Exception $e) {
-            session()->flash('error', 'Error recording sales: ' . $e->getMessage());
-        }
-    }
 
     public function render()
     {

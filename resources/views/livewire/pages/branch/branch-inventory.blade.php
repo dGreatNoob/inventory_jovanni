@@ -587,7 +587,7 @@
 
                 <div class="mb-4">
                     <p class="text-sm text-gray-600 dark:text-gray-400">
-                        Upload a text file containing barcodes (one barcode per line). The system will compare these barcodes with allocated products in the current branch to identify variances (missing items, extra items, quantity mismatches).
+                        Upload a text file containing scanned barcodes (one barcode per line) for inventory audit. The system will compare these barcodes with allocated products in the current branch to detect variances (missing items, extra items, quantity mismatches).
                     </p>
                 </div>
 
@@ -798,7 +798,7 @@
                                         <div class="mt-3 flex flex-wrap gap-2">
                                             <button wire:click="viewTodaysAudit"
                                                 class="px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
-                                                View Today's Audit
+                                                View Today’s Audit
                                             </button>
                                         </div>
                                     </div>

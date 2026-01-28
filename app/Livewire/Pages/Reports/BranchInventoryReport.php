@@ -4,187 +4,132 @@ namespace App\Livewire\Pages\Reports;
 
 use Livewire\Component;
 use App\Models\Branch;
-use App\Models\BranchAllocationItem;
-use App\Models\Shipment;
-use Illuminate\Support\Facades\DB;
+use Livewire\WithPagination;
+use Spatie\Activitylog\Models\Activity;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Layout;
 
 #[
     Layout('components.layouts.app'),
-    Title('Branch Inventory Report')
+    Title('Branch Inventory Audit Report')
 ]
 class BranchInventoryReport extends Component
 {
+    use WithPagination;
+
     public string $dateFrom = '';
     public string $dateTo = '';
     public ?int $selectedBranch = null;
 
+    public bool $showAuditModal = false;
+    public ?int $selectedAuditId = null;
+    /** @var array<string,mixed> */
+    public array $selectedAudit = [];
+
     public function mount()
     {
-        $this->dateTo = now()->format('Y-m-d');
-        $this->dateFrom = now()->subDays(30)->format('Y-m-d');
+        // Allow deep links via query params (used by "View Today's Audit" shortcut)
+        $this->dateFrom = (string) request()->query('dateFrom', '');
+        $this->dateTo = (string) request()->query('dateTo', '');
+        $selectedBranch = request()->query('selectedBranch', '');
+        $this->selectedBranch = $selectedBranch !== '' ? (int) $selectedBranch : null;
+
+        // Defaults
+        if (!$this->dateTo) {
+            $this->dateTo = now()->format('Y-m-d');
+        }
+        if (!$this->dateFrom) {
+            $this->dateFrom = now()->subDays(30)->format('Y-m-d');
+        }
+    }
+
+    public function updating($name, $value)
+    {
+        // Reset pagination on filter changes
+        if (in_array($name, ['dateFrom', 'dateTo', 'selectedBranch'], true)) {
+            $this->resetPage();
+        }
     }
 
     protected function baseQuery()
     {
-        $query = BranchAllocationItem::with([
-            'branchAllocation.branch',
-            'branchAllocation.shipments',
-            'product'
-        ])
-        ->whereHas('branchAllocation.shipments', function ($q) {
-            $q->where('shipping_status', 'completed');
-        })
-        ->where('box_id', null); // Only unpacked items
+        $query = Activity::query()
+            ->with('subject')
+            ->where('log_name', 'inventory_audit')
+            ->where('subject_type', Branch::class)
+            ->orderByDesc('created_at');
 
         if ($this->dateFrom) {
-            $query->whereHas('branchAllocation.shipments', function ($q) {
-                $q->whereDate('created_at', '>=', $this->dateFrom);
-            });
+            $query->whereDate('created_at', '>=', $this->dateFrom);
         }
         if ($this->dateTo) {
-            $query->whereHas('branchAllocation.shipments', function ($q) {
-                $q->whereDate('created_at', '<=', $this->dateTo);
-            });
+            $query->whereDate('created_at', '<=', $this->dateTo);
         }
         if ($this->selectedBranch) {
-            $query->whereHas('branchAllocation', function ($q) {
-                $q->where('branch_id', $this->selectedBranch);
-            });
+            $query->where('subject_id', $this->selectedBranch);
         }
 
         return $query;
+    }
+
+    public function openAudit(int $activityId): void
+    {
+        $activity = Activity::where('log_name', 'inventory_audit')
+            ->where('subject_type', Branch::class)
+            ->with('subject')
+            ->findOrFail($activityId);
+
+        $properties = $activity->properties;
+        // Spatie casts properties to a Collection; normalize to array
+        $propertiesArray = method_exists($properties, 'toArray') ? $properties->toArray() : (array) $properties;
+
+        $this->selectedAuditId = $activity->id;
+        $this->selectedAudit = [
+            'id' => $activity->id,
+            'created_at' => $activity->created_at,
+            'branch_id' => $activity->subject_id,
+            'branch_name' => $activity->subject?->name ?? 'Unknown Branch',
+            'branch_batch' => $activity->subject?->batch ?? null,
+            'description' => $activity->description,
+            'properties' => $propertiesArray,
+        ];
+
+        $this->showAuditModal = true;
+    }
+
+    public function closeAuditModal(): void
+    {
+        $this->showAuditModal = false;
+        $this->selectedAuditId = null;
+        $this->selectedAudit = [];
     }
 
     public function render()
     {
         $base = $this->baseQuery();
 
-        // Overview stats
-        $totalBranches = Branch::whereHas('branchAllocations.shipments', function ($q) {
-            $q->where('shipping_status', 'completed');
-        })->count();
+        $totalAudits = (clone $base)->count();
+        $branchesAudited = (clone $base)->distinct('subject_id')->count('subject_id');
 
-        $totalProducts = (clone $base)->distinct('product_id')->count('product_id');
-
-        $totalQuantity = (clone $base)->sum('quantity');
-        $totalSold = (clone $base)->sum('sold_quantity');
-        $totalValue = (clone $base)->sum(DB::raw('quantity * unit_price'));
-
-        $lowStockItems = (clone $base)
-            ->selectRaw('product_id, SUM(quantity - sold_quantity) as remaining')
-            ->groupBy('product_id')
-            ->having('remaining', '<', 10)
-            ->having('remaining', '>', 0)
-            ->get()
+        $passAudits = (clone $base)
+            ->where('properties->missing_items_count', 0)
+            ->where('properties->extra_items_count', 0)
+            ->where('properties->quantity_variances_count', 0)
             ->count();
 
-        $outOfStockItems = (clone $base)
-            ->selectRaw('product_id, SUM(quantity - sold_quantity) as remaining')
-            ->groupBy('product_id')
-            ->having('remaining', '<=', 0)
-            ->get()
-            ->count();
+        $failAudits = max(0, $totalAudits - $passAudits);
 
-        // Branch performance - calculate manually
-        $branchPerformance = Branch::whereHas('branchAllocations.shipments', function ($q) {
-            $q->where('shipping_status', 'completed');
-            if ($this->dateFrom) $q->whereDate('created_at', '>=', $this->dateFrom);
-            if ($this->dateTo) $q->whereDate('created_at', '<=', $this->dateTo);
-        })
-        ->with(['branchAllocations.shipments' => function ($q) {
-            $q->where('shipping_status', 'completed');
-            if ($this->dateFrom) $q->whereDate('created_at', '>=', $this->dateFrom);
-            if ($this->dateTo) $q->whereDate('created_at', '<=', $this->dateTo);
-        }])
-        ->get()
-        ->map(function ($branch) {
-            $totalShipments = $branch->branchAllocations->sum(function ($allocation) {
-                return $allocation->shipments->count();
-            });
-
-            $allocationItems = BranchAllocationItem::whereHas('branchAllocation', function ($q) use ($branch) {
-                $q->where('branch_id', $branch->id);
-            })
-            ->whereHas('branchAllocation.shipments', function ($q) {
-                $q->where('shipping_status', 'completed');
-                if ($this->dateFrom) $q->whereDate('created_at', '>=', $this->dateFrom);
-                if ($this->dateTo) $q->whereDate('created_at', '<=', $this->dateTo);
-            })
-            ->where('box_id', null)
-            ->get();
-
-            $totalAllocated = $allocationItems->sum('quantity');
-            $totalSold = $allocationItems->sum('sold_quantity');
-
-            return [
-                'id' => $branch->id,
-                'name' => $branch->name,
-                'total_shipments' => $totalShipments,
-                'total_allocated' => $totalAllocated,
-                'total_sold' => $totalSold,
-            ];
-        })
-        ->sortByDesc('total_shipments')
-        ->take(10);
-
-        // Top products by quantity
-        $topProducts = (clone $base)
-            ->select('product_id', 'product_snapshot_name', 'product_snapshot_barcode', 'product_snapshot_sku')
-            ->selectRaw('SUM(quantity) as total_quantity, SUM(sold_quantity) as total_sold, SUM(quantity * unit_price) as total_value')
-            ->groupBy('product_id', 'product_snapshot_name', 'product_snapshot_barcode', 'product_snapshot_sku')
-            ->orderByDesc('total_quantity')
-            ->limit(10)
-            ->get();
-
-        // Low stock products
-        $lowStockProducts = (clone $base)
-            ->select('product_id', 'product_snapshot_name', 'product_snapshot_barcode', 'product_snapshot_sku')
-            ->selectRaw('SUM(quantity - sold_quantity) as remaining, SUM(quantity) as total_quantity')
-            ->groupBy('product_id', 'product_snapshot_name', 'product_snapshot_barcode', 'product_snapshot_sku')
-            ->having('remaining', '<', 10)
-            ->having('remaining', '>', 0)
-            ->orderBy('remaining')
-            ->limit(10)
-            ->get();
-
-        // Out of stock products
-        $outOfStockProducts = (clone $base)
-            ->select('product_id', 'product_snapshot_name', 'product_snapshot_barcode', 'product_snapshot_sku')
-            ->selectRaw('SUM(quantity - sold_quantity) as remaining, SUM(quantity) as total_quantity')
-            ->groupBy('product_id', 'product_snapshot_name', 'product_snapshot_barcode', 'product_snapshot_sku')
-            ->having('remaining', '<=', 0)
-            ->orderByDesc('total_quantity')
-            ->limit(10)
-            ->get();
-
-        // Monthly trend for last 6 months
-        $months = [];
-        $values = [];
-        $now = now();
-        for ($i = 5; $i >= 0; $i--) {
-            $month = $now->copy()->subMonths($i);
-            $label = $month->format('M');
-            $count = Shipment::where('shipping_status', 'completed')
-                ->whereMonth('created_at', $month->month)
-                ->whereYear('created_at', $month->year)
-                ->when($this->selectedBranch, function ($q) {
-                    $q->whereHas('branchAllocation', function ($sub) {
-                        $sub->where('branch_id', $this->selectedBranch);
-                    });
-                })
-                ->count();
-            $months[] = $label;
-            $values[] = $count;
-        }
+        $audits = (clone $base)->paginate(15);
 
         $branches = Branch::orderBy('name')->get();
 
         return view('livewire.pages.reports.branch-inventory-report', compact(
-            'totalBranches', 'totalProducts', 'totalQuantity', 'totalSold', 'totalValue',
-            'lowStockItems', 'outOfStockItems', 'branchPerformance', 'topProducts',
-            'lowStockProducts', 'outOfStockProducts', 'months', 'values', 'branches'
+            'audits',
+            'branches',
+            'totalAudits',
+            'branchesAudited',
+            'passAudits',
+            'failAudits',
         ));
     }
 }

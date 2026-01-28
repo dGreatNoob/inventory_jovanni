@@ -4,10 +4,12 @@ on:
   push:
     branches:
       - dev
+      - staging
       - main
   pull_request:
     branches:
       - dev
+      - staging
       - main
 
 jobs:
@@ -19,11 +21,13 @@ jobs:
         env:
           MYSQL_ROOT_PASSWORD: root
           MYSQL_DATABASE: inventory_jovanni_test
-          MYSQL_USER: test_user
-          MYSQL_PASSWORD: test_password
         ports:
           - 3306:3306
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
     steps:
       - name: Checkout
@@ -32,7 +36,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: 8.2
+          php-version: 8.3
           tools: composer:v2
           coverage: xdebug
 
@@ -49,7 +53,9 @@ jobs:
         run: composer config http-basic.composer.fluxui.dev "${{ secrets.FLUX_USERNAME }}" "${{ secrets.FLUX_LICENSE_KEY }}"
 
       - name: Install Dependencies
-        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+        run: |
+          # Try install first, update lock if needed
+          composer install --no-interaction --prefer-dist --optimize-autoloader || composer update --lock --no-interaction --prefer-dist --optimize-autoloader
 
       - name: Copy Environment File
         run: cp .env.example .env
@@ -66,15 +72,67 @@ jobs:
           echo "DB_DATABASE=inventory_jovanni_test" >> .env
           echo "DB_USERNAME=root" >> .env
           echo "DB_PASSWORD=root" >> .env
+          # Update phpunit.xml for CI/CD (override local credentials)
+          sed -i 's|<env name="DB_PORT" value="3307"/>|<env name="DB_PORT" value="3306"/>|g' phpunit.xml || true
+          sed -i 's|<env name="DB_USERNAME" value="jovanni"/>|<env name="DB_USERNAME" value="root"/>|g' phpunit.xml || true
+          sed -i 's|<env name="DB_PASSWORD" value="secret"/>|<env name="DB_PASSWORD" value="root"/>|g' phpunit.xml || true
+          echo "Updated phpunit.xml for CI/CD"
+
+      - name: Install MySQL Client
+        run: sudo apt-get update && sudo apt-get install -y default-mysql-client
+
+      - name: Wait for MySQL to be ready
+        run: |
+          timeout 60 bash -c 'until mysqladmin ping -h 127.0.0.1 -u root -proot --silent; do sleep 2; done'
+          echo "MySQL is ready!"
+          mysqladmin ping -h 127.0.0.1 -u root -proot
 
       - name: Run Database Migrations
-        run: php artisan migrate --env=testing
+        run: php artisan migrate --force
 
       - name: Run Database Seeding
-        run: php artisan db:seed --env=testing
+        run: php artisan db:seed --force
+
+      - name: Clear Configuration Cache
+        run: php artisan config:clear
+
+      - name: Verify Database Connection
+        run: |
+          php artisan tinker --execute="DB::connection()->getPdo(); echo 'Database connection successful!';"
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: inventory_jovanni_test
+          DB_USERNAME: root
+          DB_PASSWORD: root
 
       - name: Build Assets
-        run: npm run build
+        run: |
+          echo "📦 Building frontend assets..."
+          mkdir -p public/build
+          echo "Running: npm run build"
+          npm run build
+          echo "Checking for manifest.json..."
+          if [ ! -f "public/build/manifest.json" ]; then
+            echo "❌ ERROR: manifest.json not found after build!"
+            echo "Build directory contents:"
+            ls -la public/build/ || echo "Build directory is empty or doesn't exist"
+            echo "Checking if build command succeeded..."
+            exit 1
+          fi
+          echo "✅ Assets built successfully"
+          echo "Manifest file details:"
+          ls -lh public/build/manifest.json
+          echo "Manifest file size:"
+          wc -l public/build/manifest.json || echo "Could not read manifest"
 
       - name: Run Tests
-        run: ./vendor/bin/pest
+        run: ./vendor/bin/pest --stop-on-failure
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: inventory_jovanni_test
+          DB_USERNAME: root
+          DB_PASSWORD: root

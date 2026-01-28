@@ -1,0 +1,411 @@
+name: Build and Package for Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment Environment'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+      version:
+        description: 'Version tag (optional)'
+        required: false
+        type: string
+      skip_tests:
+        description: 'Skip tests (not recommended)'
+        required: false
+        type: boolean
+        default: false
+  push:
+    branches:
+      - staging
+    tags:
+      - 'v*'
+      - 'staging-*'
+      - 'prod-*'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: inventory_jovanni_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.3
+          tools: composer:v2
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install Node Dependencies
+        run: npm ci
+
+      - name: Add Flux Credentials
+        run: composer config http-basic.composer.fluxui.dev "${{ secrets.FLUX_USERNAME }}" "${{ secrets.FLUX_LICENSE_KEY }}"
+
+      - name: Install Dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Copy Environment File
+        run: cp .env.example .env
+
+      - name: Generate Application Key
+        run: php artisan key:generate
+
+      - name: Update Test Environment Configuration
+        run: |
+          echo "DB_CONNECTION=mysql" >> .env
+          echo "DB_HOST=127.0.0.1" >> .env
+          echo "DB_PORT=3306" >> .env
+          echo "DB_DATABASE=inventory_jovanni_test" >> .env
+          echo "DB_USERNAME=root" >> .env
+          echo "DB_PASSWORD=root" >> .env
+          # Update phpunit.xml for CI/CD (override local credentials)
+          sed -i 's|<env name="DB_PORT" value="3307"/>|<env name="DB_PORT" value="3306"/>|g' phpunit.xml || true
+          sed -i 's|<env name="DB_USERNAME" value="jovanni"/>|<env name="DB_USERNAME" value="root"/>|g' phpunit.xml || true
+          sed -i 's|<env name="DB_PASSWORD" value="secret"/>|<env name="DB_PASSWORD" value="root"/>|g' phpunit.xml || true
+          echo "Updated phpunit.xml for CI/CD"
+
+      - name: Install MySQL Client
+        run: sudo apt-get update && sudo apt-get install -y default-mysql-client
+
+      - name: Wait for MySQL
+        run: |
+          timeout 60 bash -c 'until mysqladmin ping -h 127.0.0.1 -u root -proot --silent; do sleep 2; done'
+          echo "MySQL is ready!"
+          mysqladmin ping -h 127.0.0.1 -u root -proot
+
+      - name: Run Database Migrations
+        run: php artisan migrate --force
+
+      - name: Clear Configuration Cache
+        run: php artisan config:clear
+
+      - name: Verify Database Connection
+        run: |
+          php artisan tinker --execute="DB::connection()->getPdo(); echo 'Database connection successful!';"
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: inventory_jovanni_test
+          DB_USERNAME: root
+          DB_PASSWORD: root
+
+      - name: Build Assets
+        run: |
+          echo "📦 Building frontend assets..."
+          mkdir -p public/build
+          echo "Running: npm run build"
+          npm run build
+          echo "Checking for manifest.json..."
+          if [ ! -f "public/build/manifest.json" ]; then
+            echo "❌ ERROR: manifest.json not found after build!"
+            echo "Build directory contents:"
+            ls -la public/build/ || echo "Build directory is empty or doesn't exist"
+            echo "Checking if build command succeeded..."
+            exit 1
+          fi
+          echo "✅ Assets built successfully"
+          echo "Manifest file details:"
+          ls -lh public/build/manifest.json
+          echo "Manifest file size:"
+          wc -l public/build/manifest.json || echo "Could not read manifest"
+
+      - name: Run Tests
+        if: ${{ github.event.inputs.skip_tests != 'true' }}
+        run: ./vendor/bin/pest --stop-on-failure
+        env:
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: inventory_jovanni_test
+          DB_USERNAME: root
+          DB_PASSWORD: root
+
+  build-and-package:
+    needs: test
+    if: always() && (needs.test.result == 'success' || github.event.inputs.skip_tests == 'true')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Determine environment
+        id: env
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+            echo "version=${{ github.event.inputs.version || github.sha }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == refs/tags/staging-* ]]; then
+            echo "environment=staging" >> $GITHUB_OUTPUT
+            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == refs/tags/prod-* ]]; then
+            echo "environment=production" >> $GITHUB_OUTPUT
+            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          else
+            echo "environment=staging" >> $GITHUB_OUTPUT
+            echo "version=${{ github.sha }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.3
+          tools: composer:v2
+
+      - name: Add Flux Credentials
+        run: composer config http-basic.composer.fluxui.dev "${{ secrets.FLUX_USERNAME }}" "${{ secrets.FLUX_LICENSE_KEY }}"
+
+      - name: Install PHP Dependencies
+        run: composer install --no-dev --optimize-autoloader --no-interaction
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install Node Dependencies
+        run: npm ci
+
+      - name: Build Frontend Assets
+        run: npm run build
+
+      - name: Create deployment package
+        run: |
+          mkdir -p deployment-package
+          
+          # Copy essential files
+          cp -r app deployment-package/
+          cp -r bootstrap deployment-package/
+          cp -r config deployment-package/
+          cp -r database deployment-package/
+          cp -r lang deployment-package/
+          cp -r public deployment-package/
+          cp -r resources deployment-package/
+          cp -r routes deployment-package/
+          cp -r storage deployment-package/
+          cp artisan deployment-package/
+          cp composer.json deployment-package/
+          cp composer.lock deployment-package/
+          cp package.json deployment-package/
+          cp package-lock.json deployment-package/
+          cp vite.config.js deployment-package/
+          
+          # Copy Docker files
+          cp Dockerfile deployment-package/
+          cp docker-compose.prod.yml deployment-package/
+          cp docker-compose.yml deployment-package/
+          cp .dockerignore deployment-package/ 2>/dev/null || true
+          cp dockerignore deployment-package/ 2>/dev/null || true
+          
+          # Copy deployment scripts
+          mkdir -p deployment-package/scripts
+          cp -r scripts/production deployment-package/scripts/ 2>/dev/null || true
+          cp docker-start.sh deployment-package/ 2>/dev/null || true
+          
+          # Copy nginx config
+          mkdir -p deployment-package/nginx
+          cp -r nginx deployment-package/ 2>/dev/null || true
+          
+          # Copy mysql init
+          mkdir -p deployment-package/mysql
+          cp -r mysql deployment-package/ 2>/dev/null || true
+          
+          # Create .env.example
+          cp .env.example deployment-package/.env.example
+          
+          # Create deployment info file
+          cat > deployment-package/DEPLOYMENT_INFO.txt << EOF
+          Deployment Information
+          ======================
+          Environment: ${{ steps.env.outputs.environment }}
+          Version: ${{ steps.env.outputs.version }}
+          Commit: ${{ github.sha }}
+          Branch: ${{ github.ref_name }}
+          Built: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          Built by: ${{ github.actor }}
+          EOF
+          
+          # Create deployment script
+          cat > deployment-package/deploy.sh << 'DEPLOYSCRIPT'
+          #!/bin/bash
+          set -e
+          
+          ENVIRONMENT="${1:-staging}"
+          VERSION="${2:-latest}"
+          
+          echo "🚀 Starting deployment to $ENVIRONMENT (version: $VERSION)"
+          
+          # Check if .env exists
+          if [ ! -f ".env" ]; then
+            echo "⚠️  .env file not found. Copying from .env.example..."
+            cp .env.example .env
+            echo "⚠️  Please update .env with your $ENVIRONMENT configuration before continuing"
+            exit 1
+          fi
+          
+          # Stop existing containers
+          echo "🛑 Stopping existing containers..."
+          docker-compose -f docker-compose.prod.yml down || true
+          
+          # Backup database if exists
+          if docker ps | grep -q "inventory-jovanni-db"; then
+            echo "💾 Creating database backup..."
+            BACKUP_DIR="backups"
+            mkdir -p "$BACKUP_DIR"
+            BACKUP_FILE="$BACKUP_DIR/backup_$(date +%Y%m%d_%H%M%S).sql"
+            docker exec inventory-jovanni-db mysqldump -u root -p"${DB_ROOT_PASSWORD:-rootsecret}" inventory_jovanni > "$BACKUP_FILE" 2>/dev/null || echo "⚠️  Backup skipped (container may not be running)"
+          fi
+          
+          # Build and start containers
+          echo "🔨 Building and starting containers..."
+          RUN_MIGRATIONS=true docker-compose -f docker-compose.prod.yml up -d --build
+          
+          # Wait for services to be ready
+          echo "⏳ Waiting for services to be ready..."
+          sleep 10
+          
+          # Run post-deployment tasks
+          echo "⚙️  Running post-deployment tasks..."
+          docker-compose -f docker-compose.prod.yml exec -T app php artisan storage:link || true
+          docker-compose -f docker-compose.prod.yml exec -T app php artisan config:cache || true
+          docker-compose -f docker-compose.prod.yml exec -T app php artisan route:cache || true
+          docker-compose -f docker-compose.prod.yml exec -T app php artisan view:cache || true
+          
+          # Health check
+          echo "🏥 Running health check..."
+          sleep 5
+          if curl -f http://localhost/health 2>/dev/null || curl -f http://localhost 2>/dev/null; then
+            echo "✅ Deployment successful! Application is running."
+          else
+            echo "⚠️  Health check failed. Please verify manually."
+          fi
+          
+          echo ""
+          echo "📋 Deployment Summary:"
+          echo "   Environment: $ENVIRONMENT"
+          echo "   Version: $VERSION"
+          echo "   Access: http://localhost"
+          echo ""
+          DEPLOYSCRIPT
+          
+          chmod +x deployment-package/deploy.sh
+          
+          # Create quick start guide
+          cat > deployment-package/QUICK_START.md << 'EOF'
+          # Quick Deployment Guide
+          
+          ## Prerequisites
+          - Docker and Docker Compose installed on server
+          - .env file configured with production/staging values
+          
+          ## Deployment Steps
+          
+          1. **Extract package** to your deployment directory
+             ```bash
+             unzip deployment-package.zip
+             cd deployment-package
+             ```
+          
+          2. **Configure environment**
+             ```bash
+             cp .env.example .env
+             # Edit .env with your database credentials and settings
+             ```
+          
+          3. **Deploy**
+             ```bash
+             ./deploy.sh staging  # or 'production'
+             ```
+          
+          4. **Verify**
+             - Check logs: `docker-compose -f docker-compose.prod.yml logs -f`
+             - Access application: http://your-server-ip
+          
+          ## Rollback
+          If deployment fails:
+          ```bash
+          docker-compose -f docker-compose.prod.yml down
+          # Restore from backup if needed
+          ```
+          
+          ## Troubleshooting
+          - Check container status: `docker-compose -f docker-compose.prod.yml ps`
+          - View logs: `docker-compose -f docker-compose.prod.yml logs app`
+          - Restart services: `docker-compose -f docker-compose.prod.yml restart`
+          EOF
+
+      - name: Create deployment archive
+        run: |
+          cd deployment-package
+          zip -r ../deployment-${{ steps.env.outputs.environment }}-${{ steps.env.outputs.version }}.zip .
+          cd ..
+          ls -lh deployment-*.zip
+
+      - name: Upload deployment package
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-${{ steps.env.outputs.environment }}-${{ steps.env.outputs.version }}
+          path: deployment-${{ steps.env.outputs.environment }}-${{ steps.env.outputs.version }}.zip
+          retention-days: 30
+
+      - name: Create GitHub Release (for tags)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: deployment-${{ steps.env.outputs.environment }}-${{ steps.env.outputs.version }}.zip
+          draft: false
+          prerelease: ${{ steps.env.outputs.environment == 'staging' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deployment Summary
+        run: |
+          echo "## 🚀 Deployment Package Ready" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** ${{ steps.env.outputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ steps.env.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📦 Download Package" >> $GITHUB_STEP_SUMMARY
+          echo "1. Go to Actions tab" >> $GITHUB_STEP_SUMMARY
+          echo "2. Find this workflow run" >> $GITHUB_STEP_SUMMARY
+          echo "3. Download the artifact: \`deployment-${{ steps.env.outputs.environment }}-${{ steps.env.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📋 Deployment Instructions" >> $GITHUB_STEP_SUMMARY
+          echo "1. Extract the zip file on your server" >> $GITHUB_STEP_SUMMARY
+          echo "2. Configure \`.env\` file" >> $GITHUB_STEP_SUMMARY
+          echo "3. Run \`./deploy.sh ${{ steps.env.outputs.environment }}\`" >> $GITHUB_STEP_SUMMARY

@@ -587,7 +587,7 @@
 
                 <div class="mb-4">
                     <p class="text-sm text-gray-600 dark:text-gray-400">
-                        Upload a text file containing barcodes (one barcode per line). The system will compare these barcodes with products in the current branch and update the Quantity Sold column.
+                        Upload a text file containing barcodes (one barcode per line). The system will compare these barcodes with allocated products in the current branch to identify variances (missing items, extra items, quantity mismatches).
                     </p>
                 </div>
 
@@ -623,7 +623,7 @@
             <div class="absolute right-0 top-0 h-full w-full max-w-2xl bg-white dark:bg-gray-800 shadow-xl transform transition-transform duration-300 {{ $showResultsModal ? 'translate-x-0' : 'translate-x-full' }}">
                 <div class="p-6 h-full overflow-y-auto">
                     <div class="flex justify-between items-center mb-6">
-                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Barcode Comparison Results</h3>
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Inventory Audit Results</h3>
                         <button wire:click="closeResultsModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -634,68 +634,31 @@
                     <div class="mb-6">
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                             <div>
-                                <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ $uploadedBarcodeCount }}</div>
-                                <div class="text-sm text-gray-600 dark:text-gray-400">Total Barcodes Uploaded</div>
+                                <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ $auditResults['total_scanned'] ?? $uploadedBarcodeCount }}</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">Total Scanned</div>
                             </div>
                             <div>
-                                <div class="text-2xl font-bold text-green-600 dark:text-green-400">{{ $matchedBarcodeCount }}</div>
-                                <div class="text-sm text-gray-600 dark:text-gray-400">Matching Products Found</div>
+                                <div class="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{{ $auditResults['total_allocated'] ?? 0 }}</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">Total Allocated</div>
                             </div>
                             <div>
-                                <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ $uploadedBarcodeCount - $matchedBarcodeCount }}</div>
-                                <div class="text-sm text-gray-600 dark:text-gray-400">Unmatched Barcodes</div>
+                                <div class="text-2xl font-bold text-red-600 dark:text-red-400">{{ count($missingItems) }}</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">Missing Items</div>
                             </div>
                             <div>
-                                <div class="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                                    {{ array_sum(array_column($barcodeMatches, 'quantity_sold')) }}
-                                </div>
-                                <div class="text-sm text-gray-600 dark:text-gray-400">Total Quantity Sold</div>
+                                <div class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{{ count($quantityVariances) + count($extraItems) }}</div>
+                                <div class="text-sm text-gray-600 dark:text-gray-400">Variances</div>
                             </div>
                         </div>
                     </div>
 
-                    @if(!empty($validBarcodes))
-                        <div class="mb-6">
-                            <h4 class="font-medium text-green-600 dark:text-green-400 mb-3 flex items-center">
-                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                                Will Be Saved ({{ count($validBarcodes) }}):
-                            </h4>
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                    <thead class="bg-gray-50 dark:bg-gray-700">
-                                        <tr>
-                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Barcode</th>
-                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Product Name</th>
-                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">SKU</th>
-                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Quantity Sold</th>
-                                            <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Available Quantity</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                        @foreach($validBarcodes as $barcode => $result)
-                                            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                                <td class="px-4 py-3 text-sm font-mono text-gray-900 dark:text-white">{{ $barcode }}</td>
-                                                <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">{{ $result['product_name'] }}</td>
-                                                <td class="px-4 py-3 text-sm font-mono text-gray-500 dark:text-gray-400">{{ $result['sku'] }}</td>
-                                                <td class="px-4 py-3 text-sm font-semibold text-green-600 dark:text-green-400 text-center">{{ $result['quantity_sold'] }}</td>
-                                                <td class="px-4 py-3 text-sm text-gray-900 dark:text-white text-center">{{ $result['available_quantity'] }}</td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    @endif
-
-                    @if(!empty($invalidBarcodes))
+                    @if(!empty($missingItems))
                         <div class="mb-6">
                             <h4 class="font-medium text-red-600 dark:text-red-400 mb-3 flex items-center">
                                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
                                 </svg>
-                                Will Be Skipped ({{ count($invalidBarcodes) }}):
+                                Missing Items ({{ count($missingItems) }}): Allocated but not scanned
                             </h4>
                             <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
                                 <div class="overflow-x-auto">
@@ -705,20 +668,20 @@
                                                 <th class="px-4 py-2 text-left text-xs font-medium text-red-700 dark:text-red-300 uppercase">Barcode</th>
                                                 <th class="px-4 py-2 text-left text-xs font-medium text-red-700 dark:text-red-300 uppercase">Product Name</th>
                                                 <th class="px-4 py-2 text-left text-xs font-medium text-red-700 dark:text-red-300 uppercase">SKU</th>
-                                                <th class="px-4 py-2 text-left text-xs font-medium text-red-700 dark:text-red-300 uppercase">Attempted Qty</th>
-                                                <th class="px-4 py-2 text-left text-xs font-medium text-red-700 dark:text-red-300 uppercase">Remaining</th>
-                                                <th class="px-4 py-2 text-left text-xs font-medium text-red-700 dark:text-red-300 uppercase">Already Sold</th>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-red-700 dark:text-red-300 uppercase">Allocated Qty</th>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-red-700 dark:text-red-300 uppercase">Scanned Qty</th>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-red-700 dark:text-red-300 uppercase">Variance</th>
                                             </tr>
                                         </thead>
                                         <tbody class="bg-red-50 dark:bg-red-900/20 divide-y divide-red-200 dark:divide-red-700">
-                                            @foreach($invalidBarcodes as $barcode => $result)
+                                            @foreach($missingItems as $item)
                                                 <tr class="hover:bg-red-100 dark:hover:bg-red-900/30">
-                                                    <td class="px-4 py-3 text-sm font-mono text-red-900 dark:text-red-100">{{ $barcode }}</td>
-                                                    <td class="px-4 py-3 text-sm text-red-900 dark:text-red-100">{{ $result['product_name'] }}</td>
-                                                    <td class="px-4 py-3 text-sm font-mono text-red-700 dark:text-red-300">{{ $result['sku'] }}</td>
-                                                    <td class="px-4 py-3 text-sm font-semibold text-red-600 dark:text-red-400 text-center">{{ $result['quantity_sold'] }}</td>
-                                                    <td class="px-4 py-3 text-sm text-red-900 dark:text-red-100 text-center">{{ $result['available_quantity'] }}</td>
-                                                    <td class="px-4 py-3 text-sm text-red-900 dark:text-red-100 text-center">{{ $result['already_sold'] }}</td>
+                                                    <td class="px-4 py-3 text-sm font-mono text-red-900 dark:text-red-100">{{ $item['barcode'] }}</td>
+                                                    <td class="px-4 py-3 text-sm text-red-900 dark:text-red-100">{{ $item['product_name'] }}</td>
+                                                    <td class="px-4 py-3 text-sm font-mono text-red-700 dark:text-red-300">{{ $item['sku'] }}</td>
+                                                    <td class="px-4 py-3 text-sm text-red-900 dark:text-red-100 text-center">{{ $item['allocated_quantity'] }}</td>
+                                                    <td class="px-4 py-3 text-sm text-red-900 dark:text-red-100 text-center">0</td>
+                                                    <td class="px-4 py-3 text-sm font-semibold text-red-600 dark:text-red-400 text-center">{{ $item['variance'] }}</td>
                                                 </tr>
                                             @endforeach
                                         </tbody>
@@ -728,32 +691,32 @@
                         </div>
                     @endif
 
-                    @if(!empty($unmatchedBarcodes))
+                    @if(!empty($extraItems))
                         <div class="mb-6">
-                            <h4 class="font-medium text-red-600 dark:text-red-400 mb-3 flex items-center">
+                            <h4 class="font-medium text-orange-600 dark:text-orange-400 mb-3 flex items-center">
                                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
                                 </svg>
-                                Unmatched Barcodes (Errors):
+                                Extra Items ({{ count($extraItems) }}): Scanned but not allocated to this branch
                             </h4>
-                            <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                            <div class="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
                                 <div class="overflow-x-auto">
-                                    <table class="min-w-full divide-y divide-red-200 dark:divide-red-700">
-                                        <thead class="bg-red-100 dark:bg-red-900/40">
+                                    <table class="min-w-full divide-y divide-orange-200 dark:divide-orange-700">
+                                        <thead class="bg-orange-100 dark:bg-orange-900/40">
                                             <tr>
-                                                <th class="px-4 py-2 text-left text-xs font-medium text-red-700 dark:text-red-300 uppercase">Barcode</th>
-                                                <th class="px-4 py-2 text-left text-xs font-medium text-red-700 dark:text-red-300 uppercase">Count</th>
-                                                <th class="px-4 py-2 text-left text-xs font-medium text-red-700 dark:text-red-300 uppercase">Status</th>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-orange-700 dark:text-orange-300 uppercase">Barcode</th>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-orange-700 dark:text-orange-300 uppercase">Scanned Qty</th>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-orange-700 dark:text-orange-300 uppercase">Status</th>
                                             </tr>
                                         </thead>
-                                        <tbody class="bg-red-50 dark:bg-red-900/20 divide-y divide-red-200 dark:divide-red-700">
-                                            @foreach($unmatchedBarcodes as $barcode => $count)
-                                                <tr class="hover:bg-red-100 dark:hover:bg-red-900/30">
-                                                    <td class="px-4 py-3 text-sm font-mono text-red-900 dark:text-red-100">{{ $barcode }}</td>
-                                                    <td class="px-4 py-3 text-sm font-semibold text-red-600 dark:text-red-400 text-center">{{ $count }}</td>
+                                        <tbody class="bg-orange-50 dark:bg-orange-900/20 divide-y divide-orange-200 dark:divide-orange-700">
+                                            @foreach($extraItems as $item)
+                                                <tr class="hover:bg-orange-100 dark:hover:bg-orange-900/30">
+                                                    <td class="px-4 py-3 text-sm font-mono text-orange-900 dark:text-orange-100">{{ $item['barcode'] }}</td>
+                                                    <td class="px-4 py-3 text-sm font-semibold text-orange-600 dark:text-orange-400 text-center">{{ $item['scanned_quantity'] }}</td>
                                                     <td class="px-4 py-3 text-sm">
-                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300">
-                                                            ✗ Not Found
+                                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300">
+                                                            Not Allocated
                                                         </span>
                                                     </td>
                                                 </tr>
@@ -765,57 +728,95 @@
                         </div>
                     @endif
 
-                    @if(!empty($similarBarcodes))
+                    @if(!empty($quantityVariances))
                         <div class="mb-6">
                             <h4 class="font-medium text-yellow-600 dark:text-yellow-400 mb-3 flex items-center">
                                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
                                 </svg>
-                                Similar Barcodes:
+                                Quantity Variances ({{ count($quantityVariances) }}): Scanned count doesn't match allocated
                             </h4>
                             <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
                                 <div class="overflow-x-auto">
                                     <table class="min-w-full divide-y divide-yellow-200 dark:divide-yellow-700">
                                         <thead class="bg-yellow-100 dark:bg-yellow-900/40">
                                             <tr>
-                                                <th class="px-4 py-2 text-left text-xs font-medium text-yellow-700 dark:text-yellow-300 uppercase">Uploaded Barcode</th>
-                                                <th class="px-4 py-2 text-left text-xs font-medium text-yellow-700 dark:text-yellow-300 uppercase">Existing Barcode</th>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-yellow-700 dark:text-yellow-300 uppercase">Barcode</th>
                                                 <th class="px-4 py-2 text-left text-xs font-medium text-yellow-700 dark:text-yellow-300 uppercase">Product Name</th>
                                                 <th class="px-4 py-2 text-left text-xs font-medium text-yellow-700 dark:text-yellow-300 uppercase">SKU</th>
-                                                <th class="px-4 py-2 text-left text-xs font-medium text-yellow-700 dark:text-yellow-300 uppercase">Quantity Sold</th>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-yellow-700 dark:text-yellow-300 uppercase">Allocated Qty</th>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-yellow-700 dark:text-yellow-300 uppercase">Scanned Qty</th>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-yellow-700 dark:text-yellow-300 uppercase">Variance</th>
                                             </tr>
                                         </thead>
                                         <tbody class="bg-yellow-50 dark:bg-yellow-900/20 divide-y divide-yellow-200 dark:divide-yellow-700">
-                                            @foreach($similarBarcodes as $item)
+                                            @foreach($quantityVariances as $item)
                                                 <tr class="hover:bg-yellow-100 dark:hover:bg-yellow-900/30">
-                                                    <td class="px-4 py-3 text-sm font-mono text-yellow-900 dark:text-yellow-100">{{ $item['uploaded_barcode'] }}</td>
-                                                    <td class="px-4 py-3 text-sm font-mono text-yellow-900 dark:text-yellow-100">{{ $item['existing_barcode'] }}</td>
+                                                    <td class="px-4 py-3 text-sm font-mono text-yellow-900 dark:text-yellow-100">{{ $item['barcode'] }}</td>
                                                     <td class="px-4 py-3 text-sm text-yellow-900 dark:text-yellow-100">{{ $item['product_name'] }}</td>
                                                     <td class="px-4 py-3 text-sm font-mono text-yellow-700 dark:text-yellow-300">{{ $item['sku'] }}</td>
-                                                    <td class="px-4 py-3 text-sm font-semibold text-yellow-600 dark:text-yellow-400 text-center">{{ $item['quantity_sold'] }}</td>
+                                                    <td class="px-4 py-3 text-sm text-yellow-900 dark:text-yellow-100 text-center">{{ $item['allocated_quantity'] }}</td>
+                                                    <td class="px-4 py-3 text-sm text-yellow-900 dark:text-yellow-100 text-center">{{ $item['scanned_quantity'] }}</td>
+                                                    <td class="px-4 py-3 text-sm font-semibold {{ $item['variance'] > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }} text-center">
+                                                        {{ $item['variance'] > 0 ? '+' : '' }}{{ $item['variance'] }}
+                                                    </td>
                                                 </tr>
                                             @endforeach
                                         </tbody>
                                     </table>
                                 </div>
-                                <div class="mt-4 flex justify-end">
-                                    <button wire:click="syncSimilarBarcodes"
-                                            class="px-4 py-2 text-sm font-medium text-white bg-yellow-600 rounded-md hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2">
-                                        Sync Similar Barcodes
-                                    </button>
+                            </div>
+                        </div>
+                    @endif
+
+                    @if(empty($missingItems) && empty($extraItems) && empty($quantityVariances))
+                        <div class="mb-6">
+                            <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-6 text-center">
+                                <svg class="mx-auto h-12 w-12 text-green-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <h4 class="text-lg font-medium text-green-800 dark:text-green-200 mb-2">No Variances Found</h4>
+                                <p class="text-sm text-green-600 dark:text-green-300">All scanned barcodes match the allocated products. Inventory is accurate.</p>
+                            </div>
+                        </div>
+                    @endif
+
+                    @if($errors->has('audit') || !empty($existingAuditIdForDay))
+                        <div class="mb-4">
+                            <div class="bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+                                <div class="flex items-start gap-3">
+                                    <svg class="h-5 w-5 text-amber-700 dark:text-amber-300 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                    </svg>
+                                    <div class="flex-1">
+                                        <div class="text-sm font-medium text-amber-900 dark:text-amber-100">
+                                            Audit already saved today
+                                        </div>
+                                        <div class="mt-1 text-sm text-amber-800 dark:text-amber-200">
+                                            {{ $errors->first('audit') }}
+                                        </div>
+                                        <div class="mt-3 flex flex-wrap gap-2">
+                                            <button wire:click="viewTodaysAudit"
+                                                class="px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800">
+                                                View Today's Audit
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     @endif
 
-                    <div class="flex justify-end space-x-3">
+                    <div class="flex justify-end space-x-3 mt-6">
                         <button wire:click="closeResultsModal"
                                 class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
-                            Cancel
+                            Close
                         </button>
-                        <button wire:click="saveMatchedBarcodesToDatabase"
-                                class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
-                            Update Quantity Sold
+                        <button wire:click="saveAuditResults"
+                                @if(!empty($existingAuditIdForDay)) disabled @endif
+                                class="px-4 py-2 text-sm font-medium text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+                                    {{ !empty($existingAuditIdForDay) ? 'bg-blue-300 dark:bg-blue-900/40 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700' }}">
+                            Save Audit Results
                         </button>
                     </div>
                 </div>

@@ -43,39 +43,53 @@ else
     echo "ℹ️  Not a git repository, skipping git pull"
 fi
 
-# Step 3: Stop containers gracefully
+# Step 3: Install PHP dependencies using Docker (Composer in PHP 8.3)
 echo ""
-echo "🛑 Step 3: Stopping containers..."
+echo "🧩 Step 3: Installing PHP dependencies via Docker (Composer)..."
+docker run --rm \
+  -v "$PROJECT_DIR":/var/www \
+  -w /var/www \
+  php:8.3-cli \
+  bash -lc "apt-get update && apt-get install -y git unzip > /dev/null 2>&1 && \
+            curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer && \
+            composer install --no-dev --optimize-autoloader" || {
+    echo "❌ Composer install failed (Docker). Aborting deployment."
+    exit 1
+  }
+
+# Step 4: Stop containers gracefully
+echo ""
+echo "🛑 Step 4: Stopping containers..."
 docker compose -f "$COMPOSE_FILE" down || docker-compose -f "$COMPOSE_FILE" down || true
 
-# Step 4: Pull latest images (if using registry)
+# Step 5: Pull latest images (if using registry)
 echo ""
-echo "📥 Step 4: Pulling latest images..."
+echo "📥 Step 5: Pulling latest images..."
 # Uncomment if using container registry:
 # docker pull ghcr.io/dgreatnoob/inventory_jovanni:staging-latest || echo "⚠️  Image pull failed, will build locally"
 
-# Step 5: Build and start containers
+# Step 6: Build and start containers
 echo ""
-echo "🔨 Step 5: Building and starting containers..."
+echo "🔨 Step 6: Building and starting containers..."
 RUN_MIGRATIONS=true docker compose -f "$COMPOSE_FILE" up -d --build
 
-# Step 6: Wait for services to be ready
+# Step 7: Wait for services to be ready
 echo ""
-echo "⏳ Step 6: Waiting for services to be ready..."
+echo "⏳ Step 7: Waiting for services to be ready..."
 sleep 15
 
-# Step 7: Run migrations (if not done by entrypoint)
+# Step 8: Run migrations (if not done by entrypoint)
 echo ""
-echo "📊 Step 7: Running database migrations..."
+echo "📊 Step 8: Running database migrations..."
 if docker ps | grep -q "inventory-jovanni-app"; then
     docker compose -f "$COMPOSE_FILE" exec -T app php artisan migrate --force || echo "⚠️  Migrations failed"
 else
     echo "⚠️  App container not running, skipping migrations"
 fi
 
-# Step 8: Clear and cache config
+# Step 9: Clear and cache config
 echo ""
-echo "⚡ Step 8: Optimizing application..."
+echo "⚡ Step 9: Optimizing application..."
 if docker ps | grep -q "inventory-jovanni-app"; then
     docker compose -f "$COMPOSE_FILE" exec -T app php artisan config:clear || true
     docker compose -f "$COMPOSE_FILE" exec -T app php artisan config:cache || true
@@ -86,9 +100,9 @@ else
     echo "⚠️  App container not running, skipping optimization"
 fi
 
-# Step 9: Health check
+# Step 10: Health check
 echo ""
-echo "🏥 Step 9: Health check..."
+echo "🏥 Step 10: Health check..."
 sleep 5
 
 if curl -f http://localhost/health 2>/dev/null || curl -f http://localhost 2>/dev/null; then
@@ -98,9 +112,9 @@ else
     echo "   Please verify manually: http://localhost"
 fi
 
-# Step 10: Show status
+# Step 11: Show status
 echo ""
-echo "📋 Step 10: Container status..."
+echo "📋 Step 11: Container status..."
 docker compose -f "$COMPOSE_FILE" ps
 
 echo ""

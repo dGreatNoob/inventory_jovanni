@@ -68,14 +68,20 @@ Project management, refactoring plans, and development guidelines.
 #### ⚙️ [General System](./general/)
 System-wide documentation, setup guides, and general architecture.
 - **Status**: 📋 Partially Documented
-- **Key Features**: Development setup, system configuration
+- **Key Features**: Development setup, test configuration, deployment guides, troubleshooting
+- **Documents**: 
+  - [Development Setup](./general/DEVELOPMENT_SETUP.md)
+  - [Test Setup](./general/TEST_SETUP.md)
+  - [Deployment Guides](./general/deployment/)
+  - [Troubleshooting](./general/troubleshooting/)
 
 ## 🚀 Quick Start Guide
 
 ### For Developers
 1. **Setup**: Start with [Development Setup](./general/DEVELOPMENT_SETUP.md)
-2. **Architecture**: Review [Product Management](./product-management/) for core system understanding
-3. **Implementation**: Follow module-specific documentation for detailed implementation
+2. **Testing**: Configure tests using [Test Setup Guide](./general/TEST_SETUP.md)
+3. **Architecture**: Review [Product Management](./product-management/) for core system understanding
+4. **Implementation**: Follow module-specific documentation for detailed implementation
 
 ### For System Administrators
 1. **Overview**: Review all module README files for system understanding

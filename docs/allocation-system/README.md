@@ -1,5 +1,9 @@
 # Allocation System Documentation
 
+## Documentation Files
+
+- **[allocation_workflow_flowchart.md](./allocation_workflow_flowchart.md)** - Warehouse & Sales integration workflow flowchart
+
 ## Overview
 
 The Allocation System is a comprehensive two-way inventory management solution that manages the flow of goods from **Warehouse** to **Sales/Branches**. It consists of two main interfaces:

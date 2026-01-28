@@ -83,6 +83,10 @@ jobs:
           echo "DB_DATABASE=inventory_jovanni_test" >> .env
           echo "DB_USERNAME=root" >> .env
           echo "DB_PASSWORD=root" >> .env
+          # Update phpunit.xml for CI/CD (override local credentials)
+          sed -i 's|<env name="DB_PORT" value="3307"/>|<env name="DB_PORT" value="3306"/>|g' phpunit.xml
+          sed -i 's|<env name="DB_USERNAME" value="jovanni"/>|<env name="DB_USERNAME" value="root"/>|g' phpunit.xml
+          sed -i 's|<env name="DB_PASSWORD" value="secret"/>|<env name="DB_PASSWORD" value="root"/>|g' phpunit.xml
 
       - name: Wait for MySQL
         run: |

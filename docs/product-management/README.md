@@ -10,6 +10,8 @@ This folder contains all documentation related to the Product Management module 
 - **[CASCADING_CATEGORY_DROPDOWN.md](./CASCADING_CATEGORY_DROPDOWN.md)** - Technical documentation for cascading dropdown functionality
 - **[BARCODE_AUTO_GENERATION.md](./BARCODE_AUTO_GENERATION.md)** - Barcode generation system documentation
 - **[BARCODE_FIELD_COMPARISON.md](./BARCODE_FIELD_COMPARISON.md)** - Comparison of barcode field implementations
+- **[product_form_reorder_plan.md](./product_form_reorder_plan.md)** - Product form field reordering plan
+- **[product_supplier_code_rename_plan.md](./product_supplier_code_rename_plan.md)** - Supplier code field rename plan
 
 ## Module Overview
 

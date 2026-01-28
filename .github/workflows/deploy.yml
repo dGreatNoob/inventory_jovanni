@@ -20,6 +20,8 @@ on:
         type: boolean
         default: false
   push:
+    branches:
+      - staging
     tags:
       - 'v*'
       - 'staging-*'

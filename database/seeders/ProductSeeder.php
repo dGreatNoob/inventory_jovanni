@@ -8,6 +8,7 @@ use App\Models\Supplier;
 use App\Models\ProductColor;
 use App\Models\ProductInventory;
 use App\Models\ProductPriceHistory;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -18,6 +19,14 @@ class ProductSeeder extends Seeder
      */
     public function run(): void
     {
+        // Get a default user for created_by / updated_by relationships
+        $defaultUserId = User::query()->value('id');
+
+        if (! $defaultUserId) {
+            $this->command->warn('No users found. Please run SuperAdminSeeder (or another user seeder) before ProductSeeder.');
+            return;
+        }
+
         // Get existing data
         $categories = Category::whereNull('parent_id')->get();
         $suppliers = Supplier::where('is_active', true)->get();
@@ -531,8 +540,8 @@ class ProductSeeder extends Seeder
                     'specs' => $productData['specs'],
                     'disabled' => false,
                     'soft_card' => null,
-                    'created_by' => 1,
-                    'updated_by' => 1,
+                    'created_by' => $defaultUserId,
+                    'updated_by' => $defaultUserId,
                 ]
             );
 
@@ -555,7 +564,7 @@ class ProductSeeder extends Seeder
                 'old_price' => null,
                 'new_price' => $productData['price'],
                 'pricing_note' => $productData['price_note'],
-                'changed_by' => 1,
+                'changed_by' => $defaultUserId,
                 'changed_at' => now(),
             ]);
 

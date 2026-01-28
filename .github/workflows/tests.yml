@@ -67,11 +67,15 @@ jobs:
           echo "DB_USERNAME=root" >> .env
           echo "DB_PASSWORD=root" >> .env
 
+      - name: Wait for MySQL to be ready
+        run: |
+          timeout 60 bash -c 'until mysqladmin ping -h 127.0.0.1 -u root -proot --silent; do sleep 2; done'
+
       - name: Run Database Migrations
-        run: php artisan migrate --env=testing
+        run: php artisan migrate --force
 
       - name: Run Database Seeding
-        run: php artisan db:seed --env=testing
+        run: php artisan db:seed --force
 
       - name: Build Assets
         run: npm run build

@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class BranchAllocation extends Model
 {
+    use HasFactory;
     protected $fillable = [
         'batch_allocation_id',
         'branch_id',

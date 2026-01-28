@@ -53,39 +53,48 @@ docker compose -f "$COMPOSE_FILE" run --rm --entrypoint "" app \
     exit 1
   }
 
-# Step 4: Stop containers gracefully
+# Step 4: Build frontend assets inside the app service (Vite/Vite+Laravel)
 echo ""
-echo "🛑 Step 4: Stopping containers..."
+echo "🎨 Step 4: Building frontend assets via app container (Vite)..."
+docker compose -f "$COMPOSE_FILE" run --rm --entrypoint "" app \
+  bash -lc "if [ ! -d node_modules ]; then npm ci; fi && npm run build" || {
+    echo "❌ Asset build failed inside app container. Aborting deployment."
+    exit 1
+  }
+
+# Step 5: Stop containers gracefully
+echo ""
+echo "🛑 Step 5: Stopping containers..."
 docker compose -f "$COMPOSE_FILE" down || docker-compose -f "$COMPOSE_FILE" down || true
 
-# Step 5: Pull latest images (if using registry)
+# Step 6: Pull latest images (if using registry)
 echo ""
-echo "📥 Step 5: Pulling latest images..."
+echo "📥 Step 6: Pulling latest images..."
 # Uncomment if using container registry:
 # docker pull ghcr.io/dgreatnoob/inventory_jovanni:staging-latest || echo "⚠️  Image pull failed, will build locally"
 
-# Step 6: Build and start containers
+# Step 7: Build and start containers
 echo ""
-echo "🔨 Step 6: Building and starting containers..."
+echo "🔨 Step 7: Building and starting containers..."
 RUN_MIGRATIONS=true docker compose -f "$COMPOSE_FILE" up -d --build
 
-# Step 7: Wait for services to be ready
+# Step 8: Wait for services to be ready
 echo ""
-echo "⏳ Step 7: Waiting for services to be ready..."
+echo "⏳ Step 8: Waiting for services to be ready..."
 sleep 15
 
-# Step 8: Run migrations (if not done by entrypoint)
+# Step 9: Run migrations (if not done by entrypoint)
 echo ""
-echo "📊 Step 8: Running database migrations..."
+echo "📊 Step 9: Running database migrations..."
 if docker ps | grep -q "inventory-jovanni-app"; then
     docker compose -f "$COMPOSE_FILE" exec -T app php artisan migrate --force || echo "⚠️  Migrations failed"
 else
     echo "⚠️  App container not running, skipping migrations"
 fi
 
-# Step 9: Clear and cache config
+# Step 10: Clear and cache config
 echo ""
-echo "⚡ Step 9: Optimizing application..."
+echo "⚡ Step 10: Optimizing application..."
 if docker ps | grep -q "inventory-jovanni-app"; then
     docker compose -f "$COMPOSE_FILE" exec -T app php artisan config:clear || true
     docker compose -f "$COMPOSE_FILE" exec -T app php artisan config:cache || true
@@ -96,9 +105,9 @@ else
     echo "⚠️  App container not running, skipping optimization"
 fi
 
-# Step 10: Health check
+# Step 11: Health check
 echo ""
-echo "🏥 Step 10: Health check..."
+echo "🏥 Step 11: Health check..."
 sleep 5
 
 if curl -f http://localhost/health 2>/dev/null || curl -f http://localhost 2>/dev/null; then
@@ -108,9 +117,9 @@ else
     echo "   Please verify manually: http://localhost"
 fi
 
-# Step 11: Show status
+# Step 12: Show status
 echo ""
-echo "📋 Step 11: Container status..."
+echo "📋 Step 12: Container status..."
 docker compose -f "$COMPOSE_FILE" ps
 
 echo ""

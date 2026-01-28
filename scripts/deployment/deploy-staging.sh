@@ -43,17 +43,13 @@ else
     echo "ℹ️  Not a git repository, skipping git pull"
 fi
 
-# Step 3: Install PHP dependencies using Docker (Composer in PHP 8.3)
+# Step 3: Install PHP dependencies inside the app service (uses image extensions)
 echo ""
-echo "🧩 Step 3: Installing PHP dependencies via Docker (Composer)..."
-docker run --rm \
-  -v "$PROJECT_DIR":/var/www \
-  -w /var/www \
-  php:8.3-cli \
-  bash -lc "apt-get update && apt-get install -y git unzip > /dev/null 2>&1 && \
-            curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer && \
+echo "🧩 Step 3: Installing PHP dependencies via app container (Composer)..."
+docker compose -f "$COMPOSE_FILE" run --rm app \
+  bash -lc "git config --global --add safe.directory /var/www && \
             composer install --no-dev --optimize-autoloader" || {
-    echo "❌ Composer install failed (Docker). Aborting deployment."
+    echo "❌ Composer install failed inside app container. Aborting deployment."
     exit 1
   }
 

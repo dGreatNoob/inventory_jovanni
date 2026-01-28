@@ -6,10 +6,11 @@
 /storage/*.key
 /storage/pail
 /vendor
+# .env files should not be tracked (contain sensitive data)
 .env
-.env.backup
-.env.production
 .env.local
+.env.production
+.env.backup
 
 # Database backups
 /backups/

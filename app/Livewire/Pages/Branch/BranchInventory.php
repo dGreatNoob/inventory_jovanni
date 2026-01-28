@@ -37,7 +37,16 @@ class BranchInventory extends Component
     public $showUploadModal = false;
     public $showResultsModal = false;
     public $showSuccessModal = false;
+    public $showCustomerSalesModal = false;
     public $successMessage = '';
+
+    // Customer sales properties
+    public $salesBarcodeInput = '';
+    public $selectedSalesProduct = null;
+    public $salesQuantity = 1;
+    public $salesItems = [];
+    public $selectedAgentId = null;
+    public $availableAgents = [];
 
     // File upload properties
     public $textFile;
@@ -78,6 +87,7 @@ class BranchInventory extends Component
     public function mount()
     {
         $this->loadBatches();
+        $this->loadAgents();
     }
 
     /**
@@ -115,6 +125,14 @@ class BranchInventory extends Component
                 'last_shipment_date' => $this->getLastShipmentDateForBatch($batchName),
             ];
         });
+    }
+
+    /**
+     * Load all available agents
+     */
+    protected function loadAgents()
+    {
+        $this->availableAgents = \App\Models\Agent::orderBy('name')->get();
     }
 
     /**
@@ -266,12 +284,12 @@ class BranchInventory extends Component
             ];
         })->values();
 
-        // Add promo information to each product
+        // Add active promos count to each product
         $this->branchProducts = $this->branchProducts->map(function ($product) {
             $productId = $product['id'];
             $batchAllocationIds = collect($product['shipments'])->pluck('batch_allocation_id')->filter()->unique();
 
-            $promo = Promo::where('product', 'like', '%' . (string)$productId . '%')
+            $activePromosCount = Promo::where('product', 'like', '%' . (string)$productId . '%')
                 ->where(function($q) use ($batchAllocationIds) {
                     $q->where(function($sub) use ($batchAllocationIds) {
                         foreach ($batchAllocationIds as $id) {
@@ -281,9 +299,9 @@ class BranchInventory extends Component
                 })
                 ->where('startDate', '<=', now())
                 ->where('endDate', '>=', now())
-                ->first();
+                ->count();
 
-            $product['promo_name'] = $promo ? $promo->name : 'none';
+            $product['active_promos_count'] = $activePromosCount;
             return $product;
         });
     }
@@ -518,7 +536,7 @@ class BranchInventory extends Component
     }
 
     /**
-     * Save audit results to database (does NOT update sold_quantity)
+     * Save audit results to database
      */
     public function saveAuditResults()
     {
@@ -598,7 +616,6 @@ class BranchInventory extends Component
                 $message .= "No variances found - inventory matches allocation.";
             }
 
-            $this->successMessage = $message;
             $this->showSuccessModal = true;
 
         } catch (\Exception $e) {
@@ -737,6 +754,7 @@ class BranchInventory extends Component
                 $allocatedProducts[$barcode]['allocated_quantity'] += $item->quantity;
             }
         }
+    }
 
         // Count scanned barcodes
         $scannedBarcodeCount = array_count_values($uploadedBarcodes);
@@ -784,6 +802,17 @@ class BranchInventory extends Component
                     'scanned_quantity' => $scannedCount,
                 ];
             }
+
+            // Refresh data
+            $this->loadBranchProducts();
+
+            // Close modal and show success
+            $this->closeCustomerSalesModal();
+            $this->successMessage = 'Customer sales recorded successfully!';
+            $this->showSuccessModal = true;
+
+        } catch (\Exception $e) {
+            session()->flash('error', 'Error recording sales: ' . $e->getMessage());
         }
 
         // Build audit results summary

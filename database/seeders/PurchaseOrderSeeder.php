@@ -140,11 +140,11 @@ class PurchaseOrderSeeder extends Seeder
         ];
 
         // Fields that exist in the purchase_orders table (from migration)
+        // Only include fields that actually exist in the database
         $allowedFields = [
             'po_num', 'status', 'supplier_id', 'order_date', 'del_to', 'payment_terms',
-            'total_qty', 'total_price', 'ordered_by', 'approver', 'approved_at',
-            'approved_by', 'cancellation_reason', 'cancelled_at', 'cancelled_by',
-            'return_reason', 'del_on', 'dr_number'
+            'quotation', 'po_type', 'expected_delivery_date', 'total_qty', 'total_price', 
+            'ordered_by', 'approver', 'del_on', 'dr_number', 'received_date', 'total_est_weight'
         ];
 
         foreach ($purchaseOrders as $poData) {

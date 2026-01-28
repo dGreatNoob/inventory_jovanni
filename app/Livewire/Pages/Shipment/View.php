@@ -20,9 +20,9 @@ class View extends Component
     public function mount($shipmentId)
     {
         $this->shipmentId = $shipmentId;
-        $this->ShipmentResult = Shipment::findOrFail($shipmentId);
+        $this->ShipmentResult = Shipment::with('deliveryReceipt')->findOrFail($shipmentId);
         $this->company_results  = \App\Models\Customer::all()->pluck('name', 'id');
-        
+
         $this->shippingMethodDropDown = Shipment::deliveryMethodDropDown();
 
     }
@@ -68,7 +68,7 @@ class View extends Component
     {
         $this->editingItemId = $itemId;
         $item = \App\Models\BranchAllocationItem::find($itemId);
-        $this->editQuantities[$itemId] = $item->quantity;
+        $this->editQuantities[$itemId] = $item->scanned_quantity;
     }
 
     public function saveEdit($itemId)
@@ -78,14 +78,30 @@ class View extends Component
         ]);
 
         $item = \App\Models\BranchAllocationItem::find($itemId);
-        $oldQuantity = $item->quantity;
-        $item->quantity = $this->editQuantities[$itemId];
+        $oldQuantity = $item->scanned_quantity;
+        $item->scanned_quantity = $this->editQuantities[$itemId];
         $item->save();
+
+        // Update box current_count if it exists
+        if ($item->box) {
+            $box = $item->box;
+            $totalScannedInBox = \App\Models\BranchAllocationItem::where('box_id', $box->id)->sum('scanned_quantity');
+            $box->update(['current_count' => $totalScannedInBox]);
+        }
+
+        // Update DR scanned_items count
+        if ($item->delivery_receipt_id) {
+            $dr = \App\Models\DeliveryReceipt::find($item->delivery_receipt_id);
+            if ($dr) {
+                $totalScannedInDR = \App\Models\BranchAllocationItem::where('delivery_receipt_id', $dr->id)->sum('scanned_quantity');
+                $dr->update(['scanned_items' => $totalScannedInDR]);
+            }
+        }
 
         // Log activity
         \Spatie\Activitylog\Models\Activity::create([
             'log_name' => 'branch_inventory',
-            'description' => "Updated allocated quantity for product {$item->getDisplayBarcodeAttribute()} in shipment {$this->ShipmentResult->shipping_plan_num}",
+            'description' => "Updated scanned quantity for product {$item->getDisplayBarcodeAttribute()} in shipment {$this->ShipmentResult->shipping_plan_num}",
             'subject_type' => \App\Models\BranchAllocationItem::class,
             'subject_id' => $item->id,
             'causer_type' => null,
@@ -95,16 +111,17 @@ class View extends Component
                 'product_name' => $item->getDisplayNameAttribute(),
                 'barcode' => $item->getDisplayBarcodeAttribute(),
                 'shipment_id' => $this->ShipmentResult->id,
-                'old_quantity' => $oldQuantity,
-                'new_quantity' => $this->editQuantities[$itemId],
+                'old_scanned_quantity' => $oldQuantity,
+                'new_scanned_quantity' => $this->editQuantities[$itemId],
                 'branch_id' => $this->ShipmentResult->branchAllocation->branch_id ?? null,
+                'box_number' => $item->box->box_number ?? null,
             ],
         ]);
 
         $this->editingItemId = null;
         unset($this->editQuantities[$itemId]);
 
-        session()->flash('message', 'Product quantity updated successfully.');
+        session()->flash('message', 'Scanned quantity updated successfully.');
     }
 
     public function cancelEdit()
@@ -116,7 +133,7 @@ class View extends Component
     public function render()
     {
         return view('livewire.pages.shipment.view', [
-            'shipment_view' => Shipment::with(['salesOrder', 'branchAllocation.items.product'])->find($this->shipmentId),
+            'shipment_view' => Shipment::with(['salesOrder', 'branchAllocation', 'deliveryReceipt'])->find($this->shipmentId),
         ]);
     }
 }

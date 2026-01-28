@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -17,29 +18,53 @@ return new class extends Migration
         // Drop foreign keys first, then drop the table
         // Using dropIfExists for idempotency - safe to run multiple times
         
-        // Drop foreign key from purchase_order_items
+        // Drop foreign key from purchase_order_items (if it exists)
         if (Schema::hasTable('purchase_order_items')) {
-            Schema::table('purchase_order_items', function (Blueprint $table) {
-                $table->dropForeign(['product_id']);
-            });
+            $this->dropForeignKeyIfExists('purchase_order_items', 'product_id', 'supply_profiles');
         }
 
-        // Drop foreign key from supply_orders
+        // Drop foreign key from sales_order_items (if it exists)
+        if (Schema::hasTable('sales_order_items')) {
+            $this->dropForeignKeyIfExists('sales_order_items', 'product_id', 'supply_profiles');
+        }
+
+        // Drop foreign key from supply_orders (if it exists)
         if (Schema::hasTable('supply_orders')) {
-            Schema::table('supply_orders', function (Blueprint $table) {
-                $table->dropForeign(['supply_profile_id']);
-            });
+            $this->dropForeignKeyIfExists('supply_orders', 'supply_profile_id', 'supply_profiles');
         }
 
-        // Drop foreign key from supply_batches
+        // Drop foreign key from supply_batches (if it exists)
         if (Schema::hasTable('supply_batches')) {
-            Schema::table('supply_batches', function (Blueprint $table) {
-                $table->dropForeign(['supply_profile_id']);
-            });
+            $this->dropForeignKeyIfExists('supply_batches', 'supply_profile_id', 'supply_profiles');
         }
 
         // Drop the supply_profiles table
         Schema::dropIfExists('supply_profiles');
+    }
+
+    /**
+     * Drop a foreign key if it exists.
+     * 
+     * @param string $tableName
+     * @param string $columnName
+     * @param string $referencedTable
+     */
+    private function dropForeignKeyIfExists(string $tableName, string $columnName, string $referencedTable): void
+    {
+        $foreignKeys = DB::select("
+            SELECT CONSTRAINT_NAME 
+            FROM information_schema.KEY_COLUMN_USAGE 
+            WHERE TABLE_SCHEMA = DATABASE() 
+            AND TABLE_NAME = ? 
+            AND COLUMN_NAME = ?
+            AND REFERENCED_TABLE_NAME = ?
+        ", [$tableName, $columnName, $referencedTable]);
+
+        foreach ($foreignKeys as $fk) {
+            Schema::table($tableName, function (Blueprint $table) use ($fk) {
+                $table->dropForeign($fk->CONSTRAINT_NAME);
+            });
+        }
     }
 
     /**

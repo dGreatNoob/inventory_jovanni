@@ -16,7 +16,7 @@ class Payment extends Model
         'amount',
         'payment_date',
         'payment_method',
-        'finance_id',
+        'type',
         'status',
         'remarks',
     ];
@@ -25,14 +25,6 @@ class Payment extends Model
         'payment_date' => 'datetime',
         'amount' => 'decimal:2',
     ];
-
-    /**
-     * Get the finance record (payable or receivable) this payment is linked to
-     */
-    public function finance(): BelongsTo
-    {
-        return $this->belongsTo(Finance::class);
-    }
 
     /**
      * Scope to filter by payment method
@@ -58,15 +50,4 @@ class Payment extends Model
         return $query->where('status', $status);
     }
 
-    /**
-     * Check if payment is valid (amount <= balance due)
-     */
-    public function isValidAmount(): bool
-    {
-        if (!$this->finance) {
-            return false;
-        }
-
-        return $this->amount <= $this->finance->balance;
-    }
 }

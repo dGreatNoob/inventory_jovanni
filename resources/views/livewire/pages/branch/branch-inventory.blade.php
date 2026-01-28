@@ -139,6 +139,10 @@
                                 class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
                             📄 Upload Text File
                         </button>
+                        <button wire:click="openCustomerSalesModal"
+                                class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                            💰 Add Customer Sales
+                        </button>
                         <button wire:click="clearBranchSelection"
                                 class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
                             Back to Branches
@@ -229,7 +233,7 @@
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Remaining</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Unit Price</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Total Value</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Promo Type</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Active Promos</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Actions</th>
                                 </tr>
                             </thead>
@@ -268,7 +272,7 @@
                                             ₱{{ number_format($product['total_value'], 2) }}
                                         </td>
                                         <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
-                                            {{ $product['promo_name'] }}
+                                            {{ $product['active_promos_count'] }} Active Promos
                                         </td>
                                         <td class="px-4 py-3 text-sm">
                                             <button wire:click="viewProductDetails({{ $product['id'] }})"
@@ -521,6 +525,36 @@
                                     <div class="text-sm text-gray-600 dark:text-gray-400">
                                         Allocation: {{ $shipment['allocation_reference'] }} • Barcode: {{ $shipment['barcode'] }}
                                     </div>
+                                    @php
+                                        $productId = $selectedProductDetails['id'];
+                                        $batchAllocationId = $shipment['batch_allocation_id'];
+                                        $promo = \App\Models\Promo::where('product', 'like', '%' . (string)$productId . '%')
+                                            ->where('branch', 'like', '%' . (string)$batchAllocationId . '%')
+                                            ->where('startDate', '<=', now())
+                                            ->where('endDate', '>=', now())
+                                            ->first();
+                                        if ($promo) {
+                                            $discount = 0;
+                                            if($promo->type == 'Buy one Take one') {
+                                                $discount = 0.5;
+                                            } elseif($promo->type == '70% Discount') {
+                                                $discount = 0.7;
+                                            } elseif($promo->type == '60% Discount') {
+                                                $discount = 0.6;
+                                            } elseif($promo->type == '50% Discount') {
+                                                $discount = 0.5;
+                                            }
+                                            $discounted_price = $shipment['price'] * (1 - $discount);
+                                            $total_discounted_value = $discounted_price * $shipment['allocated_quantity'];
+                                        }
+                                    @endphp
+                                    @if($promo)
+                                        <div class="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                                            <strong>Discounted Price:</strong> ₱{{ number_format($discounted_price, 2) }} |
+                                            <strong>Total Discounted Value:</strong> ₱{{ number_format($total_discounted_value, 2) }} |
+                                            <strong>Promo Type:</strong> {{ $promo->name }} ({{ $promo->type }})
+                                        </div>
+                                    @endif
                                 </div>
                             @endforeach
                         </div>
@@ -827,5 +861,312 @@
             </div>
         </div>
     @endif
+
+    <!-- Customer Sales Modal -->
+    <div
+        x-data="{ open: @entangle('showCustomerSalesModal').live }"
+        x-cloak
+        x-on:keydown.escape.window="if (open) { open = false; $wire.closeCustomerSalesModal(); }"
+    >
+        <template x-teleport="body">
+            <div
+                x-show="open"
+                x-transition.opacity
+                class="fixed inset-0 z-50 flex"
+            >
+                <div
+                    x-show="open"
+                    x-transition.opacity
+                    class="fixed inset-0 bg-neutral-900/30 dark:bg-neutral-900/50"
+                    @click="open = false; $wire.closeCustomerSalesModal()"
+                ></div>
+
+                <section
+                    x-show="open"
+                    x-transition:enter="transform transition ease-in-out duration-300"
+                    x-transition:enter-start="translate-x-full"
+                    x-transition:enter-end="translate-x-0"
+                    x-transition:leave="transform transition ease-in-out duration-300"
+                    x-transition:leave-start="translate-x-0"
+                    x-transition:leave-end="translate-x-full"
+                    class="relative ml-auto flex h-full w-full max-w-2xl bg-white shadow-xl dark:bg-zinc-900"
+                >
+                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-green-500 dark:bg-green-400"></div>
+
+                    <div class="ml-[0.25rem] flex h-full w-full flex-col bg-white shadow-xl dark:bg-zinc-900">
+                        <header class="flex items-start justify-between border-b border-gray-200 px-6 py-5 dark:border-zinc-700">
+                            <div class="flex items-start gap-3">
+                                <div class="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 text-green-600 dark:bg-green-900/40 dark:text-green-300">
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+                                        Add Customer Sales
+                                    </h2>
+                                    <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                                        Record customer sales for {{ collect($batchBranches)->firstWhere('id', $selectedBranchId)['name'] ?? 'Branch' }}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <button
+                                type="button"
+                                class="rounded-full p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500 dark:text-gray-500 dark:hover:bg-zinc-800 dark:hover:text-gray-200"
+                                @click="open = false; $wire.closeCustomerSalesModal()"
+                                aria-label="Close sales modal"
+                            >
+                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </header>
+
+                        <div class="flex-1 overflow-hidden">
+                            <div class="flex h-full flex-col">
+                                <div class="flex-1 overflow-y-auto px-6 py-6">
+                                    <div class="space-y-6">
+                                        <!-- Product Selection -->
+                                        <section class="space-y-4">
+                                            <div>
+                                                <flux:heading size="md" class="text-gray-900 dark:text-white">Select Product</flux:heading>
+                                                <p class="text-sm text-gray-500 dark:text-gray-400">Scan product barcode or select from inventory.</p>
+                                            </div>
+
+                                            <div class="space-y-4">
+                                                <div>
+                                                    <label for="sales-barcode-input" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                                                        Barcode
+                                                    </label>
+                                                    <input
+                                                        id="sales-barcode-input"
+                                                        type="text"
+                                                        wire:model.live="salesBarcodeInput"
+                                                        placeholder="Scan barcode or enter manually..."
+                                                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                                        x-ref="salesBarcodeInput"
+                                                        x-init="$nextTick(() => { if ($el) $el.focus(); })"
+                                                        autofocus
+                                                    />
+                                                </div>
+
+                                                <!-- Product Info Display -->
+                                                @if($selectedSalesProduct)
+                                                    <div class="rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-900/20">
+                                                        <h5 class="font-medium text-green-900 dark:text-green-100 mb-2">Selected Product</h5>
+                                                        <div class="flex items-center space-x-4">
+                                                            @if($selectedSalesProduct['image_url'])
+                                                                <img src="{{ $selectedSalesProduct['image_url'] }}" alt="{{ $selectedSalesProduct['name'] }}" class="w-16 h-16 object-cover rounded">
+                                                            @endif
+                                                            <div>
+                                                                <div class="font-medium text-green-900 dark:text-green-100">{{ $selectedSalesProduct['name'] }}</div>
+                                                                <div class="text-sm text-green-700 dark:text-green-300">Barcode: {{ $selectedSalesProduct['barcode'] ?? 'N/A' }}</div>
+                                                                <div class="text-sm text-green-700 dark:text-green-300">Available: {{ $selectedSalesProduct['remaining_quantity'] }} units</div>
+                                                                <div class="text-sm text-green-700 dark:text-green-300">Price: ₱{{ number_format($selectedSalesProduct['unit_price'], 2) }}</div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                @endif
+
+                                                <div>
+                                                    <label for="sales-quantity-input" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                                                        Quantity
+                                                    </label>
+                                                    <input
+                                                        id="sales-quantity-input"
+                                                        type="number"
+                                                        wire:model="salesQuantity"
+                                                        min="1"
+                                                        placeholder="Enter quantity..."
+                                                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <label for="sales-agent-select" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                                                        Agent (Optional)
+                                                    </label>
+                                                    <select
+                                                        id="sales-agent-select"
+                                                        wire:model="selectedAgentId"
+                                                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                                    >
+                                                        <option value="">Select an agent...</option>
+                                                        @foreach($availableAgents as $agent)
+                                                            <option value="{{ $agent->id }}">{{ $agent->agent_code }} - {{ $agent->name }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+
+                                                <button
+                                                    wire:click="addSalesItem"
+                                                    class="w-full px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                                                    :disabled="!$wire.selectedSalesProduct || !$wire.salesQuantity"
+                                                >
+                                                    Add to Sales
+                                                </button>
+                                            </div>
+                                        </section>
+
+                                        <!-- Sales Items List -->
+                                        @if (!empty($salesItems))
+                                        <section class="space-y-4">
+                                            <div>
+                                                <flux:heading size="md" class="text-gray-900 dark:text-white">Sales Items</flux:heading>
+                                                <p class="text-sm text-gray-500 dark:text-gray-400">Items added to this sales transaction.</p>
+                                            </div>
+
+                                            <div class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                                                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                                    <thead class="bg-gray-50 dark:bg-gray-700">
+                                                        <tr>
+                                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Product</th>
+                                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Quantity</th>
+                                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Unit Price</th>
+                                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Total</th>
+                                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                                        @foreach($salesItems as $index => $item)
+                                                            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                                                <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">
+                                                                    {{ $item['name'] }}
+                                                                </td>
+                                                                <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                                                                    {{ $item['quantity'] }}
+                                                                </td>
+                                                                <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                                                                    ₱{{ number_format($item['unit_price'], 2) }}
+                                                                </td>
+                                                                <td class="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
+                                                                    ₱{{ number_format($item['total'], 2) }}
+                                                                </td>
+                                                                <td class="px-4 py-3 text-sm">
+                                                                    <button wire:click="removeSalesItem({{ $index }})"
+                                                                            class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300">
+                                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                                        </svg>
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
+                                            </div>
+
+                                            <!-- Sales Summary -->
+                                            <div class="rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-900/20">
+                                                <div class="flex justify-between items-center">
+                                                    <span class="font-medium text-green-900 dark:text-green-100">Total Sales Amount:</span>
+                                                    <span class="text-xl font-bold text-green-900 dark:text-green-100">₱{{ number_format(collect($salesItems)->sum('total'), 2) }}</span>
+                                                </div>
+                                            </div>
+                                        </section>
+                                        @endif
+                                    </div>
+                                </div>
+
+                                <div class="border-t border-gray-200 bg-white px-6 py-4 dark:border-zinc-700 dark:bg-zinc-900">
+                                    <div class="flex items-center justify-between">
+                                        <div class="text-sm text-gray-500 dark:text-gray-400">
+                                            @if(empty($salesItems))
+                                                Add products to create a sales transaction
+                                            @else
+                                                {{ count($salesItems) }} items • Total: ₱{{ number_format(collect($salesItems)->sum('total'), 2) }}
+                                            @endif
+                                        </div>
+                                        <div class="flex items-center space-x-3">
+                                            <button type="button" wire:click="clearSalesItems"
+                                                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
+                                                Clear All
+                                            </button>
+                                            <button type="button" wire:click="saveCustomerSales"
+                                                    class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                                                    :disabled="empty($salesItems)">
+                                                Save Sales
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </template>
+    </div>
+
+    @push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const salesBarcodeInput = document.getElementById('sales-barcode-input');
+            let lastScrollPosition = 0;
+
+            if (salesBarcodeInput) {
+                // Auto-focus on load
+                salesBarcodeInput.focus();
+
+                // Save scroll position before Livewire update
+                window.addEventListener('livewire:update', function() {
+                    lastScrollPosition = window.scrollY || window.pageYOffset;
+                });
+
+                // Restore scroll position after Livewire update
+                window.addEventListener('livewire:updated', function() {
+                    window.scrollTo(0, lastScrollPosition);
+                    // Refocus the input after update
+                    setTimeout(() => {
+                        const input = document.getElementById('sales-barcode-input');
+                        if (input) {
+                            input.focus();
+                        }
+                    }, 50);
+                });
+
+                // Prevent scroll on focus
+                salesBarcodeInput.addEventListener('focus', function(e) {
+                    e.preventDefault();
+                });
+
+                // Refocus when clicking anywhere on the page (except buttons)
+                document.addEventListener('click', function(e) {
+                    if (e.target.tagName !== 'BUTTON' && !e.target.closest('button') && !e.target.closest('input')) {
+                        setTimeout(() => {
+                            const input = document.getElementById('sales-barcode-input');
+                            if (input) input.focus();
+                        }, 50);
+                    }
+                });
+            }
+        });
+
+        // Additional Livewire hook to prevent scroll
+        document.addEventListener('livewire:initialized', () => {
+            let scrollPosition = 0;
+
+            Livewire.hook('morph.updating', ({
+                component,
+                cleanup
+            }) => {
+                scrollPosition = window.scrollY || window.pageYOffset;
+            });
+
+            Livewire.hook('morph.updated', ({
+                component
+            }) => {
+                window.scrollTo(0, scrollPosition);
+
+                // Refocus sales barcode input
+                const salesBarcodeInput = document.getElementById('sales-barcode-input');
+                if (salesBarcodeInput) {
+                    setTimeout(() => salesBarcodeInput.focus(), 100);
+                }
+            });
+        });
+    </script>
+    @endpush
 </div>
 </div>

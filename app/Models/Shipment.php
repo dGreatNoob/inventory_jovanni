@@ -16,6 +16,7 @@ class Shipment extends Model
         'sales_order_id',
         'batch_allocation_id',
         'branch_allocation_id',
+        'delivery_receipt_id',
         'delivery_method',
         'carrier_name',
         'vehicle_plate_number',
@@ -85,6 +86,11 @@ class Shipment extends Model
     public function branchAllocation()
     {
         return $this->belongsTo(BranchAllocation::class);
+    }
+
+    public function deliveryReceipt()
+    {
+        return $this->belongsTo(DeliveryReceipt::class);
     }
 
     public function statusLogs()

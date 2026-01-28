@@ -105,14 +105,13 @@
                         <div class="flex text-sm text-gray-600 dark:text-gray-400">
                             <label for="uploadImages" class="relative cursor-pointer bg-white dark:bg-gray-700 rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500">
                                 <span>Upload files</span>
-                                <input id="uploadImages" 
-                                       type="file" 
-                                       multiple 
-                                       accept="image/*"
-                                       x-ref="fileInput"
-                                       x-on:change="uploadFiles($event.target.files)"
-                                       wire:model="uploadImages" 
-                                       class="sr-only">
+                                <input id="uploadImages"
+                                        type="file"
+                                        multiple
+                                        accept="image/*"
+                                        x-ref="fileInput"
+                                        x-on:change="uploadFiles($event.target.files)"
+                                        class="sr-only">
                             </label>
                             <p class="pl-1">or drag and drop</p>
                         </div>
@@ -135,13 +134,14 @@
                         </label>
                         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                             @foreach($uploadImages as $index => $image)
+                                @if($image)
                                 <div class="relative">
-                                    <img src="{{ $image->temporaryUrl() }}" 
-                                         alt="Preview {{ $index + 1 }}"
-                                         class="w-full h-24 object-cover rounded-lg border border-gray-200 dark:border-gray-600">
+                                    <img src="{{ $image->temporaryUrl() }}"
+                                          alt="Preview {{ $index + 1 }}"
+                                          class="w-full h-24 object-cover rounded-lg border border-gray-200 dark:border-gray-600">
                                     <div class="absolute top-1 right-1">
-                                        <flux:button 
-                                            type="button" 
+                                        <flux:button
+                                            type="button"
                                             wire:click="$set('uploadImages.{{ $index }}', null)"
                                             variant="danger"
                                             size="sm"
@@ -154,6 +154,7 @@
                                     </div>
                                     <div class="absolute bottom-1 left-1 bg-black/60 text-white text-[10px] px-1 py-0.5 rounded">{{ $image->getClientOriginalName() }}</div>
                                 </div>
+                                @endif
                             @endforeach
                         </div>
                     </div>

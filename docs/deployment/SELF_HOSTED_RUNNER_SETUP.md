@@ -225,7 +225,7 @@ Once the runner is set up and tested:
 
 1. The workflow will automatically deploy when you push to `staging` branch
 2. Monitor deployments in GitHub Actions tab
-3. Set up similar runner for production (main branch) if needed
+3. **Production:** See [PRODUCTION_RUNNER_SETUP.md](./PRODUCTION_RUNNER_SETUP.md) to set up a self-hosted runner on the production server (main branch, `/var/www/inventory_jovanni`)
 
 ## Support
 

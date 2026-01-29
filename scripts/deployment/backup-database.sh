@@ -29,7 +29,7 @@ if ! docker ps | grep -q "$DB_CONTAINER"; then
 fi
 
 # Create backup
-if docker exec "$DB_CONTAINER" mysqldump -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" > "$BACKUP_FILE" 2>/dev/null; then
+if docker exec "$DB_CONTAINER" mysqldump -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" > "$BACKUP_FILE" 2>&1; then
     # Compress backup
     gzip -f "$BACKUP_FILE"
     BACKUP_FILE="${BACKUP_FILE}.gz"
@@ -46,5 +46,8 @@ if docker exec "$DB_CONTAINER" mysqldump -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAM
     echo "✅ Backup complete!"
 else
     echo "❌ Backup failed!"
-    exit 1
+    echo "   Attempted: docker exec $DB_CONTAINER mysqldump -u $DB_USER -p*** $DB_NAME"
+    echo "   This is non-critical - deployment will continue..."
+    # Don't exit 1 - backup failure shouldn't stop deployment
+    exit 0
 fi

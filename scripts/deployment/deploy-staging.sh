@@ -22,11 +22,16 @@ fi
 DB_CONTAINER="${DB_CONTAINER:-inventory-jovanni-db}"
 COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.yml}"
 
-# Step 1: Backup database
+# Step 1: Backup database (non-blocking)
 echo ""
 echo "📦 Step 1: Database Backup"
 if [ -f "$SCRIPT_DIR/backup-database.sh" ]; then
-    bash "$SCRIPT_DIR/backup-database.sh" ./backups
+    # Pass DB credentials from .env (map DB_DATABASE -> DB_NAME, DB_USERNAME -> DB_USER)
+    DB_CONTAINER="${DB_CONTAINER:-inventory-jovanni-db}" \
+    DB_NAME="${DB_DATABASE:-inventory_jovanni}" \
+    DB_USER="${DB_USERNAME:-root}" \
+    DB_PASSWORD="${DB_PASSWORD:-rootsecret}" \
+    bash "$SCRIPT_DIR/backup-database.sh" ./backups || echo "⚠️  Backup failed, but continuing deployment..."
 else
     echo "⚠️  Backup script not found, skipping..."
 fi

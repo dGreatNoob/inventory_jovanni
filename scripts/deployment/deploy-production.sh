@@ -22,6 +22,16 @@ fi
 DB_CONTAINER="${DB_CONTAINER:-inventory-jovanni-db}"
 COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.prod.yml}"
 
+# Verify compose file exists
+if [ ! -f "$COMPOSE_FILE" ]; then
+    echo "❌ Error: Compose file '$COMPOSE_FILE' not found in $PROJECT_DIR"
+    echo "   Current directory: $(pwd)"
+    echo "   Files in directory:"
+    ls -la . | head -20
+    exit 1
+fi
+echo "✅ Using compose file: $COMPOSE_FILE"
+
 # Step 1: Backup database (non-blocking)
 echo ""
 echo "📦 Step 1: Database Backup"
@@ -46,9 +56,31 @@ else
     echo "ℹ️  Not a git repository, skipping git pull"
 fi
 
-# Step 3: Install PHP dependencies inside the app service
+# Step 3: Stop existing containers FIRST to free up ports
 echo ""
-echo "🧩 Step 3: Installing PHP dependencies via app container (Composer)..."
+echo "🛑 Step 3: Stopping existing containers..."
+cd "$PROJECT_DIR"
+docker compose -f "$COMPOSE_FILE" down --remove-orphans --timeout 30 || docker-compose -f "$COMPOSE_FILE" down --remove-orphans --timeout 30 || true
+
+# Force stop any containers that might still be running
+echo "🔍 Checking for containers still using port 80..."
+if command -v lsof >/dev/null 2>&1; then
+    # Find and kill process using port 80
+    PID=$(sudo lsof -ti:80 2>/dev/null || true)
+    if [ -n "$PID" ]; then
+        echo "⚠️  Found process $PID using port 80, stopping it..."
+        sudo kill -9 "$PID" 2>/dev/null || true
+        sleep 2
+    fi
+fi
+
+# Force remove any containers with our project name that might still exist
+docker ps -a --filter "name=inventory-jovanni" --format "{{.ID}}" | xargs -r docker rm -f 2>/dev/null || true
+echo "✅ Containers stopped, port 80 should be free"
+
+# Step 4: Install PHP dependencies inside the app service
+echo ""
+echo "🧩 Step 4: Installing PHP dependencies via app container (Composer)..."
 docker compose -f "$COMPOSE_FILE" run --rm --entrypoint "" app \
   bash -lc "git config --global --add safe.directory /var/www && \
             composer install --no-dev --optimize-autoloader" || {
@@ -56,19 +88,14 @@ docker compose -f "$COMPOSE_FILE" run --rm --entrypoint "" app \
     exit 1
   }
 
-# Step 4: Build frontend assets inside the app service
+# Step 5: Build frontend assets inside the app service
 echo ""
-echo "🎨 Step 4: Building frontend assets via app container (Vite)..."
+echo "🎨 Step 5: Building frontend assets via app container (Vite)..."
 docker compose -f "$COMPOSE_FILE" run --rm --entrypoint "" app \
   bash -lc "if [ ! -d node_modules ]; then npm ci; fi && npm run build" || {
     echo "❌ Asset build failed inside app container. Aborting deployment."
     exit 1
   }
-
-# Step 5: Stop containers gracefully
-echo ""
-echo "🛑 Step 5: Stopping containers..."
-docker compose -f "$COMPOSE_FILE" down || docker-compose -f "$COMPOSE_FILE" down || true
 
 # Step 6: Build and start containers
 echo ""

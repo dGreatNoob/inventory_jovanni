@@ -6,6 +6,6 @@
         <x-app-logo-icon class="h-12 w-16 fill-current text-white dark:text-white" />
     </div>
     <div class="ms-3 grid flex-1 text-start text-sm">
-        <span class="truncate leading-none font-semibold">Jovanni Bags (staging)</span>
+        <span class="truncate leading-none font-semibold">Jovanni Bags</span>
     </div>
 </div>

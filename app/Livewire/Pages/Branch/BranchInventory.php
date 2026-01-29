@@ -37,7 +37,16 @@ class BranchInventory extends Component
     public $showUploadModal = false;
     public $showResultsModal = false;
     public $showSuccessModal = false;
+    public $showCustomerSalesModal = false;
     public $successMessage = '';
+
+    // Customer sales properties
+    public $salesBarcodeInput = '';
+    public $selectedSalesProduct = null;
+    public $salesQuantity = 1;
+    public $salesItems = [];
+    public $selectedAgentId = null;
+    public $availableAgents = [];
 
     // File upload properties
     public $textFile;
@@ -49,6 +58,16 @@ class BranchInventory extends Component
     public $validBarcodes = [];
     public $invalidBarcodes = [];
     public $similarBarcodes = [];
+
+    // Audit-specific properties
+    public $auditResults = [];
+    public $missingItems = [];      // Allocated but not scanned
+    public $extraItems = [];        // Scanned but not allocated
+    public $quantityVariances = []; // Quantity mismatches
+    public $auditDate = null;
+    public ?int $existingAuditIdForDay = null;
+    public ?string $existingAuditCreatedAtForDay = null;
+    public ?string $existingAuditDay = null;
 
     // Inline editing properties
     public $editingShipmentId = null;
@@ -68,6 +87,7 @@ class BranchInventory extends Component
     public function mount()
     {
         $this->loadBatches();
+        $this->loadAgents();
     }
 
     /**
@@ -105,6 +125,14 @@ class BranchInventory extends Component
                 'last_shipment_date' => $this->getLastShipmentDateForBatch($batchName),
             ];
         });
+    }
+
+    /**
+     * Load all available agents
+     */
+    protected function loadAgents()
+    {
+        $this->availableAgents = \App\Models\Agent::orderBy('name')->get();
     }
 
     /**
@@ -256,12 +284,12 @@ class BranchInventory extends Component
             ];
         })->values();
 
-        // Add promo information to each product
+        // Add active promos count to each product
         $this->branchProducts = $this->branchProducts->map(function ($product) {
             $productId = $product['id'];
             $batchAllocationIds = collect($product['shipments'])->pluck('batch_allocation_id')->filter()->unique();
 
-            $promo = Promo::where('product', 'like', '%' . (string)$productId . '%')
+            $activePromosCount = Promo::where('product', 'like', '%' . (string)$productId . '%')
                 ->where(function($q) use ($batchAllocationIds) {
                     $q->where(function($sub) use ($batchAllocationIds) {
                         foreach ($batchAllocationIds as $id) {
@@ -271,9 +299,9 @@ class BranchInventory extends Component
                 })
                 ->where('startDate', '<=', now())
                 ->where('endDate', '>=', now())
-                ->first();
+                ->count();
 
-            $product['promo_name'] = $promo ? $promo->name : 'none';
+            $product['active_promos_count'] = $activePromosCount;
             return $product;
         });
     }
@@ -508,159 +536,112 @@ class BranchInventory extends Component
     }
 
     /**
-     * Save matched barcodes to database
+     * Save audit results to database
      */
-    public function saveMatchedBarcodesToDatabase()
+    public function saveAuditResults()
     {
-        if (!$this->selectedBranchId || empty($this->validBarcodes)) {
+        if (!$this->selectedBranchId || empty($this->auditResults)) {
             return;
         }
 
         try {
-            // Save only the valid barcodes, distributing the quantity across available items
-            foreach ($this->validBarcodes as $barcode => $result) {
-                $items = \App\Models\BranchAllocationItem::where(function($q) use ($barcode) {
-                    $q->where('product_snapshot_barcode', $barcode)
-                      ->orWhereHas('product', function($sub) use ($barcode) {
-                          $sub->where('barcode', $barcode);
-                      });
-                })
-                ->whereHas('branchAllocation', function($q) {
-                    $q->where('branch_id', $this->selectedBranchId);
-                })
-                ->whereHas('branchAllocation.shipments', function ($q) {
-                    $q->where('shipping_status', 'completed');
-                })
-                ->where('box_id', null) // Only unpacked items
-                ->orderBy('id')
-                ->get();
+            // Prevent duplicates: only one audit per branch per calendar day
+            $auditDay = $this->auditDate ? $this->auditDate->toDateString() : now()->toDateString();
+            $existing = Activity::query()
+                ->where('log_name', 'inventory_audit')
+                ->where('subject_type', Branch::class)
+                ->where('subject_id', $this->selectedBranchId)
+                ->whereDate('created_at', $auditDay)
+                ->latest('created_at')
+                ->first();
 
-                $remaining = $result['quantity_sold'];
-                foreach ($items as $item) {
-                    $available = $item->quantity - $item->sold_quantity;
-                    if ($available > 0 && $remaining > 0) {
-                        $increment = min($remaining, $available);
-                        $item->increment('sold_quantity', $increment);
-                        $remaining -= $increment;
-                    }
-                    if ($remaining <= 0) break;
-                }
+            if ($existing) {
+                $this->existingAuditIdForDay = $existing->id;
+                $this->existingAuditCreatedAtForDay = optional($existing->created_at)->toDateTimeString();
+                $this->existingAuditDay = $auditDay;
+
+                $this->addError(
+                    'audit',
+                    "An audit is already saved for this branch on {$auditDay} (saved at {$this->existingAuditCreatedAtForDay})."
+                );
+
+                return;
             }
+
+            // Save audit record to activity logs
+            Activity::create([
+                'log_name' => 'inventory_audit',
+                'description' => "Inventory audit for branch {$this->selectedBranchId}",
+                'subject_type' => Branch::class,
+                'subject_id' => $this->selectedBranchId,
+                'causer_type' => null,
+                'causer_id' => null,
+                'properties' => [
+                    'audit_date' => $this->auditDate ? $this->auditDate->toDateTimeString() : now()->toDateTimeString(),
+                    'total_scanned' => $this->auditResults['total_scanned'] ?? 0,
+                    'total_allocated' => $this->auditResults['total_allocated'] ?? 0,
+                    'total_products_allocated' => $this->auditResults['total_products_allocated'] ?? 0,
+                    'total_products_scanned' => $this->auditResults['total_products_scanned'] ?? 0,
+                    'missing_items' => $this->missingItems,
+                    'extra_items' => $this->extraItems,
+                    'quantity_variances' => $this->quantityVariances,
+                    'missing_items_count' => count($this->missingItems),
+                    'extra_items_count' => count($this->extraItems),
+                    'quantity_variances_count' => count($this->quantityVariances),
+                ],
+            ]);
 
             // Close modal and refresh data
             $this->showResultsModal = false;
             $this->loadBranchProducts();
 
             // Prepare success message
-            $savedCount = count($this->validBarcodes);
-            $skippedCount = count($this->invalidBarcodes);
-            $message = "{$savedCount} barcode(s) saved successfully!";
-
-            if ($skippedCount > 0) {
-                $message .= " {$skippedCount} barcode(s) were skipped due to quantity limits.";
+            $totalVariances = count($this->missingItems) + count($this->extraItems) + count($this->quantityVariances);
+            $message = "Inventory audit saved successfully! ";
+            
+            if ($totalVariances > 0) {
+                $message .= "Found {$totalVariances} variance(s): ";
+                $parts = [];
+                if (count($this->missingItems) > 0) {
+                    $parts[] = count($this->missingItems) . " missing";
+                }
+                if (count($this->extraItems) > 0) {
+                    $parts[] = count($this->extraItems) . " extra";
+                }
+                if (count($this->quantityVariances) > 0) {
+                    $parts[] = count($this->quantityVariances) . " quantity mismatch(es)";
+                }
+                $message .= implode(", ", $parts) . ".";
+            } else {
+                $message .= "No variances found - inventory matches allocation.";
             }
 
-            // Log activity for each updated product
-            foreach ($this->validBarcodes as $barcode => $result) {
-                Activity::create([
-                    'log_name' => 'branch_inventory',
-                    'description' => "Updated quantity sold for product {$barcode} in branch {$this->selectedBranchId}",
-                    'subject_type' => BranchAllocationItem::class,
-                    'subject_id' => null, // Since multiple items
-                    'causer_type' => null, // No user
-                    'causer_id' => null,
-                    'properties' => [
-                        'barcode' => $barcode,
-                        'product_name' => $result['product_name'],
-                        'quantity_sold' => $result['quantity_sold'],
-                        'branch_id' => $this->selectedBranchId,
-                        'uploaded_file' => true,
-                    ],
-                ]);
-            }
-
-            $this->successMessage = $message;
             $this->showSuccessModal = true;
 
         } catch (\Exception $e) {
-            $this->addError('save', 'Error saving data: ' . $e->getMessage());
+            $this->addError('save', 'Error saving audit data: ' . $e->getMessage());
         }
     }
 
     /**
-     * Sync similar barcodes to database
+     * Shortcut: open today's audit in reports (if exists).
      */
-    public function syncSimilarBarcodes()
+    public function viewTodaysAudit()
     {
-        if (!$this->selectedBranchId || empty($this->similarBarcodes)) {
+        if (!$this->selectedBranchId) {
             return;
         }
 
-        try {
-            foreach ($this->similarBarcodes as $item) {
-                $barcode = $item['existing_barcode'];
-                $quantitySold = $item['quantity_sold'];
+        $auditDay = $this->existingAuditDay
+            ?? ($this->auditDate ? $this->auditDate->toDateString() : now()->toDateString());
 
-                $items = \App\Models\BranchAllocationItem::where(function($q) use ($barcode) {
-                    $q->where('product_snapshot_barcode', $barcode)
-                      ->orWhereHas('product', function($sub) use ($barcode) {
-                          $sub->where('barcode', $barcode);
-                      });
-                })
-                ->whereHas('branchAllocation', function($q) {
-                    $q->where('branch_id', $this->selectedBranchId);
-                })
-                ->whereHas('branchAllocation.shipments', function ($q) {
-                    $q->where('shipping_status', 'completed');
-                })
-                ->where('box_id', null)
-                ->orderBy('id')
-                ->get();
-
-                $remaining = $quantitySold;
-                foreach ($items as $item) {
-                    $available = $item->quantity - $item->sold_quantity;
-                    if ($available > 0 && $remaining > 0) {
-                        $increment = min($remaining, $available);
-                        $item->increment('sold_quantity', $increment);
-                        $remaining -= $increment;
-                    }
-                    if ($remaining <= 0) break;
-                }
-            }
-
-            $this->showResultsModal = false;
-            $this->loadBranchProducts();
-
-            // Log activity for each synced product
-            foreach ($this->similarBarcodes as $item) {
-                Activity::create([
-                    'log_name' => 'branch_inventory',
-                    'description' => "Synced similar barcode {$item['uploaded_barcode']} to {$item['existing_barcode']} in branch {$this->selectedBranchId}",
-                    'subject_type' => BranchAllocationItem::class,
-                    'subject_id' => null, // Since multiple items
-                    'causer_type' => null, // No user
-                    'causer_id' => null,
-                    'properties' => [
-                        'barcode' => $item['existing_barcode'],
-                        'uploaded_barcode' => $item['uploaded_barcode'],
-                        'product_name' => $item['product_name'],
-                        'quantity_sold' => $item['quantity_sold'],
-                        'branch_id' => $this->selectedBranchId,
-                        'uploaded_file' => true,
-                        'synced_similar' => true,
-                    ],
-                ]);
-            }
-
-            $syncedCount = count($this->similarBarcodes);
-            $this->successMessage = "{$syncedCount} similar barcode(s) synced successfully!";
-            $this->showSuccessModal = true;
-
-        } catch (\Exception $e) {
-            $this->addError('sync', 'Error syncing data: ' . $e->getMessage());
-        }
+        return redirect()->to(route('reports.branch-inventory', [
+            'selectedBranch' => $this->selectedBranchId,
+            'dateFrom' => $auditDay,
+            'dateTo' => $auditDay,
+        ]));
     }
+
 
     /**
      * Close the results modal
@@ -668,7 +649,14 @@ class BranchInventory extends Component
     public function closeResultsModal()
     {
         $this->showResultsModal = false;
-        $this->similarBarcodes = [];
+        $this->missingItems = [];
+        $this->extraItems = [];
+        $this->quantityVariances = [];
+        $this->auditResults = [];
+        $this->existingAuditIdForDay = null;
+        $this->existingAuditCreatedAtForDay = null;
+        $this->existingAuditDay = null;
+        $this->resetErrorBag('audit');
     }
 
     /**
@@ -730,93 +718,227 @@ class BranchInventory extends Component
     }
 
     /**
-     * Process barcode comparison with current branch products
+     * Process barcode comparison for inventory audit
+     * Detects variances: missing items, extra items, and quantity mismatches
      */
     protected function processBarcodeComparison($uploadedBarcodes)
     {
-        // Get all products from current branch products
-        $allProducts = [];
-        foreach ($this->branchProducts as $product) {
-            if (!empty($product['barcode']) && $product['barcode'] !== 'N/A') {
-                $allProducts[$product['barcode']] = [
-                    'name' => $product['name'],
-                    'sku' => $product['sku'],
-                    'quantity' => $product['total_quantity'],
-                    'quantity_sold' => 0,
-                ];
-            }
+        if (!$this->selectedBranchId) {
+            return;
         }
 
-        // Count matches for each barcode
-        $barcodeCount = array_count_values($uploadedBarcodes);
-        $matches = [];
+        // Get all allocated products for this branch from BranchAllocationItem
+        $allocatedItems = BranchAllocationItem::with('product')
+            ->whereHas('branchAllocation', function ($q) {
+                $q->where('branch_id', $this->selectedBranchId);
+            })
+            ->whereHas('branchAllocation.shipments', function ($q) {
+                $q->where('shipping_status', 'completed');
+            })
+            ->where('box_id', null) // Only unpacked items
+            ->get();
 
-        foreach ($barcodeCount as $barcode => $count) {
-            if (isset($allProducts[$barcode])) {
-                $matches[$barcode] = [
-                    'product_name' => $allProducts[$barcode]['name'],
-                    'sku' => $allProducts[$barcode]['sku'],
-                    'quantity_sold' => $count,
-                    'available_quantity' => $allProducts[$barcode]['quantity'],
-                ];
-            }
-        }
-
-        $this->matchedBarcodeCount = count($matches);
-        $this->barcodeMatches = $matches;
-        $this->uploadResults = $matches;
-
-        // Collect unmatched barcodes
-        $this->unmatchedBarcodes = [];
-        foreach ($barcodeCount as $barcode => $count) {
-            if (!isset($matches[$barcode])) {
-                $this->unmatchedBarcodes[$barcode] = $count;
-            }
-        }
-
-        // Find similar barcodes (same first 10 digits, different last 6 digits)
-        $this->similarBarcodes = [];
-        foreach ($this->unmatchedBarcodes as $uploadedBarcode => $count) {
-            $prefix = substr($uploadedBarcode, 0, 10);
-            $suffix = substr($uploadedBarcode, 10);
-            foreach (array_keys($allProducts) as $existingBarcode) {
-                $existingPrefix = substr($existingBarcode, 0, 10);
-                $existingSuffix = substr($existingBarcode, 10);
-                if ($prefix === $existingPrefix && $suffix !== $existingSuffix) {
-                    $this->similarBarcodes[] = [
-                        'uploaded_barcode' => $uploadedBarcode,
-                        'existing_barcode' => $existingBarcode,
-                        'product_name' => $allProducts[$existingBarcode]['name'],
-                        'sku' => $allProducts[$existingBarcode]['sku'],
-                        'quantity_sold' => $count,
+        // Build allocated products map by barcode
+        $allocatedProducts = [];
+        foreach ($allocatedItems as $item) {
+            $barcode = $item->getDisplayBarcodeAttribute();
+            if (!empty($barcode) && $barcode !== 'N/A') {
+                if (!isset($allocatedProducts[$barcode])) {
+                    $allocatedProducts[$barcode] = [
+                        'product_id' => $item->product_id,
+                        'product_name' => $item->getDisplayNameAttribute(),
+                        'sku' => $item->getDisplaySkuAttribute(),
+                        'allocated_quantity' => 0,
                     ];
-                    break; // One match per uploaded barcode
                 }
+                $allocatedProducts[$barcode]['allocated_quantity'] += $item->quantity;
             }
         }
 
-        // Validate matched barcodes for quantity limits
-        $this->validateBarcodeQuantities($matches);
+        // Count scanned barcodes
+        $scannedBarcodeCount = array_count_values($uploadedBarcodes);
+        $this->uploadedBarcodeCount = count($uploadedBarcodes);
 
-        // Update the quantity sold in the branch products data
-        $this->updateQuantitySoldInProducts($matches);
+        // Initialize audit results
+        $this->missingItems = [];
+        $this->extraItems = [];
+        $this->quantityVariances = [];
+        $this->auditDate = now();
+
+        // Detect missing items (allocated but not scanned)
+        foreach ($allocatedProducts as $barcode => $product) {
+            $scannedCount = $scannedBarcodeCount[$barcode] ?? 0;
+            
+            if ($scannedCount == 0) {
+                // Missing item - allocated but not scanned
+                $this->missingItems[] = [
+                    'barcode' => $barcode,
+                    'product_name' => $product['product_name'],
+                    'sku' => $product['sku'],
+                    'allocated_quantity' => $product['allocated_quantity'],
+                    'scanned_quantity' => 0,
+                    'variance' => -$product['allocated_quantity'],
+                ];
+            } elseif ($scannedCount != $product['allocated_quantity']) {
+                // Quantity variance - scanned count doesn't match allocated
+                $this->quantityVariances[] = [
+                    'barcode' => $barcode,
+                    'product_name' => $product['product_name'],
+                    'sku' => $product['sku'],
+                    'allocated_quantity' => $product['allocated_quantity'],
+                    'scanned_quantity' => $scannedCount,
+                    'variance' => $scannedCount - $product['allocated_quantity'],
+                ];
+            }
+        }
+
+        // Detect extra items (scanned but not allocated to this branch)
+        foreach ($scannedBarcodeCount as $barcode => $scannedCount) {
+            if (!isset($allocatedProducts[$barcode])) {
+                // Extra item - scanned but not allocated
+                $this->extraItems[] = [
+                    'barcode' => $barcode,
+                    'scanned_quantity' => $scannedCount,
+                ];
+            }
+        }
+
+        // Build audit results summary
+        $this->auditResults = [
+            'total_allocated' => array_sum(array_column($allocatedProducts, 'allocated_quantity')),
+            'total_scanned' => array_sum($scannedBarcodeCount),
+            'total_products_allocated' => count($allocatedProducts),
+            'total_products_scanned' => count($scannedBarcodeCount),
+            'missing_items_count' => count($this->missingItems),
+            'extra_items_count' => count($this->extraItems),
+            'quantity_variances_count' => count($this->quantityVariances),
+        ];
+
+        // Keep matched count for UI compatibility
+        $this->matchedBarcodeCount = count($allocatedProducts) - count($this->missingItems);
+        $this->barcodeMatches = [];
+        $this->uploadResults = [];
     }
 
     /**
-     * Validate barcode quantities against available inventory
+     * Open customer sales modal
      */
-    protected function validateBarcodeQuantities($matches)
+    public function openCustomerSalesModal()
     {
-        $this->validBarcodes = [];
-        $this->invalidBarcodes = [];
+        $this->showCustomerSalesModal = true;
+        $this->resetSalesModal();
+    }
 
-        foreach ($matches as $barcode => $result) {
-            $items = \App\Models\BranchAllocationItem::with('product')
-                ->where(function($q) use ($barcode) {
-                    $q->where('product_snapshot_barcode', $barcode)
-                      ->orWhereHas('product', function($sub) use ($barcode) {
-                          $sub->where('barcode', $barcode);
-                      });
+    /**
+     * Close customer sales modal
+     */
+    public function closeCustomerSalesModal()
+    {
+        $this->showCustomerSalesModal = false;
+        $this->resetSalesModal();
+    }
+
+    /**
+     * Reset sales modal properties
+     */
+    protected function resetSalesModal()
+    {
+        $this->salesBarcodeInput = '';
+        $this->selectedSalesProduct = null;
+        $this->salesQuantity = 1;
+        $this->salesItems = [];
+        $this->selectedAgentId = null;
+    }
+
+    /**
+     * Process sales barcode input changes
+     */
+    public function updatedSalesBarcodeInput()
+    {
+        $barcode = trim($this->salesBarcodeInput);
+        if (empty($barcode)) {
+            $this->selectedSalesProduct = null;
+            return;
+        }
+
+        // Find product by barcode in current branch products
+        $product = collect($this->branchProducts)->first(function ($product) use ($barcode) {
+            return $product['barcode'] === $barcode;
+        });
+
+        if ($product) {
+            $this->selectedSalesProduct = $product;
+        } else {
+            $this->selectedSalesProduct = null;
+        }
+    }
+
+    /**
+     * Add sales item to the transaction
+     */
+    public function addSalesItem()
+    {
+        if (!$this->selectedSalesProduct || !$this->salesQuantity || $this->salesQuantity < 1) {
+            return;
+        }
+
+        // Check if quantity exceeds available
+        if ($this->salesQuantity > $this->selectedSalesProduct['remaining_quantity']) {
+            session()->flash('error', 'Quantity exceeds available stock.');
+            return;
+        }
+
+        $item = [
+            'id' => $this->selectedSalesProduct['id'],
+            'name' => $this->selectedSalesProduct['name'],
+            'barcode' => $this->selectedSalesProduct['barcode'],
+            'quantity' => $this->salesQuantity,
+            'unit_price' => $this->selectedSalesProduct['unit_price'],
+            'total' => $this->salesQuantity * $this->selectedSalesProduct['unit_price'],
+        ];
+
+        $this->salesItems[] = $item;
+
+        // Reset for next item
+        $this->salesBarcodeInput = '';
+        $this->selectedSalesProduct = null;
+        $this->salesQuantity = 1;
+    }
+
+    /**
+     * Remove sales item from transaction
+     */
+    public function removeSalesItem($index)
+    {
+        if (isset($this->salesItems[$index])) {
+            unset($this->salesItems[$index]);
+            $this->salesItems = array_values($this->salesItems); // Reindex array
+        }
+    }
+
+    /**
+     * Clear all sales items
+     */
+    public function clearSalesItems()
+    {
+        $this->salesItems = [];
+    }
+
+    /**
+     * Save customer sales transaction
+     */
+    public function saveCustomerSales()
+    {
+        if (empty($this->salesItems)) {
+            return;
+        }
+
+        try {
+            // Process each sales item
+            foreach ($this->salesItems as $item) {
+                // Find and update the corresponding branch allocation items
+                $allocationItems = BranchAllocationItem::whereHas('product', function($q) use ($item) {
+                    $q->where('id', $item['id']);
                 })
                 ->whereHas('branchAllocation', function($q) {
                     $q->where('branch_id', $this->selectedBranchId);
@@ -825,36 +947,56 @@ class BranchInventory extends Component
                     $q->where('shipping_status', 'completed');
                 })
                 ->where('box_id', null) // Only unpacked items
+                ->orderBy('id')
                 ->get();
 
-            $totalAllocated = $items->sum('quantity');
-            $totalAlreadySold = $items->sum('sold_quantity');
-            $newSold = $result['quantity_sold'];
-
-            if ($totalAlreadySold + $newSold <= $totalAllocated) {
-                $this->validBarcodes[$barcode] = $result;
-            } else {
-                $this->invalidBarcodes[$barcode] = [
-                    'quantity_sold' => $newSold,
-                    'available_quantity' => $totalAllocated - $totalAlreadySold,
-                    'already_sold' => $totalAlreadySold,
-                    'product_name' => $result['product_name'],
-                    'sku' => $result['sku']
-                ];
+                $remainingQuantity = $item['quantity'];
+                foreach ($allocationItems as $allocationItem) {
+                    $available = $allocationItem->quantity - $allocationItem->sold_quantity;
+                    if ($available > 0 && $remainingQuantity > 0) {
+                        $increment = min($remainingQuantity, $available);
+                        $allocationItem->increment('sold_quantity', $increment);
+                        $remainingQuantity -= $increment;
+                    }
+                    if ($remainingQuantity <= 0) break;
+                }
             }
-        }
-    }
 
-    /**
-     * Update quantity sold in the products data
-     */
-    protected function updateQuantitySoldInProducts($matches)
-    {
-        foreach ($this->branchProducts as &$product) {
-            if (!empty($product['barcode']) && $product['barcode'] !== 'N/A' && isset($matches[$product['barcode']])) {
-                $product['total_sold'] += $matches[$product['barcode']]['quantity_sold'];
-                $product['remaining_quantity'] = $product['total_quantity'] - $product['total_sold'];
+            // Log activity
+            $agent = $this->selectedAgentId ? \App\Models\Agent::find($this->selectedAgentId) : null;
+            foreach ($this->salesItems as $item) {
+                Activity::create([
+                    'log_name' => 'branch_inventory',
+                    'description' => "Customer sale recorded for product {$item['barcode']} in branch {$this->selectedBranchId}" . ($agent ? " by agent {$agent->name}" : ""),
+                    'subject_type' => BranchAllocationItem::class,
+                    'subject_id' => null,
+                    'causer_type' => null,
+                    'causer_id' => null,
+                    'properties' => [
+                        'product_id' => $item['id'],
+                        'product_name' => $item['name'],
+                        'barcode' => $item['barcode'],
+                        'quantity_sold' => $item['quantity'],
+                        'unit_price' => $item['unit_price'],
+                        'total_amount' => $item['total'],
+                        'branch_id' => $this->selectedBranchId,
+                        'agent_id' => $this->selectedAgentId,
+                        'agent_name' => $agent ? $agent->name : null,
+                        'customer_sale' => true,
+                    ],
+                ]);
             }
+
+            // Refresh data
+            $this->loadBranchProducts();
+
+            // Close modal and show success
+            $this->closeCustomerSalesModal();
+            $this->successMessage = 'Customer sales recorded successfully!';
+            $this->showSuccessModal = true;
+
+        } catch (\Exception $e) {
+            session()->flash('error', 'Error recording sales: ' . $e->getMessage());
         }
     }
 

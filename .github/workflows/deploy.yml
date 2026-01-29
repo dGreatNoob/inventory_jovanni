@@ -57,6 +57,7 @@ jobs:
         with:
           php-version: 8.3
           tools: composer:v2
+          cache: composer
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -184,24 +185,13 @@ jobs:
         with:
           php-version: 8.3
           tools: composer:v2
+          cache: composer
 
       - name: Add Flux Credentials
         run: composer config http-basic.composer.fluxui.dev "${{ secrets.FLUX_USERNAME }}" "${{ secrets.FLUX_LICENSE_KEY }}"
 
       - name: Install PHP Dependencies
         run: composer install --no-dev --optimize-autoloader --no-interaction
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-
-      - name: Install Node Dependencies
-        run: npm ci
-
-      - name: Build Frontend Assets
-        run: npm run build
 
       - name: Create deployment package
         run: |
@@ -409,3 +399,47 @@ jobs:
           echo "1. Extract the zip file on your server" >> $GITHUB_STEP_SUMMARY
           echo "2. Configure \`.env\` file" >> $GITHUB_STEP_SUMMARY
           echo "3. Run \`./deploy.sh ${{ steps.env.outputs.environment }}\`" >> $GITHUB_STEP_SUMMARY
+
+  deploy-to-staging:
+    needs: build-and-package
+    runs-on: self-hosted
+    if: |
+      always() && 
+      (needs.build-and-package.result == 'success' || github.event.inputs.skip_tests == 'true') &&
+      (github.ref == 'refs/heads/staging' || startsWith(github.ref, 'refs/tags/staging-'))
+    environment:
+      name: staging
+      url: ${{ vars.STAGING_URL }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup deployment environment
+        run: |
+          echo "🔧 Setting up deployment environment..."
+          # Ensure scripts are executable
+          chmod +x scripts/deployment/*.sh || true
+          # Create backups directory
+          mkdir -p backups
+
+      - name: Run deployment script
+        run: |
+          echo "🚀 Starting automated deployment to staging..."
+          bash scripts/deployment/deploy-staging.sh
+        env:
+          DB_CONTAINER: inventory-jovanni-db
+          COMPOSE_FILE: docker-compose.yml
+
+      - name: Deployment Status
+        run: |
+          echo "## ✅ Staging Deployment Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Deployed at:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Access:** ${{ vars.STAGING_URL }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📊 Container Status" >> $GITHUB_STEP_SUMMARY
+          docker compose ps >> $GITHUB_STEP_SUMMARY || echo "Could not get container status" >> $GITHUB_STEP_SUMMARY

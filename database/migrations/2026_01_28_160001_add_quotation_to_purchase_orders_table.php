@@ -6,26 +6,26 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
         Schema::table('purchase_orders', function (Blueprint $table) {
-            // In some environments the quotation column may not exist yet (fresh databases, CI)
             if (! Schema::hasColumn('purchase_orders', 'quotation')) {
-                // Create the column as nullable if it doesn't exist
-                $table->string('quotation')->nullable();
-            } else {
-                // Otherwise, just make it nullable
-                $table->string('quotation')->nullable()->change();
+                $table->string('quotation')->nullable()->after('payment_terms');
             }
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
         Schema::table('purchase_orders', function (Blueprint $table) {
             if (Schema::hasColumn('purchase_orders', 'quotation')) {
-                // Revert to non-nullable only if the column exists
-                $table->string('quotation')->nullable(false)->change();
+                $table->dropColumn('quotation');
             }
         });
     }

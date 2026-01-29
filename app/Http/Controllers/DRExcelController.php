@@ -15,23 +15,51 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 
 class DRExcelController extends Controller
 {
-    public function exportDR(Request $request, $batchId)
+    public function exportDR(Request $request, $batchId, $branchId = null)
     {
         $batch = BatchAllocation::with([
             'branchAllocations.branch',
             'branchAllocations.items.product'
         ])->findOrFail($batchId);
 
+        // If branchId is provided, filter to only that branch
+        if ($branchId) {
+            $batch->branchAllocations = $batch->branchAllocations->filter(function ($branchAllocation) use ($branchId) {
+                return $branchAllocation->id == $branchId;
+            });
+        }
+
         try {
             // Create new Spreadsheet object
             $spreadsheet = new Spreadsheet();
-            $sheet = $spreadsheet->getActiveSheet();
 
-            // Set sheet title
-            $sheet->setTitle('DR - ' . $batch->ref_no);
+            // Get all mother DRs for the branch(es)
+            $motherDRs = collect();
+            foreach ($batch->branchAllocations as $branchAllocation) {
+                $mothers = DeliveryReceipt::where('branch_allocation_id', $branchAllocation->id)
+                    ->where('type', 'mother')
+                    ->orderBy('created_at')
+                    ->get();
+                $motherDRs = $motherDRs->merge($mothers);
+            }
 
-            // Add data to the spreadsheet
-            $this->addDataToSheet($sheet, $batch);
+            if ($motherDRs->isEmpty()) {
+                // Fallback to one sheet if no mothers
+                $sheet = $spreadsheet->getActiveSheet();
+                $sheet->setTitle('DR - ' . $batch->ref_no);
+                $this->addDataToSheet($sheet, $batch, null);
+            } else {
+                // Create a sheet for each mother DR
+                foreach ($motherDRs as $index => $motherDR) {
+                    if ($index == 0) {
+                        $sheet = $spreadsheet->getActiveSheet();
+                    } else {
+                        $sheet = $spreadsheet->createSheet();
+                    }
+                    $sheet->setTitle('DR - ' . $motherDR->dr_number);
+                    $this->addDataToSheet($sheet, $batch, $motherDR);
+                }
+            }
 
             // Create Excel file
             $writer = new Xlsx($spreadsheet);
@@ -61,7 +89,7 @@ class DRExcelController extends Controller
         }
     }
 
-    private function addDataToSheet($sheet, $batch)
+    private function addDataToSheet($sheet, $batch, $motherDR = null)
     {
         $row = 1;
 
@@ -88,23 +116,30 @@ class DRExcelController extends Controller
         $totalQty = 0;
         $uniqueSkus = collect();
 
-        // Process each branch allocation
-        foreach ($batch->branchAllocations as $branchAllocation) {
-            $branch = $branchAllocation->branch;
+        if ($motherDR) {
+            // Get all DRs in this chain (mother and children)
+            $drIds = [$motherDR->id];
+            $childDRs = DeliveryReceipt::where('parent_dr_id', $motherDR->id)->get();
+            $drIds = array_merge($drIds, $childDRs->pluck('id')->toArray());
+
+            // Get boxes for these DRs
+            $boxIds = DeliveryReceipt::whereIn('id', $drIds)->pluck('box_id')->toArray();
+
+            // Get scanned items from these boxes
+            $scannedItems = \App\Models\BranchAllocationItem::whereIn('box_id', $boxIds)
+                ->where('scanned_quantity', '>', 0)
+                ->with('product', 'branchAllocation.branch')
+                ->get()
+                ->groupBy('product_id');
+
+            $drNumber = $motherDR->dr_number;
+            $branch = $motherDR->branchAllocation->branch;
             $storeCode = $branch->code ?? '';
 
-            // Get the mother DR number for this branch allocation
-            $motherDr = DeliveryReceipt::where('branch_allocation_id', $branchAllocation->id)
-                ->where('type', 'mother')
-                ->first();
-            $drNumber = $motherDr ? $motherDr->dr_number : $batch->ref_no;
-
-            // Only process original allocation items (without box_id)
-            $originalItems = $branchAllocation->items()->whereNull('box_id')->get();
-
-            // Process each original item
-            foreach ($originalItems as $item) {
-                $product = $item->product;
+            // Process scanned items
+            foreach ($scannedItems as $productId => $items) {
+                $totalScannedQty = $items->sum('scanned_quantity');
+                $product = $items->first()->product;
                 $skuNumber = $product->sku ?? $product->id;
 
                 $sheet->setCellValue('A' . $row, $drNumber);
@@ -114,16 +149,55 @@ class DRExcelController extends Controller
                 $sheet->setCellValue('E' . $row, '72'); // Sub-Dept Code - fixed
                 $sheet->setCellValue('F' . $row, '7'); // Class Code - fixed
                 $sheet->setCellValue('G' . $row, $skuNumber);
-                $sheet->setCellValue('H' . $row, $item->quantity);
+                $sheet->setCellValue('H' . $row, $totalScannedQty);
 
                 // Add borders to all cells
                 for ($colIndex = 'A'; $colIndex <= 'H'; $colIndex++) {
                     $sheet->getStyle($colIndex . $row)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
                 }
 
-                $totalQty += $item->quantity;
+                $totalQty += $totalScannedQty;
                 $uniqueSkus->push($skuNumber);
                 $row++;
+            }
+        } else {
+            // Fallback: process each branch allocation (original logic for allocated items)
+            foreach ($batch->branchAllocations as $branchAllocation) {
+                $branch = $branchAllocation->branch;
+                $storeCode = $branch->code ?? '';
+
+                // Get the mother DR number for this branch allocation
+                $motherDr = DeliveryReceipt::where('branch_allocation_id', $branchAllocation->id)
+                    ->where('type', 'mother')
+                    ->first();
+                $drNumber = $motherDr ? $motherDr->dr_number : $batch->ref_no;
+
+                // Only process original allocation items (without box_id)
+                $originalItems = $branchAllocation->items()->whereNull('box_id')->get();
+
+                // Process each original item
+                foreach ($originalItems as $item) {
+                    $product = $item->product;
+                    $skuNumber = $product->sku ?? $product->id;
+
+                    $sheet->setCellValue('A' . $row, $drNumber);
+                    $sheet->setCellValue('B' . $row, $storeCode);
+                    $sheet->setCellValue('C' . $row, \Carbon\Carbon::parse($batch->created_at)->format('dmY')); // Expected Delivery Date in ddmmyy format
+                    $sheet->setCellValue('D' . $row, '41'); // Dept. Code - fixed
+                    $sheet->setCellValue('E' . $row, '72'); // Sub-Dept Code - fixed
+                    $sheet->setCellValue('F' . $row, '7'); // Class Code - fixed
+                    $sheet->setCellValue('G' . $row, $skuNumber);
+                    $sheet->setCellValue('H' . $row, $item->quantity);
+
+                    // Add borders to all cells
+                    for ($colIndex = 'A'; $colIndex <= 'H'; $colIndex++) {
+                        $sheet->getStyle($colIndex . $row)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+                    }
+
+                    $totalQty += $item->quantity;
+                    $uniqueSkus->push($skuNumber);
+                    $row++;
+                }
             }
         }
 

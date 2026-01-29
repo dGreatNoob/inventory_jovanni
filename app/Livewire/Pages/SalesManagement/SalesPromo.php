@@ -91,10 +91,8 @@ class SalesPromo extends Component
             'promo_description',
             'startDate',
             'endDate',
-            'selected_batches',
             'selected_products',
             'promo_type',
-            'batchDropdown',
             'productDropdown',
         ]);
         $this->resetValidation();
@@ -109,8 +107,6 @@ class SalesPromo extends Component
             'promo_description' => 'nullable|string|max:500',
             'startDate' => 'required|date',
             'endDate' => 'required|date|after_or_equal:startDate',
-            'selected_batches' => 'required|array|min:1',
-            'selected_batches.*' => 'exists:batch_allocations,id',
             'selected_products' => 'required|array|min:1',
             'selected_products.*' => 'exists:products,id',
             'promo_type' => 'required|string|in:' . implode(',', $this->promo_type_options),
@@ -140,9 +136,7 @@ class SalesPromo extends Component
 
     // Validation messages
     protected $messages = [
-        'selected_batches.required' => 'Please select at least one batch.',
         'selected_products.required' => 'Please select at least one product.',
-        'edit_selected_batches.required' => 'Please select at least one batch.',
         'edit_selected_products.required' => 'Please select at least one product.',
     ];
 
@@ -163,7 +157,7 @@ class SalesPromo extends Component
             'description' => $this->promo_description,
             'startDate' => $this->startDate,
             'endDate' => $this->endDate,
-            'branch' => json_encode($this->selected_batches), // Still storing branch IDs but calling it batches in UI
+            'branch' => json_encode([]), // No batch selection required
             'product' => json_encode($this->selected_products),
             'second_product' => null,
             'type' => $this->promo_type,
@@ -178,7 +172,6 @@ class SalesPromo extends Component
             'promo_description',
             'startDate',
             'endDate',
-            'selected_batches',
             'selected_products',
             'promo_type',
         ]);
@@ -253,7 +246,7 @@ class SalesPromo extends Component
     }
 
     /**
-     * Check for overlapping promos
+     * Check for overlapping promos (simplified - checks product overlaps only, no batch requirement)
      */
     private function checkForOverlappingPromos($excludeId = null)
     {
@@ -262,7 +255,6 @@ class SalesPromo extends Component
         
         $startDate = $isEdit ? $this->edit_startDate : $this->startDate;
         $endDate = $isEdit ? $this->edit_endDate : $this->endDate;
-        $batches = $isEdit ? $this->edit_selected_batches : $this->selected_batches;
         $products = $isEdit ? $this->edit_selected_products : $this->selected_products;
 
         // Convert dates to Carbon for proper comparison
@@ -284,25 +276,17 @@ class SalesPromo extends Component
             $datesOverlap = ($newStart <= $existingEnd) && ($newEnd >= $existingStart);
             
             if ($datesOverlap) {
-                // Get batches and products from existing promo
-                $existingBatches = $this->safeJsonDecode($existingPromo->branch);
+                // Get products from existing promo
                 $existingMainProducts = $this->safeJsonDecode($existingPromo->product);
                 $existingSecondProducts = $this->safeJsonDecode($existingPromo->second_product);
 
-                // Check if any of our selected batches overlap with existing promo batches
-                $batchOverlap = array_intersect($batches, $existingBatches);
-                
-                if (!empty($batchOverlap)) {
-                    // Check if any of our selected products exist in the existing promo
-                    foreach ($products as $productId) {
-                        if (in_array($productId, $existingMainProducts) || in_array($productId, $existingSecondProducts)) {
-                            $conflictingPromos->push([
-                                'promo' => $existingPromo,
-                                'product_id' => $productId,
-                                'batch_ids' => $batchOverlap,
-                                'type' => 'main'
-                            ]);
-                        }
+                // Check if any of our selected products exist in the existing promo
+                foreach ($products as $productId) {
+                    if (in_array($productId, $existingMainProducts) || in_array($productId, $existingSecondProducts)) {
+                        $conflictingPromos->push([
+                            'promo' => $existingPromo,
+                            'product_id' => $productId,
+                        ]);
                     }
                 }
             }
@@ -317,11 +301,7 @@ class SalesPromo extends Component
                 $productName = $this->products->firstWhere('id', $productId)->name ?? 'Unknown Product';
                 $promoNames = $conflicts->pluck('promo.name')->unique()->implode(', ');
                 
-                // Get batch allocation ref_nos for the conflict
-                $batchIds = $conflicts->flatMap->batch_ids->unique();
-                $batchRefNos = $this->batchAllocations->whereIn('id', $batchIds)->pluck('ref_no')->implode(', ');
-                
-                $errorMessage = "Product '{$productName}' is already in promotion(s): {$promoNames} for batch allocation(s): {$batchRefNos} during the selected dates.";
+                $errorMessage = "Product '{$productName}' is already in promotion(s): {$promoNames} during the selected dates.";
                 
                 // Determine which field to show error on
                 $field = $isEdit ? 'edit_selected_products' : 'selected_products';
@@ -337,11 +317,11 @@ class SalesPromo extends Component
     }
 
     /**
-     * Check if a product is disabled for selected batches due to overlap
+     * Check if a product is disabled due to overlap (simplified - no batch requirement)
      */
-    private function isProductDisabledForBatches($productId, $batchIds, $startDate, $endDate, $excludePromoId = null)
+    private function isProductDisabled($productId, $startDate, $endDate, $excludePromoId = null)
     {
-        if (empty($batchIds) || empty($startDate) || empty($endDate)) {
+        if (empty($startDate) || empty($endDate)) {
             return false;
         }
 
@@ -361,15 +341,12 @@ class SalesPromo extends Component
             $datesOverlap = ($newStart <= $existingEnd) && ($newEnd >= $existingStart);
             
             if ($datesOverlap) {
-                // Get batches and products from existing promo
-                $existingBatches = $this->safeJsonDecode($existingPromo->branch);
+                // Get products from existing promo
                 $existingProducts = $this->safeJsonDecode($existingPromo->product);
                 $existingSecondProducts = $this->safeJsonDecode($existingPromo->second_product);
 
-                // Check if batch and product combination overlaps
-                $batchOverlap = array_intersect($batchIds, $existingBatches);
-                
-                if (!empty($batchOverlap) && (in_array($productId, $existingProducts) || in_array($productId, $existingSecondProducts))) {
+                // Check if product is already in an overlapping promo
+                if (in_array($productId, $existingProducts) || in_array($productId, $existingSecondProducts)) {
                     return true; // Product is disabled due to conflict
                 }
             }
@@ -399,10 +376,10 @@ class SalesPromo extends Component
     public function updatedSelectedProducts()
     {
         // Remove any disabled products that were selected
-        if (!empty($this->selected_products) && !empty($this->selected_batches) && $this->startDate && $this->endDate) {
+        if (!empty($this->selected_products) && $this->startDate && $this->endDate) {
             $validProducts = [];
             foreach ($this->selected_products as $productId) {
-                if (!$this->isProductDisabledForBatches($productId, $this->selected_batches, $this->startDate, $this->endDate)) {
+                if (!$this->isProductDisabled($productId, $this->startDate, $this->endDate)) {
                     $validProducts[] = $productId;
                 }
             }
@@ -413,10 +390,10 @@ class SalesPromo extends Component
     public function updatedEditSelectedProducts($value)
     {
         // Remove any disabled products that were selected
-        if (!empty($this->edit_selected_products) && !empty($this->edit_selected_batches) && $this->edit_startDate && $this->edit_endDate) {
+        if (!empty($this->edit_selected_products) && $this->edit_startDate && $this->edit_endDate) {
             $validProducts = [];
             foreach ($this->edit_selected_products as $productId) {
-                if (!$this->isProductDisabledForBatches($productId, $this->edit_selected_batches, $this->edit_startDate, $this->edit_endDate, $this->edit_id)) {
+                if (!$this->isProductDisabled($productId, $this->edit_startDate, $this->edit_endDate, $this->edit_id)) {
                     $validProducts[] = $productId;
                 }
             }
@@ -476,23 +453,22 @@ class SalesPromo extends Component
         // No special handling needed
     }
 
-    // Computed property to get products for selected batch allocations
-    public function getAvailableProductsForBatchesProperty()
+    // Computed property to get all available products (allocated and not fully sold)
+    public function getAvailableProductsProperty()
     {
-        if (empty($this->selected_batches)) {
-            return collect();
-        }
-
-        // Get all product IDs from branch allocation items in selected batch allocations
-        $productIds = BranchAllocationItem::whereHas('branchAllocation', function ($query) {
-            $query->whereIn('batch_allocation_id', $this->selected_batches);
-        })->pluck('product_id')->unique();
+        // Get all product IDs from branch allocation items that have available quantity
+        // Only include products that have available quantity (quantity - sold_quantity > 0)
+        // This ensures sold products are excluded from promo creation
+        $productIds = BranchAllocationItem::selectRaw('product_id, SUM(quantity - COALESCE(sold_quantity, 0)) as available_qty')
+            ->groupBy('product_id')
+            ->havingRaw('available_qty > 0')
+            ->pluck('product_id');
 
         $products = Product::whereIn('id', $productIds)->orderBy('name')->get();
         
         // Filter out products that would cause overlap conflicts
         return $products->map(function ($product) {
-            $product->isDisabled = $this->isProductDisabledForBatches($product->id, $this->selected_batches, $this->startDate, $this->endDate);
+            $product->isDisabled = $this->isProductDisabled($product->id, $this->startDate, $this->endDate);
             return $product;
         });
     }
@@ -518,13 +494,6 @@ class SalesPromo extends Component
         });
     }
 
-
-    // When batch allocations change, reset products and validate
-    public function updatedSelectedBatches()
-    {
-        // Clear selected products when batch allocations change
-        $this->selected_products = [];
-    }
 
     // When dates change, validate selected products
     public function updatedStartDate()

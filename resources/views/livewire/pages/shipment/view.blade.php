@@ -120,13 +120,13 @@
             @endif
 
             <!-- Product Information -->
-            @if($shipment_view->branchAllocation && $shipment_view->branchAllocation->items)
+            @if($shipment_view->deliveryReceipt)
             <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                     <svg class="w-5 h-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
                     </svg>
-                    Product Information
+                    Scanned Products for DR: {{ $shipment_view->deliveryReceipt->dr_number }}
                 </h3>
 
                 <div class="overflow-x-auto">
@@ -137,18 +137,33 @@
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Product Name</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Barcode</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">SKU</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Quantity</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Scanned Quantity</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Box Number</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
-                            @foreach($shipment_view->branchAllocation->items->where('box_id', null) as $item)
+                            @php
+                                // Get all boxes for this DR chain (mother and children)
+                                $drIds = [$shipment_view->deliveryReceipt->id];
+                                $childDRs = \App\Models\DeliveryReceipt::where('parent_dr_id', $shipment_view->deliveryReceipt->id)->get();
+                                $drIds = array_merge($drIds, $childDRs->pluck('id')->toArray());
+
+                                // Get scanned items from these DRs (individual items, not grouped)
+                                $scannedItems = \App\Models\BranchAllocationItem::whereIn('delivery_receipt_id', $drIds)
+                                    ->where('scanned_quantity', '>', 0)
+                                    ->with('product', 'box')
+                                    ->orderBy('product_id')
+                                    ->get();
+                            @endphp
+
+                            @forelse($scannedItems as $item)
                             <tr>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    @if($item->product && $item->product->images && $item->product->images->first())
-                                        <img src="{{ $item->product->images->first()->url }}"
-                                             alt="{{ $item->product->name }}"
-                                             class="w-16 h-16 object-cover rounded">
+                                    @if($item->product && $item->product->primary_image)
+                                        <img src="{{ asset('storage/' . $item->product->primary_image) }}"
+                                              alt="{{ $item->product->name }}"
+                                              class="w-16 h-16 object-cover rounded">
                                     @else
                                         <div class="w-16 h-16 bg-gray-200 dark:bg-gray-600 rounded flex items-center justify-center">
                                             <span class="text-xs text-gray-500 dark:text-gray-400">No Image</span>
@@ -158,6 +173,9 @@
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm font-medium text-gray-900 dark:text-white">
                                         {{ $item->product->name ?? 'N/A' }}
+                                        @if($item->product && $item->product->color)
+                                            <span class="text-xs text-gray-500 dark:text-gray-400">({{ $item->product->color->name }})</span>
+                                        @endif
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
@@ -181,10 +199,15 @@
                                             <span class="text-red-500 text-xs">{{ $message }}</span>
                                         @enderror
                                     @else
-                                        <div class="text-sm text-gray-500 dark:text-gray-300">
-                                            {{ $item->quantity }}
+                                        <div class="text-sm font-semibold text-blue-600 dark:text-blue-400">
+                                            {{ $item->scanned_quantity }}
                                         </div>
                                     @endif
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-500 dark:text-gray-300">
+                                        {{ $item->box->box_number ?? 'N/A' }}
+                                    </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     @if($editingItemId != $item->id)
@@ -192,7 +215,13 @@
                                     @endif
                                 </td>
                             </tr>
-                            @endforeach
+                            @empty
+                            <tr>
+                                <td colspan="7" class="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                                    No scanned products found for this delivery receipt.
+                                </td>
+                            </tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>

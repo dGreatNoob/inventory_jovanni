@@ -56,6 +56,47 @@ else
     echo "ℹ️  Not a git repository, skipping git pull"
 fi
 
+# Ensure .env file exists and has correct Docker settings
+echo ""
+echo "🔧 Step 2.5: Verifying .env configuration for Docker..."
+if [ ! -f .env ]; then
+    echo "⚠️  .env file not found, copying from .env.example..."
+    cp .env.example .env || echo "⚠️  .env.example not found either"
+fi
+
+# Update DB_HOST to 'db' (Docker service name) if it's set to localhost/127.0.0.1
+if [ -f .env ]; then
+    # Backup .env
+    cp .env .env.backup.$(date +%Y%m%d_%H%M%S) 2>/dev/null || true
+    
+    # Fix DB_HOST for Docker
+    if grep -q "^DB_HOST=127.0.0.1" .env || grep -q "^DB_HOST=localhost" .env; then
+        echo "   Updating DB_HOST to 'db' (Docker service name)..."
+        sed -i 's/^DB_HOST=127\.0\.0\.1/DB_HOST=db/' .env
+        sed -i 's/^DB_HOST=localhost/DB_HOST=db/' .env
+    fi
+    
+    # Ensure DB_PORT is 3306 for Docker (not 3307 which is host port)
+    if grep -q "^DB_PORT=3307" .env; then
+        echo "   Updating DB_PORT to 3306 (Docker internal port)..."
+        sed -i 's/^DB_PORT=3307/DB_PORT=3306/' .env
+    fi
+    
+    # Ensure DB_USERNAME and DB_PASSWORD match docker-compose defaults if not set
+    if ! grep -q "^DB_USERNAME=" .env; then
+        echo "   Setting DB_USERNAME=root..."
+        echo "DB_USERNAME=root" >> .env
+    fi
+    if ! grep -q "^DB_PASSWORD=" .env; then
+        echo "   Setting DB_PASSWORD=rootsecret..."
+        echo "DB_PASSWORD=rootsecret" >> .env
+    fi
+    
+    echo "✅ .env configuration verified"
+else
+    echo "⚠️  .env file not found, Docker environment variables will be used"
+fi
+
 # Step 3: Stop existing containers FIRST to free up ports
 echo ""
 echo "🛑 Step 3: Stopping existing containers..."
@@ -151,49 +192,166 @@ fi
 # Start containers
 RUN_MIGRATIONS=true docker compose -f "$COMPOSE_FILE" up -d --build
 
-# Step 7: Wait for services to be ready
+# Wait a moment for containers to start
+sleep 5
+
+# Check initial container status
+echo ""
+echo "📊 Initial container status:"
+docker compose -f "$COMPOSE_FILE" ps
+
+# Step 7: Wait for services to be ready and healthy
 echo ""
 echo "⏳ Step 7: Waiting for services to be ready..."
-sleep 15
+echo "   Waiting for database..."
+for i in {1..30}; do
+    if docker compose -f "$COMPOSE_FILE" exec -T db mysqladmin ping -h localhost -u root -prootsecret >/dev/null 2>&1; then
+        echo "   ✅ Database is ready"
+        break
+    fi
+    if [ $i -eq 30 ]; then
+        echo "   ⚠️  Database not ready after 30 attempts"
+    fi
+    sleep 2
+done
+
+echo "   Waiting for Redis..."
+for i in {1..15}; do
+    if docker compose -f "$COMPOSE_FILE" exec -T redis redis-cli ping >/dev/null 2>&1; then
+        echo "   ✅ Redis is ready"
+        break
+    fi
+    if [ $i -eq 15 ]; then
+        echo "   ⚠️  Redis not ready after 15 attempts"
+    fi
+    sleep 2
+done
+
+echo "   Waiting for app container to be running (not restarting)..."
+for i in {1..30}; do
+    CONTAINER_STATUS=$(docker inspect --format='{{.State.Status}}' inventory-jovanni-app 2>/dev/null || echo "not-found")
+    if [ "$CONTAINER_STATUS" = "running" ]; then
+        # Check if it's been running for at least 5 seconds (not restarting)
+        sleep 5
+        CONTAINER_STATUS=$(docker inspect --format='{{.State.Status}}' inventory-jovanni-app 2>/dev/null || echo "not-found")
+        if [ "$CONTAINER_STATUS" = "running" ]; then
+            echo "   ✅ App container is running and stable"
+            break
+        fi
+    fi
+    if [ $i -eq 30 ]; then
+        echo "   ❌ App container failed to start properly"
+        echo "   Container logs:"
+        docker compose -f "$COMPOSE_FILE" logs --tail=50 app || true
+        echo "   ⚠️  Continuing anyway..."
+    fi
+    sleep 2
+done
 
 # Step 8: Run migrations (if not done by entrypoint)
 echo ""
 echo "📊 Step 8: Running database migrations..."
-if docker ps | grep -q "inventory-jovanni-app"; then
-    docker compose -f "$COMPOSE_FILE" exec -T app php artisan migrate --force || echo "⚠️  Migrations failed"
-else
-    echo "⚠️  App container not running, skipping migrations"
-fi
+MAX_RETRIES=5
+RETRY_COUNT=0
+while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+    CONTAINER_STATUS=$(docker inspect --format='{{.State.Status}}' inventory-jovanni-app 2>/dev/null || echo "not-found")
+    if [ "$CONTAINER_STATUS" = "running" ]; then
+        # Clear config cache first to ensure fresh .env values are used
+        echo "   Clearing config cache to pick up .env changes..."
+        docker compose -f "$COMPOSE_FILE" exec -T app php artisan config:clear 2>/dev/null || true
+        sleep 2
+        
+        if docker compose -f "$COMPOSE_FILE" exec -T app php artisan migrate --force 2>&1; then
+            echo "✅ Migrations completed successfully"
+            break
+        else
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+            if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+                echo "   ⚠️  Migration attempt $RETRY_COUNT failed, retrying in 5 seconds..."
+                echo "   Checking database connection..."
+                docker compose -f "$COMPOSE_FILE" exec -T app php artisan tinker --execute="DB::connection()->getPdo(); echo 'DB OK';" 2>&1 || echo "   DB connection check failed"
+                sleep 5
+            else
+                echo "   ⚠️  Migrations failed after $MAX_RETRIES attempts"
+                echo "   Container logs:"
+                docker compose -f "$COMPOSE_FILE" logs --tail=20 app || true
+            fi
+        fi
+    else
+        echo "   ⚠️  App container is not running (status: $CONTAINER_STATUS), skipping migrations"
+        break
+    fi
+done
 
 # Step 9: Optimize application
 echo ""
 echo "⚡ Step 9: Optimizing application..."
-if docker ps | grep -q "inventory-jovanni-app"; then
-    docker compose -f "$COMPOSE_FILE" exec -T app php artisan config:clear || true
-    docker compose -f "$COMPOSE_FILE" exec -T app php artisan config:cache || true
-    docker compose -f "$COMPOSE_FILE" exec -T app php artisan route:cache || true
-    docker compose -f "$COMPOSE_FILE" exec -T app php artisan view:cache || true
-    docker compose -f "$COMPOSE_FILE" exec -T app php artisan storage:link || true
-else
-    echo "⚠️  App container not running, skipping optimization"
-fi
+MAX_RETRIES=3
+RETRY_COUNT=0
+while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+    CONTAINER_STATUS=$(docker inspect --format='{{.State.Status}}' inventory-jovanni-app 2>/dev/null || echo "not-found")
+    if [ "$CONTAINER_STATUS" = "running" ]; then
+        # Run optimization commands with retry
+        docker compose -f "$COMPOSE_FILE" exec -T app php artisan config:clear 2>/dev/null || true
+        if docker compose -f "$COMPOSE_FILE" exec -T app php artisan config:cache 2>&1; then
+            docker compose -f "$COMPOSE_FILE" exec -T app php artisan route:cache 2>/dev/null || true
+            docker compose -f "$COMPOSE_FILE" exec -T app php artisan view:cache 2>/dev/null || true
+            docker compose -f "$COMPOSE_FILE" exec -T app php artisan storage:link 2>/dev/null || true
+            echo "✅ Application optimization completed"
+            break
+        else
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+            if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+                echo "   ⚠️  Optimization attempt $RETRY_COUNT failed, retrying in 3 seconds..."
+                sleep 3
+            else
+                echo "   ⚠️  Optimization failed after $MAX_RETRIES attempts, but continuing..."
+            fi
+        fi
+    else
+        echo "   ⚠️  App container is not running (status: $CONTAINER_STATUS), skipping optimization"
+        break
+    fi
+done
 
 # Step 10: Health check
 echo ""
 echo "🏥 Step 10: Health check..."
 sleep 5
 
-if curl -f http://localhost/health 2>/dev/null || curl -f http://localhost 2>/dev/null; then
-    echo "✅ Health check passed!"
+# Check container status first
+CONTAINER_STATUS=$(docker inspect --format='{{.State.Status}}' inventory-jovanni-app 2>/dev/null || echo "not-found")
+if [ "$CONTAINER_STATUS" != "running" ]; then
+    echo "❌ App container is not running (status: $CONTAINER_STATUS)"
+    echo "   Recent container logs:"
+    docker compose -f "$COMPOSE_FILE" logs --tail=30 app || true
+    echo ""
+    echo "   All container status:"
+    docker compose -f "$COMPOSE_FILE" ps || true
 else
-    echo "⚠️  Health check failed, but deployment completed"
-    echo "   Please verify manually: http://localhost"
+    # Try health check
+    if curl -f http://localhost/health 2>/dev/null || curl -f http://localhost 2>/dev/null; then
+        echo "✅ Health check passed!"
+    else
+        echo "⚠️  Health check failed, but container is running"
+        echo "   Container logs:"
+        docker compose -f "$COMPOSE_FILE" logs --tail=20 app || true
+        echo "   Please verify manually"
+    fi
 fi
 
-# Step 11: Show status
+# Step 11: Show status and access info
 echo ""
 echo "📋 Step 11: Container status..."
 docker compose -f "$COMPOSE_FILE" ps
+
+# Get server IP for external access
+SERVER_IP=$(hostname -I | awk '{print $1}' 2>/dev/null || echo "SERVER_IP")
+echo ""
+echo "🌐 Access Information:"
+echo "   Local:  http://localhost"
+echo "   External: http://$SERVER_IP"
+echo "   (Ensure firewall allows port 80 if accessing from other devices)"
 
 echo ""
 echo "✅ Production deployment completed!"

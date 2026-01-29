@@ -91,6 +91,17 @@ ls -la .env
 # Runner user must be able to read/write this directory and run docker
 ```
 
+**Important:** Your `.env` file must have Docker-compatible database settings:
+```bash
+# In .env file, ensure these are set for Docker:
+DB_HOST=db              # NOT 127.0.0.1 or localhost (use Docker service name)
+DB_PORT=3306            # NOT 3307 (use Docker internal port)
+DB_USERNAME=root        # Or your MySQL user
+DB_PASSWORD=rootsecret  # Or your MySQL password
+```
+
+The deployment script will automatically fix these if they're wrong, but it's better to set them correctly from the start.
+
 ## 9. When deployments run
 
 - **Push to `main`** → workflow runs tests, builds package, then **deploy-to-production** runs on the production runner (pull, composer, npm build, docker up).
@@ -171,6 +182,67 @@ sudo systemctl status docker
 ```
 
 Verify containers have `restart: always` in `docker-compose.prod.yml` (they already do).
+
+**Container restart loop (app container keeps restarting)**
+
+Check container logs to see why it's failing:
+```bash
+cd /var/www/inventory_jovanni
+docker compose -f docker-compose.prod.yml logs app
+# Or last 50 lines:
+docker compose -f docker-compose.prod.yml logs --tail=50 app
+```
+
+Common causes:
+- **Database connection issues** - Most common! Check `.env` file:
+  ```bash
+  # WRONG (for Docker):
+  DB_HOST=127.0.0.1
+  DB_PORT=3307
+  
+  # CORRECT (for Docker):
+  DB_HOST=db
+  DB_PORT=3306
+  ```
+  The deployment script fixes this automatically, but verify your `.env` has `DB_HOST=db` not `127.0.0.1`.
+- Missing APP_KEY (run: `docker compose -f docker-compose.prod.yml exec app php artisan key:generate`)
+- Permission issues on storage/ directory
+- Missing dependencies or build errors
+
+**"Connection refused" database errors**
+
+If you see `SQLSTATE[HY000] [2002] Connection refused`:
+1. Check `.env` has `DB_HOST=db` (Docker service name), not `127.0.0.1`
+2. Verify database container is running: `docker compose -f docker-compose.prod.yml ps db`
+3. Test database connection:
+   ```bash
+   docker compose -f docker-compose.prod.yml exec app php artisan tinker --execute="DB::connection()->getPdo(); echo 'DB OK';"
+   ```
+4. Clear Laravel config cache: `docker compose -f docker-compose.prod.yml exec app php artisan config:clear`
+
+**SSL/HTTPS error when accessing**
+
+The app runs on HTTP (port 80), not HTTPS. If you see SSL errors:
+- Use `http://` not `https://` (e.g., `http://192.168.0.100`)
+- Clear browser cache or try incognito mode
+- Some browsers auto-redirect to HTTPS - disable this or use HTTP explicitly
+
+**App not accessible from other devices**
+
+1. Check firewall allows port 80:
+   ```bash
+   sudo ufw status
+   sudo ufw allow 80/tcp
+   ```
+
+2. Verify nginx is listening on all interfaces (it is: `listen 0.0.0.0:80`)
+
+3. Check server IP:
+   ```bash
+   hostname -I
+   ```
+
+4. Test from another device: `http://SERVER_IP` (replace SERVER_IP with actual IP)
 
 ## Summary
 

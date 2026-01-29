@@ -60,23 +60,60 @@ fi
 echo ""
 echo "🛑 Step 3: Stopping existing containers..."
 cd "$PROJECT_DIR"
-docker compose -f "$COMPOSE_FILE" down --remove-orphans --timeout 30 || docker-compose -f "$COMPOSE_FILE" down --remove-orphans --timeout 30 || true
 
-# Force stop any containers that might still be running
-echo "🔍 Checking for containers still using port 80..."
+# Stop all containers using this compose file
+docker compose -f "$COMPOSE_FILE" down --remove-orphans --timeout 30 2>/dev/null || docker-compose -f "$COMPOSE_FILE" down --remove-orphans --timeout 30 2>/dev/null || true
+
+# Force stop any containers with our project name
+echo "🔍 Stopping any remaining inventory-jovanni containers..."
+docker ps --filter "name=inventory-jovanni" --format "{{.ID}}" | while read -r container_id; do
+    if [ -n "$container_id" ]; then
+        echo "   Stopping container: $container_id"
+        docker stop "$container_id" 2>/dev/null || true
+        docker rm -f "$container_id" 2>/dev/null || true
+    fi
+done
+
+# Check what's using port 80
+echo "🔍 Checking what's using port 80..."
+if command -v netstat >/dev/null 2>&1; then
+    PORT80_PROCESS=$(sudo netstat -tlnp | grep ':80 ' || true)
+    if [ -n "$PORT80_PROCESS" ]; then
+        echo "⚠️  Port 80 is in use:"
+        echo "$PORT80_PROCESS"
+    fi
+elif command -v ss >/dev/null 2>&1; then
+    PORT80_PROCESS=$(sudo ss -tlnp | grep ':80 ' || true)
+    if [ -n "$PORT80_PROCESS" ]; then
+        echo "⚠️  Port 80 is in use:"
+        echo "$PORT80_PROCESS"
+    fi
+fi
+
+# Try to find and kill process using port 80
 if command -v lsof >/dev/null 2>&1; then
-    # Find and kill process using port 80
     PID=$(sudo lsof -ti:80 2>/dev/null || true)
     if [ -n "$PID" ]; then
         echo "⚠️  Found process $PID using port 80, stopping it..."
         sudo kill -9 "$PID" 2>/dev/null || true
-        sleep 2
+        sleep 3
     fi
 fi
 
 # Force remove any containers with our project name that might still exist
 docker ps -a --filter "name=inventory-jovanni" --format "{{.ID}}" | xargs -r docker rm -f 2>/dev/null || true
-echo "✅ Containers stopped, port 80 should be free"
+
+# Verify port 80 is free
+if command -v lsof >/dev/null 2>&1; then
+    if sudo lsof -ti:80 >/dev/null 2>&1; then
+        echo "❌ WARNING: Port 80 is still in use after cleanup attempts!"
+        echo "   You may need to manually stop the service using port 80"
+    else
+        echo "✅ Port 80 is free"
+    fi
+fi
+
+echo "✅ Container cleanup complete"
 
 # Step 4: Install PHP dependencies inside the app service
 echo ""
@@ -100,6 +137,18 @@ docker compose -f "$COMPOSE_FILE" run --rm --entrypoint "" app \
 # Step 6: Build and start containers
 echo ""
 echo "🔨 Step 6: Building and starting containers..."
+
+# Final check: ensure port 80 is free before starting
+if command -v lsof >/dev/null 2>&1; then
+    if sudo lsof -ti:80 >/dev/null 2>&1; then
+        echo "❌ ERROR: Port 80 is still in use! Cannot start containers."
+        echo "   Please manually stop the service using port 80 and try again."
+        echo "   Check with: sudo lsof -i:80"
+        exit 1
+    fi
+fi
+
+# Start containers
 RUN_MIGRATIONS=true docker compose -f "$COMPOSE_FILE" up -d --build
 
 # Step 7: Wait for services to be ready

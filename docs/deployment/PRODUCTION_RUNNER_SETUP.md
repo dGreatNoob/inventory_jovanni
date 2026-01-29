@@ -97,7 +97,41 @@ ls -la .env
 - **Manual run** → Actions → "Build and Package for Deployment" → Run workflow, choose **Environment: production** → production runner runs the deploy.
 - **Tag `prod-*`** → same as manual production.
 
-## 10. Troubleshooting
+## 10. Ensure Docker Auto-Starts on Boot
+
+To ensure your app automatically comes back online after a server restart:
+
+**1. Enable Docker service to start on boot:**
+```bash
+sudo systemctl enable docker
+sudo systemctl enable docker.socket
+```
+
+**2. Verify Docker starts automatically:**
+```bash
+sudo systemctl is-enabled docker
+# Should output: enabled
+```
+
+**3. Test auto-restart behavior:**
+```bash
+# Restart Docker (containers should auto-restart due to restart: always)
+sudo systemctl restart docker
+
+# Check containers are running
+cd /var/www/inventory_jovanni
+docker compose -f docker-compose.prod.yml ps
+```
+
+**How it works:**
+- Your `docker-compose.prod.yml` has `restart: always` for all services
+- When Docker starts (after reboot), it automatically restarts containers with `restart: always`
+- Containers start in dependency order (db → redis → app → nginx)
+- Your app will be accessible once all containers are healthy
+
+**Note:** The first time after reboot, containers may take 30-60 seconds to fully start (especially database initialization).
+
+## 11. Troubleshooting
 
 **Runner offline**
 
@@ -126,6 +160,17 @@ The user that runs the runner service must own or have write access to `/var/www
 sudo chown -R jovanni:jovanni /var/www/inventory_jovanni
 sudo usermod -aG docker jovanni
 ```
+
+**Containers don't auto-start after reboot**
+
+Ensure Docker service is enabled:
+```bash
+sudo systemctl enable docker
+sudo systemctl enable docker.socket
+sudo systemctl status docker
+```
+
+Verify containers have `restart: always` in `docker-compose.prod.yml` (they already do).
 
 ## Summary
 

@@ -176,6 +176,12 @@ jobs:
           elif [[ "${{ github.ref }}" == refs/tags/prod-* ]]; then
             echo "environment=production" >> $GITHUB_OUTPUT
             echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == refs/heads/main ]]; then
+            echo "environment=production" >> $GITHUB_OUTPUT
+            echo "version=${{ github.sha }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == refs/heads/staging ]]; then
+            echo "environment=staging" >> $GITHUB_OUTPUT
+            echo "version=${{ github.sha }}" >> $GITHUB_OUTPUT
           else
             echo "environment=staging" >> $GITHUB_OUTPUT
             echo "version=${{ github.sha }}" >> $GITHUB_OUTPUT

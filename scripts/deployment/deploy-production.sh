@@ -82,20 +82,47 @@ if [ -f .env ]; then
         sed -i 's/^DB_PORT=3307/DB_PORT=3306/' .env
     fi
     
-    # Ensure DB_USERNAME and DB_PASSWORD match docker-compose defaults if not set
-    if ! grep -q "^DB_USERNAME=" .env; then
-        echo "   Setting DB_USERNAME=root..."
+    # Force DB_USERNAME and DB_PASSWORD to root/rootsecret for Docker
+    # (MySQL container always has root; MYSQL_USER is only created on first init, so use root to avoid "Connection refused")
+    if grep -q "^DB_USERNAME=" .env; then
+        sed -i 's/^DB_USERNAME=.*/DB_USERNAME=root/' .env
+        echo "   Set DB_USERNAME=root for Docker MySQL"
+    else
         echo "DB_USERNAME=root" >> .env
     fi
-    if ! grep -q "^DB_PASSWORD=" .env; then
-        echo "   Setting DB_PASSWORD=rootsecret..."
+    if grep -q "^DB_PASSWORD=" .env; then
+        sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=rootsecret/' .env
+        echo "   Set DB_PASSWORD=rootsecret for Docker MySQL"
+    else
         echo "DB_PASSWORD=rootsecret" >> .env
+    fi
+    
+    # Ensure APP_KEY is set (required to avoid 500 errors)
+    if ! grep -q "^APP_KEY=base64:" .env 2>/dev/null; then
+        if grep -q "^APP_KEY=$" .env || ! grep -q "^APP_KEY=" .env; then
+            echo "   APP_KEY is missing or empty - will be generated when app container starts"
+        fi
+    fi
+    
+    # Ensure APP_URL is set for production (helps avoid 500s from URL generation)
+    if ! grep -q "^APP_URL=http" .env 2>/dev/null; then
+        SERVER_IP=$(hostname -I | awk '{print $1}' 2>/dev/null || echo "localhost")
+        echo "   Setting APP_URL=http://$SERVER_IP (update in .env if you use a domain)"
+        sed -i "s|^APP_URL=.*|APP_URL=http://$SERVER_IP|" .env 2>/dev/null || true
+        if ! grep -q "^APP_URL=" .env; then
+            echo "APP_URL=http://$SERVER_IP" >> .env
+        fi
     fi
     
     echo "✅ .env configuration verified"
 else
     echo "⚠️  .env file not found, Docker environment variables will be used"
 fi
+
+# Ensure storage and bootstrap/cache are writable (prevents 500 errors)
+echo "   Ensuring storage and cache directories exist..."
+mkdir -p storage/framework/{sessions,views,cache} storage/logs bootstrap/cache 2>/dev/null || true
+chmod -R 775 storage bootstrap/cache 2>/dev/null || true
 
 # Step 3: Stop existing containers FIRST to free up ports
 echo ""
@@ -283,7 +310,7 @@ while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
     fi
 done
 
-# Step 9: Optimize application
+# Step 9: Optimize application and fix common 500-error causes
 echo ""
 echo "⚡ Step 9: Optimizing application..."
 MAX_RETRIES=3
@@ -291,8 +318,15 @@ RETRY_COUNT=0
 while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
     CONTAINER_STATUS=$(docker inspect --format='{{.State.Status}}' inventory-jovanni-app 2>/dev/null || echo "not-found")
     if [ "$CONTAINER_STATUS" = "running" ]; then
-        # Run optimization commands with retry
         docker compose -f "$COMPOSE_FILE" exec -T app php artisan config:clear 2>/dev/null || true
+        
+        # Ensure APP_KEY is set (missing key causes 500)
+        docker compose -f "$COMPOSE_FILE" exec -T app php artisan key:generate --force 2>/dev/null || true
+        
+        # Fix storage/cache permissions inside container (www-data)
+        docker compose -f "$COMPOSE_FILE" exec -T app chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache 2>/dev/null || true
+        docker compose -f "$COMPOSE_FILE" exec -T app chmod -R 775 /var/www/storage /var/www/bootstrap/cache 2>/dev/null || true
+        
         if docker compose -f "$COMPOSE_FILE" exec -T app php artisan config:cache 2>&1; then
             docker compose -f "$COMPOSE_FILE" exec -T app php artisan route:cache 2>/dev/null || true
             docker compose -f "$COMPOSE_FILE" exec -T app php artisan view:cache 2>/dev/null || true

@@ -96,11 +96,11 @@ ls -la .env
 # In .env file, ensure these are set for Docker:
 DB_HOST=db              # NOT 127.0.0.1 or localhost (use Docker service name)
 DB_PORT=3306            # NOT 3307 (use Docker internal port)
-DB_USERNAME=root        # Or your MySQL user
-DB_PASSWORD=rootsecret  # Or your MySQL password
+DB_USERNAME=root        # Must be root for Docker MySQL (jovanni user only exists on first DB init)
+DB_PASSWORD=rootsecret  # Must match MYSQL_ROOT_PASSWORD / docker-compose
 ```
 
-The deployment script will automatically fix these if they're wrong, but it's better to set them correctly from the start.
+The deployment script will automatically set these for Docker. Using `DB_USERNAME=jovanni` (from .env.example) causes "Connection refused" because that user may not exist in the container.
 
 ## 9. When deployments run
 
@@ -211,14 +211,17 @@ Common causes:
 
 **"Connection refused" database errors**
 
-If you see `SQLSTATE[HY000] [2002] Connection refused`:
-1. Check `.env` has `DB_HOST=db` (Docker service name), not `127.0.0.1`
-2. Verify database container is running: `docker compose -f docker-compose.prod.yml ps db`
-3. Test database connection:
+If you see `SQLSTATE[HY000] [2002] Connection refused` (or log shows `'jovanni'` as DB user):
+1. **Use root for Docker:** In `.env` set `DB_USERNAME=root` and `DB_PASSWORD=rootsecret`. The MySQL container always has root; a custom user (e.g. jovanni) is only created on first DB volume init, so Laravel must use root.
    ```bash
-   docker compose -f docker-compose.prod.yml exec app php artisan tinker --execute="DB::connection()->getPdo(); echo 'DB OK';"
+   sed -i 's/^DB_USERNAME=.*/DB_USERNAME=root/' .env
+   sed -i 's/^DB_PASSWORD=.*/DB_PASSWORD=rootsecret/' .env
+   docker compose -f docker-compose.prod.yml exec app php artisan config:clear
+   docker compose -f docker-compose.prod.yml restart app
    ```
-4. Clear Laravel config cache: `docker compose -f docker-compose.prod.yml exec app php artisan config:clear`
+2. Check `.env` has `DB_HOST=db` (Docker service name), not `127.0.0.1`
+3. Verify database container is running: `docker compose -f docker-compose.prod.yml ps db`
+4. Test: `docker compose -f docker-compose.prod.yml exec app php artisan tinker --execute="DB::connection()->getPdo(); echo 'DB OK';"`
 
 **SSL/HTTPS error when accessing**
 
@@ -226,6 +229,39 @@ The app runs on HTTP (port 80), not HTTPS. If you see SSL errors:
 - Use `http://` not `https://` (e.g., `http://192.168.0.100`)
 - Clear browser cache or try incognito mode
 - Some browsers auto-redirect to HTTPS - disable this or use HTTP explicitly
+
+**500 Server Error when accessing the app**
+
+1. **Check Laravel logs** (most important):
+   ```bash
+   cd /var/www/inventory_jovanni
+   # From host:
+   tail -100 storage/logs/laravel.log
+   # Or from inside app container:
+   docker compose -f docker-compose.prod.yml exec app cat storage/logs/laravel.log | tail -100
+   ```
+   The log will show the real exception (e.g. missing APP_KEY, permission denied, DB error).
+
+2. **Common causes and fixes:**
+   - **Missing or empty APP_KEY**
+     ```bash
+     docker compose -f docker-compose.prod.yml exec app php artisan key:generate --force
+     ```
+   - **Wrong APP_URL** – Set in `.env` to your actual URL (e.g. `APP_URL=http://192.168.0.100` or your domain).
+   - **Storage/cache permissions**
+     ```bash
+     docker compose -f docker-compose.prod.yml exec app chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+     docker compose -f docker-compose.prod.yml exec app chmod -R 775 /var/www/storage /var/www/bootstrap/cache
+     ```
+   - **Config cache out of date**
+     ```bash
+     docker compose -f docker-compose.prod.yml exec app php artisan config:clear
+     docker compose -f docker-compose.prod.yml exec app php artisan config:cache
+     ```
+   - **Session/cache driver (Redis)** – If Redis is down, set in `.env`: `CACHE_STORE=file` and `SESSION_DRIVER=file` temporarily to test.
+
+3. **Temporarily enable debug** (only for debugging, then turn off):
+   In `.env`: `APP_DEBUG=true` then reload. You’ll see the error on screen. Set back to `APP_DEBUG=false` when done.
 
 **App not accessible from other devices**
 

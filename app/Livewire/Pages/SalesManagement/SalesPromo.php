@@ -30,6 +30,10 @@ class SalesPromo extends Component
     // Dropdowns
     public $batchDropdown = false, $productDropdown = false;
 
+    // Product search (for searchable dropdown)
+    public $productSearch = '';
+    public $editProductSearch = '';
+
     // Delete modal
     public $showDeleteModal = false;
     public $deleteId = null;
@@ -94,6 +98,7 @@ class SalesPromo extends Component
             'selected_products',
             'promo_type',
             'productDropdown',
+            'productSearch',
         ]);
         $this->resetValidation();
     }
@@ -356,6 +361,14 @@ class SalesPromo extends Component
     }
 
     /**
+     * Check if a product is disabled for edit (batch context); delegates to isProductDisabled.
+     */
+    private function isProductDisabledForBatches($productId, $batchIds, $startDate, $endDate, $excludePromoId = null)
+    {
+        return $this->isProductDisabled($productId, $startDate, $endDate, $excludePromoId);
+    }
+
+    /**
      * Safe JSON decode helper
      */
     private function safeJsonDecode($jsonString)
@@ -411,7 +424,8 @@ class SalesPromo extends Component
         $this->reset([
             'edit_id', 'edit_name', 'edit_code', 'edit_description', 
             'edit_startDate', 'edit_endDate', 'edit_type',
-            'edit_selected_batches', 'edit_selected_products'
+            'edit_selected_batches', 'edit_selected_products',
+            'editProductDropdown', 'editProductSearch',
         ]);
     }
 
@@ -473,6 +487,21 @@ class SalesPromo extends Component
         });
     }
 
+    // Filtered available products for create form (searchable dropdown)
+    public function getFilteredAvailableProductsProperty()
+    {
+        $products = $this->availableProducts;
+        $query = trim($this->productSearch);
+        if ($query === '') {
+            return $products;
+        }
+        $lower = strtolower($query);
+        return $products->filter(function ($product) use ($lower) {
+            return str_contains(strtolower($product->name), $lower)
+                || str_contains(strtolower((string) $product->sku), $lower);
+        })->values();
+    }
+
     // Computed property for edit products based on selected batch allocations
     public function getAvailableProductsForEditBatchesProperty()
     {
@@ -492,6 +521,21 @@ class SalesPromo extends Component
             $product->isDisabled = $this->isProductDisabledForBatches($product->id, $this->edit_selected_batches, $this->edit_startDate, $this->edit_endDate, $this->edit_id);
             return $product;
         });
+    }
+
+    // Filtered edit products for searchable dropdown
+    public function getFilteredEditProductsProperty()
+    {
+        $products = $this->availableProductsForEditBatches;
+        $query = trim($this->editProductSearch);
+        if ($query === '') {
+            return $products;
+        }
+        $lower = strtolower($query);
+        return $products->filter(function ($product) use ($lower) {
+            return str_contains(strtolower($product->name), $lower)
+                || str_contains(strtolower((string) ($product->sku ?? '')), $lower);
+        })->values();
     }
 
 

@@ -188,14 +188,21 @@
                                                         <label for="promo_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                                             Promo Type
                                                         </label>
-                                                        <select id="promo_type" wire:model="promo_type"
-                                                            class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
-                                                            required>
-                                                            <option value="" disabled selected>Select Promo Type</option>
-                                                            @foreach($promo_type_options as $type)
-                                                                <option value="{{ $type }}">{{ $type }}</option>
-                                                            @endforeach
-                                                        </select>
+                                                        <div class="relative">
+                                                            <select id="promo_type" wire:model="promo_type"
+                                                                class="block w-full appearance-none rounded-md border border-gray-300 bg-white pl-3 pr-10 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                                required>
+                                                                <option value="" disabled selected>Select Promo Type</option>
+                                                                @foreach($promo_type_options as $type)
+                                                                    <option value="{{ $type }}">{{ $type }}</option>
+                                                                @endforeach
+                                                            </select>
+                                                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 dark:text-gray-400">
+                                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                                </svg>
+                                                            </div>
+                                                        </div>
                                                         @error('promo_type')
                                                             <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                                         @enderror
@@ -236,66 +243,78 @@
                                                     <p class="text-sm text-gray-500 dark:text-gray-400">Choose products to include in the promo.</p>
                                                 </div>
 
-                                                <!-- Product Selection -->
+                                                <!-- Product Selection (searchable multi-select) -->
                                                 <div class="grid gap-4">
-                                                    <!-- First Product Dropdown -->
                                                     <div>
                                                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Product</label>
                                                         <div class="relative" wire:click.outside="$set('productDropdown', false)">
-                                                            <div wire:click="$toggle('productDropdown')"
-                                                                class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm cursor-pointer flex justify-between items-center">
+                                                            <div wire:click="$set('productDropdown', true)"
+                                                                class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm cursor-pointer flex justify-between items-center min-h-[42px]">
                                                                 <div class="flex flex-wrap gap-1 items-center">
                                                                     @if(!$productDropdown)
                                                                         @if(empty($selected_products))
-                                                                            <span class="text-gray-400">Select Product</span>
+                                                                            <span class="text-gray-400">Search and select products...</span>
                                                                         @else
                                                                             @foreach($this->availableProducts as $product)
                                                                                 @if(in_array($product->id, $selected_products))
                                                                                     <span class="inline-flex items-center bg-gray-600 text-white text-xs font-medium px-2 py-0.5 rounded-full">
                                                                                         {{ $product->name }}
-                                                                                        <span class="ml-1 text-gray-200 text-[11px]">₱{{ number_format($product->price, 0) }}</span>
+                                                                                        <span class="ml-1 text-gray-200 text-[11px]">₱{{ number_format($product->price ?? 0, 0) }}</span>
                                                                                     </span>
                                                                                 @endif
                                                                             @endforeach
                                                                         @endif
                                                                     @else
-                                                                        <span class="text-gray-400">Select Product</span>
+                                                                        <span class="text-gray-400">Search and select products...</span>
                                                                     @endif
                                                                 </div>
-                                                                <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <svg class="w-4 h-4 ml-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                                                 </svg>
                                                             </div>
 
                                                             @if($productDropdown)
-                                                                <div class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto dark:bg-gray-700 dark:border-gray-600">
-                                                                    @if($this->availableProducts->count() > 0)
-                                                                        @foreach($this->availableProducts as $product)
-                                                                            <label class="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600 last:border-b-0 {{ $product->isDisabled ?? false ? 'opacity-50 cursor-not-allowed' : '' }}">
-                                                                                <div class="flex items-center space-x-3">
-                                                                                    <input type="checkbox"
-                                                                                        value="{{ $product->id }}"
-                                                                                        wire:model="selected_products"
-                                                                                        @if($product->isDisabled ?? false) disabled @endif
-                                                                                        onclick="event.stopPropagation()"
-                                                                                        class="form-checkbox h-4 w-4 accent-green-600 text-green-600 focus:ring-green-500 border-gray-300 rounded dark:accent-green-400 dark:text-green-400 {{ $product->isDisabled ?? false ? 'cursor-not-allowed' : '' }}">
-                                                                                    <span class="text-sm text-gray-900 dark:text-white {{ $product->isDisabled ?? false ? 'line-through' : '' }}">
-                                                                                        {{ $product->name }}
-                                                                                        @if($product->isDisabled ?? false)
-                                                                                            <span class="ml-2 text-xs text-red-500">(Already in promo)</span>
-                                                                                        @endif
+                                                                <div class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg dark:bg-gray-700 dark:border-gray-600">
+                                                                    <div class="p-2 border-b border-gray-200 dark:border-gray-600 sticky top-0 bg-white dark:bg-gray-700">
+                                                                        <input type="text"
+                                                                            wire:model.live.debounce.200ms="productSearch"
+                                                                            placeholder="Search by name or SKU..."
+                                                                            onclick="event.stopPropagation()"
+                                                                            class="block w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-600 dark:text-white dark:placeholder-gray-400" />
+                                                                    </div>
+                                                                    <div class="max-h-60 overflow-auto">
+                                                                        @if($this->filteredAvailableProducts->count() > 0)
+                                                                            @foreach($this->filteredAvailableProducts as $product)
+                                                                                <label class="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600 last:border-b-0 {{ $product->isDisabled ?? false ? 'opacity-50 cursor-not-allowed' : '' }}">
+                                                                                    <div class="flex items-center space-x-3">
+                                                                                        <input type="checkbox"
+                                                                                            value="{{ $product->id }}"
+                                                                                            wire:model="selected_products"
+                                                                                            @if($product->isDisabled ?? false) disabled @endif
+                                                                                            onclick="event.stopPropagation()"
+                                                                                            class="form-checkbox h-4 w-4 accent-green-600 text-green-600 focus:ring-green-500 border-gray-300 rounded dark:accent-green-400 dark:text-green-400 {{ $product->isDisabled ?? false ? 'cursor-not-allowed' : '' }}">
+                                                                                        <span class="text-sm text-gray-900 dark:text-white {{ $product->isDisabled ?? false ? 'line-through' : '' }}">
+                                                                                            {{ $product->name }}
+                                                                                            @if($product->isDisabled ?? false)
+                                                                                                <span class="ml-2 text-xs text-red-500">(Already in promo)</span>
+                                                                                            @endif
+                                                                                        </span>
+                                                                                    </div>
+                                                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500 text-white dark:bg-emerald-400 dark:text-gray-900 shadow-sm">
+                                                                                        ₱ {{ number_format($product->price ?? 0, 0) }}
                                                                                     </span>
-                                                                                </div>
-                                                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500 text-white dark:bg-emerald-400 dark:text-gray-900 shadow-sm">
-                                                                                    ₱ {{ number_format($product->price, 0) }}
-                                                                                </span>
-                                                                            </label>
-                                                                        @endforeach
-                                                                    @else
-                                                                        <div class="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
-                                                                            No products available
-                                                                        </div>
-                                                                    @endif
+                                                                                </label>
+                                                                            @endforeach
+                                                                        @else
+                                                                            <div class="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
+                                                                                @if($productSearch)
+                                                                                    No products match "{{ $productSearch }}"
+                                                                                @else
+                                                                                    No products available
+                                                                                @endif
+                                                                            </div>
+                                                                        @endif
+                                                                    </div>
                                                                 </div>
                                                             @endif
 
@@ -671,14 +690,21 @@
                                                         <label for="edit_type" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                                             Promo Type
                                                         </label>
-                                                        <select id="edit_type" wire:model="edit_type"
-                                                            class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
-                                                            required>
-                                                            <option value="" disabled>Select Promo Type</option>
-                                                            @foreach($promo_type_options as $type)
-                                                                <option value="{{ $type }}">{{ $type }}</option>
-                                                            @endforeach
-                                                        </select>
+                                                        <div class="relative">
+                                                            <select id="edit_type" wire:model="edit_type"
+                                                                class="block w-full appearance-none rounded-md border border-gray-300 bg-white pl-3 pr-10 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                                required>
+                                                                <option value="" disabled>Select Promo Type</option>
+                                                                @foreach($promo_type_options as $type)
+                                                                    <option value="{{ $type }}">{{ $type }}</option>
+                                                                @endforeach
+                                                            </select>
+                                                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 dark:text-gray-400">
+                                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                                </svg>
+                                                            </div>
+                                                        </div>
                                                         @error('edit_type')
                                                             <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                                         @enderror
@@ -775,13 +801,13 @@
                                                     </div>
                                                 </div>
 
-                                                <!-- Product Selection -->
+                                                <!-- Product Selection (searchable multi-select) -->
                                                 <div class="grid gap-4">
                                                     <div>
                                                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Product</label>
                                                         <div class="relative" wire:click.outside="$set('editProductDropdown', false)">
                                                             <div wire:click="$toggle('editProductDropdown')"
-                                                                class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm cursor-pointer flex justify-between items-center">
+                                                                class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm cursor-pointer flex justify-between items-center min-h-[42px]">
                                                                 <div class="flex flex-wrap gap-1 items-center">
                                                                     @if(!$editProductDropdown)
                                                                         @if(empty($edit_selected_products))
@@ -789,7 +815,7 @@
                                                                                 @if(empty($edit_selected_batches))
                                                                                     Select batch allocation first
                                                                                 @else
-                                                                                    Select Product
+                                                                                    Search and select products...
                                                                                 @endif
                                                                             </span>
                                                                         @else
@@ -797,7 +823,7 @@
                                                                                 @if(in_array($product->id, $edit_selected_products))
                                                                                     <span class="inline-flex items-center bg-gray-600 text-white text-xs font-medium px-2 py-0.5 rounded-full">
                                                                                         {{ $product->name }}
-                                                                                        <span class="ml-1 text-gray-200 text-[11px]">₱{{ number_format($product->price, 0) }}</span>
+                                                                                        <span class="ml-1 text-gray-200 text-[11px]">₱{{ number_format($product->price ?? 0, 0) }}</span>
                                                                                     </span>
                                                                                 @endif
                                                                             @endforeach
@@ -807,45 +833,58 @@
                                                                             @if(empty($edit_selected_batches))
                                                                                 Select batch allocation first
                                                                             @else
-                                                                                Select Product
+                                                                                Search and select products...
                                                                             @endif
                                                                         </span>
                                                                     @endif
                                                                 </div>
-                                                                <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <svg class="w-4 h-4 ml-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                                                 </svg>
                                                             </div>
 
                                                             @if($editProductDropdown && !empty($edit_selected_batches))
-                                                                <div class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto dark:bg-gray-700 dark:border-gray-600">
-                                                                    @if($this->availableProductsForEditBatches->count() > 0)
-                                                                        @foreach($this->availableProductsForEditBatches as $product)
-                                                                            <label class="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600 last:border-b-0 {{ $product->isDisabled ?? false ? 'opacity-50 cursor-not-allowed' : '' }}">
-                                                                                <div class="flex items-center space-x-3">
-                                                                                    <input type="checkbox"
-                                                                                        value="{{ $product->id }}"
-                                                                                        wire:model="edit_selected_products"
-                                                                                        @if($product->isDisabled ?? false) disabled @endif
-                                                                                        onclick="event.stopPropagation()"
-                                                                                        class="form-checkbox h-4 w-4 accent-green-600 text-green-600 focus:ring-green-500 border-gray-300 rounded dark:accent-green-400 dark:text-green-400 {{ $product->isDisabled ?? false ? 'cursor-not-allowed' : '' }}">
-                                                                                    <span class="text-sm text-gray-900 dark:text-white {{ $product->isDisabled ?? false ? 'line-through' : '' }}">
-                                                                                        {{ $product->name }}
-                                                                                        @if($product->isDisabled ?? false)
-                                                                                            <span class="ml-2 text-xs text-red-500">(Already in promo)</span>
-                                                                                        @endif
+                                                                <div class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg dark:bg-gray-700 dark:border-gray-600">
+                                                                    <div class="p-2 border-b border-gray-200 dark:border-gray-600 sticky top-0 bg-white dark:bg-gray-700">
+                                                                        <input type="text"
+                                                                            wire:model.live.debounce.200ms="editProductSearch"
+                                                                            placeholder="Search by name or SKU..."
+                                                                            onclick="event.stopPropagation()"
+                                                                            class="block w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-600 dark:text-white dark:placeholder-gray-400" />
+                                                                    </div>
+                                                                    <div class="max-h-60 overflow-auto">
+                                                                        @if($this->filteredEditProducts->count() > 0)
+                                                                            @foreach($this->filteredEditProducts as $product)
+                                                                                <label class="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600 last:border-b-0 {{ $product->isDisabled ?? false ? 'opacity-50 cursor-not-allowed' : '' }}">
+                                                                                    <div class="flex items-center space-x-3">
+                                                                                        <input type="checkbox"
+                                                                                            value="{{ $product->id }}"
+                                                                                            wire:model="edit_selected_products"
+                                                                                            @if($product->isDisabled ?? false) disabled @endif
+                                                                                            onclick="event.stopPropagation()"
+                                                                                            class="form-checkbox h-4 w-4 accent-green-600 text-green-600 focus:ring-green-500 border-gray-300 rounded dark:accent-green-400 dark:text-green-400 {{ $product->isDisabled ?? false ? 'cursor-not-allowed' : '' }}">
+                                                                                        <span class="text-sm text-gray-900 dark:text-white {{ $product->isDisabled ?? false ? 'line-through' : '' }}">
+                                                                                            {{ $product->name }}
+                                                                                            @if($product->isDisabled ?? false)
+                                                                                                <span class="ml-2 text-xs text-red-500">(Already in promo)</span>
+                                                                                            @endif
+                                                                                        </span>
+                                                                                    </div>
+                                                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500 text-white dark:bg-emerald-400 dark:text-gray-900 shadow-sm">
+                                                                                        ₱ {{ number_format($product->price ?? 0, 0) }}
                                                                                     </span>
-                                                                                </div>
-                                                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500 text-white dark:bg-emerald-400 dark:text-gray-900 shadow-sm">
-                                                                                    ₱ {{ number_format($product->price, 0) }}
-                                                                                </span>
-                                                                            </label>
-                                                                        @endforeach
-                                                                    @else
-                                                                        <div class="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
-                                                                            No products available in selected batch allocations
-                                                                        </div>
-                                                                    @endif
+                                                                                </label>
+                                                                            @endforeach
+                                                                        @else
+                                                                            <div class="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
+                                                                                @if($editProductSearch)
+                                                                                    No products match "{{ $editProductSearch }}"
+                                                                                @else
+                                                                                    No products available in selected batch allocations
+                                                                                @endif
+                                                                            </div>
+                                                                        @endif
+                                                                    </div>
                                                                 </div>
                                                             @endif
 

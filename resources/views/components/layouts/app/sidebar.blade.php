@@ -4,8 +4,28 @@
 <head>
     @include('partials.head')
     @livewireStyles
-    {{-- Dynamic favicon - will use black logo for light mode --}}
-    <link rel="icon" type="image/png" href="{{ asset('images/jovanni_logo_black.png') }}" alt="Jovanni Logo" />
+    {{-- Dynamic favicon - Jovanni logo for both light and dark mode --}}
+    <link rel="icon" type="image/png" href="{{ asset('images/jovanni_logo_black.png') }}" id="favicon-light" />
+    <link rel="icon" type="image/png" href="{{ asset('images/jovanni_logo_white.png') }}" id="favicon-dark" media="(prefers-color-scheme: dark)" />
+    <script>
+        // Update favicon based on theme
+        document.addEventListener('DOMContentLoaded', function() {
+            const updateFavicon = () => {
+                const isDark = document.documentElement.classList.contains('dark') || 
+                              (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                const favicon = document.querySelector('link[rel="icon"]');
+                if (favicon) {
+                    favicon.href = isDark ? 
+                        '{{ asset("images/jovanni_logo_white.png") }}' : 
+                        '{{ asset("images/jovanni_logo_black.png") }}';
+                }
+            };
+            updateFavicon();
+            // Watch for theme changes
+            const observer = new MutationObserver(updateFavicon);
+            observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+        });
+    </script>
 </head>
 @php
     use App\Enums\Enum\PermissionEnum;

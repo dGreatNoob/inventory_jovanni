@@ -31,6 +31,9 @@ class Product extends Model
         'price',
         'original_price',
         'price_note',
+        'price_effective_date',
+        'pending_price',
+        'pending_price_note',
         'cost',
         'shelf_life_days',
         'pict_name',
@@ -44,6 +47,8 @@ class Product extends Model
         'disabled' => 'boolean',
         'price' => 'decimal:2',
         'original_price' => 'decimal:2',
+        'price_effective_date' => 'date',
+        'pending_price' => 'decimal:2',
         'cost' => 'decimal:2',
         'product_color_id' => 'integer',
     ];

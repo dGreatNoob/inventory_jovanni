@@ -4,6 +4,7 @@
             <flux:heading id="price-history-title" size="lg" class="text-gray-900 dark:text-white">Price History</flux:heading>
             <flux:modal.close aria-label="Close" />
         </div>
+        <p class="text-xs text-gray-500 dark:text-gray-400">Applied price changes for this product. Entries include changes that took effect immediately and those that took effect on their scheduled effective date.</p>
 
         @if(empty($priceHistories))
             <p class="text-sm text-gray-500 dark:text-gray-400">No price changes recorded.</p>

@@ -10,6 +10,7 @@ use App\Models\Category;
 use App\Models\Supplier;
 use App\Models\ProductImage;
 use App\Models\ProductColor;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
@@ -86,6 +87,7 @@ class ProductService
                 'price' => $data['price'],
                 'original_price' => $data['original_price'] ?? null,
                 'price_note' => $data['price_note'],
+                'price_effective_date' => !empty($data['price_effective_date']) ? $data['price_effective_date'] : null,
                 'cost' => $data['cost'],
                 'shelf_life_days' => $data['shelf_life_days'] ?? null,
                 'pict_name' => $data['pict_name'] ?? null,
@@ -136,17 +138,23 @@ class ProductService
                 $color = $product->color;
             }
 
+            $effectiveDate = !empty($data['price_effective_date'])
+                ? Carbon::parse($data['price_effective_date'])->startOfDay()
+                : null;
+            $isFutureEffective = $effectiveDate && $effectiveDate->gt(Carbon::today());
+
             $updatePayload = array_merge($data, [
                 'updated_by' => auth()->id(),
             ]);
 
+            // Barcode: when effective date is future we keep current price for barcode; otherwise use form price
+            $priceForBarcode = $isFutureEffective ? $product->price : ($data['price'] ?? $product->price);
             if (array_key_exists('product_number', $data) || array_key_exists('product_color_id', $data) || array_key_exists('price', $data)) {
                 $updatedProductNumber = $data['product_number'] ?? $product->product_number;
                 $colorCode = $color?->code;
-                $price = $data['price'] ?? $product->price;
 
-                if ($updatedProductNumber && $colorCode && $price) {
-                    $composedBarcode = $this->composeBarcode($updatedProductNumber, $colorCode, $price);
+                if ($updatedProductNumber && $colorCode && $priceForBarcode) {
+                    $composedBarcode = $this->composeBarcode($updatedProductNumber, $colorCode, $priceForBarcode);
                     if ($composedBarcode) {
                         $updatePayload['barcode'] = $composedBarcode;
                     }
@@ -157,6 +165,23 @@ class ProductService
             if (array_key_exists('price', $data)) {
                 $newPrice = $data['price'];
                 $priceChanged = $this->hasPriceChanged($originalPrice, $newPrice);
+            }
+
+            if ($isFutureEffective) {
+                // Store new price/note as pending; do not change active price/price_note/product_type yet
+                $productType = $data['product_type'] ?? null;
+                $pendingNote = $this->generateNextPriceNote($product, $productType);
+                $updatePayload['pending_price'] = $data['price'] ?? null;
+                $updatePayload['pending_price_note'] = $pendingNote;
+                $updatePayload['price_effective_date'] = $effectiveDate;
+                unset($updatePayload['price'], $updatePayload['price_note'], $updatePayload['product_type']);
+                $product->update($updatePayload);
+                // No ProductPriceHistory until the scheduled command applies the pending price
+            } else {
+                // Apply price immediately and clear any pending
+                $updatePayload['pending_price'] = null;
+                $updatePayload['pending_price_note'] = null;
+                $updatePayload['price_effective_date'] = null;
 
                 if ($priceChanged) {
                     $productType = $data['product_type'] ?? null;
@@ -164,19 +189,19 @@ class ProductService
                     $updatePayload['price_note'] = $nextNote;
                     $data['price_note'] = $nextNote;
                 }
-            }
 
-            $product->update($updatePayload);
+                $product->update($updatePayload);
 
-            if ($priceChanged) {
-                ProductPriceHistory::create([
-                    'product_id' => $product->id,
-                    'old_price' => $originalPrice,
-                    'new_price' => $data['price'],
-                    'pricing_note' => $data['price_note'] ?? $originalNote,
-                    'changed_by' => auth()->id() ?? 1,
-                    'changed_at' => now(),
-                ]);
+                if ($priceChanged) {
+                    ProductPriceHistory::create([
+                        'product_id' => $product->id,
+                        'old_price' => $originalPrice,
+                        'new_price' => $data['price'],
+                        'pricing_note' => $data['price_note'] ?? $originalNote,
+                        'changed_by' => auth()->id() ?? 1,
+                        'changed_at' => now(),
+                    ]);
+                }
             }
 
             return $product->fresh(['category', 'supplier', 'images', 'inventory']);
@@ -213,11 +238,83 @@ class ProductService
     }
 
     /**
-     * Get product with full details
+     * Apply pending price/price_note for a single product if its price_effective_date is today or in the past.
+     * Call this when loading a product for display or edit so the current price is up to date.
+     * Returns true if the product was updated, false otherwise.
+     */
+    public function applyDuePendingPriceForProduct(Product $product): bool
+    {
+        if ($product->price_effective_date === null) {
+            return false;
+        }
+        if ($product->price_effective_date->isFuture()) {
+            return false;
+        }
+        if ($product->pending_price === null && $product->pending_price_note === null) {
+            return false;
+        }
+
+        $oldPrice = $product->price;
+        $newPrice = $product->pending_price ?? $product->price;
+        $newNote = $product->pending_price_note ?? $product->price_note;
+        // Update product_type based on the new price_note (SAL = sale, REG = regular)
+        $newProductType = str_starts_with(strtoupper((string) $newNote), 'SAL') ? 'sale' : 'regular';
+
+        DB::transaction(function () use ($product, $oldPrice, $newPrice, $newNote, $newProductType) {
+            $product->update([
+                'price' => $newPrice,
+                'price_note' => $newNote,
+                'product_type' => $newProductType,
+                'pending_price' => null,
+                'pending_price_note' => null,
+                'price_effective_date' => null,
+                'updated_by' => auth()->id(),
+            ]);
+
+            ProductPriceHistory::create([
+                'product_id' => $product->id,
+                'old_price' => $oldPrice,
+                'new_price' => $newPrice,
+                'pricing_note' => $newNote,
+                'changed_by' => auth()->id() ?? 1,
+                'changed_at' => now(),
+            ]);
+        });
+
+        return true;
+    }
+
+    /**
+     * Apply pending price/price_note for products whose price_effective_date is today or in the past.
+     * Returns the number of products updated. Use for manual bulk apply (e.g. artisan command).
+     */
+    public function applyDuePendingPrices(): int
+    {
+        $today = Carbon::today();
+        $products = Product::whereNotNull('price_effective_date')
+            ->where('price_effective_date', '<=', $today)
+            ->where(function ($q) {
+                $q->whereNotNull('pending_price')->orWhereNotNull('pending_price_note');
+            })
+            ->get();
+
+        $count = 0;
+        foreach ($products as $product) {
+            if ($this->applyDuePendingPriceForProduct($product->fresh())) {
+                $count++;
+            }
+        }
+
+        return $count;
+    }
+
+    /**
+     * Get product with full details.
+     * Applies any due pending price (effective date <= today) so the returned product has current price.
      */
     public function getProductDetails(int $productId): ?Product
     {
-        return Product::with([
+        $product = Product::with([
             'category',
             'supplier',
             'images',
@@ -226,6 +323,13 @@ class ProductService
                 $query->with(['location', 'creator'])->latest()->limit(10);
             }
         ])->find($productId);
+
+        if ($product) {
+            $this->applyDuePendingPriceForProduct($product);
+            $product->refresh();
+        }
+
+        return $product;
     }
 
     /**

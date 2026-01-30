@@ -21,9 +21,16 @@
                 <div class="grid gap-6 mb-6 md:grid-cols-2">
                     <div>
                         <label for="po_type" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">PO Number</label>
-                        <select id="po_type" wire:model="po_type" disabled class="bg-gray-100 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
-                            <option value="products" selected>&lt;NEW&gt;</option>
-                        </select>
+                        <div class="relative">
+                            <select id="po_type" wire:model="po_type" disabled class="bg-gray-100 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 pr-10 appearance-none dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+                                <option value="products" selected>&lt;NEW&gt;</option>
+                            </select>
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
+                        </div>
                     </div>
                     <div>
                         <label for="ordered_by" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Ordered By</label>
@@ -31,12 +38,19 @@
                     </div>
                     <div>
                         <label for="supplier_id" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Supplier</label>
-                        <select id="supplier_id" wire:model.live="supplier_id" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required>
-                            <option value="">Select a supplier</option>
-                            @foreach($suppliers as $supplier)
-                            <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
-                            @endforeach
-                        </select>
+                        <div class="relative">
+                            <select id="supplier_id" wire:model.live="supplier_id" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 pr-10 appearance-none dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" required>
+                                <option value="">Select a supplier</option>
+                                @foreach($suppliers as $supplier)
+                                <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
+                                @endforeach
+                            </select>
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
+                        </div>
                         @error('supplier_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
                     <div>
@@ -56,11 +70,6 @@
                         <label for="expected_delivery_date" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Expected Delivery Date</label>
                         <input type="date" id="expected_delivery_date" wire:model="expected_delivery_date" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" />
                         @error('expected_delivery_date') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                    </div>
-                    <div>
-                        <label for="payment_terms" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Payment Terms</label>
-                        <input type="text" id="payment_terms" wire:model="payment_terms" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Enter payment terms" required />
-                        @error('payment_terms') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
                 </div>
             </form>
@@ -91,21 +100,23 @@
                     </div>
 
                     {{-- Add Product Modal --}}
-                    <div x-data="{ show: @entangle('showModal') }" x-show="show" x-cloak class="fixed top-0 left-0 right-0 z-50 w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] max-h-full flex items-center justify-center bg-black bg-opacity-50">
-                        <div class="relative w-full max-w-4xl max-h-full">
-                            <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
-                                <div class="flex items-start justify-between p-4 border-b rounded-t dark:border-gray-600">
+                    <div x-data="{ show: @entangle('showModal') }" x-show="show" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
+                        <div class="relative w-full max-w-4xl max-h-[90vh] bg-white rounded-lg shadow-xl dark:bg-gray-800 overflow-hidden flex flex-col">
+                            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+                                <div>
                                     <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
                                         Add Product to Purchase Order
                                     </h3>
-                                    <button type="button" wire:click="closeModal" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ml-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
-                                        <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
-                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
-                                        </svg>
-                                        <span class="sr-only">Close modal</span>
-                                    </button>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Select a product from the supplier's catalog</p>
                                 </div>
-                                <div class="p-6 space-y-6">
+                                <button type="button" wire:click="closeModal" class="rounded-full p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                    <svg class="w-5 h-5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
+                                    </svg>
+                                    <span class="sr-only">Close modal</span>
+                                </button>
+                            </div>
+                            <div class="flex-1 overflow-y-auto px-6 py-6">
                                     {{-- Search and Filters --}}
                                     <div class="grid gap-4 mb-4 md:grid-cols-2">
                                         <div>
@@ -116,59 +127,76 @@
                                                         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z" />
                                                     </svg>
                                                 </div>
-                                                <input type="text" wire:model.live="search" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Search by name, SKU, or barcode" />
+                                                <input type="text" wire:model.live.debounce.300ms="search" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Search by name, SKU, Product ID, or Supplier Code..." />
                                             </div>
                                         </div>
                                         <div>
                                             <label for="categoryFilter" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Category</label>
-                                            <select wire:model.live="categoryFilter" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                                                <option value="">All Categories</option>
-                                                @foreach($categories as $category)
-                                                    <option value="{{ $category->id }}">{{ $category->name }}</option>
-                                                @endforeach
-                                            </select>
+                                            <div class="relative">
+                                                <select wire:model.live="categoryFilter" id="categoryFilter" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 pr-10 appearance-none dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                                    <option value="">All Categories</option>
+                                                    @foreach($categories as $category)
+                                                        <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                                <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                    </svg>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
 
                                     {{-- Product List --}}
-                                    <div class="mt-2 max-h-64 overflow-y-auto border border-gray-200 rounded-lg dark:border-gray-600">
-                                        @forelse($products as $product)
-                                        <div wire:click="selectProduct({{ $product->id }})"
-                                            class="p-3 hover:bg-blue-50 dark:hover:bg-blue-900/30 cursor-pointer border-b dark:border-gray-600 {{ $selected_product == $product->id ? 'bg-blue-100 dark:bg-blue-900/50 border-l-4 border-blue-500' : '' }}">
-                                            <div class="flex justify-between items-start">
-                                                <div class="flex-1">
-                                                    <div class="font-medium text-gray-900 dark:text-white">{{ $product->name }}</div>
-                                                    <div class="text-sm text-gray-500 dark:text-gray-400">
-                                                        SKU: {{ $product->sku }} 
-                                                        @if($product->barcode)
-                                                        | Barcode: {{ $product->barcode }}
+                                    <div class="border border-gray-200 rounded-lg dark:border-gray-600 overflow-hidden">
+                                        <div class="max-h-64 overflow-y-auto">
+                                            @forelse($products as $product)
+                                            <div wire:click="selectProduct({{ $product->id }})"
+                                                class="p-4 hover:bg-blue-50 dark:hover:bg-blue-900/30 cursor-pointer border-b border-gray-200 dark:border-gray-600 last:border-b-0 {{ $selected_product == $product->id ? 'bg-blue-50 dark:bg-blue-900/50 border-l-4 border-blue-500' : '' }}">
+                                                <div class="flex justify-between items-start">
+                                                    <div class="flex-1 space-y-1.5">
+                                                        <div class="font-medium text-gray-900 dark:text-white">
+                                                            {{ $product->remarks ?? $product->name }}
+                                                            @if ($product->color)
+                                                                <span class="text-gray-500 dark:text-gray-400"> · {{ $product->color->name ?? $product->color->code }}</span>
+                                                            @endif
+                                                        </div>
+                                                        <div class="text-sm font-mono text-gray-600 dark:text-gray-400">
+                                                            SKU: {{ $product->sku ?? '—' }}
+                                                        </div>
+                                                        <div class="text-sm text-gray-600 dark:text-gray-400">
+                                                            Supplier Code: {{ $product->supplier_code ?? '—' }}
+                                                        </div>
+                                                        @if ($product->category)
+                                                            <div class="text-xs text-gray-500 dark:text-gray-400">
+                                                                {{ $product->category->name }}
+                                                            </div>
                                                         @endif
                                                     </div>
-                                                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                                        {{ $product->category ? $product->category->name : 'N/A' }} | 
-                                                        {{ $product->supplier ? $product->supplier->name : 'N/A' }}
+                                                    <div class="text-right ml-4 flex-shrink-0">
+                                                        <div class="text-xs text-gray-500 dark:text-gray-400 mb-1">Cost</div>
+                                                        <div class="font-semibold text-gray-900 dark:text-white">₱{{ number_format($product->cost, 2) }}</div>
                                                     </div>
                                                 </div>
-                                                <div class="text-right ml-4">
-                                                    <div class="font-semibold text-gray-900 dark:text-white">₱{{ number_format($product->cost, 2) }}</div>
-                                                </div>
                                             </div>
+                                            @empty
+                                            <div class="p-6 text-center text-gray-500 dark:text-gray-400">
+                                                <svg class="w-12 h-12 mx-auto mb-2 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                                                </svg>
+                                                <p>No products found</p>
+                                            </div>
+                                            @endforelse
                                         </div>
-                                        @empty
-                                        <div class="p-6 text-center text-gray-500 dark:text-gray-400">
-                                            <svg class="w-12 h-12 mx-auto mb-2 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
-                                            </svg>
-                                            <p>No products found</p>
-                                        </div>
-                                        @endforelse
                                     </div>
-                                    <div class="mt-2">
+                                    <div class="mt-3">
                                         {{ $products->links() }}
                                     </div>
 
                                     {{-- Quantity and Price Inputs --}}
-                                    <div class="grid gap-4 md:grid-cols-2 border-t pt-4 dark:border-gray-600">
+                                    @if($selected_product)
+                                    <div class="grid gap-4 md:grid-cols-2 border-t border-gray-200 dark:border-gray-600 pt-4 mt-4">
                                         <div>
                                             <label for="unit_price" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Unit Price (₱)</label>
                                             <input type="number" step="0.01" wire:model="unit_price" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Enter unit price" required />
@@ -180,10 +208,15 @@
                                             @error('order_qty') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                         </div>
                                     </div>
+                                    @endif
                                 </div>
-                                <div class="flex items-center p-6 space-x-2 border-t border-gray-200 rounded-b dark:border-gray-600">
-                                    <button type="button" wire:click="addItem" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Add Item</button>
-                                    <button type="button" wire:click="closeModal" class="text-gray-500 bg-white hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-blue-300 rounded-lg border border-gray-200 text-sm font-medium px-5 py-2.5 hover:text-gray-900 focus:z-10 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-500 dark:hover:text-white dark:hover:bg-gray-600 dark:focus:ring-gray-600">Cancel</button>
+                                <div class="flex items-center justify-end px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 flex-shrink-0 space-x-3">
+                                    <button type="button" wire:click="closeModal" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
+                                        Cancel
+                                    </button>
+                                    <button type="button" wire:click="addItem" @if(!$selected_product) disabled @endif class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed">
+                                        Add Item
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -194,35 +227,47 @@
                         <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
                             <thead class="text-sm text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                                 <tr>
-                                    <th scope="col" class="px-6 py-3">SKU</th>
-                                    <th scope="col" class="px-6 py-3">Name</th>
-                                    <th scope="col" class="px-6 py-3">Category</th>
-                                    <th scope="col" class="px-6 py-3">Supplier</th>
-                                    <th scope="col" class="px-6 py-3">Supplier Code</th>
-                                    <th scope="col" class="px-6 py-3">Unit Price</th>
-                                    <th scope="col" class="px-6 py-3">Quantity</th>
-                                    <th scope="col" class="px-6 py-3">Total Price</th>
-                                    <th scope="col" class="px-6 py-3">Action</th>
+                                    <th scope="col" class="px-5 py-3 text-left">Product Name</th>
+                                    <th scope="col" class="px-5 py-3 text-left">SKU</th>
+                                    <th scope="col" class="px-5 py-3 text-left">Supplier Code</th>
+                                    <th scope="col" class="px-5 py-3 text-left">Category</th>
+                                    <th scope="col" class="px-5 py-3 text-right">Unit Price</th>
+                                    <th scope="col" class="px-5 py-3 text-right">Quantity</th>
+                                    <th scope="col" class="px-5 py-3 text-right">Total Price</th>
+                                    <th scope="col" class="px-5 py-3 text-center">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse($paginatedOrderedItems as $index => $item)
                                 <tr class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700">
-                                    <td class="px-6 py-4 font-medium text-gray-900 dark:text-white">{{ $item['sku'] ?? 'N/A' }}</td>
-                                    <td class="px-6 py-4">{{ $item['name'] ?? 'N/A' }}</td>
-                                    <td class="px-6 py-4">{{ $item['category'] ?? 'N/A' }}</td>
-                                    <td class="px-6 py-4">{{ $item['supplier'] ?? 'N/A' }}</td>
-                                    <td class="px-6 py-4">{{ $item['supplier_code'] ?? 'N/A' }}</td>
-                                    <td class="px-6 py-4">₱{{ number_format($item['unit_price'] ?? 0, 2) }}</td>
-                                    <td class="px-6 py-4">{{ number_format($item['order_qty'] ?? 0, 2) }} {{ $item['uom'] ?? 'pcs' }}</td>
-                                    <td class="px-6 py-4 font-semibold">₱{{ number_format($item['total_price'] ?? 0, 2) }}</td>
-                                    <td class="px-6 py-4">
+                                    <td class="px-5 py-4">
+                                        <div class="font-medium text-gray-900 dark:text-white">{{ $item['name'] ?? 'N/A' }}</div>
+                                    </td>
+                                    <td class="px-5 py-4">
+                                        <div class="text-sm font-mono text-gray-600 dark:text-gray-400">{{ $item['sku'] ?? '—' }}</div>
+                                    </td>
+                                    <td class="px-5 py-4">
+                                        <div class="text-sm text-gray-600 dark:text-gray-400">{{ $item['supplier_code'] ?? '—' }}</div>
+                                    </td>
+                                    <td class="px-5 py-4">
+                                        <div class="text-sm text-gray-500 dark:text-gray-400">{{ $item['category'] ?? 'N/A' }}</div>
+                                    </td>
+                                    <td class="px-5 py-4 text-right">
+                                        <div class="text-sm text-gray-900 dark:text-white">₱{{ number_format($item['unit_price'] ?? 0, 2) }}</div>
+                                    </td>
+                                    <td class="px-5 py-4 text-right">
+                                        <div class="text-sm text-gray-900 dark:text-white">{{ number_format($item['order_qty'] ?? 0, 2) }} {{ $item['uom'] ?? 'pcs' }}</div>
+                                    </td>
+                                    <td class="px-5 py-4 text-right">
+                                        <div class="text-sm font-semibold text-gray-900 dark:text-white">₱{{ number_format($item['total_price'] ?? 0, 2) }}</div>
+                                    </td>
+                                    <td class="px-5 py-4 text-center">
                                         <button type="button" wire:click="removeItem({{ count($orderedItems) - 1 - ($index + (($orderedItemsPage - 1) * $orderedItemsPerPage)) }})" class="font-medium text-red-600 dark:text-red-500 hover:underline">Remove</button>
                                     </td>
                                 </tr>
                                 @empty
                                 <tr class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700">
-                                    <td colspan="9" class="px-6 py-8 text-center">
+                                    <td colspan="8" class="px-6 py-8 text-center">
                                         <div class="flex flex-col items-center justify-center space-y-4">
                                             <svg class="w-12 h-12 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
@@ -237,10 +282,11 @@
                             @if(!empty($orderedItems))
                             <tfoot class="text-sm font-semibold text-gray-900 bg-gray-100 dark:bg-gray-700 dark:text-white">
                                 <tr>
-                                    <td colspan="6" class="px-6 py-3 text-right">Total:</td>
-                                    <td class="px-6 py-3">{{ number_format($this->totalQuantity, 2) }}</td>
-                                    <td class="px-6 py-3">₱{{ number_format($this->totalAmount, 2) }}</td>
-                                    <td></td>
+                                    <td colspan="4" class="px-5 py-3 text-right">Total:</td>
+                                    <td class="px-5 py-3"></td>
+                                    <td class="px-5 py-3 text-right">{{ number_format($this->totalQuantity, 2) }}</td>
+                                    <td class="px-5 py-3 text-right">₱{{ number_format($this->totalAmount, 2) }}</td>
+                                    <td class="px-5 py-3"></td>
                                 </tr>
                             </tfoot>
                             @endif
@@ -252,14 +298,21 @@
                         <div class="flex items-center justify-between">
                             <div class="flex items-center space-x-4">
                                 <label class="text-sm font-medium text-gray-900 dark:text-white">Per Page:</label>
-                                <select wire:model.live="orderedItemsPerPage"
-                                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
-                                    <option value="5">5</option>
-                                    <option value="10">10</option>
-                                    <option value="25">25</option>
-                                    <option value="50">50</option>
-                                    <option value="100">100</option>
-                                </select>
+                                <div class="relative">
+                                    <select wire:model.live="orderedItemsPerPage"
+                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 pr-10 appearance-none dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+                                        <option value="5">5</option>
+                                        <option value="10">10</option>
+                                        <option value="25">25</option>
+                                        <option value="50">50</option>
+                                        <option value="100">100</option>
+                                    </select>
+                                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                        </svg>
+                                    </div>
+                                </div>
                             </div>
                             @if($orderedItemsTotalPages > 1)
                             <div class="flex items-center space-x-2">

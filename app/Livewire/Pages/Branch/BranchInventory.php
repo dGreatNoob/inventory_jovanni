@@ -47,6 +47,8 @@ class BranchInventory extends Component
     public $salesItems = [];
     public $selectedAgentId = null;
     public $availableAgents = [];
+    public $agentSearch = '';
+    public $agentDropdown = false;
 
     // File upload properties
     public $textFile;
@@ -270,8 +272,10 @@ class BranchInventory extends Component
             return [
                 'id' => $productId,
                 'name' => $productItems->first()->getDisplayNameAttribute(),
-                'barcode' => $productItems->first()->getDisplayBarcodeAttribute(),
+                'product_number' => $product->product_number ?? null,
                 'sku' => $productItems->first()->getDisplaySkuAttribute(),
+                'supplier_code' => $product->supplier_code ?? null,
+                'barcode' => $productItems->first()->getDisplayBarcodeAttribute(),
                 'total_quantity' => $totalQuantity,
                 'total_sold' => $totalSold,
                 'remaining_quantity' => $totalQuantity - $totalSold,
@@ -616,6 +620,7 @@ class BranchInventory extends Component
                 $message .= "No variances found - inventory matches allocation.";
             }
 
+            $this->successMessage = $message;
             $this->showSuccessModal = true;
 
         } catch (\Exception $e) {
@@ -744,10 +749,13 @@ class BranchInventory extends Component
             $barcode = $item->getDisplayBarcodeAttribute();
             if (!empty($barcode) && $barcode !== 'N/A') {
                 if (!isset($allocatedProducts[$barcode])) {
+                    $product = $item->product;
                     $allocatedProducts[$barcode] = [
                         'product_id' => $item->product_id,
+                        'product_number' => $product ? ($product->product_number ?? null) : null,
                         'product_name' => $item->getDisplayNameAttribute(),
                         'sku' => $item->getDisplaySkuAttribute(),
+                        'supplier_code' => $product ? ($product->supplier_code ?? null) : null,
                         'allocated_quantity' => 0,
                     ];
                 }
@@ -773,8 +781,10 @@ class BranchInventory extends Component
                 // Missing item - allocated but not scanned
                 $this->missingItems[] = [
                     'barcode' => $barcode,
+                    'product_number' => $product['product_number'] ?? null,
                     'product_name' => $product['product_name'],
                     'sku' => $product['sku'],
+                    'supplier_code' => $product['supplier_code'] ?? null,
                     'allocated_quantity' => $product['allocated_quantity'],
                     'scanned_quantity' => 0,
                     'variance' => -$product['allocated_quantity'],
@@ -783,8 +793,10 @@ class BranchInventory extends Component
                 // Quantity variance - scanned count doesn't match allocated
                 $this->quantityVariances[] = [
                     'barcode' => $barcode,
+                    'product_number' => $product['product_number'] ?? null,
                     'product_name' => $product['product_name'],
                     'sku' => $product['sku'],
+                    'supplier_code' => $product['supplier_code'] ?? null,
                     'allocated_quantity' => $product['allocated_quantity'],
                     'scanned_quantity' => $scannedCount,
                     'variance' => $scannedCount - $product['allocated_quantity'],
@@ -848,6 +860,25 @@ class BranchInventory extends Component
         $this->salesQuantity = 1;
         $this->salesItems = [];
         $this->selectedAgentId = null;
+        $this->agentSearch = '';
+        $this->agentDropdown = false;
+    }
+
+    /**
+     * Filtered agents for searchable dropdown (by name or agent_code).
+     */
+    public function getFilteredAvailableAgentsProperty()
+    {
+        $agents = collect($this->availableAgents);
+        $query = trim($this->agentSearch);
+        if ($query === '') {
+            return $agents;
+        }
+        $lower = strtolower($query);
+        return $agents->filter(function ($agent) use ($lower) {
+            return str_contains(strtolower((string) ($agent->name ?? '')), $lower)
+                || str_contains(strtolower((string) ($agent->agent_code ?? '')), $lower);
+        })->values();
     }
 
     /**
@@ -891,6 +922,9 @@ class BranchInventory extends Component
         $item = [
             'id' => $this->selectedSalesProduct['id'],
             'name' => $this->selectedSalesProduct['name'],
+            'product_number' => $this->selectedSalesProduct['product_number'] ?? null,
+            'sku' => $this->selectedSalesProduct['sku'] ?? null,
+            'supplier_code' => $this->selectedSalesProduct['supplier_code'] ?? null,
             'barcode' => $this->selectedSalesProduct['barcode'],
             'quantity' => $this->salesQuantity,
             'unit_price' => $this->selectedSalesProduct['unit_price'],

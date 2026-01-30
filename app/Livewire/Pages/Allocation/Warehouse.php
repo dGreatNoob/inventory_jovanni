@@ -95,6 +95,10 @@ class Warehouse extends Component
     public $selectedProductFilterName = null;
     public $showAllProducts = false;
     public $filteredProducts = [];
+    public $categorySearch = '';
+    public $categoryDropdown = false;
+    public $productSearch = '';
+    public $productDropdown = false;
 
     // Add branches fields
     public $availableBranches = [];
@@ -908,6 +912,44 @@ class Warehouse extends Component
         $this->availableCategories = \App\Models\Category::orderBy('name')->get();
     }
 
+    /**
+     * Filtered categories for searchable dropdown (by name).
+     */
+    public function getFilteredCategoriesProperty()
+    {
+        $categories = collect($this->availableCategories);
+        $query = trim($this->categorySearch);
+        if ($query === '') {
+            return $categories;
+        }
+        $lower = strtolower($query);
+        return $categories->filter(function ($category) use ($lower) {
+            return str_contains(strtolower((string) ($category->name ?? '')), $lower);
+        })->values();
+    }
+
+    /**
+     * Filtered product names for searchable dropdown (search by name, Product ID, supplier code, SKU).
+     */
+    public function getFilteredProductNamesForDropdownProperty()
+    {
+        $products = $this->availableProducts;
+        if ($this->selectedCategoryId) {
+            $products = $products->where('category_id', $this->selectedCategoryId);
+        }
+        $query = trim($this->productSearch);
+        if ($query !== '') {
+            $lower = strtolower($query);
+            $products = $products->filter(function ($product) use ($lower) {
+                return str_contains(strtolower((string) ($product->name ?? '')), $lower)
+                    || str_contains(strtolower((string) ($product->product_number ?? '')), $lower)
+                    || str_contains(strtolower((string) ($product->supplier_code ?? '')), $lower)
+                    || str_contains(strtolower((string) ($product->sku ?? '')), $lower);
+            });
+        }
+        return $products->pluck('name')->unique()->values();
+    }
+
     public function filterProducts()
     {
         $query = Product::query();
@@ -1012,6 +1054,31 @@ class Warehouse extends Component
         $this->selectedCategoryId = null;
         $this->selectedProductFilterName = null;
         $this->filteredProducts = $this->availableProducts;
+        $this->categorySearch = '';
+        $this->categoryDropdown = false;
+        $this->productSearch = '';
+        $this->productDropdown = false;
+    }
+
+    public function selectCategoryFilter($categoryId)
+    {
+        $this->selectedCategoryId = $categoryId ?: null;
+        $this->categoryDropdown = false;
+        $this->filterProducts();
+    }
+
+    public function selectProductFilter($productName)
+    {
+        $this->selectedProductFilterName = $productName ?: null;
+        $this->productDropdown = false;
+        $this->filterProducts();
+    }
+
+    public function selectProductFilterByIndex($index)
+    {
+        $names = $this->filteredProductNamesForDropdown;
+        $name = $names->get((int) $index);
+        $this->selectProductFilter($name);
     }
 
     public function loadBranchesByBatch()
@@ -1824,6 +1891,10 @@ class Warehouse extends Component
         $this->selectedProductFilterName = null;
         $this->showAllProducts = false; // Changed to false to not show products by default
         $this->filteredProducts = [];
+        $this->categorySearch = '';
+        $this->categoryDropdown = false;
+        $this->productSearch = '';
+        $this->productDropdown = false;
 
         // Load fresh data
         $this->loadAvailableBatchNumbers();

@@ -497,8 +497,11 @@ class SalesPromo extends Component
         }
         $lower = strtolower($query);
         return $products->filter(function ($product) use ($lower) {
-            return str_contains(strtolower($product->name), $lower)
-                || str_contains(strtolower((string) $product->sku), $lower);
+            return str_contains(strtolower($product->name ?? ''), $lower)
+                || str_contains(strtolower((string) ($product->remarks ?? '')), $lower)
+                || str_contains(strtolower((string) ($product->sku ?? '')), $lower)
+                || str_contains(strtolower((string) ($product->supplier_code ?? '')), $lower)
+                || str_contains(strtolower((string) ($product->product_number ?? '')), $lower);
         })->values();
     }
 
@@ -533,8 +536,11 @@ class SalesPromo extends Component
         }
         $lower = strtolower($query);
         return $products->filter(function ($product) use ($lower) {
-            return str_contains(strtolower($product->name), $lower)
-                || str_contains(strtolower((string) ($product->sku ?? '')), $lower);
+            return str_contains(strtolower($product->name ?? ''), $lower)
+                || str_contains(strtolower((string) ($product->remarks ?? '')), $lower)
+                || str_contains(strtolower((string) ($product->sku ?? '')), $lower)
+                || str_contains(strtolower((string) ($product->supplier_code ?? '')), $lower)
+                || str_contains(strtolower((string) ($product->product_number ?? '')), $lower);
         })->values();
     }
 

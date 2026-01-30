@@ -175,6 +175,8 @@ class BranchTransfer extends Component
                         'product_id' => $item->product_id,
                         'name' => $item->getDisplayNameAttribute(),
                         'sku' => $item->getDisplaySkuAttribute(),
+                        'product_number' => $product->product_number ?? null,
+                        'supplier_code' => $product->supplier_code ?? null,
                         'available_quantity' => $totalScanned,
                         'color' => $product->color,
                     ];

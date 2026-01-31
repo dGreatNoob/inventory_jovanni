@@ -462,6 +462,22 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Sync code to deployment directory
+        run: |
+          PROJECT_DIR="${PROJECT_DIR:-/var/www/inventory_jovanni}"
+          echo "Syncing checkout from $GITHUB_WORKSPACE to $PROJECT_DIR..."
+          mkdir -p "$PROJECT_DIR"
+          rsync -a --delete \
+            --exclude='node_modules' \
+            --exclude='vendor' \
+            --exclude='storage/logs/*' \
+            --exclude='storage/framework/cache/*' \
+            --exclude='storage/framework/sessions/*' \
+            --exclude='storage/framework/views/*' \
+            --exclude='.env' \
+            "$GITHUB_WORKSPACE/" "$PROJECT_DIR/"
+          echo "Code sync complete. Deployed commit: $(cd "$PROJECT_DIR" && git rev-parse HEAD 2>/dev/null || echo 'N/A')"
+
       - name: Setup deployment environment
         run: |
           echo "🔧 Setting up deployment environment..."

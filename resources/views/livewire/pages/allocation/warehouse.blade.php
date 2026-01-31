@@ -506,36 +506,117 @@
                             <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6">
                                 <h5 class="font-medium mb-3">Filter Products</h5>
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                                    <!-- Category Filter -->
+                                    <!-- Category Filter (searchable) -->
                                     <div>
-                                        <label for="category-filter"
-                                            class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
                                             Category
                                         </label>
-                                        <select id="category-filter" wire:model.live="selectedCategoryId"
-                                            wire:change="filterProducts"
-                                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
-                                            <option value="">All Categories</option>
-                                            @foreach ($availableCategories as $category)
-                                                <option value="{{ $category->id }}">{{ $category->name }}</option>
-                                            @endforeach
-                                        </select>
+                                        <div class="relative" wire:click.outside="$set('categoryDropdown', false)">
+                                            <div wire:click="$set('categoryDropdown', true)"
+                                                class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm cursor-pointer flex justify-between items-center min-h-[42px]">
+                                                <span class="{{ $selectedCategoryId ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400' }}">
+                                                    @if($selectedCategoryId && $availableCategories)
+                                                        @php $selCat = collect($availableCategories)->firstWhere('id', $selectedCategoryId); @endphp
+                                                        {{ $selCat ? $selCat->name : 'All Categories' }}
+                                                    @else
+                                                        All Categories
+                                                    @endif
+                                                </span>
+                                                <svg class="w-4 h-4 ml-2 flex-shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                </svg>
+                                            </div>
+                                            @if($categoryDropdown)
+                                                <div class="absolute z-20 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg dark:bg-gray-700 dark:border-gray-600">
+                                                    <div class="p-2 border-b border-gray-200 dark:border-gray-600 sticky top-0 bg-white dark:bg-gray-700">
+                                                        <input type="text"
+                                                            wire:model.live.debounce.200ms="categorySearch"
+                                                            placeholder="Search categories..."
+                                                            onclick="event.stopPropagation()"
+                                                            class="block w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-600 dark:text-white dark:placeholder-gray-400" />
+                                                    </div>
+                                                    <div class="max-h-48 overflow-auto">
+                                                        <button type="button"
+                                                                wire:click="selectCategoryFilter(null)"
+                                                                class="w-full flex items-center px-3 py-2 text-left text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600">
+                                                            All Categories
+                                                        </button>
+                                                        @foreach($this->filteredCategories as $category)
+                                                            <button type="button"
+                                                                    wire:click="selectCategoryFilter({{ $category->id }})"
+                                                                    class="w-full flex items-center justify-between px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600 last:border-b-0 {{ $selectedCategoryId == $category->id ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-900 dark:text-blue-100' : 'text-gray-900 dark:text-white' }}">
+                                                                <span>{{ $category->name }}</span>
+                                                                @if($selectedCategoryId == $category->id)
+                                                                    <svg class="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                                                    </svg>
+                                                                @endif
+                                                            </button>
+                                                        @endforeach
+                                                        @if($this->filteredCategories->isEmpty())
+                                                            <div class="px-3 py-4 text-center text-sm text-gray-500 dark:text-gray-400">No categories match</div>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            @endif
+                                        </div>
                                     </div>
 
-                                    <!-- Product Filter -->
+                                    <!-- Product Filter (searchable: name, Product ID, Supplier Code, SKU) -->
                                     <div>
-                                        <label for="product-filter"
-                                            class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
                                             Product Name
                                         </label>
-                                        <select id="product-filter" wire:model.live="selectedProductFilterName"
-                                            wire:change="filterProducts"
-                                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
-                                            <option value="">All Products</option>
-                                            @foreach ($availableProducts->groupBy('name') as $productName => $variants)
-                                                <option value="{{ $productName }}">{{ $productName }}</option>
-                                            @endforeach
-                                        </select>
+                                        <div class="relative" wire:click.outside="$set('productDropdown', false)">
+                                            <div wire:click="$set('productDropdown', true)"
+                                                class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm cursor-pointer flex justify-between items-center min-h-[42px]">
+                                                <span class="{{ $selectedProductFilterName ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400' }}">
+                                                    {{ $selectedProductFilterName ?: 'All Products' }}
+                                                </span>
+                                                <svg class="w-4 h-4 ml-2 flex-shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                </svg>
+                                            </div>
+                                            @if($productDropdown)
+                                                <div class="absolute z-20 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg dark:bg-gray-700 dark:border-gray-600">
+                                                    <div class="p-2 border-b border-gray-200 dark:border-gray-600 sticky top-0 bg-white dark:bg-gray-700">
+                                                        <input type="text"
+                                                            wire:model.live.debounce.200ms="productSearch"
+                                                            placeholder="Search by name, Product ID, Supplier Code, or SKU..."
+                                                            onclick="event.stopPropagation()"
+                                                            class="block w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-600 dark:text-white dark:placeholder-gray-400" />
+                                                    </div>
+                                                    <div class="max-h-48 overflow-auto">
+                                                        <button type="button"
+                                                                wire:click="selectProductFilter(null)"
+                                                                class="w-full flex items-center px-3 py-2 text-left text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600">
+                                                            All Products
+                                                        </button>
+                                                        @foreach($this->filteredProductNamesForDropdown as $index => $productName)
+                                                            <button type="button"
+                                                                    wire:click="selectProductFilterByIndex({{ $index }})"
+                                                                    class="w-full flex items-center justify-between px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600 last:border-b-0 {{ $selectedProductFilterName === $productName ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-900 dark:text-blue-100' : 'text-gray-900 dark:text-white' }}">
+                                                                <span>{{ $productName }}</span>
+                                                                @if($selectedProductFilterName === $productName)
+                                                                    <svg class="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                                                    </svg>
+                                                                @endif
+                                                            </button>
+                                                        @endforeach
+                                                        @if($this->filteredProductNamesForDropdown->isEmpty())
+                                                            <div class="px-3 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                                                                @if($productSearch)
+                                                                    No products match "{{ $productSearch }}"
+                                                                @else
+                                                                    No products in this category
+                                                                @endif
+                                                            </div>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            @endif
+                                        </div>
                                     </div>
 
                                     <!-- Show All Button -->
@@ -572,20 +653,15 @@
 
                                 <!-- Show Already Selected Products -->
                                 @if (!empty($selectedProductIdsForAllocation))
-                                    <div
-                                        class="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg">
+                                    <div class="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg">
                                         <h6 class="text-sm font-medium text-green-800 dark:text-green-200 mb-2">
-                                            Products Added to Allocation
-                                            ({{ count($selectedProductIdsForAllocation) }})
+                                            Products Added to Allocation ({{ count($selectedProductIdsForAllocation) }})
                                         </h6>
                                         <div class="flex flex-wrap gap-2">
                                             @foreach ($availableProducts->whereIn('id', $selectedProductIdsForAllocation) as $product)
-                                                <span
-                                                    class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
-                                                    {{ $product->sku }} - {{ $product->name }}
-                                                    @if ($product->color)
-                                                        ({{ $product->color->code }})
-                                                    @endif
+                                                <span class="inline-flex flex-col items-start px-2.5 py-1 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
+                                                    <span>{{ $product->remarks ?? $product->name }}@if ($product->color) · {{ $product->color->name ?? $product->color->code }}@endif</span>
+                                                    <span class="text-[11px] opacity-90">SKU: {{ $product->sku ?? '—' }} · Supplier Code (SKU): {{ $product->supplier_code ?? '—' }}</span>
                                                 </span>
                                             @endforeach
                                         </div>
@@ -594,101 +670,58 @@
 
                                 @if ($selectedCategoryId || $selectedProductFilterName || $showAllProducts)
                                     @if (($showAllProducts ? $availableProducts : $filteredProducts)->count() > 0)
-                                        <div
-                                            class="border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden max-h-80 overflow-y-auto">
-                                            <table class="min-w-full">
-                                                <thead class="bg-gray-50 dark:bg-gray-700 sticky top-0">
-                                                    <tr>
-                                                        <th
-                                                            class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                                            Select</th>
-                                                        <th
-                                                            class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                                            Product Details</th>
-                                                        <th
-                                                            class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                                            Price & Stock</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody class="bg-white dark:bg-gray-800">
-                                                    @php
-                                                        $products = $showAllProducts
-                                                            ? $availableProducts
-                                                            : $filteredProducts;
-                                                        // Group products by product name
-                                                        $groupedProducts = $products->groupBy('name');
-                                                    @endphp
-                                                    @foreach ($groupedProducts as $productName => $productVariants)
-                                                        <!-- Product Group Header -->
-                                                        <tr class="bg-gray-100 dark:bg-gray-700">
-                                                            <td colspan="3"
-                                                                class="px-4 py-2 border-t border-gray-300 dark:border-gray-600">
-                                                                <div class="flex items-center justify-between">
-                                                                    <span
-                                                                        class="text-sm font-semibold text-gray-800 dark:text-white">
-                                                                        {{ $productName }}
-                                                                        <span
-                                                                            class="text-xs text-gray-600 dark:text-gray-400">({{ $productVariants->count() }}
-                                                                            colors)</span>
-                                                                    </span>
-                                                                </div>
-                                                            </td>
+                                        @php
+                                            $products = $showAllProducts
+                                                ? $availableProducts
+                                                : $filteredProducts;
+                                            $groupedProducts = $products->groupBy('name');
+                                        @endphp
+                                        @foreach ($groupedProducts as $productName => $productVariants)
+                                            <!-- Product Group Header (above table) -->
+                                            <div class="mb-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-t-lg border border-gray-200 dark:border-gray-600 border-b-0">
+                                                <span class="text-sm font-semibold text-gray-800 dark:text-white">{{ $productName }}</span>
+                                                <span class="text-xs text-gray-500 dark:text-gray-400 ml-2">({{ $productVariants->count() }} variant{{ $productVariants->count() !== 1 ? 's' : '' }})</span>
+                                            </div>
+                                            <!-- Product Variants Table -->
+                                            <div class="border border-gray-200 dark:border-gray-600 rounded-b-lg overflow-hidden {{ !$loop->last ? 'mb-6' : '' }} max-h-80 overflow-y-auto">
+                                                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
+                                                    <thead class="bg-gray-50 dark:bg-gray-700 sticky top-0">
+                                                        <tr>
+                                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-14">Select</th>
+                                                            <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap">Product ID</th>
+                                                            <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[12rem]">Product Name</th>
+                                                            <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap">SKU</th>
+                                                            <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap">Supplier Code (SKU)</th>
+                                                            <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap">Price</th>
+                                                            <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap">Stock</th>
                                                         </tr>
-                                                        <!-- Product Variants -->
+                                                    </thead>
+                                                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700">
                                                         @foreach ($productVariants as $product)
-                                                            <tr
-                                                                class="hover:bg-gray-50 dark:hover:bg-gray-700 border-l-4 border-blue-200">
-                                                                <td class="px-4 py-3 pl-8">
+                                                            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 border-l-4 border-blue-200 dark:border-blue-700">
+                                                                <td class="px-4 py-3 align-top">
                                                                     <input type="checkbox"
                                                                         wire:model.live="temporarySelectedProducts"
                                                                         value="{{ $product->id }}"
                                                                         class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
                                                                 </td>
-                                                                <td class="px-4 py-3">
-                                                                    @php
-                                                                        $colorCode = $product->color->code ?? '';
-                                                                    @endphp
-                                                                    <div class="text-sm text-gray-900 dark:text-white">
-                                                                        <span
-                                                                            class="font-mono bg-blue-100 dark:bg-blue-900 px-2 py-1 rounded text-xs">{{ $product->sku }}</span>
-                                                                        <span
-                                                                            class="ml-2 font-medium">{{ $product->name }}</span>
-                                                                    </div>
-                                                                    <div
-                                                                        class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                                                        @if ($colorCode)
-                                                                            <span class="font-medium">Color:
-                                                                                {{ $colorCode }}</span>
-                                                                        @endif
-                                                                        @if ($product->color && $product->color->name)
-                                                                            <span
-                                                                                class="ml-2">({{ $product->color->name }})</span>
-                                                                        @endif
-                                                                        @if ($product->color && $product->color->code)
-                                                                            <span
-                                                                                class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
-                                                                                style="background-color: {{ $product->color->code }}20; color: {{ $product->color->code }}">
-                                                                                {{ $product->color->code }}
-                                                                            </span>
-                                                                        @endif
-                                                                    </div>
+                                                                <td class="px-5 py-3 text-sm font-mono text-gray-600 dark:text-gray-300 align-top">{{ $product->product_number ?? '—' }}</td>
+                                                                <td class="px-5 py-3 text-sm text-gray-900 dark:text-white align-top">
+                                                                    <span class="font-medium">{{ $product->remarks ?? $product->name }}</span>
+                                                                    @if ($product->color)
+                                                                        <span class="text-gray-500 dark:text-gray-400"> · {{ $product->color->name ?? $product->color->code }}</span>
+                                                                    @endif
                                                                 </td>
-                                                                <td class="px-4 py-3">
-                                                                    <div class="text-sm text-gray-900 dark:text-white">
-                                                                        ₱{{ number_format($product->price ?? ($product->selling_price ?? 0), 2) }}
-                                                                    </div>
-                                                                    <div
-                                                                        class="text-xs text-gray-500 dark:text-gray-400">
-                                                                        Stock:
-                                                                        {{ intval($product->initial_quantity) ?? 0 }}
-                                                                    </div>
-                                                                </td>
+                                                                <td class="px-5 py-3 text-sm font-mono text-gray-600 dark:text-gray-400 align-top">{{ $product->sku ?? '—' }}</td>
+                                                                <td class="px-5 py-3 text-sm text-gray-600 dark:text-gray-400 align-top">{{ $product->supplier_code ?? '—' }}</td>
+                                                                <td class="px-5 py-3 text-sm text-gray-900 dark:text-white align-top">₱{{ number_format($product->price ?? ($product->selling_price ?? 0), 2) }}</td>
+                                                                <td class="px-5 py-3 text-sm text-gray-600 dark:text-gray-400 align-top">{{ intval($product->initial_quantity ?? 0) }}</td>
                                                             </tr>
                                                         @endforeach
-                                                    @endforeach
-                                                </tbody>
-                                            </table>
-                                        </div>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        @endforeach
                                     @else
                                         <div
                                             class="text-center py-8 border border-gray-200 dark:border-gray-600 rounded-lg">
@@ -750,13 +783,13 @@
                                                             Branch</th>
                                                         @foreach ($filteredProductsForMatrix as $product)
                                                             <th
-                                                                class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase min-w-[120px] bg-gray-50 dark:bg-gray-700">
-                                                                <div class="flex flex-col items-center space-y-1">
+                                                                class="px-3 py-2 border border-gray-300 dark:border-gray-600 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase min-w-[140px] bg-gray-50 dark:bg-gray-700">
+                                                                <div class="flex flex-col items-center space-y-1.5">
                                                                     <button type="button"
                                                                         wire:click="removeProductFromAllocation({{ $product->id }})"
-                                                                        class="text-red-500 hover:text-red-700 text-xs mb-1"
+                                                                        class="text-red-500 hover:text-red-700 self-end mb-1"
                                                                         title="Remove this product from allocation">
-                                                                        <svg class="w-4 h-4" fill="none"
+                                                                        <svg class="w-3.5 h-3.5" fill="none"
                                                                             stroke="currentColor" viewBox="0 0 24 24">
                                                                             <path stroke-linecap="round"
                                                                                 stroke-linejoin="round"
@@ -764,15 +797,14 @@
                                                                                 d="M6 18L18 6M6 6l12 12"></path>
                                                                         </svg>
                                                                     </button>
-                                                                    <div class="text-center">
-                                                                        {{ $product->name }}
-                                                                        {{ $product->color->name ?? '' }}
-                                                                        ({{ $product->color->shortcut ?? '' }})
-                                                                        <br>
-                                                                        <span
-                                                                            class="text-xs text-gray-400">₱{{ number_format($product->price ?? ($product->selling_price ?? 0), 2) }}</span><br>
-                                                                        <span class="text-xs text-gray-400">Stock:
-                                                                            {{ intval($product->initial_quantity) }}</span>
+                                                                    <div class="text-xs font-mono text-gray-700 dark:text-gray-300">
+                                                                        {{ $product->product_number ?? '—' }} - {{ $product->sku ?? '—' }}
+                                                                    </div>
+                                                                    <div class="text-xs text-gray-600 dark:text-gray-400">
+                                                                        {{ $product->supplier_code ?? '—' }}
+                                                                    </div>
+                                                                    <div class="text-xs text-gray-500 dark:text-gray-500">
+                                                                        Stock: {{ intval($product->initial_quantity ?? 0) }}
                                                                     </div>
                                                                 </div>
                                                             </th>
@@ -843,38 +875,27 @@
                                         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                                             <thead class="bg-gray-50 dark:bg-gray-700">
                                                 <tr>
-                                                    <th
-                                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                                                        Image</th>
-                                                    <th
-                                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                                                        Product</th>
-                                                    <th
-                                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                                                        Quantity</th>
-                                                    <th
-                                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                                                        Unit Price</th>
-                                                    <th
-                                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                                                        Total Value</th>
-                                                    <th
-                                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                                                        Applied to Branches</th>
+                                                    <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase w-16">Image</th>
+                                                    <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase min-w-[200px]">Product</th>
+                                                    <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase whitespace-nowrap">Quantity</th>
+                                                    <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase whitespace-nowrap">Unit Price</th>
+                                                    <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase whitespace-nowrap">Total Value</th>
+                                                    <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase whitespace-nowrap">Applied to Branches</th>
                                                 </tr>
                                             </thead>
-                                            <tbody
-                                                class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                                                 @foreach ($productAllocations as $index => $allocation)
+                                                    @php
+                                                        $product = $availableProducts->firstWhere('id', $allocation['product_id'] ?? null);
+                                                    @endphp
                                                     <tr>
-                                                        <td class="px-6 py-4 whitespace-nowrap">
+                                                        <td class="px-5 py-4 align-top">
                                                             @if ($allocation['image'])
                                                                 <img src="{{ asset('storage/' . $allocation['image']) }}"
                                                                     alt="{{ $allocation['product_name'] }}"
                                                                     class="w-12 h-12 rounded object-cover">
                                                             @else
-                                                                <div
-                                                                    class="w-12 h-12 bg-gray-200 dark:bg-gray-600 rounded flex items-center justify-center">
+                                                                <div class="w-12 h-12 bg-gray-200 dark:bg-gray-600 rounded flex items-center justify-center">
                                                                     <svg class="w-6 h-6 text-gray-400" fill="none"
                                                                         stroke="currentColor" viewBox="0 0 24 24">
                                                                         <path stroke-linecap="round"
@@ -885,31 +906,53 @@
                                                                 </div>
                                                             @endif
                                                         </td>
-                                                        <td
-                                                            class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                                            {{ $allocation['product_name'] }}</td>
-                                                        <td
-                                                            class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                                            {{ $allocation['quantity'] }}</td>
-                                                        <td
-                                                            class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                                        <td class="px-5 py-4 text-sm">
+                                                            <div class="space-y-1.5">
+                                                                <div>
+                                                                    <div class="text-[10px] text-gray-400 dark:text-gray-500 font-medium uppercase tracking-wider">Product Name</div>
+                                                                    <div class="text-sm font-semibold text-gray-900 dark:text-white">
+                                                                        {{ $product ? ($product->remarks ?? $product->name) : $allocation['product_name'] }}
+                                                                        @if ($product && $product->color)
+                                                                            <span class="text-gray-500 dark:text-gray-400"> · {{ $product->color->name ?? $product->color->code }}</span>
+                                                                        @endif
+                                                                    </div>
+                                                                </div>
+                                                                <div class="grid grid-cols-2 gap-x-3 gap-y-1">
+                                                                    <div>
+                                                                        <div class="text-[10px] text-gray-400 dark:text-gray-500 font-medium uppercase tracking-wider">Product ID</div>
+                                                                        <div class="text-xs font-mono text-gray-600 dark:text-gray-300">{{ $product->product_number ?? '—' }}</div>
+                                                                    </div>
+                                                                    <div>
+                                                                        <div class="text-[10px] text-gray-400 dark:text-gray-500 font-medium uppercase tracking-wider">SKU</div>
+                                                                        <div class="text-xs font-mono text-gray-600 dark:text-gray-300">{{ $product->sku ?? '—' }}</div>
+                                                                    </div>
+                                                                    <div class="col-span-2">
+                                                                        <div class="text-[10px] text-gray-400 dark:text-gray-500 font-medium uppercase tracking-wider">Supplier Code (SKU)</div>
+                                                                        <div class="text-xs text-gray-600 dark:text-gray-300">{{ $product->supplier_code ?? '—' }}</div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td class="px-5 py-4 text-sm text-gray-900 dark:text-white align-top">
+                                                            {{ $allocation['quantity'] }}
+                                                        </td>
+                                                        <td class="px-5 py-4 text-sm text-gray-900 dark:text-white align-top">
                                                             @if ($allocation['unit_price'])
                                                                 ₱{{ number_format($allocation['unit_price'], 2) }}
                                                             @else
                                                                 N/A
                                                             @endif
                                                         </td>
-                                                        <td
-                                                            class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                                        <td class="px-5 py-4 text-sm text-gray-900 dark:text-white align-top">
                                                             @if ($allocation['total_value'] === 'Varies')
                                                                 {{ $allocation['total_value'] }}
                                                             @else
                                                                 ₱{{ number_format($allocation['total_value'], 2) }}
                                                             @endif
                                                         </td>
-                                                        <td
-                                                            class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                                                            {{ $allocation['applied_to_branches'] }}</td>
+                                                        <td class="px-5 py-4 text-sm text-gray-900 dark:text-white align-top">
+                                                            {{ $allocation['applied_to_branches'] }}
+                                                        </td>
                                                     </tr>
                                                 @endforeach
                                             </tbody>
@@ -1306,8 +1349,21 @@
                                     </div>
                                 @endif
                             </td>
-                            <td class="px-4 py-2 w-48 text-sm font-medium text-gray-900 dark:text-white truncate" title="{{ $item->display_name }}{{ $item->product && $item->product->color ? ' ' . $item->product->color->name : '' }}">
-                                {{ $item->display_name }}{{ $item->product && $item->product->color ? ' ' . $item->product->color->name : '' }}
+                            <td class="px-4 py-2 w-48 text-sm">
+                                <div class="space-y-1">
+                                    <div class="font-medium text-gray-900 dark:text-white">
+                                        {{ $item->product ? ($item->product->remarks ?? $item->product->name) : $item->display_name }}
+                                        @if ($item->product && $item->product->color)
+                                            <span class="text-gray-500 dark:text-gray-400"> · {{ $item->product->color->name ?? $item->product->color->code }}</span>
+                                        @endif
+                                    </div>
+                                    <div class="text-xs font-mono text-gray-600 dark:text-gray-400">
+                                        SKU: {{ $item->product->sku ?? '—' }}
+                                    </div>
+                                    <div class="text-xs text-gray-600 dark:text-gray-400">
+                                        Supplier Code: {{ $item->product->supplier_code ?? '—' }}
+                                    </div>
+                                </div>
                             </td>
                             <td class="px-4 py-2 w-36 text-sm font-mono text-gray-500 dark:text-gray-400 truncate" title="{{ $item->display_barcode }}">
                                 {{ $item->display_barcode }}

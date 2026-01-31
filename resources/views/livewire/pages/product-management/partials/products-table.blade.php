@@ -10,6 +10,9 @@
                                class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-gray-600 rounded">
                     </th>
                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Product ID
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         <button wire:click="sortBy('name')" class="group inline-flex">
                             <button wire:click="sortBy('remarks')" class="group inline-flex">
                             Description
@@ -80,6 +83,9 @@
                                    class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-gray-600 rounded">
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-mono text-gray-900 dark:text-white">{{ $product->product_number ?? '—' }}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
                             <div class="flex items-center">
                                 <div class="flex-shrink-0 h-10 w-10">
                                     @if($product->primary_image)
@@ -96,7 +102,8 @@
                                 </div>
                                 <div class="ml-4">
                                     <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $product->remarks ?? $product->name }}</div>
-                                    <div class="text-sm text-gray-500 dark:text-gray-400">SKU: {{ $product->sku }}</div>
+                                    <div class="text-sm text-gray-500 dark:text-gray-400">{{ $product->sku }}</div>
+                                    <div class="text-sm text-gray-500 dark:text-gray-400">Supplier Code (SKU): {{ $product->supplier_code ?? '—' }}</div>
                                 </div>
                             </div>
                         </td>

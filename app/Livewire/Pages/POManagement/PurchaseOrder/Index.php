@@ -182,7 +182,6 @@ class Index extends Component
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
                     $q->where('po_num', 'like', '%' . $this->search . '%')
-                        ->orWhere('payment_terms', 'like', '%' . $this->search . '%')
                         ->orWhereHas('supplier', function ($query) {
                             $query->where('name', 'like', '%' . $this->search . '%');
                         })

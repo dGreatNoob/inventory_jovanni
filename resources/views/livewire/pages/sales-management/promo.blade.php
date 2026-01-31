@@ -257,9 +257,10 @@
                                                                         @else
                                                                             @foreach($this->availableProducts as $product)
                                                                                 @if(in_array($product->id, $selected_products))
-                                                                                    <span class="inline-flex items-center bg-gray-600 text-white text-xs font-medium px-2 py-0.5 rounded-full">
-                                                                                        {{ $product->name }}
-                                                                                        <span class="ml-1 text-gray-200 text-[11px]">₱{{ number_format($product->price ?? 0, 0) }}</span>
+                                                                                    <span class="inline-flex flex-col items-start bg-gray-600 text-white text-xs font-medium px-2 py-1 rounded-full">
+                                                                                        <span>{{ $product->remarks ?? $product->name }}</span>
+                                                                                        <span class="text-[11px] text-gray-200">SKU: {{ $product->sku ?? '—' }} · Supplier Code (SKU): {{ $product->supplier_code ?? '—' }}</span>
+                                                                                        <span class="text-[11px] text-gray-200">₱{{ number_format($product->price ?? 0, 0) }}</span>
                                                                                     </span>
                                                                                 @endif
                                                                             @endforeach
@@ -278,7 +279,7 @@
                                                                     <div class="p-2 border-b border-gray-200 dark:border-gray-600 sticky top-0 bg-white dark:bg-gray-700">
                                                                         <input type="text"
                                                                             wire:model.live.debounce.200ms="productSearch"
-                                                                            placeholder="Search by name or SKU..."
+                                                                            placeholder="Search by name, SKU, Supplier Code, or Product ID..."
                                                                             onclick="event.stopPropagation()"
                                                                             class="block w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-600 dark:text-white dark:placeholder-gray-400" />
                                                                     </div>
@@ -286,21 +287,25 @@
                                                                         @if($this->filteredAvailableProducts->count() > 0)
                                                                             @foreach($this->filteredAvailableProducts as $product)
                                                                                 <label class="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600 last:border-b-0 {{ $product->isDisabled ?? false ? 'opacity-50 cursor-not-allowed' : '' }}">
-                                                                                    <div class="flex items-center space-x-3">
+                                                                                    <div class="flex items-center space-x-3 min-w-0 flex-1">
                                                                                         <input type="checkbox"
                                                                                             value="{{ $product->id }}"
                                                                                             wire:model="selected_products"
                                                                                             @if($product->isDisabled ?? false) disabled @endif
                                                                                             onclick="event.stopPropagation()"
-                                                                                            class="form-checkbox h-4 w-4 accent-green-600 text-green-600 focus:ring-green-500 border-gray-300 rounded dark:accent-green-400 dark:text-green-400 {{ $product->isDisabled ?? false ? 'cursor-not-allowed' : '' }}">
-                                                                                        <span class="text-sm text-gray-900 dark:text-white {{ $product->isDisabled ?? false ? 'line-through' : '' }}">
-                                                                                            {{ $product->name }}
-                                                                                            @if($product->isDisabled ?? false)
-                                                                                                <span class="ml-2 text-xs text-red-500">(Already in promo)</span>
-                                                                                            @endif
-                                                                                        </span>
+                                                                                            class="form-checkbox h-4 w-4 accent-green-600 text-green-600 focus:ring-green-500 border-gray-300 rounded dark:accent-green-400 dark:text-green-400 flex-shrink-0 {{ $product->isDisabled ?? false ? 'cursor-not-allowed' : '' }}">
+                                                                                        <div class="flex flex-col text-left min-w-0">
+                                                                                            <span class="text-sm font-medium text-gray-900 dark:text-white {{ $product->isDisabled ?? false ? 'line-through' : '' }}">
+                                                                                                {{ $product->remarks ?? $product->name }}
+                                                                                                @if($product->isDisabled ?? false)
+                                                                                                    <span class="ml-2 text-xs text-red-500">(Already in promo)</span>
+                                                                                                @endif
+                                                                                            </span>
+                                                                                            <span class="text-xs text-gray-500 dark:text-gray-400">SKU: {{ $product->sku ?? '—' }}</span>
+                                                                                            <span class="text-xs text-gray-500 dark:text-gray-400">Supplier Code (SKU): {{ $product->supplier_code ?? '—' }}</span>
+                                                                                        </div>
                                                                                     </div>
-                                                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500 text-white dark:bg-emerald-400 dark:text-gray-900 shadow-sm">
+                                                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500 text-white dark:bg-emerald-400 dark:text-gray-900 shadow-sm flex-shrink-0 ml-2">
                                                                                         ₱ {{ number_format($product->price ?? 0, 0) }}
                                                                                     </span>
                                                                                 </label>
@@ -821,9 +826,10 @@
                                                                         @else
                                                                             @foreach($this->availableProductsForEditBatches as $product)
                                                                                 @if(in_array($product->id, $edit_selected_products))
-                                                                                    <span class="inline-flex items-center bg-gray-600 text-white text-xs font-medium px-2 py-0.5 rounded-full">
-                                                                                        {{ $product->name }}
-                                                                                        <span class="ml-1 text-gray-200 text-[11px]">₱{{ number_format($product->price ?? 0, 0) }}</span>
+                                                                                    <span class="inline-flex flex-col items-start bg-gray-600 text-white text-xs font-medium px-2 py-1 rounded-full">
+                                                                                        <span>{{ $product->remarks ?? $product->name }}</span>
+                                                                                        <span class="text-[11px] text-gray-200">SKU: {{ $product->sku ?? '—' }} · Supplier Code (SKU): {{ $product->supplier_code ?? '—' }}</span>
+                                                                                        <span class="text-[11px] text-gray-200">₱{{ number_format($product->price ?? 0, 0) }}</span>
                                                                                     </span>
                                                                                 @endif
                                                                             @endforeach
@@ -848,7 +854,7 @@
                                                                     <div class="p-2 border-b border-gray-200 dark:border-gray-600 sticky top-0 bg-white dark:bg-gray-700">
                                                                         <input type="text"
                                                                             wire:model.live.debounce.200ms="editProductSearch"
-                                                                            placeholder="Search by name or SKU..."
+                                                                            placeholder="Search by name, SKU, Supplier Code, or Product ID..."
                                                                             onclick="event.stopPropagation()"
                                                                             class="block w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-600 dark:text-white dark:placeholder-gray-400" />
                                                                     </div>
@@ -856,21 +862,25 @@
                                                                         @if($this->filteredEditProducts->count() > 0)
                                                                             @foreach($this->filteredEditProducts as $product)
                                                                                 <label class="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600 last:border-b-0 {{ $product->isDisabled ?? false ? 'opacity-50 cursor-not-allowed' : '' }}">
-                                                                                    <div class="flex items-center space-x-3">
+                                                                                    <div class="flex items-center space-x-3 min-w-0 flex-1">
                                                                                         <input type="checkbox"
                                                                                             value="{{ $product->id }}"
                                                                                             wire:model="edit_selected_products"
                                                                                             @if($product->isDisabled ?? false) disabled @endif
                                                                                             onclick="event.stopPropagation()"
-                                                                                            class="form-checkbox h-4 w-4 accent-green-600 text-green-600 focus:ring-green-500 border-gray-300 rounded dark:accent-green-400 dark:text-green-400 {{ $product->isDisabled ?? false ? 'cursor-not-allowed' : '' }}">
-                                                                                        <span class="text-sm text-gray-900 dark:text-white {{ $product->isDisabled ?? false ? 'line-through' : '' }}">
-                                                                                            {{ $product->name }}
-                                                                                            @if($product->isDisabled ?? false)
-                                                                                                <span class="ml-2 text-xs text-red-500">(Already in promo)</span>
-                                                                                            @endif
-                                                                                        </span>
+                                                                                            class="form-checkbox h-4 w-4 accent-green-600 text-green-600 focus:ring-green-500 border-gray-300 rounded dark:accent-green-400 dark:text-green-400 flex-shrink-0 {{ $product->isDisabled ?? false ? 'cursor-not-allowed' : '' }}">
+                                                                                        <div class="flex flex-col text-left min-w-0">
+                                                                                            <span class="text-sm font-medium text-gray-900 dark:text-white {{ $product->isDisabled ?? false ? 'line-through' : '' }}">
+                                                                                                {{ $product->remarks ?? $product->name }}
+                                                                                                @if($product->isDisabled ?? false)
+                                                                                                    <span class="ml-2 text-xs text-red-500">(Already in promo)</span>
+                                                                                                @endif
+                                                                                            </span>
+                                                                                            <span class="text-xs text-gray-500 dark:text-gray-400">SKU: {{ $product->sku ?? '—' }}</span>
+                                                                                            <span class="text-xs text-gray-500 dark:text-gray-400">Supplier Code (SKU): {{ $product->supplier_code ?? '—' }}</span>
+                                                                                        </div>
                                                                                     </div>
-                                                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500 text-white dark:bg-emerald-400 dark:text-gray-900 shadow-sm">
+                                                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500 text-white dark:bg-emerald-400 dark:text-gray-900 shadow-sm flex-shrink-0 ml-2">
                                                                                         ₱ {{ number_format($product->price ?? 0, 0) }}
                                                                                     </span>
                                                                                 </label>

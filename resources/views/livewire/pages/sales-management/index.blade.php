@@ -207,9 +207,9 @@
                                     <x-dropdown
                                         wire:model.live="subclassSelected"
                                         name="subclassSelected"
-                                        label="Subclass Branch"
+                                        label="Selling Area Branch"
                                         :options="$subclass_results"
-                                        placeholder="Select Subclass Branch"
+                                        placeholder="Select Selling Area Branch"
                                         multiselect
                                         class="w-full"
                                     />
@@ -251,12 +251,12 @@
                                         </div>
                                         @if(!empty($subclassSelected))
                                         <div class="md:col-span-2">
-                                            <span class="text-blue-700 dark:text-blue-300 font-medium">Agents in Selected Subclasses:</span>
+                                            <span class="text-blue-700 dark:text-blue-300 font-medium">Agents in Selected Selling Areas:</span>
                                             <div class="mt-1">
                                                 @php
                                                     $agentsInSubclasses = \App\Models\Agent::whereHas('branchAssignments', function($query) use ($branch, $subclassSelected) {
                                                         $query->where('branch_id', $branch->id)
-                                                              ->whereIn('subclass', $subclassSelected)
+                                                              ->whereIn('selling_area', $subclassSelected)
                                                               ->whereNull('released_at');
                                                     })->pluck('name')->toArray();
                                                 @endphp

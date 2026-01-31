@@ -578,14 +578,19 @@
                                                                 class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
                                                         </td>
                                                         <td class="px-4 py-3">
-                                                            <div class="text-sm text-gray-900 dark:text-white">
-                                                                <span class="font-mono bg-blue-100 dark:bg-blue-900 px-2 py-1 rounded text-xs">{{ $product['sku'] }}</span>
-                                                                <span class="ml-2 font-medium">{{ $product['name'] }}</span>
-                                                            </div>
-                                                            <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                                                @if ($product['color'])
-                                                                    <span class="font-medium">Color: {{ $product['color']['code'] }}</span>
-                                                                @endif
+                                                            <div class="space-y-1">
+                                                                <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                                                    {{ $product['name'] }}
+                                                                    @if ($product['color'])
+                                                                        <span class="text-gray-500 dark:text-gray-400"> · {{ $product['color']['name'] ?? $product['color']['code'] }}</span>
+                                                                    @endif
+                                                                </div>
+                                                                <div class="text-xs font-mono text-gray-600 dark:text-gray-400">
+                                                                    SKU: {{ $product['sku'] ?? '—' }}
+                                                                </div>
+                                                                <div class="text-xs text-gray-600 dark:text-gray-400">
+                                                                    Supplier Code: {{ $product['supplier_code'] ?? '—' }}
+                                                                </div>
                                                             </div>
                                                         </td>
                                                         <td class="px-4 py-3">
@@ -712,13 +717,20 @@
                                             <tbody>
                                                 @foreach ($selectedProducts as $product)
                                                     <tr>
-                                                        <td class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700">
-                                                            <div>
-                                                                <div class="font-mono bg-blue-100 dark:bg-blue-900 px-2 py-1 rounded text-xs">{{ $product['sku'] }}</div>
-                                                                <div class="mt-1">{{ $product['name'] }}</div>
-                                                                @if ($product['color'])
-                                                                    <div class="text-xs text-gray-500 dark:text-gray-400">Color: {{ $product['color']['code'] }}</div>
-                                                                @endif
+                                                        <td class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm bg-gray-50 dark:bg-gray-700">
+                                                            <div class="space-y-1">
+                                                                <div class="font-medium text-gray-900 dark:text-white">
+                                                                    {{ $product['name'] }}
+                                                                    @if ($product['color'])
+                                                                        <span class="text-gray-500 dark:text-gray-400"> · {{ $product['color']['name'] ?? $product['color']['code'] }}</span>
+                                                                    @endif
+                                                                </div>
+                                                                <div class="text-xs font-mono text-gray-600 dark:text-gray-400">
+                                                                    SKU: {{ $product['sku'] ?? '—' }}
+                                                                </div>
+                                                                <div class="text-xs text-gray-600 dark:text-gray-400">
+                                                                    Supplier Code: {{ $product['supplier_code'] ?? '—' }}
+                                                                </div>
                                                             </div>
                                                         </td>
                                                         <td class="px-4 py-2 border border-gray-300 dark:border-gray-600 text-center bg-white dark:bg-gray-800">

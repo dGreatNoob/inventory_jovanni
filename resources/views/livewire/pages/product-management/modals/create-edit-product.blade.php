@@ -485,13 +485,13 @@
                                             <div>
                                                 <flux:input
                                                     wire:model="form.supplier_code"
-                                                    label="Supplier SKU"
-                                                    placeholder="Enter supplier's SKU/barcode for this product"
+                                                    label="Supplier Code (SKU)"
+                                                    placeholder="Enter supplier's product code (SKU) for this product"
                                                     class="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                                 />
                                                 @error('form.supplier_code') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                                                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                                    Enter the supplier's product identifier (SKU or barcode), not the supplier's company code.
+                                                    Enter the supplier's product identifier (SKU), not the supplier's company code.
                                                 </p>
                                             </div>
                                         </div>

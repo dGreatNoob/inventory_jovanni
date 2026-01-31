@@ -15,7 +15,7 @@ class View extends Component
     
     public $supplier_id;
     public $availableCategories = [];
-    public $supplier_name, $supplier_code, $supplier_address, $contact_person, $contact_num, $email, $tin_num, $status;
+    public $supplier_name, $supplier_code, $supplier_address, $contact_person, $contact_num, $email, $status;
     public $perPage = 10;
     public $search = '';
     public $showDeleteModal = false;
@@ -68,7 +68,6 @@ class View extends Component
         $this->contact_person = $supplier->contact_person;
         $this->contact_num = $supplier->contact_num;
         $this->email = $supplier->email;
-        $this->tin_num = $supplier->tin_num;
         $this->status = $supplier->status;
 
         $this->availableCategories = Category::active()

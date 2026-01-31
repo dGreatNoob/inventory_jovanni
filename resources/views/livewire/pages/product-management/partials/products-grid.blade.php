@@ -12,8 +12,11 @@
                                class="h-4 w-4 text-gray-600 focus:ring-gray-500 dark:focus:ring-gray-400 border-gray-300 rounded">
                     </div>
 
-                    <!-- Stock Status Badge -->
-                    <div class="absolute top-2 right-2 z-10">
+                    <!-- Product ID + Stock Badge (stacked, no overlap) -->
+                    <div class="absolute top-2 right-2 z-10 flex flex-col items-end gap-1.5">
+                        <span class="text-xs font-mono text-gray-600 dark:text-gray-400 leading-tight">
+                            ID: {{ $product->product_number }}
+                        </span>
                         @if($product->total_quantity <= 0)
                             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">
                                 Out of Stock
@@ -64,10 +67,13 @@
                             {{ $product->remarks ?? $product->name }}
                         </h3>
                         <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            SKU: {{ $product->sku }}
+                            {{ $product->sku }}
+                        </p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">
+                            Supplier Code (SKU): {{ $product->supplier_code ?? '—' }}
                         </p>
                         @if($product->category)
-                            <p class="text-xs text-gray-500 dark:text-gray-400">
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                                 {{ $product->category->name }}
                             </p>
                         @endif

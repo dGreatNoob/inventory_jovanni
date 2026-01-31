@@ -21,7 +21,6 @@ class PurchaseOrder extends Model
         'ordered_by',
         'del_to',
         'del_on',
-        'payment_terms',
         'quotation',
         'total_qty',
         'total_price',

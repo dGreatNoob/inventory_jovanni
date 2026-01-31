@@ -22,6 +22,7 @@ on:
   push:
     branches:
       - staging
+      - main
     tags:
       - 'v*'
       - 'staging-*'
@@ -175,6 +176,12 @@ jobs:
           elif [[ "${{ github.ref }}" == refs/tags/prod-* ]]; then
             echo "environment=production" >> $GITHUB_OUTPUT
             echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == refs/heads/main ]]; then
+            echo "environment=production" >> $GITHUB_OUTPUT
+            echo "version=${{ github.sha }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == refs/heads/staging ]]; then
+            echo "environment=staging" >> $GITHUB_OUTPUT
+            echo "version=${{ github.sha }}" >> $GITHUB_OUTPUT
           else
             echo "environment=staging" >> $GITHUB_OUTPUT
             echo "version=${{ github.sha }}" >> $GITHUB_OUTPUT
@@ -402,7 +409,7 @@ jobs:
 
   deploy-to-staging:
     needs: build-and-package
-    runs-on: self-hosted
+    runs-on: [self-hosted, staging]
     if: |
       always() && 
       (needs.build-and-package.result == 'success' || github.event.inputs.skip_tests == 'true') &&
@@ -443,3 +450,40 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 📊 Container Status" >> $GITHUB_STEP_SUMMARY
           docker compose ps >> $GITHUB_STEP_SUMMARY || echo "Could not get container status" >> $GITHUB_STEP_SUMMARY
+
+  deploy-to-production:
+    needs: build-and-package
+    runs-on: [self-hosted, production]
+    if: |
+      always() &&
+      (needs.build-and-package.result == 'success' || github.event.inputs.skip_tests == 'true') &&
+      (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/prod-') || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production'))
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup deployment environment
+        run: |
+          echo "🔧 Setting up deployment environment..."
+          chmod +x scripts/deployment/*.sh || true
+          mkdir -p /var/www/inventory_jovanni/backups || true
+
+      - name: Run production deployment script
+        run: |
+          echo "🚀 Starting automated deployment to production..."
+          bash scripts/deployment/deploy-production.sh
+        env:
+          PROJECT_DIR: /var/www/inventory_jovanni
+          COMPOSE_FILE: docker-compose.prod.yml
+          DB_CONTAINER: inventory-jovanni-db
+
+      - name: Deployment Status
+        run: |
+          echo "## ✅ Production Deployment Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Deployed at:** $(date -u +"%Y-%m-%d %H%M:%S UTC")" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📊 Container Status" >> $GITHUB_STEP_SUMMARY
+          cd /var/www/inventory_jovanni && docker compose -f docker-compose.prod.yml ps >> $GITHUB_STEP_SUMMARY || echo "Could not get container status" >> $GITHUB_STEP_SUMMARY

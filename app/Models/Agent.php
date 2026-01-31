@@ -11,7 +11,7 @@ class Agent extends Model
         'name',
         'address',
         'contact_num',
-        'tin_num',
+        'sss_num',
         'status', // changed from branch_designation to status
     ];
 

@@ -225,9 +225,11 @@
                             <thead class="bg-gray-50 dark:bg-gray-700">
                                 <tr>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Image</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Product</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Barcode</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Product ID</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Product Name</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">SKU</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Supplier Code (SKU)</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Barcode</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Total Quantity</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Total Sold</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Remaining</th>
@@ -247,14 +249,20 @@
                                                 <span class="text-gray-400 dark:text-gray-500">No image</span>
                                             @endif
                                         </td>
+                                        <td class="px-4 py-3 text-sm font-mono text-gray-600 dark:text-gray-300">
+                                            {{ $product['product_number'] ?? '—' }}
+                                        </td>
                                         <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">
                                             {{ $product['name'] }}
                                         </td>
                                         <td class="px-4 py-3 text-sm font-mono text-gray-500 dark:text-gray-400">
-                                            {{ $product['barcode'] ?? 'N/A' }}
+                                            {{ $product['sku'] }}
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                                            {{ $product['supplier_code'] ?? '—' }}
                                         </td>
                                         <td class="px-4 py-3 text-sm font-mono text-gray-500 dark:text-gray-400">
-                                            {{ $product['sku'] }}
+                                            {{ $product['barcode'] ?? 'N/A' }}
                                         </td>
                                         <td class="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white text-center">
                                             {{ $product['total_quantity'] }}
@@ -616,21 +624,23 @@
         </div>
     @endif
 
-    <!-- Results Slider -->
+    <!-- Inventory Audit Results Modal -->
     @if($showResultsModal)
-        <div class="fixed inset-0 z-50">
-            <div class="absolute inset-0 bg-opacity-50" wire:click="closeResultsModal"></div>
-            <div class="absolute right-0 top-0 h-full w-full max-w-2xl bg-white dark:bg-gray-800 shadow-xl transform transition-transform duration-300 {{ $showResultsModal ? 'translate-x-0' : 'translate-x-full' }}">
-                <div class="p-6 h-full overflow-y-auto">
-                    <div class="flex justify-between items-center mb-6">
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div class="absolute inset-0 bg-black/50 dark:bg-black/60" wire:click="closeResultsModal"></div>
+            <div class="relative w-full max-w-5xl max-h-[90vh] bg-white dark:bg-gray-800 rounded-lg shadow-xl overflow-hidden flex flex-col">
+                <div class="p-6 flex-shrink-0 border-b border-gray-200 dark:border-gray-700">
+                    <div class="flex justify-between items-center">
                         <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Inventory Audit Results</h3>
-                        <button wire:click="closeResultsModal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                        <button wire:click="closeResultsModal" class="rounded-full p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                             </svg>
                         </button>
                     </div>
+                </div>
 
+                <div class="flex-1 overflow-y-auto p-6">
                     <div class="mb-6">
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                             <div>
@@ -665,9 +675,11 @@
                                     <table class="min-w-full divide-y divide-red-200 dark:divide-red-700">
                                         <thead class="bg-red-100 dark:bg-red-900/40">
                                             <tr>
-                                                <th class="px-4 py-2 text-left text-xs font-medium text-red-700 dark:text-red-300 uppercase">Barcode</th>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-red-700 dark:text-red-300 uppercase">Product ID</th>
                                                 <th class="px-4 py-2 text-left text-xs font-medium text-red-700 dark:text-red-300 uppercase">Product Name</th>
                                                 <th class="px-4 py-2 text-left text-xs font-medium text-red-700 dark:text-red-300 uppercase">SKU</th>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-red-700 dark:text-red-300 uppercase">Supplier Code (SKU)</th>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-red-700 dark:text-red-300 uppercase">Barcode</th>
                                                 <th class="px-4 py-2 text-left text-xs font-medium text-red-700 dark:text-red-300 uppercase">Allocated Qty</th>
                                                 <th class="px-4 py-2 text-left text-xs font-medium text-red-700 dark:text-red-300 uppercase">Scanned Qty</th>
                                                 <th class="px-4 py-2 text-left text-xs font-medium text-red-700 dark:text-red-300 uppercase">Variance</th>
@@ -676,9 +688,11 @@
                                         <tbody class="bg-red-50 dark:bg-red-900/20 divide-y divide-red-200 dark:divide-red-700">
                                             @foreach($missingItems as $item)
                                                 <tr class="hover:bg-red-100 dark:hover:bg-red-900/30">
-                                                    <td class="px-4 py-3 text-sm font-mono text-red-900 dark:text-red-100">{{ $item['barcode'] }}</td>
+                                                    <td class="px-4 py-3 text-sm font-mono text-red-900 dark:text-red-100">{{ $item['product_number'] ?? '—' }}</td>
                                                     <td class="px-4 py-3 text-sm text-red-900 dark:text-red-100">{{ $item['product_name'] }}</td>
                                                     <td class="px-4 py-3 text-sm font-mono text-red-700 dark:text-red-300">{{ $item['sku'] }}</td>
+                                                    <td class="px-4 py-3 text-sm text-red-900 dark:text-red-100">{{ $item['supplier_code'] ?? '—' }}</td>
+                                                    <td class="px-4 py-3 text-sm font-mono text-red-900 dark:text-red-100">{{ $item['barcode'] }}</td>
                                                     <td class="px-4 py-3 text-sm text-red-900 dark:text-red-100 text-center">{{ $item['allocated_quantity'] }}</td>
                                                     <td class="px-4 py-3 text-sm text-red-900 dark:text-red-100 text-center">0</td>
                                                     <td class="px-4 py-3 text-sm font-semibold text-red-600 dark:text-red-400 text-center">{{ $item['variance'] }}</td>
@@ -741,9 +755,11 @@
                                     <table class="min-w-full divide-y divide-yellow-200 dark:divide-yellow-700">
                                         <thead class="bg-yellow-100 dark:bg-yellow-900/40">
                                             <tr>
-                                                <th class="px-4 py-2 text-left text-xs font-medium text-yellow-700 dark:text-yellow-300 uppercase">Barcode</th>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-yellow-700 dark:text-yellow-300 uppercase">Product ID</th>
                                                 <th class="px-4 py-2 text-left text-xs font-medium text-yellow-700 dark:text-yellow-300 uppercase">Product Name</th>
                                                 <th class="px-4 py-2 text-left text-xs font-medium text-yellow-700 dark:text-yellow-300 uppercase">SKU</th>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-yellow-700 dark:text-yellow-300 uppercase">Supplier Code (SKU)</th>
+                                                <th class="px-4 py-2 text-left text-xs font-medium text-yellow-700 dark:text-yellow-300 uppercase">Barcode</th>
                                                 <th class="px-4 py-2 text-left text-xs font-medium text-yellow-700 dark:text-yellow-300 uppercase">Allocated Qty</th>
                                                 <th class="px-4 py-2 text-left text-xs font-medium text-yellow-700 dark:text-yellow-300 uppercase">Scanned Qty</th>
                                                 <th class="px-4 py-2 text-left text-xs font-medium text-yellow-700 dark:text-yellow-300 uppercase">Variance</th>
@@ -752,9 +768,11 @@
                                         <tbody class="bg-yellow-50 dark:bg-yellow-900/20 divide-y divide-yellow-200 dark:divide-yellow-700">
                                             @foreach($quantityVariances as $item)
                                                 <tr class="hover:bg-yellow-100 dark:hover:bg-yellow-900/30">
-                                                    <td class="px-4 py-3 text-sm font-mono text-yellow-900 dark:text-yellow-100">{{ $item['barcode'] }}</td>
+                                                    <td class="px-4 py-3 text-sm font-mono text-yellow-900 dark:text-yellow-100">{{ $item['product_number'] ?? '—' }}</td>
                                                     <td class="px-4 py-3 text-sm text-yellow-900 dark:text-yellow-100">{{ $item['product_name'] }}</td>
                                                     <td class="px-4 py-3 text-sm font-mono text-yellow-700 dark:text-yellow-300">{{ $item['sku'] }}</td>
+                                                    <td class="px-4 py-3 text-sm text-yellow-900 dark:text-yellow-100">{{ $item['supplier_code'] ?? '—' }}</td>
+                                                    <td class="px-4 py-3 text-sm font-mono text-yellow-900 dark:text-yellow-100">{{ $item['barcode'] }}</td>
                                                     <td class="px-4 py-3 text-sm text-yellow-900 dark:text-yellow-100 text-center">{{ $item['allocated_quantity'] }}</td>
                                                     <td class="px-4 py-3 text-sm text-yellow-900 dark:text-yellow-100 text-center">{{ $item['scanned_quantity'] }}</td>
                                                     <td class="px-4 py-3 text-sm font-semibold {{ $item['variance'] > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }} text-center">
@@ -806,19 +824,19 @@
                             </div>
                         </div>
                     @endif
+                </div>
 
-                    <div class="flex justify-end space-x-3 mt-6">
-                        <button wire:click="closeResultsModal"
-                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
-                            Close
-                        </button>
-                        <button wire:click="saveAuditResults"
-                                @if(!empty($existingAuditIdForDay)) disabled @endif
-                                class="px-4 py-2 text-sm font-medium text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
-                                    {{ !empty($existingAuditIdForDay) ? 'bg-blue-300 dark:bg-blue-900/40 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700' }}">
-                            Save Audit Results
-                        </button>
-                    </div>
+                <div class="flex-shrink-0 flex justify-end space-x-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+                    <button wire:click="closeResultsModal"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                        Close
+                    </button>
+                    <button wire:click="saveAuditResults"
+                            @if(!empty($existingAuditIdForDay)) disabled @endif
+                            class="px-4 py-2 text-sm font-medium text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+                                {{ !empty($existingAuditIdForDay) ? 'bg-blue-300 dark:bg-blue-900/40 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700' }}">
+                        Save Audit Results
+                    </button>
                 </div>
             </div>
         </div>
@@ -954,16 +972,42 @@
                                                 <!-- Product Info Display -->
                                                 @if($selectedSalesProduct)
                                                     <div class="rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-900/20">
-                                                        <h5 class="font-medium text-green-900 dark:text-green-100 mb-2">Selected Product</h5>
-                                                        <div class="flex items-center space-x-4">
+                                                        <h5 class="font-medium text-green-900 dark:text-green-100 mb-3">Selected Product</h5>
+                                                        <div class="flex gap-4">
                                                             @if($selectedSalesProduct['image_url'])
-                                                                <img src="{{ $selectedSalesProduct['image_url'] }}" alt="{{ $selectedSalesProduct['name'] }}" class="w-16 h-16 object-cover rounded">
+                                                                <img src="{{ $selectedSalesProduct['image_url'] }}" alt="{{ $selectedSalesProduct['name'] }}" class="w-20 h-20 object-cover rounded flex-shrink-0">
                                                             @endif
-                                                            <div>
-                                                                <div class="font-medium text-green-900 dark:text-green-100">{{ $selectedSalesProduct['name'] }}</div>
-                                                                <div class="text-sm text-green-700 dark:text-green-300">Barcode: {{ $selectedSalesProduct['barcode'] ?? 'N/A' }}</div>
-                                                                <div class="text-sm text-green-700 dark:text-green-300">Available: {{ $selectedSalesProduct['remaining_quantity'] }} units</div>
-                                                                <div class="text-sm text-green-700 dark:text-green-300">Price: ₱{{ number_format($selectedSalesProduct['unit_price'], 2) }}</div>
+                                                            <div class="min-w-0 flex-1 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
+                                                                <div class="sm:col-span-2">
+                                                                    <div class="text-sm text-green-600 dark:text-green-400 font-medium mb-0.5">Product Name</div>
+                                                                    <div class="font-medium text-green-900 dark:text-green-100">{{ $selectedSalesProduct['name'] }}</div>
+                                                                </div>
+                                                                <div>
+                                                                    <div class="text-xs text-green-600 dark:text-green-400 font-medium mb-0.5">Product ID</div>
+                                                                    <div class="text-sm font-mono text-green-900 dark:text-green-100">{{ $selectedSalesProduct['product_number'] ?? '—' }}</div>
+                                                                </div>
+                                                                <div>
+                                                                    <div class="text-xs text-green-600 dark:text-green-400 font-medium mb-0.5">SKU</div>
+                                                                    <div class="text-sm font-mono text-green-900 dark:text-green-100">{{ $selectedSalesProduct['sku'] ?? '—' }}</div>
+                                                                </div>
+                                                                <div>
+                                                                    <div class="text-xs text-green-600 dark:text-green-400 font-medium mb-0.5">Supplier Code (SKU)</div>
+                                                                    <div class="text-sm text-green-900 dark:text-green-100">{{ $selectedSalesProduct['supplier_code'] ?? '—' }}</div>
+                                                                </div>
+                                                                <div>
+                                                                    <div class="text-xs text-green-600 dark:text-green-400 font-medium mb-0.5">Barcode</div>
+                                                                    <div class="text-sm font-mono text-green-900 dark:text-green-100">{{ $selectedSalesProduct['barcode'] ?? 'N/A' }}</div>
+                                                                </div>
+                                                                <div class="sm:col-span-2 flex flex-wrap gap-4 pt-2 border-t border-green-200 dark:border-green-700 mt-2">
+                                                                    <div>
+                                                                        <span class="text-xs text-green-600 dark:text-green-400">Available:</span>
+                                                                        <span class="ml-1 font-medium text-green-900 dark:text-green-100">{{ $selectedSalesProduct['remaining_quantity'] }} units</span>
+                                                                    </div>
+                                                                    <div>
+                                                                        <span class="text-xs text-green-600 dark:text-green-400">Unit Price:</span>
+                                                                        <span class="ml-1 font-medium text-green-900 dark:text-green-100">₱{{ number_format($selectedSalesProduct['unit_price'], 2) }}</span>
+                                                                    </div>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -984,19 +1028,129 @@
                                                 </div>
 
                                                 <div>
-                                                    <label for="sales-agent-select" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                                                        Selling Area
+                                                    </label>
+                                                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Where in the branch was this item sold?</p>
+                                                    <div class="relative" wire:click.outside="$set('sellingAreaDropdown', false)">
+                                                        <div wire:click="toggleSellingAreaDropdown"
+                                                            class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-green-500 focus:outline-none focus:ring-green-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm flex justify-between items-center min-h-[42px] {{ !empty($sellingAreaOptions) ? 'cursor-pointer' : 'cursor-not-allowed opacity-75' }}">
+                                                            <span class="{{ $selectedSellingArea ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500' }}">
+                                                                @if($selectedSellingArea)
+                                                                    {{ $selectedSellingArea }}
+                                                                @else
+                                                                    {{ empty($sellingAreaOptions) ? 'No selling areas configured' : 'Select selling area...' }}
+                                                                @endif
+                                                            </span>
+                                                            <svg class="w-4 h-4 ml-2 flex-shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                            </svg>
+                                                        </div>
+                                                        @if($sellingAreaDropdown && !empty($sellingAreaOptions))
+                                                            <div class="absolute z-20 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg dark:bg-gray-700 dark:border-gray-600">
+                                                                <div class="p-2 border-b border-gray-200 dark:border-gray-600 sticky top-0 bg-white dark:bg-gray-700">
+                                                                    <input type="text"
+                                                                        wire:model.live.debounce.200ms="sellingAreaSearch"
+                                                                        placeholder="Search selling areas..."
+                                                                        onclick="event.stopPropagation()"
+                                                                        class="block w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-green-500 focus:outline-none focus:ring-green-500 dark:border-gray-600 dark:bg-gray-600 dark:text-white dark:placeholder-gray-400" />
+                                                                </div>
+                                                                <div class="max-h-48 overflow-auto">
+                                                                    <button type="button"
+                                                                            wire:click="selectSellingArea()"
+                                                                            class="w-full flex items-center px-3 py-2 text-left text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600">
+                                                                        <span class="text-gray-400">None</span>
+                                                                    </button>
+                                                                    @foreach($this->filteredSellingAreaOptions as $option)
+                                                                        <button type="button"
+                                                                                wire:click="selectSellingArea({{ json_encode($option) }})"
+                                                                                class="w-full flex items-center justify-between px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600 last:border-b-0 {{ $selectedSellingArea == $option ? 'bg-green-50 dark:bg-green-900/20 text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-white' }}">
+                                                                            <span>{{ $option }}</span>
+                                                                            @if($selectedSellingArea == $option)
+                                                                                <svg class="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                                                                </svg>
+                                                                            @endif
+                                                                        </button>
+                                                                    @endforeach
+                                                                    @if($this->filteredSellingAreaOptions->isEmpty())
+                                                                        <div class="px-3 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                                                                            @if($sellingAreaSearch)
+                                                                                No selling areas match "{{ $sellingAreaSearch }}"
+                                                                            @else
+                                                                                No selling areas available
+                                                                            @endif
+                                                                        </div>
+                                                                    @endif
+                                                                </div>
+                                                            </div>
+                                                        @endif
+                                                    </div>
+                                                </div>
+
+                                                <div>
+                                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
                                                         Agent (Optional)
                                                     </label>
-                                                    <select
-                                                        id="sales-agent-select"
-                                                        wire:model="selectedAgentId"
-                                                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                                    >
-                                                        <option value="">Select an agent...</option>
-                                                        @foreach($availableAgents as $agent)
-                                                            <option value="{{ $agent->id }}">{{ $agent->agent_code }} - {{ $agent->name }}</option>
-                                                        @endforeach
-                                                    </select>
+                                                    <div class="relative" wire:click.outside="$set('agentDropdown', false)">
+                                                        <div wire:click="toggleAgentDropdown"
+                                                            class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-green-500 focus:outline-none focus:ring-green-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm cursor-pointer flex justify-between items-center min-h-[42px]">
+                                                            <span class="{{ $selectedAgentId ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500' }}">
+                                                                @if($selectedAgentId && $availableAgents)
+                                                                    @php $selectedAgent = collect($availableAgents)->firstWhere('id', $selectedAgentId); @endphp
+                                                                    @if($selectedAgent)
+                                                                        {{ $selectedAgent->agent_code }} - {{ $selectedAgent->name }}
+                                                                    @else
+                                                                        Select an agent...
+                                                                    @endif
+                                                                @else
+                                                                    Select an agent...
+                                                                @endif
+                                                            </span>
+                                                            <svg class="w-4 h-4 ml-2 flex-shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                            </svg>
+                                                        </div>
+                                                        @if($agentDropdown)
+                                                            <div class="absolute z-20 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg dark:bg-gray-700 dark:border-gray-600">
+                                                                <div class="p-2 border-b border-gray-200 dark:border-gray-600 sticky top-0 bg-white dark:bg-gray-700">
+                                                                    <input type="text"
+                                                                        wire:model.live.debounce.200ms="agentSearch"
+                                                                        placeholder="Search by name or agent code..."
+                                                                        onclick="event.stopPropagation()"
+                                                                        class="block w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-green-500 focus:outline-none focus:ring-green-500 dark:border-gray-600 dark:bg-gray-600 dark:text-white dark:placeholder-gray-400" />
+                                                                </div>
+                                                                <div class="max-h-48 overflow-auto">
+                                                                    <button type="button"
+                                                                            wire:click="selectAgent()"
+                                                                            class="w-full flex items-center px-3 py-2 text-left text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600">
+                                                                        <span class="text-gray-400">None</span>
+                                                                    </button>
+                                                                    @foreach($this->filteredAvailableAgents as $agent)
+                                                                        <button type="button"
+                                                                                wire:click="selectAgent({{ $agent->id }})"
+                                                                                class="w-full flex items-center justify-between px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600 last:border-b-0 {{ $selectedAgentId == $agent->id ? 'bg-green-50 dark:bg-green-900/20 text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-white' }}">
+                                                                            <span>{{ $agent->agent_code }} - {{ $agent->name }}</span>
+                                                                            @if($selectedAgentId == $agent->id)
+                                                                                <svg class="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                                                                </svg>
+                                                                            @endif
+                                                                        </button>
+                                                                    @endforeach
+                                                                    @if($this->filteredAvailableAgents->isEmpty())
+                                                                        <div class="px-3 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                                                                            @if($agentSearch)
+                                                                                No agents match "{{ $agentSearch }}"
+                                                                            @else
+                                                                                No agents available
+                                                                            @endif
+                                                                        </div>
+                                                                    @endif
+                                                                </div>
+                                                            </div>
+                                                        @endif
+                                                    </div>
                                                 </div>
 
                                                 <button
@@ -1031,8 +1185,18 @@
                                                     <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                                                         @foreach($salesItems as $index => $item)
                                                             <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                                                <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">
-                                                                    {{ $item['name'] }}
+                                                                <td class="px-4 py-3 text-sm">
+                                                                    <div class="font-medium text-gray-900 dark:text-white">{{ $item['name'] }}</div>
+                                                                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                                                        <span class="font-mono">SKU: {{ $item['sku'] ?? '—' }}</span>
+                                                                        @if(!empty($item['supplier_code']))
+                                                                            <span class="mx-1">·</span>
+                                                                            <span>Supplier Code (SKU): {{ $item['supplier_code'] }}</span>
+                                                                        @endif
+                                                                    </div>
+                                                                    @if(!empty($item['product_number']))
+                                                                        <div class="text-xs text-gray-400 dark:text-gray-500 font-mono mt-0.5">ID: {{ $item['product_number'] }}</div>
+                                                                    @endif
                                                                 </td>
                                                                 <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
                                                                     {{ $item['quantity'] }}

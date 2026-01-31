@@ -5,13 +5,25 @@
     <div class="space-y-6">
         <!-- Tabs Navigation -->
         @include('livewire.pages.branch.branch-management-tabs')
-        <!-- Create New Branch Form -->
+        <!-- Create New Branch Form (Collapsible) -->
          @can ('branch create')
-        <section class="bg-white dark:bg-gray-800 shadow rounded-lg mb-8">
-            <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
-                <h3 class="text-lg font-medium text-gray-900 dark:text-white">Create New Branch</h3>
-                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Add a new branch to the system</p>
-            </div>
+        <section class="bg-white dark:bg-gray-800 shadow rounded-lg mb-8" x-data="{ open: false }">
+            <button type="button"
+                @click="open = !open"
+                class="w-full px-6 py-5 flex items-center justify-between text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-inset">
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">Create New Branch</h3>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Add a new branch to the system</p>
+                </div>
+                <svg class="w-5 h-5 text-gray-500 dark:text-gray-400 transition-transform duration-200"
+                    :class="{ 'rotate-180': open }"
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
+            <div x-show="open"
+                x-collapse
+                class="border-t border-gray-200 dark:border-gray-700">
             <form wire:submit.prevent="submit" class="p-6">
                 <!-- Basic Information -->
                 <div class="mb-10">
@@ -59,40 +71,47 @@
                                 placeholder="John Doe" />
                             @error('manager_name') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                         </div>
+                        <div>
+                            <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email Address</label>
+                            <input type="email" id="email" wire:model="email"
+                                class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                placeholder="branch@example.com" />
+                            @error('email') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                        </div>
                     </div>
                 </div>
                 
-                <!-- Subclass Information -->
+                <!-- Selling Area Information -->
                 <div class="mb-10">
-                    <h4 class="text-md font-semibold text-gray-900 dark:text-white mb-6">Subclass Information</h4>
+                    <h4 class="text-md font-semibold text-gray-900 dark:text-white mb-6">Selling Area Information</h4>
                     <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                         <div>
-                            <label for="subclass1" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Subclass 1</label>
-                            <input type="text" id="subclass1" wire:model="subclass1"
+                            <label for="selling_area1" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Selling Area 1</label>
+                            <input type="text" id="selling_area1" wire:model="selling_area1"
                                 class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                placeholder="Subclass 1" />
-                            @error('subclass1') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                placeholder="Selling Area 1" />
+                            @error('selling_area1') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                         </div>
                         <div>
-                            <label for="subclass2" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Subclass 2</label>
-                            <input type="text" id="subclass2" wire:model="subclass2"
+                            <label for="selling_area2" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Selling Area 2</label>
+                            <input type="text" id="selling_area2" wire:model="selling_area2"
                                 class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                placeholder="Subclass 2" />
-                            @error('subclass2') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                placeholder="Selling Area 2" />
+                            @error('selling_area2') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                         </div>
                         <div>
-                            <label for="subclass3" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Subclass 3</label>
-                            <input type="text" id="subclass3" wire:model="subclass3"
+                            <label for="selling_area3" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Selling Area 3</label>
+                            <input type="text" id="selling_area3" wire:model="selling_area3"
                                 class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                placeholder="Subclass 3" />
-                            @error('subclass3') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                placeholder="Selling Area 3" />
+                            @error('selling_area3') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                         </div>
                         <div>
-                            <label for="subclass4" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Subclass 4</label>
-                            <input type="text" id="subclass4" wire:model="subclass4"
+                            <label for="selling_area4" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Selling Area 4</label>
+                            <input type="text" id="selling_area4" wire:model="selling_area4"
                                 class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                placeholder="Subclass 4" />
-                            @error('subclass4') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                placeholder="Selling Area 4" />
+                            @error('selling_area4') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                         </div>
                     </div>
                 </div>
@@ -137,7 +156,7 @@
                         </div>
                     </div>
 
-                    <!-- Row 3: Company TIN and Department Code -->
+                    <!-- Row 3: Company TIN -->
                     <div class="grid gap-6 md:grid-cols-2 mb-6">
                         <div>
                             <label for="company_tin" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Company TIN</label>
@@ -146,43 +165,47 @@
                                 placeholder="Company TIN" />
                             @error('company_tin') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                         </div>
-                        <div>
-                            <label for="dept_code" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Department Code</label>
-                            <input type="text" id="dept_code" wire:model="dept_code"
-                                class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                placeholder="Department Code" />
-                            @error('dept_code') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
-                        </div>
                     </div>
 
-                    <!-- Row 4: Pull Out Address and Vendor Code -->
-                    <div class="grid gap-6 md:grid-cols-2">
-                        <div>
-                            <label for="pull_out_addresse" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Pull Out Address</label>
-                            <input type="text" id="pull_out_addresse" wire:model="pull_out_addresse"
-                                class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                placeholder="Pull Out Address" />
-                            @error('pull_out_addresse') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
-                        </div>
-                        <div>
-                            <label for="vendor_code" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Vendor Code</label>
-                            <input type="text" id="vendor_code" wire:model="vendor_code"
-                                class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                placeholder="Vendor Code" />
-                            @error('vendor_code') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                    <!-- Subclass group: Department Code, Pull Out Address, Vendor Group -->
+                    <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                        <h5 class="text-sm font-semibold text-gray-900 dark:text-white mb-4">Subclass</h5>
+                        <div class="grid gap-6 md:grid-cols-2">
+                            <div>
+                                <label for="dept_code" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Department Code</label>
+                                <input type="text" id="dept_code" wire:model="dept_code"
+                                    class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    placeholder="Department Code" />
+                                @error('dept_code') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <label for="pull_out_address" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Pull Out Address</label>
+                                <input type="text" id="pull_out_address" wire:model="pull_out_address"
+                                    class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    placeholder="Pull Out Address" />
+                                @error('pull_out_address') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <label for="vendor_code" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Vendor Group</label>
+                                <input type="text" id="vendor_code" wire:model="vendor_code"
+                                    class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    placeholder="Vendor Group" />
+                                @error('vendor_code') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Submit Button -->
                 <div class="pt-6 border-t border-gray-200 dark:border-gray-700">
-                    <div class="flex justify-end"></div>
+                    <div class="flex justify-end">
                         <flux:button type="submit">
                             Add Branch
                         </flux:button>
                     </div>
                 </div>
             </form>
+            </div>
         </section>
         @endcan
 
@@ -260,9 +283,8 @@
                         <tr>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Code</th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Branch Name</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Category</th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Address</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Contact</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Contact / Email</th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Manager</th>
                             <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Action</th>
                         </tr>
@@ -274,9 +296,13 @@
                                     {{ $item->code }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{{ $item->name }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ $item->category }}</td>
                                 <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{{ $item->address }}</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ $item->contact_num ?? 'N/A' }}</td>
+                                <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                                    <div>{{ $item->contact_num ?? '—' }}</div>
+                                    @if($item->email)
+                                        <div class="text-gray-400 dark:text-gray-500 text-xs mt-0.5">{{ $item->email }}</div>
+                                    @endif
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ $item->manager_name ?? 'N/A' }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-center">
                                     <div class="flex items-center justify-center space-x-2">
@@ -296,7 +322,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="px-6 py-12 text-center">
+                                <td colspan="6" class="px-6 py-12 text-center">
                                     <div class="flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
                                         <svg class="w-16 h-16 mb-4 text-gray-400 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -317,7 +343,7 @@
 
             <!-- Pagination -->
             <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
-                {{ $items->links() }}
+                {{ $items->links('livewire::tailwind', ['scrollTo' => false]) }}
             </div>
         </section>
 
@@ -385,40 +411,47 @@
                                             placeholder="Manager Name" />
                                         @error('edit_manager_name') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                                     </div>
+                                    <div>
+                                        <label for="edit_email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email Address</label>
+                                        <input type="email" wire:model="edit_email" id="edit_email" 
+                                            class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
+                                            placeholder="branch@example.com" />
+                                        @error('edit_email') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                    </div>
                                 </div>
                             </div>
 
-                            <!-- Subclass Information -->
+                            <!-- Selling Area Information -->
                             <div>
-                                <h4 class="text-md font-semibold text-gray-900 dark:text-white mb-4">Subclass Information</h4>
+                                <h4 class="text-md font-semibold text-gray-900 dark:text-white mb-4">Selling Area Information</h4>
                                 <div class="grid gap-4 md:grid-cols-2">
                                     <div>
-                                        <label for="edit_subclass1" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Subclass 1</label>
-                                        <input type="text" wire:model="edit_subclass1" id="edit_subclass1" 
+                                        <label for="edit_selling_area1" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Selling Area 1</label>
+                                        <input type="text" wire:model="edit_selling_area1" id="edit_selling_area1" 
                                             class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
-                                            placeholder="Subclass 1" />
-                                        @error('edit_subclass1') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                            placeholder="Selling Area 1" />
+                                        @error('edit_selling_area1') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                                     </div>
                                     <div>
-                                        <label for="edit_subclass2" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Subclass 2</label>
-                                        <input type="text" wire:model="edit_subclass2" id="edit_subclass2" 
+                                        <label for="edit_selling_area2" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Selling Area 2</label>
+                                        <input type="text" wire:model="edit_selling_area2" id="edit_selling_area2" 
                                             class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
-                                            placeholder="Subclass 2" />
-                                        @error('edit_subclass2') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                            placeholder="Selling Area 2" />
+                                        @error('edit_selling_area2') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                                     </div>
                                     <div>
-                                        <label for="edit_subclass3" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Subclass 3</label>
-                                        <input type="text" wire:model="edit_subclass3" id="edit_subclass3" 
+                                        <label for="edit_selling_area3" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Selling Area 3</label>
+                                        <input type="text" wire:model="edit_selling_area3" id="edit_selling_area3" 
                                             class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
-                                            placeholder="Subclass 3" />
-                                        @error('edit_subclass3') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
-                                </div>
-                                <div>
-                                        <label for="edit_subclass4" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Subclass 4</label>
-                                        <input type="text" wire:model="edit_subclass4" id="edit_subclass4" 
+                                            placeholder="Selling Area 3" />
+                                        @error('edit_selling_area3') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                    </div>
+                                    <div>
+                                        <label for="edit_selling_area4" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Selling Area 4</label>
+                                        <input type="text" wire:model="edit_selling_area4" id="edit_selling_area4" 
                                             class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
-                                            placeholder="Subclass 4" />
-                                        @error('edit_subclass4') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                            placeholder="Selling Area 4" />
+                                        @error('edit_selling_area4') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                                     </div>
                                 </div>
                             </div>
@@ -426,7 +459,7 @@
                             <!-- Additional Information -->
                             <div>
                                 <h4 class="text-md font-semibold text-gray-900 dark:text-white mb-4">Additional Information</h4>
-                                <div class="grid gap-4 md:grid-cols-2">
+                                <div class="grid gap-4 md:grid-cols-2 mb-4">
                                     <div>
                                         <label for="edit_remarks" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Remarks</label>
                                         <input type="text" wire:model="edit_remarks" id="edit_remarks" 
@@ -462,26 +495,32 @@
                                             placeholder="Company TIN" />
                                         @error('edit_company_tin') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                                     </div>
-                                    <div>
-                                        <label for="edit_dept_code" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Department Code</label>
-                                        <input type="text" wire:model="edit_dept_code" id="edit_dept_code" 
-                                            class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
-                                            placeholder="Department Code" />
-                                        @error('edit_dept_code') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
-                                    </div>
-                                    <div>
-                                        <label for="edit_pull_out_addresse" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Pull Out Address</label>
-                                        <input type="text" wire:model="edit_pull_out_addresse" id="edit_pull_out_addresse" 
-                                            class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
-                                            placeholder="Pull Out Address" />
-                                        @error('edit_pull_out_addresse') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
-                                    </div>
-                                    <div>
-                                        <label for="edit_vendor_code" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Vendor Code</label>
-                                        <input type="text" wire:model="edit_vendor_code" id="edit_vendor_code" 
-                                            class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
-                                            placeholder="Vendor Code" />
-                                        @error('edit_vendor_code') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                </div>
+                                <!-- Subclass group -->
+                                <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                                    <h5 class="text-sm font-semibold text-gray-900 dark:text-white mb-4">Subclass</h5>
+                                    <div class="grid gap-4 md:grid-cols-2">
+                                        <div>
+                                            <label for="edit_dept_code" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Department Code</label>
+                                            <input type="text" wire:model="edit_dept_code" id="edit_dept_code" 
+                                                class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
+                                                placeholder="Department Code" />
+                                            @error('edit_dept_code') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                        </div>
+                                        <div>
+                                            <label for="edit_pull_out_address" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Pull Out Address</label>
+                                            <input type="text" wire:model="edit_pull_out_address" id="edit_pull_out_address" 
+                                                class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
+                                                placeholder="Pull Out Address" />
+                                            @error('edit_pull_out_address') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                        </div>
+                                        <div>
+                                            <label for="edit_vendor_code" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Vendor Group</label>
+                                            <input type="text" wire:model="edit_vendor_code" id="edit_vendor_code" 
+                                                class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
+                                                placeholder="Vendor Group" />
+                                            @error('edit_vendor_code') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                        </div>
                                     </div>
                                 </div>
                             </div>

@@ -97,37 +97,41 @@
                         <table class="w-full text-sm text-left text-zinc-500 dark:text-zinc-400">
                             <thead class="text-sm text-zinc-700 uppercase bg-zinc-50 dark:bg-zinc-700 dark:text-zinc-400">
                                 <tr>
-                                    <th scope="col" class="px-6 py-3">SKU</th>
-                                    <th scope="col" class="px-6 py-3">Product Name</th>
-                                    <th scope="col" class="px-6 py-3">Category</th>
-                                    <th scope="col" class="px-6 py-3">Supplier</th>
-                                    <th scope="col" class="px-6 py-3">Supplier Code</th>
-                                    <th scope="col" class="px-6 py-3 text-right">Unit Price</th>
-                                    <th scope="col" class="px-6 py-3 text-right">Quantity</th>
-                                    <th scope="col" class="px-6 py-3 text-right">Total Price</th>
+                                    <th scope="col" class="px-5 py-3 text-left">Product Name</th>
+                                    <th scope="col" class="px-5 py-3 text-left">SKU</th>
+                                    <th scope="col" class="px-5 py-3 text-left">Supplier Code (SKU)</th>
+                                    <th scope="col" class="px-5 py-3 text-left">Category</th>
+                                    <th scope="col" class="px-5 py-3 text-right">Unit Price</th>
+                                    <th scope="col" class="px-5 py-3 text-right">Quantity</th>
+                                    <th scope="col" class="px-5 py-3 text-right">Total Price</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse($purchaseOrder->productOrders as $order)
                                     <tr class="bg-white border-b dark:bg-zinc-800 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-600">
-                                        <td class="px-6 py-4 font-medium text-zinc-900 dark:text-white">
-                                            {{ $order->product->sku ?? 'N/A' }}
+                                        <td class="px-5 py-4">
+                                            <div class="font-medium text-zinc-900 dark:text-white">{{ $order->product->remarks ?? $order->product->name ?? 'N/A' }}</div>
                                         </td>
-                                        <td class="px-6 py-4">{{ $order->product->name ?? 'N/A' }}</td>
-                                        <td class="px-6 py-4">{{ $order->product->category->name ?? 'N/A' }}</td>
-                                        <td class="px-6 py-4">{{ $order->product->supplier->name ?? 'N/A' }}</td>
-                                        <td class="px-6 py-4">{{ $order->product->supplier_code ?? 'N/A' }}</td>
-                                        <td class="px-6 py-4 text-right">₱{{ number_format($order->unit_price, 2) }}</td>
-                                        <td class="px-6 py-4 text-right">
+                                        <td class="px-5 py-4">
+                                            <div class="text-sm font-mono text-zinc-600 dark:text-zinc-400">{{ $order->product->sku ?? '—' }}</div>
+                                        </td>
+                                        <td class="px-5 py-4">
+                                            <div class="text-sm text-zinc-600 dark:text-zinc-400">{{ $order->product->supplier_code ?? '—' }}</div>
+                                        </td>
+                                        <td class="px-5 py-4">
+                                            <div class="text-sm text-zinc-500 dark:text-zinc-400">{{ $order->product->category->name ?? 'N/A' }}</div>
+                                        </td>
+                                        <td class="px-5 py-4 text-right">₱{{ number_format($order->unit_price, 2) }}</td>
+                                        <td class="px-5 py-4 text-right">
                                             {{ number_format($order->quantity, 0) }} {{ $order->product->uom ?? 'pcs' }}
                                         </td>
-                                        <td class="px-6 py-4 text-right font-semibold text-zinc-900 dark:text-white">
+                                        <td class="px-5 py-4 text-right font-semibold text-zinc-900 dark:text-white">
                                             ₱{{ number_format($order->total_price, 2) }}
                                         </td>
                                     </tr>
                                 @empty
                                     <tr class="bg-white border-b dark:bg-zinc-800 dark:border-zinc-700">
-                                        <td colspan="8" class="px-6 py-4 text-center">No items found</td>
+                                        <td colspan="7" class="px-5 py-4 text-center">No items found</td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -239,37 +243,45 @@
                         <table class="w-full text-sm text-left text-zinc-500 dark:text-zinc-400">
                             <thead class="text-sm text-zinc-700 uppercase bg-zinc-50 dark:bg-zinc-700 dark:text-zinc-400">
                                 <tr>
-                                    <th scope="col" class="px-6 py-3">SKU</th>
-                                    <th scope="col" class="px-6 py-3">Product Name</th>
-                                    <th scope="col" class="px-6 py-3">Category</th>
-                                    <th scope="col" class="px-6 py-3">Ordered Qty</th>
-                                    <th scope="col" class="px-6 py-3 bg-amber-50 dark:bg-amber-900/20">
+                                    <th scope="col" class="px-5 py-3 text-left">Product Name</th>
+                                    <th scope="col" class="px-5 py-3 text-left">SKU</th>
+                                    <th scope="col" class="px-5 py-3 text-left">Supplier Code (SKU)</th>
+                                    <th scope="col" class="px-5 py-3 text-left">Category</th>
+                                    <th scope="col" class="px-5 py-3 text-left">Ordered Qty</th>
+                                    <th scope="col" class="px-5 py-3 bg-amber-50 dark:bg-amber-900/20">
                                         Batch Number
                                     </th>
-                                    <th scope="col" class="px-6 py-3 text-right">Unit Price</th>
-                                    <th scope="col" class="px-6 py-3 text-right">Total Price</th>
+                                    <th scope="col" class="px-5 py-3 text-right">Unit Price</th>
+                                    <th scope="col" class="px-5 py-3 text-right">Total Price</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse($purchaseOrder->productOrders as $order)
                                     <tr class="bg-white border-b dark:bg-zinc-800 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-600">
-                                        <td class="px-6 py-4 font-medium text-zinc-900 dark:text-white">
-                                            {{ $order->product->sku ?? 'N/A' }}
+                                        <td class="px-5 py-4">
+                                            <div class="font-medium text-zinc-900 dark:text-white">{{ $order->product->remarks ?? $order->product->name ?? 'N/A' }}</div>
                                         </td>
-                                        <td class="px-6 py-4">{{ $order->product->name ?? 'N/A' }}</td>
-                                        <td class="px-6 py-4">{{ $order->product->category->name ?? 'N/A' }}</td>
-                                        <td class="px-6 py-4 text-left">
+                                        <td class="px-5 py-4">
+                                            <div class="text-sm font-mono text-zinc-600 dark:text-zinc-400">{{ $order->product->sku ?? '—' }}</div>
+                                        </td>
+                                        <td class="px-5 py-4">
+                                            <div class="text-sm text-zinc-600 dark:text-zinc-400">{{ $order->product->supplier_code ?? '—' }}</div>
+                                        </td>
+                                        <td class="px-5 py-4">
+                                            <div class="text-sm text-zinc-500 dark:text-zinc-400">{{ $order->product->category->name ?? 'N/A' }}</div>
+                                        </td>
+                                        <td class="px-5 py-4 text-left">
                                             {{ number_format($order->quantity, 0) }} {{ $order->product->uom ?? 'pcs' }}
                                         </td>
                                         <!-- Batch Number Input -->
-                                        <td class="px-6 py-4 bg-amber-50 dark:bg-amber-900/20">
+                                        <td class="px-5 py-4 bg-amber-50 dark:bg-amber-900/20">
                                             <input type="text"
                                                 wire:model="batch_numbers.{{ $order->id }}"
                                                 class="bg-white border border-amber-300 text-zinc-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2 dark:bg-zinc-700 dark:border-amber-600 dark:text-white"
                                                 placeholder="Enter batch #">
                                         </td>
-                                        <td class="px-6 py-4 text-right">₱{{ number_format($order->unit_price, 2) }}</td>
-                                        <td class="px-6 py-4 text-right font-semibold text-zinc-900 dark:text-white">
+                                        <td class="px-5 py-4 text-right">₱{{ number_format($order->unit_price, 2) }}</td>
+                                        <td class="px-5 py-4 text-right font-semibold text-zinc-900 dark:text-white">
                                             ₱{{ number_format($order->total_price, 2) }}
                                         </td>
                                     </tr>
@@ -378,37 +390,41 @@
                         <table class="w-full text-sm text-left text-zinc-500 dark:text-zinc-400">
                             <thead class="text-sm text-zinc-700 uppercase bg-zinc-50 dark:bg-zinc-700 dark:text-zinc-400">
                                 <tr>
-                                    <th scope="col" class="px-6 py-3">SKU</th>
-                                    <th scope="col" class="px-6 py-3">Product Name</th>
-                                    <th scope="col" class="px-6 py-3">Category</th>
-                                    <th scope="col" class="px-6 py-3">Supplier</th>
-                                    <th scope="col" class="px-6 py-3">Supplier Code</th>
-                                    <th scope="col" class="px-6 py-3 text-right">Unit Price</th>
-                                    <th scope="col" class="px-6 py-3 text-right">Quantity</th>
-                                    <th scope="col" class="px-6 py-3 text-right">Total Price</th>
+                                    <th scope="col" class="px-5 py-3 text-left">Product Name</th>
+                                    <th scope="col" class="px-5 py-3 text-left">SKU</th>
+                                    <th scope="col" class="px-5 py-3 text-left">Supplier Code (SKU)</th>
+                                    <th scope="col" class="px-5 py-3 text-left">Category</th>
+                                    <th scope="col" class="px-5 py-3 text-right">Unit Price</th>
+                                    <th scope="col" class="px-5 py-3 text-right">Quantity</th>
+                                    <th scope="col" class="px-5 py-3 text-right">Total Price</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse($purchaseOrder->productOrders as $order)
                                     <tr class="bg-white border-b dark:bg-zinc-800 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-600">
-                                        <td class="px-6 py-4 font-medium text-zinc-900 dark:text-white">
-                                            {{ $order->product->sku ?? 'N/A' }}
+                                        <td class="px-5 py-4">
+                                            <div class="font-medium text-zinc-900 dark:text-white">{{ $order->product->remarks ?? $order->product->name ?? 'N/A' }}</div>
                                         </td>
-                                        <td class="px-6 py-4">{{ $order->product->name ?? 'N/A' }}</td>
-                                        <td class="px-6 py-4">{{ $order->product->category->name ?? 'N/A' }}</td>
-                                        <td class="px-6 py-4">{{ $order->product->supplier->name ?? 'N/A' }}</td>
-                                        <td class="px-6 py-4">{{ $order->product->supplier_code ?? 'N/A' }}</td>
-                                        <td class="px-6 py-4 text-right">₱{{ number_format($order->unit_price, 2) }}</td>
-                                        <td class="px-6 py-4 text-right">
+                                        <td class="px-5 py-4">
+                                            <div class="text-sm font-mono text-zinc-600 dark:text-zinc-400">{{ $order->product->sku ?? '—' }}</div>
+                                        </td>
+                                        <td class="px-5 py-4">
+                                            <div class="text-sm text-zinc-600 dark:text-zinc-400">{{ $order->product->supplier_code ?? '—' }}</div>
+                                        </td>
+                                        <td class="px-5 py-4">
+                                            <div class="text-sm text-zinc-500 dark:text-zinc-400">{{ $order->product->category->name ?? 'N/A' }}</div>
+                                        </td>
+                                        <td class="px-5 py-4 text-right">₱{{ number_format($order->unit_price, 2) }}</td>
+                                        <td class="px-5 py-4 text-right">
                                             {{ number_format($order->quantity, 0) }} {{ $order->product->uom ?? 'pcs' }}
                                         </td>
-                                        <td class="px-6 py-4 text-right font-semibold text-zinc-900 dark:text-white">
+                                        <td class="px-5 py-4 text-right font-semibold text-zinc-900 dark:text-white">
                                             ₱{{ number_format($order->total_price, 2) }}
                                         </td>
                                     </tr>
                                 @empty
                                     <tr class="bg-white border-b dark:bg-zinc-800 dark:border-zinc-700">
-                                        <td colspan="8" class="px-6 py-4 text-center">No items found</td>
+                                        <td colspan="7" class="px-5 py-4 text-center">No items found</td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -549,31 +565,39 @@
                         <table class="w-full text-sm text-left text-zinc-500 dark:text-zinc-400">
                             <thead class="text-sm text-zinc-700 uppercase bg-zinc-50 dark:bg-zinc-700 dark:text-zinc-400">
                                 <tr>
-                                    <th scope="col" class="px-6 py-3">SKU</th>
-                                    <th scope="col" class="px-6 py-3">Product Name</th>
-                                    <th scope="col" class="px-6 py-3">Category</th>
-                                    <th scope="col" class="px-6 py-3">Ordered Qty</th>
-                                    <th scope="col" class="px-6 py-3 bg-purple-50 dark:bg-purple-900/20">Expected Qty</th>
-                                    <th scope="col" class="px-6 py-3 bg-amber-50 dark:bg-amber-900/20">Batch Number</th>
+                                    <th scope="col" class="px-5 py-3 text-left">Product Name</th>
+                                    <th scope="col" class="px-5 py-3 text-left">SKU</th>
+                                    <th scope="col" class="px-5 py-3 text-left">Supplier Code (SKU)</th>
+                                    <th scope="col" class="px-5 py-3 text-left">Category</th>
+                                    <th scope="col" class="px-5 py-3 text-left">Ordered Qty</th>
+                                    <th scope="col" class="px-5 py-3 bg-purple-50 dark:bg-purple-900/20">Expected Qty</th>
+                                    <th scope="col" class="px-5 py-3 bg-amber-50 dark:bg-amber-900/20">Batch Number</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse($purchaseOrder->productOrders as $order)
                                     <tr class="bg-white border-b dark:bg-zinc-800 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-600">
-                                        <td class="px-6 py-4 font-medium text-zinc-900 dark:text-white">
-                                            {{ $order->product->sku ?? 'N/A' }}
+                                        <td class="px-5 py-4">
+                                            <div class="font-medium text-zinc-900 dark:text-white">{{ $order->product->remarks ?? $order->product->name ?? 'N/A' }}</div>
                                         </td>
-                                        <td class="px-6 py-4">{{ $order->product->name ?? 'N/A' }}</td>
-                                        <td class="px-6 py-4">{{ $order->product->category->name ?? 'N/A' }}</td>
-                                        <td class="px-6 py-4 text-left">
+                                        <td class="px-5 py-4">
+                                            <div class="text-sm font-mono text-zinc-600 dark:text-zinc-400">{{ $order->product->sku ?? '—' }}</div>
+                                        </td>
+                                        <td class="px-5 py-4">
+                                            <div class="text-sm text-zinc-600 dark:text-zinc-400">{{ $order->product->supplier_code ?? '—' }}</div>
+                                        </td>
+                                        <td class="px-5 py-4">
+                                            <div class="text-sm text-zinc-500 dark:text-zinc-400">{{ $order->product->category->name ?? 'N/A' }}</div>
+                                        </td>
+                                        <td class="px-5 py-4 text-left">
                                             {{ number_format($order->quantity, 0) }} {{ $order->product->uom ?? 'pcs' }}
                                         </td>
-                                        <td class="px-6 py-4 bg-purple-50 dark:bg-purple-900/20 text-left">
+                                        <td class="px-5 py-4 bg-purple-50 dark:bg-purple-900/20 text-left">
                                             <div class="font-medium text-purple-600 dark:text-purple-400">
                                                 {{ number_format($order->expected_qty ?? $order->quantity, 0) }} {{ $order->product->uom ?? 'pcs' }}
                                             </div>
                                         </td>
-                                        <td class="px-6 py-4 bg-amber-50 dark:bg-amber-900/20">
+                                        <td class="px-5 py-4 bg-amber-50 dark:bg-amber-900/20">
                                             @if($order->batch_number)
                                                 <span class="text-xs text-zinc-400 dark:text-zinc-500 ">
                                                     {{ $order->batch_number }}
@@ -834,49 +858,57 @@
                         <table class="w-full text-sm text-left text-zinc-500 dark:text-zinc-400">
                             <thead class="text-sm text-zinc-700 uppercase bg-zinc-50 dark:bg-zinc-700 dark:text-zinc-400">
                                 <tr>
-                                    <th scope="col" class="px-6 py-3">SKU</th>
-                                    <th scope="col" class="px-6 py-3">Product Name</th>
-                                    <th scope="col" class="px-6 py-3">Category</th>
-                                    <th scope="col" class="px-6 py-3">Ordered Qty</th>
-                                    <th scope="col" class="px-6 py-3 bg-purple-50 dark:bg-purple-900/20">Expected Qty</th>
-                                    <th scope="col" class="px-6 py-3 bg-green-50 dark:bg-green-900/20">Received Qty</th>
+                                    <th scope="col" class="px-5 py-3 text-left">Product Name</th>
+                                    <th scope="col" class="px-5 py-3 text-left">SKU</th>
+                                    <th scope="col" class="px-5 py-3 text-left">Supplier Code (SKU)</th>
+                                    <th scope="col" class="px-5 py-3 text-left">Category</th>
+                                    <th scope="col" class="px-5 py-3 text-right">Ordered Qty</th>
+                                    <th scope="col" class="px-5 py-3 bg-purple-50 dark:bg-purple-900/20 text-right">Expected Qty</th>
+                                    <th scope="col" class="px-5 py-3 bg-green-50 dark:bg-green-900/20 text-right">Received Qty</th>
                                     @if($totalDestroyed > 0)
-                                    <th scope="col" class="px-6 py-3 bg-red-50 dark:bg-red-900/20">Destroyed Qty</th>
+                                    <th scope="col" class="px-5 py-3 bg-red-50 dark:bg-red-900/20 text-right">Destroyed Qty</th>
                                     @endif
-                                    <th scope="col" class="px-6 py-3">Receiving Status</th>
-                                    <th scope="col" class="px-6 py-3 text-right">Unit Price</th>
-                                    <th scope="col" class="px-6 py-3 text-right">Total Price</th>
+                                    <th scope="col" class="px-5 py-3">Receiving Status</th>
+                                    <th scope="col" class="px-5 py-3 text-right">Unit Price</th>
+                                    <th scope="col" class="px-5 py-3 text-right">Total Price</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse($purchaseOrder->productOrders as $order)
                                     <tr class="bg-white border-b dark:bg-zinc-800 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-600">
-                                        <td class="px-6 py-4 font-medium text-zinc-900 dark:text-white">
-                                            {{ $order->product->sku ?? 'N/A' }}
+                                        <td class="px-5 py-4">
+                                            <div class="font-medium text-zinc-900 dark:text-white">{{ $order->product->remarks ?? $order->product->name ?? 'N/A' }}</div>
                                         </td>
-                                        <td class="px-6 py-4">{{ $order->product->name ?? 'N/A' }}</td>
-                                        <td class="px-6 py-4">{{ $order->product->category->name ?? 'N/A' }}</td>
-                                        <td class="px-6 py-4 text-right">
+                                        <td class="px-5 py-4">
+                                            <div class="text-sm font-mono text-zinc-600 dark:text-zinc-400">{{ $order->product->sku ?? '—' }}</div>
+                                        </td>
+                                        <td class="px-5 py-4">
+                                            <div class="text-sm text-zinc-600 dark:text-zinc-400">{{ $order->product->supplier_code ?? '—' }}</div>
+                                        </td>
+                                        <td class="px-5 py-4">
+                                            <div class="text-sm text-zinc-500 dark:text-zinc-400">{{ $order->product->category->name ?? 'N/A' }}</div>
+                                        </td>
+                                        <td class="px-5 py-4 text-right">
                                             {{ number_format($order->quantity, 0) }} {{ $order->product->uom ?? 'pcs' }}
                                         </td>
-                                        <td class="px-6 py-4 bg-purple-50 dark:bg-purple-900/20 text-right">
+                                        <td class="px-5 py-4 bg-purple-50 dark:bg-purple-900/20 text-right">
                                             <div class="font-medium text-purple-600 dark:text-purple-400">
                                                 {{ number_format($order->expected_qty ?? $order->quantity, 0) }} {{ $order->product->uom ?? 'pcs' }}
                                             </div>
                                         </td>
-                                        <td class="px-6 py-4 bg-green-50 dark:bg-green-900/20 text-right">
+                                        <td class="px-5 py-4 bg-green-50 dark:bg-green-900/20 text-right">
                                             <div class="font-semibold text-green-600 dark:text-green-400">
                                                 {{ number_format($order->received_quantity, 0) }} {{ $order->product->uom ?? 'pcs' }}
                                             </div>
                                         </td>
                                         @if($totalDestroyed > 0)
-                                        <td class="px-6 py-4 bg-red-50 dark:bg-red-900/20 text-right">
+                                        <td class="px-5 py-4 bg-red-50 dark:bg-red-900/20 text-right">
                                             <div class="font-medium text-red-600 dark:text-red-400">
                                                 {{ number_format($order->destroyed_qty ?? 0, 0) }} {{ $order->product->uom ?? 'pcs' }}
                                             </div>
                                         </td>
                                         @endif
-                                        <td class="px-6 py-4">
+                                        <td class="px-5 py-4">
                                             @php
                                                 $itemReceived = $order->received_quantity ?? 0; // Good items
                                                 $itemDestroyed = $order->destroyed_qty ?? 0; // Damaged items
@@ -971,8 +1003,8 @@
                                             </div>
                                             @endif
                                         </td>
-                                        <td class="px-6 py-4 text-right">₱{{ number_format($order->unit_price, 2) }}</td>
-                                        <td class="px-6 py-4 text-right font-semibold text-zinc-900 dark:text-white">
+                                        <td class="px-5 py-4 text-right">₱{{ number_format($order->unit_price, 2) }}</td>
+                                        <td class="px-5 py-4 text-right font-semibold text-zinc-900 dark:text-white">
                                             ₱{{ number_format($order->total_price, 2) }}
                                         </td>
                                     </tr>
@@ -989,7 +1021,7 @@
 
                                     @if($order->batch_number && $itemBatches->isNotEmpty())
                                     <tr class="bg-amber-50 dark:bg-zinc-800 border-0">
-                                        <td colspan="{{ $totalDestroyed > 0 ? 10 : 9 }}" class="px-6 py-4 border-0">
+                                        <td colspan="{{ $totalDestroyed > 0 ? 11 : 10 }}" class="px-5 py-4 border-0">
                                             <div class="ml-4">
                                                 <div class="flex items-center gap-2 mb-3">
                                                     <svg class="w-4 h-4 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1092,7 +1124,7 @@
                                     @endif
                                 @empty
                                     <tr class="bg-white border-b dark:bg-zinc-800 dark:border-zinc-700">
-                                        <td colspan="{{ $totalDestroyed > 0 ? 10 : 9 }}" class="px-6 py-4 text-center">No items found</td>
+                                        <td colspan="{{ $totalDestroyed > 0 ? 11 : 10 }}" class="px-5 py-4 text-center">No items found</td>
                                     </tr>
                                 @endforelse
                             </tbody>

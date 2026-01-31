@@ -63,7 +63,7 @@
                     </header>
 
                     <div class="flex-1 overflow-hidden">
-                        <form wire:submit.prevent="saveProduct" class="flex h-full flex-col">
+                        <form wire:submit.prevent="requestSaveProduct" class="flex h-full flex-col">
                             <div class="flex-1 overflow-y-auto px-6 py-6">
                                 <div class="space-y-8">
                                     <!-- Product Details -->
@@ -290,7 +290,7 @@
                                             <div>
                                                 <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Product Type</label>
                                                 <select
-                                                    wire:model="form.product_type"
+                                                    wire:model.live="form.product_type"
                                                     class="block h-11 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
                                                 >
                                                     <option value="regular">Regular Item</option>
@@ -338,9 +338,10 @@
                                                 <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Selling Price</label>
                                                 <div class="flex items-center gap-2">
                                                     <flux:input
-                                                        wire:model.live="form.price"
+                                                        wire:model.live.debounce.400ms="form.price"
                                                         type="number"
                                                         step="0.01"
+                                                        min="0"
                                                         required
                                                         placeholder="0.00"
                                                         class="flex-1 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
@@ -371,6 +372,46 @@
                                                     No previous {{ strtolower($priceLabel) }} price recorded yet.
                                                 </p>
                                             @endif
+
+                                            <div class="mt-4">
+                                                <label class="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">When should this price take effect?</label>
+                                                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                                    <div class="flex flex-col justify-center gap-2">
+                                                        <label class="inline-flex cursor-pointer items-center gap-2">
+                                                            <input
+                                                                type="radio"
+                                                                wire:model.live="form.price_effective_option"
+                                                                value="immediately"
+                                                                class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700"
+                                                            />
+                                                            <span class="text-sm text-gray-700 dark:text-gray-300">Immediately</span>
+                                                        </label>
+                                                        <label class="inline-flex cursor-pointer items-center gap-2">
+                                                            <input
+                                                                type="radio"
+                                                                wire:model.live="form.price_effective_option"
+                                                                value="date"
+                                                                class="h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700"
+                                                            />
+                                                            <span class="text-sm text-gray-700 dark:text-gray-300">On a specific date</span>
+                                                        </label>
+                                                    </div>
+                                                    <div class="flex flex-col justify-center">
+                                                        @if(($form['price_effective_option'] ?? 'immediately') === 'date')
+                                                            <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Effective date</label>
+                                                            <input
+                                                                type="date"
+                                                                wire:model="form.price_effective_date"
+                                                                class="block h-11 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                            />
+                                                            @error('form.price_effective_date') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                                        @else
+                                                            <p class="text-xs text-gray-500 dark:text-gray-400">Select &quot;On a specific date&quot; to choose when the price takes effect.</p>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Choose when the new selling price and price note take effect.</p>
+                                            </div>
                                             </div>
                                         </div>
 
@@ -444,13 +485,13 @@
                                             <div>
                                                 <flux:input
                                                     wire:model="form.supplier_code"
-                                                    label="Supplier SKU"
-                                                    placeholder="Enter supplier's SKU/barcode for this product"
+                                                    label="Supplier Code (SKU)"
+                                                    placeholder="Enter supplier's product code (SKU) for this product"
                                                     class="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                                 />
                                                 @error('form.supplier_code') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                                                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                                    Enter the supplier's product identifier (SKU or barcode), not the supplier's company code.
+                                                    Enter the supplier's product identifier (SKU), not the supplier's company code.
                                                 </p>
                                             </div>
                                         </div>
@@ -494,19 +535,9 @@
                                                 <label class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Unit of Measure</label>
                                                 <select
                                                     wire:model="form.uom"
-                                                class="block h-11 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
+                                                    class="block h-11 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
                                                 >
                                                     <option value="pcs">Pieces</option>
-                                                    <option value="kg">Kilograms</option>
-                                                    <option value="lbs">Pounds</option>
-                                                    <option value="g">Grams</option>
-                                                    <option value="oz">Ounces</option>
-                                                    <option value="l">Liters</option>
-                                                    <option value="ml">Milliliters</option>
-                                                    <option value="m">Meters</option>
-                                                    <option value="cm">Centimeters</option>
-                                                    <option value="ft">Feet</option>
-                                                    <option value="in">Inches</option>
                                                 </select>
                                                 @error('form.uom') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                                             </div>
@@ -573,6 +604,56 @@
                     </div>
                 </div>
             </section>
+
+            {{-- Effective date confirmation modal --}}
+            <div
+                x-data="{ open: @entangle('showEffectiveDateConfirmModal').live }"
+                x-cloak
+                x-show="open"
+                class="fixed inset-0 z-[60] flex items-center justify-center p-4"
+                x-transition:enter="ease-out duration-200"
+                x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100"
+                x-transition:leave="ease-in duration-150"
+                x-transition:leave-start="opacity-100"
+                x-transition:leave-end="opacity-0"
+            >
+                <div class="fixed inset-0 bg-neutral-900/50 dark:bg-neutral-900/70" @click="$wire.cancelEffectiveDateConfirm()"></div>
+                <div
+                    x-show="open"
+                    class="relative w-full max-w-md rounded-lg bg-white p-6 shadow-xl dark:bg-zinc-900 dark:border dark:border-zinc-700"
+                    x-transition:enter="ease-out duration-200"
+                    x-transition:enter-start="opacity-0 scale-95"
+                    x-transition:enter-end="opacity-100 scale-100"
+                >
+                    <div class="flex items-start gap-3">
+                        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/40">
+                            <svg class="h-5 w-5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Confirm effective date</h3>
+                            <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                                The selling price and price note will take effect on
+                                <strong class="text-gray-900 dark:text-white">
+                                    {{ !empty($form['price_effective_date']) ? \Carbon\Carbon::parse($form['price_effective_date'])->format('F j, Y') : 'the selected date' }}
+                                </strong>.
+                                Until then, the current price will remain in effect.
+                            </p>
+                            <p class="mt-2 text-xs text-gray-500 dark:text-gray-500">Do you want to continue?</p>
+                        </div>
+                    </div>
+                    <div class="mt-6 flex justify-end gap-3">
+                        <flux:button type="button" wire:click="cancelEffectiveDateConfirm" variant="ghost">
+                            Cancel
+                        </flux:button>
+                        <flux:button type="button" wire:click="confirmSaveProduct" variant="primary">
+                            Confirm
+                        </flux:button>
+                    </div>
+                </div>
+            </div>
         </div>
     </template>
 </div>

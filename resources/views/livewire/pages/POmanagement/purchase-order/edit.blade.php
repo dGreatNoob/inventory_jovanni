@@ -23,7 +23,6 @@
                     <x-dropdown wire:model="deliver_to" name="deliver_to" label="Receiving Department" :options="$departments->pluck('name', 'id')->toArray()" placeholder="Select department" searchable="true" />
                     <x-input type="date" wire:model="order_date" name="order_date" label="Order Date" />
                     <x-input type="date" wire:model="expected_delivery_date" name="expected_delivery_date" label="Expected Delivery Date" />
-                    <x-input type="text" wire:model="payment_terms" name="payment_terms" label="Payment Terms" placeholder="Enter payment terms" />
                 </div>
             </form>
         </x-collapsible-card>

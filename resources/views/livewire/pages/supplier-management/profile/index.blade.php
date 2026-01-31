@@ -211,27 +211,6 @@
                                                 </div>
                                             </section>
 
-                                            <!-- Additional Information -->
-                                            <section class="space-y-4">
-                                                <div>
-                                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Additional Information</h3>
-                                                    <p class="text-sm text-gray-500 dark:text-gray-400">Optional details about the supplier.</p>
-                                                </div>
-
-                                                <div>
-                                                    <label for="tin_num" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                                        TIN Number
-                                                    </label>
-                                                    <input 
-                                                        type="text" 
-                                                        id="tin_num" 
-                                                        wire:model="tin_num"
-                                                        class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
-                                                        placeholder="123-456-789-000" 
-                                                    />
-                                                    @error('tin_num') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                                                </div>
-                                            </section>
                                         </div>
                                     </div>
 
@@ -379,7 +358,6 @@
                             <option value="">All Status</option>
                             <option value="active">Active</option>
                             <option value="inactive">Inactive</option>
-                            <option value="pending">Pending</option>
                         </select>
 
                         <select 
@@ -573,10 +551,6 @@
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">
                                                 Inactive
                                             </span>
-                                        @elseif($item->status === 'pending')
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300">
-                                                Pending
-                                            </span>
                                         @else
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
                                                 -
@@ -711,7 +685,6 @@
                                                                 wire:model="edit_name"
                                                                 class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
                                                                 placeholder="Enter supplier name" 
-                                                                required 
                                                             />
                                                             @error('edit_name') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                                         </div>
@@ -726,7 +699,6 @@
                                                                 wire:model="edit_code"
                                                                 class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
                                                                 placeholder="Enter supplier code" 
-                                                                required 
                                                             />
                                                             @error('edit_code') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                                         </div>
@@ -742,7 +714,6 @@
                                                             wire:model="edit_address"
                                                             class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
                                                             placeholder="Enter address" 
-                                                            required 
                                                         />
                                                         @error('edit_address') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                                     </div>
@@ -768,7 +739,6 @@
                                                                 wire:model="edit_contact_person"
                                                                 class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
                                                                 placeholder="Enter contact person" 
-                                                                required 
                                                             />
                                                             @error('edit_contact_person') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                                         </div>
@@ -783,7 +753,6 @@
                                                                 wire:model="edit_contact_num"
                                                                 class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
                                                                 placeholder="Enter contact number" 
-                                                                required 
                                                             />
                                                             @error('edit_contact_num') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                                         </div>
@@ -799,7 +768,6 @@
                                                             wire:model="edit_email"
                                                             class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
                                                             placeholder="Enter supplier email" 
-                                                            required 
                                                         />
                                                         @error('edit_email') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                                     </div>
@@ -815,20 +783,6 @@
 
                                                 <div class="space-y-4">
                                                     <div>
-                                                        <label for="edit_tin_num" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                                            TIN Number
-                                                        </label>
-                                                        <input 
-                                                            type="text" 
-                                                            id="edit_tin_num" 
-                                                            wire:model="edit_tin_num"
-                                                            class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
-                                                            placeholder="123-456-789-000" 
-                                                        />
-                                                        @error('edit_tin_num') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                                                    </div>
-
-                                                    <div>
                                                         <label for="edit_status" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                                             Status
                                                         </label>
@@ -836,12 +790,10 @@
                                                             id="edit_status" 
                                                             wire:model="edit_status"
                                                             class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
-                                                            required
                                                         >
                                                             <option value="">Select status</option>
                                                             <option value="active">Active</option>
                                                             <option value="inactive">Inactive</option>
-                                                            <option value="pending">Pending</option>
                                                         </select>
                                                         @error('edit_status') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                                     </div>

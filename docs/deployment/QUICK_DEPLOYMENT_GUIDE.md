@@ -1,8 +1,9 @@
-# Quick Deployment Guide - Staging Server
+# Quick Deployment Guide - Staging and Production
 
 ## Overview
 
-The staging server (192.168.100.26) now has automated deployment via GitHub Actions self-hosted runner.
+- **Staging:** Automated deployment via GitHub Actions self-hosted runner (staging server, e.g. 192.168.100.26). Push to `staging` branch.
+- **Production:** Automated deployment via a second self-hosted runner on the production server (`/var/www/inventory_jovanni`). Push to `main` or run workflow with environment "production". See [PRODUCTION_RUNNER_SETUP.md](./PRODUCTION_RUNNER_SETUP.md) to set up the production runner.
 
 ## How It Works
 

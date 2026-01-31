@@ -20,13 +20,13 @@ class Index extends Component
     public $totalValue = 0;
 
     // Create form properties
-    public $supplier_name, $supplier_code, $supplier_address, $contact_person, $contact_num, $email, $tin_num, $status;
+    public $supplier_name, $supplier_code, $supplier_address, $contact_person, $contact_num, $email, $status;
     
     // Edit form properties
-    public $edit_name, $edit_code, $edit_address, $edit_contact_person, $edit_contact_num, $edit_email, $edit_tin_num, $edit_status;
+    public $edit_name, $edit_code, $edit_address, $edit_contact_person, $edit_contact_num, $edit_email, $edit_status;
     
     // View modal properties
-    public $view_name, $view_code, $view_address, $view_contact_person, $view_contact_num, $view_email, $view_tin_num, $view_status, $view_categories = [];
+    public $view_name, $view_code, $view_address, $view_contact_person, $view_contact_num, $view_email, $view_status, $view_categories = [];
     
     // Table settings
     public $perPage = 10;
@@ -133,7 +133,6 @@ class Index extends Component
         $this->view_contact_person = $supplier->contact_person;
         $this->view_contact_num = $supplier->contact_num;
         $this->view_email = $supplier->email;
-        $this->view_tin_num = $supplier->tin_num;
         $this->view_status = $supplier->status;
         $this->view_categories = $supplier->categories ?? [];
 
@@ -152,7 +151,6 @@ class Index extends Component
             'view_contact_person',
             'view_contact_num',
             'view_email',
-            'view_tin_num',
             'view_status',
             'view_categories',
             'showViewModal',
@@ -165,16 +163,15 @@ class Index extends Component
     public function rules()
     {
         if ($this->selectedItemId) {
-            // Edit mode validation
+            // Edit mode: allow partial updates; only validate fields that have values
             return [
-                'edit_name' => 'required|string|max:255',
-                'edit_code' => 'required|string|max:50|unique:suppliers,code,' . $this->selectedItemId,
-                'edit_address' => 'required|string|max:500',
-                'edit_contact_person' => 'required|string|max:255',
-                'edit_contact_num' => ['required', 'regex:/^[0-9+\-\(\)\s]+$/'],
-                'edit_email' => 'required|email',
-                'edit_tin_num' => 'nullable|string|max:255',
-                'edit_status' => 'required|string|in:active,inactive,pending',
+                'edit_name' => 'nullable|string|max:255',
+                'edit_code' => 'nullable|string|max:50|unique:suppliers,code,' . $this->selectedItemId,
+                'edit_address' => 'nullable|string|max:500',
+                'edit_contact_person' => 'nullable|string|max:255',
+                'edit_contact_num' => ['nullable', 'regex:/^[0-9+\-\(\)\s]*$/'],
+                'edit_email' => 'nullable|email',
+                'edit_status' => 'nullable|string|in:active,inactive',
             ];
         }
 
@@ -186,7 +183,6 @@ class Index extends Component
             'contact_person' => 'required|string|max:255',
             'contact_num' => ['required', 'regex:/^[0-9+\-\(\)\s]+$/'],
             'email' => 'required|email',
-            'tin_num' => 'nullable|string|max:255',
         ];
     }
 
@@ -205,8 +201,7 @@ class Index extends Component
             'contact_person' => $this->contact_person,
             'contact_num' => $this->contact_num,
             'email' => $this->email,
-            'tin_num' => $this->tin_num ?? '',
-            'status' => 'pending',
+            'status' => 'active',
             'is_active' => true,
         ]);
 
@@ -219,7 +214,6 @@ class Index extends Component
             'contact_person',
             'contact_num',
             'email',
-            'tin_num',
             'showCreatePanel',
         ]);
 
@@ -241,7 +235,6 @@ class Index extends Component
         $this->edit_contact_person = $supplier->contact_person;
         $this->edit_contact_num = $supplier->contact_num;
         $this->edit_email = $supplier->email;
-        $this->edit_tin_num = $supplier->tin_num;
         $this->edit_status = $supplier->status;
 
         $this->showEditModal = true;
@@ -256,15 +249,15 @@ class Index extends Component
 
         $supplier = Supplier::findOrFail($this->selectedItemId);
 
+        // Only update fields that have values; keep existing for empty fields
         $supplier->update([
-            'name' => $this->edit_name,
-            'code' => $this->edit_code,
-            'address' => $this->edit_address,
-            'contact_person' => $this->edit_contact_person,
-            'contact_num' => $this->edit_contact_num,
-            'email' => $this->edit_email,
-            'tin_num' => $this->edit_tin_num,
-            'status' => $this->edit_status,
+            'name' => filled($this->edit_name) ? $this->edit_name : $supplier->name,
+            'code' => filled($this->edit_code) ? $this->edit_code : $supplier->code,
+            'address' => filled($this->edit_address) ? $this->edit_address : $supplier->address,
+            'contact_person' => filled($this->edit_contact_person) ? $this->edit_contact_person : $supplier->contact_person,
+            'contact_num' => filled($this->edit_contact_num) ? $this->edit_contact_num : $supplier->contact_num,
+            'email' => filled($this->edit_email) ? $this->edit_email : $supplier->email,
+            'status' => filled($this->edit_status) ? $this->edit_status : $supplier->status,
         ]);
 
         session()->flash('message', 'Supplier profile updated successfully.');
@@ -278,7 +271,6 @@ class Index extends Component
             'edit_contact_person',
             'edit_contact_num',
             'edit_email',
-            'edit_tin_num',
             'edit_status',
             'showEditModal',
         ]);
@@ -330,7 +322,6 @@ class Index extends Component
             'contact_person',
             'contact_num',
             'email',
-            'tin_num',
         ]);
     }
 
@@ -347,7 +338,6 @@ class Index extends Component
             'contact_person',
             'contact_num',
             'email',
-            'tin_num',
         ]);
     }
 
@@ -368,14 +358,12 @@ class Index extends Component
             'contact_person',
             'contact_num',
             'email',
-            'tin_num',
             'edit_name',
             'edit_code',
             'edit_address',
             'edit_contact_person',
             'edit_contact_num',
             'edit_email',
-            'edit_tin_num',
             'edit_status',
         ]);
     }

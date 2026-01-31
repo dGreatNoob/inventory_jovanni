@@ -3,6 +3,7 @@
 namespace App\Livewire\Pages\Branch;
 
 use Livewire\Component;
+use Livewire\WithPagination;
 use App\Models\Branch;
 use App\Models\Agent;
 use App\Models\AgentBranchAssignment;
@@ -10,9 +11,11 @@ use Illuminate\Support\Facades\DB;
 
 class Index extends Component
 {
-    public $name, $address, $contact_num, $manager_name;
-    public $subclass1, $subclass2, $subclass3, $subclass4;
-    public $code, $category, $remarks, $batch, $branch_code, $company_name, $company_tin, $dept_code, $pull_out_addresse, $vendor_code;
+    use WithPagination;
+
+    public $name, $address, $contact_num, $manager_name, $email;
+    public $selling_area1, $selling_area2, $selling_area3, $selling_area4;
+    public $code, $category, $remarks, $batch, $branch_code, $company_name, $company_tin, $dept_code, $pull_out_address, $vendor_code;
 
     public $editData = [];
     public $perPage = 10;
@@ -29,9 +32,19 @@ class Index extends Component
     public $sortDirection = 'desc';
 
     // Edit properties
-    public $edit_name, $edit_address, $edit_contact_num, $edit_manager_name;
-    public $edit_subclass1, $edit_subclass2, $edit_subclass3, $edit_subclass4;
-    public $edit_code, $edit_category, $edit_remarks, $edit_batch, $edit_branch_code, $edit_company_name, $edit_company_tin, $edit_dept_code, $edit_pull_out_addresse, $edit_vendor_code;
+    public $edit_name, $edit_address, $edit_contact_num, $edit_manager_name, $edit_email;
+    public $edit_selling_area1, $edit_selling_area2, $edit_selling_area3, $edit_selling_area4;
+    public $edit_code, $edit_category, $edit_remarks, $edit_batch, $edit_branch_code, $edit_company_name, $edit_company_tin, $edit_dept_code, $edit_pull_out_address, $edit_vendor_code;
+
+    public function updatingSearch()
+    {
+        $this->resetPage();
+    }
+
+    public function updatedPerPage()
+    {
+        $this->resetPage();
+    }
 
     public function sortByColumn($column)
     {
@@ -52,17 +65,18 @@ class Index extends Component
             'address' => 'required|string',
             'contact_num' => 'nullable|string',
             'manager_name' => 'nullable|string',
-            'subclass1' => 'nullable|string',
-            'subclass2' => 'nullable|string',
-            'subclass3' => 'nullable|string',
-            'subclass4' => 'nullable|string',
+            'email' => 'nullable|email',
+            'selling_area1' => 'nullable|string',
+            'selling_area2' => 'nullable|string',
+            'selling_area3' => 'nullable|string',
+            'selling_area4' => 'nullable|string',
             'remarks' => 'nullable|string',
             'batch' => 'nullable|string',
             'branch_code' => 'nullable|string',
             'company_name' => 'nullable|string',
             'company_tin' => 'nullable|string',
             'dept_code' => 'nullable|string',
-            'pull_out_addresse' => 'nullable|string',
+            'pull_out_address' => 'nullable|string',
             'vendor_code' => 'nullable|string',
         ]);
 
@@ -73,26 +87,27 @@ class Index extends Component
             'address' => $this->address,
             'contact_num' => $this->contact_num,
             'manager_name' => $this->manager_name,
-            'subclass1' => $this->subclass1,
-            'subclass2' => $this->subclass2,
-            'subclass3' => $this->subclass3,
-            'subclass4' => $this->subclass4,
+            'email' => $this->email,
+            'selling_area1' => $this->selling_area1,
+            'selling_area2' => $this->selling_area2,
+            'selling_area3' => $this->selling_area3,
+            'selling_area4' => $this->selling_area4,
             'remarks' => $this->remarks,
             'batch' => $this->batch,
             'branch_code' => $this->branch_code,
             'company_name' => $this->company_name,
             'company_tin' => $this->company_tin,
             'dept_code' => $this->dept_code,
-            'pull_out_addresse' => $this->pull_out_addresse,
+            'pull_out_address' => $this->pull_out_address,
             'vendor_code' => $this->vendor_code,
         ]);
 
         session()->flash('message', 'Branch Profile Added Successfully.');
         $this->reset([
-            'name', 'code', 'category', 'address', 'contact_num', 'manager_name',
-            'subclass1', 'subclass2', 'subclass3', 'subclass4',
+            'name', 'code', 'category', 'address', 'contact_num', 'manager_name', 'email',
+            'selling_area1', 'selling_area2', 'selling_area3', 'selling_area4',
             'remarks', 'batch', 'branch_code', 'company_name', 'company_tin',
-            'dept_code', 'pull_out_addresse', 'vendor_code'
+            'dept_code', 'pull_out_address', 'vendor_code'
         ]);
     }
 
@@ -107,17 +122,18 @@ class Index extends Component
         $this->edit_address = $branch->address;
         $this->edit_contact_num = $branch->contact_num;
         $this->edit_manager_name = $branch->manager_name;
-        $this->edit_subclass1 = $branch->subclass1;
-        $this->edit_subclass2 = $branch->subclass2;
-        $this->edit_subclass3 = $branch->subclass3;
-        $this->edit_subclass4 = $branch->subclass4;
+        $this->edit_email = $branch->email;
+        $this->edit_selling_area1 = $branch->selling_area1;
+        $this->edit_selling_area2 = $branch->selling_area2;
+        $this->edit_selling_area3 = $branch->selling_area3;
+        $this->edit_selling_area4 = $branch->selling_area4;
         $this->edit_remarks = $branch->remarks;
         $this->edit_batch = $branch->batch;
         $this->edit_branch_code = $branch->branch_code;
         $this->edit_company_name = $branch->company_name;
         $this->edit_company_tin = $branch->company_tin;
         $this->edit_dept_code = $branch->dept_code;
-        $this->edit_pull_out_addresse = $branch->pull_out_addresse;
+        $this->edit_pull_out_address = $branch->pull_out_address;
         $this->edit_vendor_code = $branch->vendor_code;
 
         $this->showEditModal = true;
@@ -132,17 +148,18 @@ class Index extends Component
             'edit_address' => 'required|string',
             'edit_contact_num' => 'nullable|string',
             'edit_manager_name' => 'nullable|string',
-            'edit_subclass1' => 'nullable|string',
-            'edit_subclass2' => 'nullable|string',
-            'edit_subclass3' => 'nullable|string',
-            'edit_subclass4' => 'nullable|string',
+            'edit_email' => 'nullable|email',
+            'edit_selling_area1' => 'nullable|string',
+            'edit_selling_area2' => 'nullable|string',
+            'edit_selling_area3' => 'nullable|string',
+            'edit_selling_area4' => 'nullable|string',
             'edit_remarks' => 'nullable|string',
             'edit_batch' => 'nullable|string',
             'edit_branch_code' => 'nullable|string',
             'edit_company_name' => 'nullable|string',
             'edit_company_tin' => 'nullable|string',
             'edit_dept_code' => 'nullable|string',
-            'edit_pull_out_addresse' => 'nullable|string',
+            'edit_pull_out_address' => 'nullable|string',
             'edit_vendor_code' => 'nullable|string',
         ]);
 
@@ -154,17 +171,18 @@ class Index extends Component
             'address' => $this->edit_address,
             'contact_num' => $this->edit_contact_num,
             'manager_name' => $this->edit_manager_name,
-            'subclass1' => $this->edit_subclass1,
-            'subclass2' => $this->edit_subclass2,
-            'subclass3' => $this->edit_subclass3,
-            'subclass4' => $this->edit_subclass4,
+            'email' => $this->edit_email,
+            'selling_area1' => $this->edit_selling_area1,
+            'selling_area2' => $this->edit_selling_area2,
+            'selling_area3' => $this->edit_selling_area3,
+            'selling_area4' => $this->edit_selling_area4,
             'remarks' => $this->edit_remarks,
             'batch' => $this->edit_batch,
             'branch_code' => $this->edit_branch_code,
             'company_name' => $this->edit_company_name,
             'company_tin' => $this->edit_company_tin,
             'dept_code' => $this->edit_dept_code,
-            'pull_out_addresse' => $this->edit_pull_out_addresse,
+            'pull_out_address' => $this->edit_pull_out_address,
             'vendor_code' => $this->edit_vendor_code,
         ]);
 
@@ -310,6 +328,7 @@ class Index extends Component
                 $query->where('name', 'like', '%'.$this->search.'%')
                     ->orWhere('address', 'like', '%'.$this->search.'%')
                     ->orWhere('contact_num', 'like', '%'.$this->search.'%')
+                    ->orWhere('email', 'like', '%'.$this->search.'%')
                     ->orWhere('manager_name', 'like', '%'.$this->search.'%');
             })
             ->latest()

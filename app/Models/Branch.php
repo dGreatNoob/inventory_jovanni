@@ -9,29 +9,30 @@ class Branch extends Model
 {
     use HasFactory;
     /**
-     * Subclass configuration constants
+     * Selling area configuration constants
      */
-    const SUBCLASS_FIELDS = ['subclass1', 'subclass2', 'subclass3', 'subclass4'];
-    const MAX_SUBCLASSES = 4;
+    const SELLING_AREA_FIELDS = ['selling_area1', 'selling_area2', 'selling_area3', 'selling_area4'];
+    const MAX_SELLING_AREAS = 4;
 
     protected $fillable = [
         'name',
-        'subclass1',
-        'subclass2',
-        'subclass3',
-        'subclass4',
+        'selling_area1',
+        'selling_area2',
+        'selling_area3',
+        'selling_area4',
         'code',
         'category',
         'address',
         'contact_num',
         'manager_name',
+        'email',
         'remarks',
         'batch',
         'branch_code',
         'company_name',
         'company_tin',
         'dept_code',
-        'pull_out_addresse',
+        'pull_out_address',
         'vendor_code',
     ];
 
@@ -41,7 +42,7 @@ class Branch extends Model
     public function currentAgents()
     {
         return $this->belongsToMany(Agent::class, 'agent_branch_assignments')
-                    ->withPivot('assigned_at', 'released_at', 'subclass')
+                    ->withPivot('assigned_at', 'released_at', 'selling_area')
                     ->wherePivot('released_at', null);
     }
 
@@ -72,75 +73,75 @@ class Branch extends Model
     }
 
     /**
-     * Get all subclass values as an array.
+     * Get all selling area values as an array.
      *
      * @return array
      */
-    public function getSubclasses(): array
+    public function getSellingAreas(): array
     {
         return array_filter([
-            $this->subclass1,
-            $this->subclass2,
-            $this->subclass3,
-            $this->subclass4,
+            $this->selling_area1,
+            $this->selling_area2,
+            $this->selling_area3,
+            $this->selling_area4,
         ]);
     }
 
     /**
-     * Get subclass by index (1-4).
+     * Get selling area by index (1-4).
      *
      * @param int $index
      * @return string|null
      */
-    public function getSubclass(int $index): ?string
+    public function getSellingArea(int $index): ?string
     {
-        if ($index < 1 || $index > self::MAX_SUBCLASSES) {
+        if ($index < 1 || $index > self::MAX_SELLING_AREAS) {
             return null;
         }
 
-        return $this->{"subclass{$index}"};
+        return $this->{"selling_area{$index}"};
     }
 
     /**
-     * Check if branch has any subclasses defined.
+     * Check if branch has any selling areas defined.
      *
      * @return bool
      */
-    public function hasSubclasses(): bool
+    public function hasSellingAreas(): bool
     {
-        return !empty($this->getSubclasses());
+        return !empty($this->getSellingAreas());
     }
 
     /**
-     * Get subclass count.
+     * Get selling area count.
      *
      * @return int
      */
-    public function getSubclassCount(): int
+    public function getSellingAreaCount(): int
     {
-        return count($this->getSubclasses());
+        return count($this->getSellingAreas());
     }
 
     /**
-     * Get all available subclass fields.
+     * Get all available selling area fields.
      *
      * @return array
      */
-    public static function getSubclassFields(): array
+    public static function getSellingAreaFields(): array
     {
-        return self::SUBCLASS_FIELDS;
+        return self::SELLING_AREA_FIELDS;
     }
 
     /**
-     * Get subclass options for dropdown/select.
+     * Get selling area options for dropdown/select.
      *
      * @return array
      */
-    public function getSubclassOptions(): array
+    public function getSellingAreaOptions(): array
     {
         $options = [];
         
-        foreach (self::SUBCLASS_FIELDS as $field) {
+        foreach (self::SELLING_AREA_FIELDS as $field) {
             if (!empty($this->$field)) {
                 $options[$field] = $this->$field;
             }
@@ -150,34 +151,50 @@ class Branch extends Model
     }
 
     /**
-     * Scope to filter branches with specific subclass.
+     * Scope to filter branches with specific selling area.
      *
      * @param \Illuminate\Database\Eloquent\Builder $query
-     * @param string $subclass
+     * @param string $sellingArea
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    public function scopeWithSubclass($query, string $subclass)
+    public function scopeWithSellingArea($query, string $sellingArea)
     {
-        return $query->where(function($q) use ($subclass) {
-            foreach (self::SUBCLASS_FIELDS as $field) {
-                $q->orWhere($field, $subclass);
+        return $query->where(function($q) use ($sellingArea) {
+            foreach (self::SELLING_AREA_FIELDS as $field) {
+                $q->orWhere($field, $sellingArea);
             }
         });
     }
 
     /**
-     * Scope to filter branches that have any subclass defined.
+     * Scope to filter branches that have any selling area defined.
      *
      * @param \Illuminate\Database\Eloquent\Builder $query
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    public function scopeHasSubclasses($query)
+    public function scopeHasSellingAreas($query)
     {
         return $query->where(function($q) {
-            foreach (self::SUBCLASS_FIELDS as $field) {
+            foreach (self::SELLING_AREA_FIELDS as $field) {
                 $q->orWhereNotNull($field);
             }
         });
+    }
+
+    /**
+     * @deprecated Use getSellingAreas() instead
+     */
+    public function getSubclasses(): array
+    {
+        return $this->getSellingAreas();
+    }
+
+    /**
+     * @deprecated Use getSellingAreaOptions() instead
+     */
+    public function getSubclassOptions(): array
+    {
+        return $this->getSellingAreaOptions();
     }
     public function products()
     {

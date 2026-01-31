@@ -1029,6 +1029,67 @@
 
                                                 <div>
                                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                                                        Selling Area
+                                                    </label>
+                                                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Where in the branch was this item sold?</p>
+                                                    <div class="relative" wire:click.outside="$set('sellingAreaDropdown', false)">
+                                                        <div wire:click="toggleSellingAreaDropdown"
+                                                            class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-green-500 focus:outline-none focus:ring-green-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm flex justify-between items-center min-h-[42px] {{ !empty($sellingAreaOptions) ? 'cursor-pointer' : 'cursor-not-allowed opacity-75' }}">
+                                                            <span class="{{ $selectedSellingArea ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500' }}">
+                                                                @if($selectedSellingArea)
+                                                                    {{ $selectedSellingArea }}
+                                                                @else
+                                                                    {{ empty($sellingAreaOptions) ? 'No selling areas configured' : 'Select selling area...' }}
+                                                                @endif
+                                                            </span>
+                                                            <svg class="w-4 h-4 ml-2 flex-shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                            </svg>
+                                                        </div>
+                                                        @if($sellingAreaDropdown && !empty($sellingAreaOptions))
+                                                            <div class="absolute z-20 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg dark:bg-gray-700 dark:border-gray-600">
+                                                                <div class="p-2 border-b border-gray-200 dark:border-gray-600 sticky top-0 bg-white dark:bg-gray-700">
+                                                                    <input type="text"
+                                                                        wire:model.live.debounce.200ms="sellingAreaSearch"
+                                                                        placeholder="Search selling areas..."
+                                                                        onclick="event.stopPropagation()"
+                                                                        class="block w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-green-500 focus:outline-none focus:ring-green-500 dark:border-gray-600 dark:bg-gray-600 dark:text-white dark:placeholder-gray-400" />
+                                                                </div>
+                                                                <div class="max-h-48 overflow-auto">
+                                                                    <button type="button"
+                                                                            wire:click="selectSellingArea()"
+                                                                            class="w-full flex items-center px-3 py-2 text-left text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600">
+                                                                        <span class="text-gray-400">None</span>
+                                                                    </button>
+                                                                    @foreach($this->filteredSellingAreaOptions as $option)
+                                                                        <button type="button"
+                                                                                wire:click="selectSellingArea({{ json_encode($option) }})"
+                                                                                class="w-full flex items-center justify-between px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600 last:border-b-0 {{ $selectedSellingArea == $option ? 'bg-green-50 dark:bg-green-900/20 text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-white' }}">
+                                                                            <span>{{ $option }}</span>
+                                                                            @if($selectedSellingArea == $option)
+                                                                                <svg class="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                                                                </svg>
+                                                                            @endif
+                                                                        </button>
+                                                                    @endforeach
+                                                                    @if($this->filteredSellingAreaOptions->isEmpty())
+                                                                        <div class="px-3 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                                                                            @if($sellingAreaSearch)
+                                                                                No selling areas match "{{ $sellingAreaSearch }}"
+                                                                            @else
+                                                                                No selling areas available
+                                                                            @endif
+                                                                        </div>
+                                                                    @endif
+                                                                </div>
+                                                            </div>
+                                                        @endif
+                                                    </div>
+                                                </div>
+
+                                                <div>
+                                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
                                                         Agent (Optional)
                                                     </label>
                                                     <div class="relative" wire:click.outside="$set('agentDropdown', false)">

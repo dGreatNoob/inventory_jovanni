@@ -9,7 +9,7 @@ class AgentBranchAssignment extends Model
     protected $fillable = [
         'agent_id',
         'branch_id',
-        'subclass',
+        'selling_area',
         'assigned_at',
         'released_at',
     ];

@@ -275,7 +275,7 @@ class Index extends Component
     private function updateAgentOptions($subclasses)
     {
         $agents = \App\Models\Agent::whereHas('branchAssignments', function($query) use ($subclasses) {
-            $query->whereIn('subclass', $subclasses)
+            $query->whereIn('selling_area', $subclasses)
                   ->whereNull('released_at');
         })->pluck('name', 'id');
 

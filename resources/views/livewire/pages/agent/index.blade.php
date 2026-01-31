@@ -312,11 +312,11 @@
             <div x-data="{
                     show: @entangle('showAssignModal').live,
                     branchId: @entangle('assign_branch_id').defer,
-                    subclassOptions: @js($subclassOptions),
-                    updateSubclassOptions() {
+                    sellingAreaOptions: @js($sellingAreaOptions),
+                    updateSellingAreaOptions() {
                         this.$wire.set('assign_branch_id', this.branchId);
                         this.$nextTick(() => {
-                            this.subclassOptions = @js($subclassOptions);
+                            this.sellingAreaOptions = @js($sellingAreaOptions);
                         });
                     }
                 }"
@@ -339,7 +339,7 @@
                         <div class="p-6 space-y-6">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Branch</label>
-                                <select x-model="branchId" @change="updateSubclassOptions()" wire:model="assign_branch_id"
+                                <select x-model="branchId" @change="updateSellingAreaOptions()" wire:model="assign_branch_id"
                                     class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                                     <option value="">Select a branch</option>
                                     @foreach($branches as $branch)
@@ -351,17 +351,17 @@
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                    Subclass {{ empty($subclassOptions) ? '(none)' : '' }}
+                                    Selling Area {{ empty($sellingAreaOptions) ? '(none)' : '' }}
                                 </label>
-                                <select wire:model="assign_subclass"
+                                <select wire:model="assign_selling_area"
                                     class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm disabled:bg-gray-100 disabled:text-gray-500"
-                                    @disabled(empty($subclassOptions))>
-                                    <option value="">{{ empty($subclassOptions) ? 'No subclasses' : 'Select a subclass' }}</option>
-                                    @foreach($subclassOptions as $opt)
+                                    @disabled(empty($sellingAreaOptions))>
+                                    <option value="">{{ empty($sellingAreaOptions) ? 'No selling areas' : 'Select a selling area' }}</option>
+                                    @foreach($sellingAreaOptions as $opt)
                                         <option value="{{ $opt }}">{{ $opt }}</option>
                                     @endforeach
                                 </select>
-                                @error('assign_subclass') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                @error('assign_selling_area') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                             </div>
                         </div>
 
@@ -379,7 +379,7 @@
             </div>
         </section>
 
-        <!-- Deployment History: add a Subclass column -->
+        <!-- Deployment History: add a Selling Area column -->
         <section>
             <div >
                 {{-- Add the Livewire deployment history component --}}

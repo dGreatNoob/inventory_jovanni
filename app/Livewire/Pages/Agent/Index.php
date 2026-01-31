@@ -31,8 +31,8 @@ class Index extends Component
     public $showAssignModal = false;
     public $assign_agent_id = null;
     public $assign_branch_id = null;
-    public $assign_subclass = null;     // string value from subclass1–4
-    public $subclassOptions = [];       // array of strings
+    public $assign_selling_area = null; // string value from selling_area1–4
+    public $sellingAreaOptions = [];    // array of strings
 
     public function mount()
     {
@@ -133,8 +133,8 @@ class Index extends Component
             'showAssignModal',
             'assign_agent_id',
             'assign_branch_id',
-            'assign_subclass',
-            'subclassOptions',
+            'assign_selling_area',
+            'sellingAreaOptions',
         ]);
     }
 
@@ -155,26 +155,26 @@ class Index extends Component
     {
         $this->assign_agent_id = $agentId;
         $this->assign_branch_id = null;
-        $this->assign_subclass = null;
-        $this->subclassOptions = [];
+        $this->assign_selling_area = null;
+        $this->sellingAreaOptions = [];
         $this->showAssignModal = true;
     }
 
     public function updatedAssignBranchId($branchId): void
     {
-        $this->assign_subclass = null;
-        $this->subclassOptions = [];
+        $this->assign_selling_area = null;
+        $this->sellingAreaOptions = [];
 
         if (!$branchId) return;
 
         $branch = Branch::find($branchId);
         if (!$branch) return;
 
-        $this->subclassOptions = collect([
-                $branch->subclass1,
-                $branch->subclass2,
-                $branch->subclass3,
-                $branch->subclass4,
+        $this->sellingAreaOptions = collect([
+                $branch->selling_area1,
+                $branch->selling_area2,
+                $branch->selling_area3,
+                $branch->selling_area4,
             ])
             ->filter(fn ($v) => filled($v))
             ->unique()
@@ -189,10 +189,10 @@ class Index extends Component
             'assign_branch_id' => 'required|integer|exists:branches,id',
         ];
 
-        if (count($this->subclassOptions) > 0) {
-            $rules['assign_subclass'] = 'required|string|in:' . implode(',', array_map(fn($s) => str_replace(',', '\,', $s), $this->subclassOptions));
+        if (count($this->sellingAreaOptions) > 0) {
+            $rules['assign_selling_area'] = 'required|string|in:' . implode(',', array_map(fn($s) => str_replace(',', '\,', $s), $this->sellingAreaOptions));
         } else {
-            $rules['assign_subclass'] = 'nullable|string';
+            $rules['assign_selling_area'] = 'nullable|string';
         }
 
         $this->validate($rules);
@@ -205,7 +205,7 @@ class Index extends Component
 
         $payload = [
             'branch_id' => $this->assign_branch_id,
-            'subclass' => $this->assign_subclass,
+            'selling_area' => $this->assign_selling_area,
             'assigned_at' => now(),
         ];
 
@@ -213,7 +213,7 @@ class Index extends Component
 
         $this->showAssignModal = false;
         session()->flash('message', 'Agent assigned to branch successfully.');
-        $this->reset(['assign_agent_id', 'assign_branch_id', 'assign_subclass', 'subclassOptions']);
+        $this->reset(['assign_agent_id', 'assign_branch_id', 'assign_selling_area', 'sellingAreaOptions']);
         $this->resetPage();
         $this->dispatch('deploymentHistoryRefresh');
     }

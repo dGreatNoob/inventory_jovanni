@@ -24,7 +24,7 @@
                     <tr>
                         <th class="px-4 py-2">AGENT CODE</th>
                         <th class="px-4 py-2">BRANCH</th>
-                        <th class="px-4 py-2">SUBCLASS</th>
+                        <th class="px-4 py-2">SELLING AREA</th>
                         <th class="px-4 py-2">ASSIGNED AT</th>
                         <th class="px-4 py-2">RELEASED AT</th>
                     </tr>
@@ -34,7 +34,7 @@
                         <tr class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700 border-gray-200">
                             <td class="px-4 py-2">{{ $assignment->agent->agent_code ?? '-' }}</td>
                             <td class="px-4 py-2">{{ $assignment->branch->name ?? '-' }}</td>
-                            <td class="px-4 py-2">{{ $assignment->subclass ?? '-' }}</td>
+                            <td class="px-4 py-2">{{ $assignment->selling_area ?? '-' }}</td>
                             <td class="px-4 py-2">{{ $assignment->assigned_at }}</td>
                             <td class="px-4 py-2">{{ $assignment->released_at ?? '-' }}</td>
                         </tr>

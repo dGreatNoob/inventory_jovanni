@@ -47,7 +47,6 @@ class PurchaseOrderSeeder extends Seeder
                 'order_date' => now()->subDays(5),
                 'ordered_by' => $getRandom($users)?->id ?? $users->first()?->id,
                 'del_to' => $getRandom($departments)?->id ?? $departments->first()?->id,
-                'payment_terms' => 'Net 30 days',
                 'total_qty' => 150,
                 'total_price' => 75000.00,
                 'approver' => $users->where('id', '!=', $users->first()?->id)->first()?->id ?? $users->first()?->id,
@@ -63,12 +62,9 @@ class PurchaseOrderSeeder extends Seeder
                 'order_date' => now()->subDays(3),
                 'ordered_by' => $getRandom($users)?->id ?? $users->first()?->id,
                 'del_to' => $getRandom($departments)?->id ?? $departments->first()?->id,
-                'payment_terms' => 'Net 15 days',
                 'total_qty' => 200,
                 'total_price' => 120000.00,
                 'approver' => $users->where('id', '!=', $users->first()?->id)->first()?->id ?? $users->first()?->id,
-                'approved_at' => now()->subDays(2),
-                'approved_by' => $users->where('id', '!=', $users->first()?->id)->first()?->id ?? $users->first()?->id,
                 'items' => $products->isNotEmpty() ? [
                     ['product_id' => $products->first()->id, 'quantity' => 75, 'unit_price' => 600.00],
                     ['product_id' => $products->count() > 1 ? $products->skip(1)->first()->id : $products->first()->id, 'quantity' => 125, 'unit_price' => 480.00],
@@ -83,13 +79,10 @@ class PurchaseOrderSeeder extends Seeder
                 'expected_delivery_date' => now()->addDays(2),
                 'ordered_by' => $getRandom($users)?->id ?? $users->first()?->id,
                 'del_to' => $getRandom($departments)?->id ?? $departments->first()?->id,
-                'payment_terms' => 'Cash on Delivery',
                 'quotation' => 'QUO-2025-003',
                 'total_qty' => 100,
                 'total_price' => 45000.00,
                 'approver' => $users->where('id', '!=', $users->first()?->id)->first()?->id ?? $users->first()?->id,
-                'approved_at' => now()->subDays(8),
-                'approved_by' => $users->where('id', '!=', $users->first()?->id)->first()?->id ?? $users->first()?->id,
                 'items' => $products->isNotEmpty() ? [
                     ['product_id' => $products->first()->id, 'quantity' => 60, 'unit_price' => 300.00],
                     ['product_id' => $products->count() > 1 ? $products->skip(1)->first()->id : $products->first()->id, 'quantity' => 40, 'unit_price' => 375.00],
@@ -104,13 +97,10 @@ class PurchaseOrderSeeder extends Seeder
                 'expected_delivery_date' => now()->subDays(5),
                 'ordered_by' => $getRandom($users)?->id ?? $users->first()?->id,
                 'del_to' => $getRandom($departments)?->id ?? $departments->first()?->id,
-                'payment_terms' => 'Net 30 days',
                 'quotation' => 'QUO-2025-004',
                 'total_qty' => 300,
                 'total_price' => 180000.00,
                 'approver' => $users->where('id', '!=', $users->first()?->id)->first()?->id ?? $users->first()?->id,
-                'approved_at' => now()->subDays(18),
-                'approved_by' => $users->where('id', '!=', $users->first()?->id)->first()?->id ?? $users->first()?->id,
                 'items' => $products->isNotEmpty() ? [
                     ['product_id' => $products->first()->id, 'quantity' => 150, 'unit_price' => 400.00],
                     ['product_id' => $products->count() > 1 ? $products->skip(1)->first()->id : $products->first()->id, 'quantity' => 150, 'unit_price' => 600.00],
@@ -125,14 +115,10 @@ class PurchaseOrderSeeder extends Seeder
                 'expected_delivery_date' => now()->addDays(5),
                 'ordered_by' => $getRandom($users)?->id ?? $users->first()?->id,
                 'del_to' => $getRandom($departments)?->id ?? $departments->first()?->id,
-                'payment_terms' => 'Net 15 days',
                 'quotation' => 'QUO-2025-005',
                 'total_qty' => 80,
                 'total_price' => 40000.00,
                 'approver' => $users->where('id', '!=', $users->first()?->id)->first()?->id ?? $users->first()?->id,
-                'cancellation_reason' => 'Supplier unable to meet delivery deadline',
-                'cancelled_at' => now()->subDays(12),
-                'cancelled_by' => $users->where('id', '!=', $users->first()?->id)->first()?->id ?? $users->first()?->id,
                 'items' => $products->isNotEmpty() ? [
                     ['product_id' => $products->first()->id, 'quantity' => 80, 'unit_price' => 500.00],
                 ] : [],
@@ -142,9 +128,9 @@ class PurchaseOrderSeeder extends Seeder
         // Fields that exist in the purchase_orders table (from migration)
         // Only include fields that actually exist in the database
         $allowedFields = [
-            'po_num', 'status', 'supplier_id', 'order_date', 'del_to', 'payment_terms',
-            'quotation', 'po_type', 'expected_delivery_date', 'total_qty', 'total_price', 
-            'ordered_by', 'approver', 'del_on', 'dr_number', 'received_date', 'total_est_weight'
+            'po_num', 'status', 'supplier_id', 'order_date', 'del_to',
+            'quotation', 'po_type', 'expected_delivery_date', 'total_qty', 'total_price',
+            'ordered_by', 'approver', 'del_on', 'dr_number', 'received_date', 'total_est_weight',
         ];
 
         foreach ($purchaseOrders as $poData) {

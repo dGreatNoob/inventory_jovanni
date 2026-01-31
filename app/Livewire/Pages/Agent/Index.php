@@ -12,10 +12,10 @@ class Index extends Component
 {
     use WithPagination;
 
-    public $agent_code, $name, $address, $contact_num, $tin_num;
+    public $agent_code, $name, $address, $contact_num, $sss_num;
     public $assignedBranches = [];
 
-    public $edit_agent_code, $edit_name, $edit_address, $edit_contact_num, $edit_tin_num;
+    public $edit_agent_code, $edit_name, $edit_address, $edit_contact_num, $edit_sss_num;
 
     public $perPage = 10;
     public $search = '';
@@ -27,12 +27,15 @@ class Index extends Component
 
     public $branches;
 
-    // Deploy/Release workflow state
+    // Assign / Manage workflow state
     public $showAssignModal = false;
     public $assign_agent_id = null;
     public $assign_branch_id = null;
     public $assign_selling_area = null; // string value from selling_area1–4
     public $sellingAreaOptions = [];    // array of strings
+
+    public $showManagePanel = false;
+    public $managePanelAgentId = null;
 
     public function mount()
     {
@@ -46,7 +49,7 @@ class Index extends Component
             'name' => 'required|string',
             'address' => 'required|string',
             'contact_num' => 'required|string',
-            'tin_num' => 'required|string',
+            'sss_num' => 'required|string',
         ]);
 
         $agent = Agent::create([
@@ -54,7 +57,7 @@ class Index extends Component
             'name' => $this->name,
             'address' => $this->address,
             'contact_num' => $this->contact_num,
-            'tin_num' => $this->tin_num,
+            'sss_num' => $this->sss_num,
         ]);
 
         foreach ($this->assignedBranches as $branchId) {
@@ -65,7 +68,7 @@ class Index extends Component
         }
 
         session()->flash('message', 'Agent Profile Added Successfully.');
-        $this->reset(['agent_code', 'name', 'address', 'contact_num', 'tin_num', 'assignedBranches']);
+        $this->reset(['agent_code', 'name', 'address', 'contact_num', 'sss_num', 'assignedBranches']);
     }
 
     public function edit($id)
@@ -77,7 +80,7 @@ class Index extends Component
         $this->edit_name = $agent->name;
         $this->edit_address = $agent->address;
         $this->edit_contact_num = $agent->contact_num;
-        $this->edit_tin_num = $agent->tin_num;
+        $this->edit_sss_num = $agent->sss_num;
 
         $this->showEditModal = true;
     }
@@ -89,7 +92,7 @@ class Index extends Component
             'edit_name' => 'required|string',
             'edit_address' => 'required|string',
             'edit_contact_num' => 'required|string',
-            'edit_tin_num' => 'required|string',
+            'edit_sss_num' => 'required|string',
         ]);
 
         $agent = Agent::findOrFail($this->selectedItemId);
@@ -99,7 +102,7 @@ class Index extends Component
             'name' => $this->edit_name,
             'address' => $this->edit_address,
             'contact_num' => $this->edit_contact_num,
-            'tin_num' => $this->edit_tin_num,
+            'sss_num' => $this->edit_sss_num,
         ]);
 
         $this->showEditModal = false;
@@ -135,20 +138,24 @@ class Index extends Component
             'assign_branch_id',
             'assign_selling_area',
             'sellingAreaOptions',
+            // manage panel
+            'showManagePanel',
+            'managePanelAgentId',
         ]);
     }
 
-    // ------------ Deploy / Release ---------------
+    // ------------ Assign / Manage (multi-branch) ---------------
 
-    public function toggleDeployment(int $agentId): void
+    public function openManagePanel(int $agentId): void
     {
-        if ($this->isDeployed($agentId)) {
-            $this->releaseAgent($agentId);
-            session()->flash('message', 'Agent released from active branch assignments.');
-            $this->dispatch('deploymentHistoryRefresh');
-        } else {
-            $this->openAssignModal($agentId);
-        }
+        $this->managePanelAgentId = $agentId;
+        $this->showManagePanel = true;
+    }
+
+    public function closeManagePanel(): void
+    {
+        $this->showManagePanel = false;
+        $this->managePanelAgentId = null;
     }
 
     public function openAssignModal(int $agentId): void
@@ -199,9 +206,14 @@ class Index extends Component
 
         $agent = Agent::findOrFail($this->assign_agent_id);
 
-        AgentBranchAssignment::where('agent_id', $agent->id)
+        $exists = AgentBranchAssignment::where('agent_id', $agent->id)
+            ->where('branch_id', $this->assign_branch_id)
             ->whereNull('released_at')
-            ->update(['released_at' => now()]);
+            ->exists();
+        if ($exists) {
+            $this->addError('assign_branch_id', 'Agent is already assigned to this branch.');
+            return;
+        }
 
         $payload = [
             'branch_id' => $this->assign_branch_id,
@@ -218,11 +230,11 @@ class Index extends Component
         $this->dispatch('deploymentHistoryRefresh');
     }
 
-    protected function releaseAgent(int $agentId): void
+    public function releaseAssignment(int $assignmentId): void
     {
-        AgentBranchAssignment::where('agent_id', $agentId)
-            ->whereNull('released_at')
-            ->update(['released_at' => now()]);
+        $assignment = AgentBranchAssignment::findOrFail($assignmentId);
+        $assignment->update(['released_at' => now()]);
+        session()->flash('message', 'Agent released from branch successfully.');
         $this->dispatch('deploymentHistoryRefresh');
     }
 
@@ -245,7 +257,7 @@ class Index extends Component
                   ->orWhere('agent_code', 'like', '%'.$this->search.'%')
                   ->orWhere('address', 'like', '%'.$this->search.'%')
                   ->orWhere('contact_num', 'like', '%'.$this->search.'%')
-                  ->orWhere('tin_num', 'like', '%'.$this->search.'%');
+                  ->orWhere('sss_num', 'like', '%'.$this->search.'%');
             });
 
         // Apply status filter
@@ -268,9 +280,29 @@ class Index extends Component
             ->pluck('agent_id')
             ->toArray();
 
+        $managePanelAgent = $this->managePanelAgentId
+            ? Agent::with(['branchAssignments' => fn ($q) => $q->whereNull('released_at')->with('branch')])->find($this->managePanelAgentId)
+            : null;
+
         return view('livewire.pages.agent.index', [
             'items' => $items,
             'deployedAgentIds' => $deployedAgentIds,
+            'managePanelAgent' => $managePanelAgent,
         ]);
+    }
+
+    public function updatingSearch()
+    {
+        $this->resetPage();
+    }
+
+    public function updatedPerPage()
+    {
+        $this->resetPage();
+    }
+
+    public function updatedStatusFilter()
+    {
+        $this->resetPage();
     }
 }

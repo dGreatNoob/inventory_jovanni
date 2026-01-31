@@ -14,6 +14,11 @@ class AgentBranchAssignment extends Model
         'released_at',
     ];
 
+    protected $casts = [
+        'assigned_at' => 'datetime',
+        'released_at' => 'datetime',
+    ];
+
     public function agent()
     {
         return $this->belongsTo(Agent::class);

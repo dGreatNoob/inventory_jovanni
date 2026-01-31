@@ -4,11 +4,23 @@
 <div class="pt-4">
     <div class="">
         @can('agent create')
-        <section class="mb-6 bg-white dark:bg-gray-800 shadow rounded-lg">
-            <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
-                <h3 class="text-lg font-medium text-gray-900 dark:text-white">Create New Agent</h3>
-                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Add a new agent to the system</p>
-            </div>
+        <section class="mb-6 bg-white dark:bg-gray-800 shadow rounded-lg" x-data="{ open: false }">
+            <button type="button"
+                @click="open = !open"
+                class="w-full px-6 py-5 flex items-center justify-between text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-inset">
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">Create New Agent</h3>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Add a new agent to the system</p>
+                </div>
+                <svg class="w-5 h-5 text-gray-500 dark:text-gray-400 transition-transform duration-200"
+                    :class="{ 'rotate-180': open }"
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
+            <div x-show="open"
+                x-collapse
+                class="border-t border-gray-200 dark:border-gray-700">
             <form wire:submit.prevent="submit" class="p-6">
                 <div class="grid gap-6 mb-6 md:grid-cols-2">
                     <div>
@@ -40,11 +52,11 @@
                         @error('contact_num') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                     </div>
                     <div>
-                        <label for="tin_num" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">TIN Number</label>
-                        <input type="text" id="tin_num" wire:model="tin_num"
+                        <label for="sss_num" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">SSS #</label>
+                        <input type="text" id="sss_num" wire:model="sss_num"
                             class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                            placeholder="123456789" required />
-                        @error('tin_num') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                            placeholder="34-1234567-8" required />
+                        @error('sss_num') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                     </div>
                 </div>
 
@@ -54,8 +66,8 @@
                         Submit
                     </flux:button>
                 </div>
-                </div>
             </form>
+            </div>
         </section>
         @endcan
 
@@ -65,10 +77,13 @@
             </div>
         @endif
 
-        <section>
-            <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
-                {{-- Search and Filter Section --}}
-                <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+        <section class="bg-white dark:bg-gray-800 shadow rounded-lg">
+            <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white">Agent List</h3>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Manage existing agents</p>
+            </div>
+            {{-- Search and Filter Section --}}
+            <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
                     <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                         <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
                             {{-- Search Input --}}
@@ -130,7 +145,8 @@
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Name</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Address</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Contact Number</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">TIN Number</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">SSS #</th>
+                                <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Branches</th>
                                 <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
                                 <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Action</th>
                             </tr>
@@ -138,7 +154,9 @@
                         <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                             @forelse($items as $item)
                                 @php
-                                    $isDeployed = $item->branchAssignments->where('released_at', null)->count() > 0;
+                                    $activeAssignments = $item->branchAssignments->where('released_at', null);
+                                    $assignmentCount = $activeAssignments->count();
+                                    $isDeployed = $assignmentCount > 0;
                                 @endphp
                                 <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
@@ -147,11 +165,14 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{{ $item->name }}</td>
                                     <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{{ $item->address }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ $item->contact_num }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ $item->tin_num }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ $item->sss_num }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500 dark:text-gray-400">
+                                        {{ $assignmentCount }}
+                                    </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-center">
                                         @if($isDeployed)
                                             <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400">
-                                                Deployed
+                                                Deployed ({{ $assignmentCount }})
                                             </span>
                                         @else
                                             <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
@@ -162,9 +183,15 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-center">
                                         <div class="flex items-center justify-center space-x-2">
                                             @can('agent assign branch')
-                                            <flux:button wire:click.prevent="toggleDeployment({{ $item->id }})" variant="outline" size="sm">
-                                                {{ $isDeployed ? 'Release' : 'Deploy' }}
+                                            @if($isDeployed)
+                                            <flux:button wire:click.prevent="openManagePanel({{ $item->id }})" variant="outline" size="sm">
+                                                Manage
                                             </flux:button>
+                                            @else
+                                            <flux:button wire:click.prevent="openAssignModal({{ $item->id }})" variant="outline" size="sm">
+                                                Assign to branch
+                                            </flux:button>
+                                            @endif
                                             @endcan
                                             
                                             @can('agent edit')
@@ -183,7 +210,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="px-6 py-12 text-center">
+                                    <td colspan="8" class="px-6 py-12 text-center">
                                         <div class="flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
                                             <svg class="w-16 h-16 mb-4 text-gray-400 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -202,10 +229,9 @@
                     </table>
                 </div>
 
-                {{-- Pagination --}}
-                <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
-                    {{ $items->links() }}
-                </div>
+            {{-- Pagination --}}
+            <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+                {{ $items->links('livewire::tailwind', ['scrollTo' => false]) }}
             </div>
         </section>
         <section>
@@ -264,11 +290,11 @@
                                 </div>
 
                                 <div>
-                                    <label for="edit_tin_num" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">TIN Number</label>
-                                    <input type="text" wire:model="edit_tin_num" id="edit_tin_num" 
+                                    <label for="edit_sss_num" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">SSS #</label>
+                                    <input type="text" wire:model="edit_sss_num" id="edit_sss_num" 
                                         class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
-                                        placeholder="123456789" />
-                                    @error('edit_tin_num') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
+                                        placeholder="34-1234567-8" />
+                                    @error('edit_sss_num') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                                 </div>
                             </div>
                         </div>
@@ -321,7 +347,7 @@
                     }
                 }"
                 x-show="show" x-cloak
-                class="fixed inset-0 z-50 w-full p-4 overflow-x-hidden overflow-y-auto flex items-center justify-center bg-black/30">
+                class="fixed inset-0 z-[60] w-full p-4 overflow-x-hidden overflow-y-auto flex items-center justify-center bg-black/30">
                 <div class="relative w-full max-w-lg max-h-full">
                     <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
                         <!-- Modal Header -->
@@ -379,9 +405,73 @@
             </div>
         </section>
 
-        <!-- Deployment History: add a Selling Area column -->
-        <section>
-            <div >
+        {{-- Manage Assignments Slideover --}}
+        <div x-data="{ show: @entangle('showManagePanel').live }"
+            x-show="show" x-cloak x-transition
+            class="fixed inset-0 z-50 overflow-hidden">
+            {{-- Backdrop --}}
+            <div x-show="show" x-transition:enter="ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+                x-transition:leave="ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                class="absolute inset-0 bg-gray-500/75 dark:bg-gray-900/75"
+                @click="$wire.closeManagePanel()">
+            </div>
+            {{-- Panel --}}
+            @if($managePanelAgent)
+            <div class="fixed inset-y-0 right-0 flex max-w-full">
+                <div x-show="show" x-transition:enter="transform transition ease-out duration-200" x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0"
+                    x-transition:leave="transform transition ease-in duration-150" x-transition:leave-start="translate-x-0" x-transition:leave-end="translate-x-full"
+                    class="w-96 flex flex-col bg-white dark:bg-gray-800 shadow-xl">
+                    <div class="border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Branch Assignments</h3>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ $managePanelAgent->name }}</p>
+                        </div>
+                        <button type="button" wire:click="closeManagePanel"
+                            class="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="flex-1 overflow-y-auto p-6">
+                        @php $currentAssignments = $managePanelAgent->branchAssignments->where('released_at', null); @endphp
+                        @if($currentAssignments->isEmpty())
+                            <p class="text-sm text-gray-500 dark:text-gray-400">No branch assignments.</p>
+                            <flux:button wire:click="openAssignModal({{ $managePanelAgent->id }})" class="mt-4">
+                                Assign to branch
+                            </flux:button>
+                        @else
+                            <ul class="divide-y divide-gray-200 dark:divide-gray-700">
+                                @foreach($currentAssignments as $assignment)
+                                <li class="py-4 flex items-center justify-between gap-4">
+                                    <div>
+                                        <p class="font-medium text-gray-900 dark:text-white">{{ $assignment->branch->name ?? '-' }}</p>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ $assignment->selling_area ?: '—' }} · {{ $assignment->assigned_at?->format('M j, Y') }}</p>
+                                    </div>
+                                    <flux:button wire:click="releaseAssignment({{ $assignment->id }})" variant="outline" size="sm" class="text-red-600 hover:text-red-700 shrink-0">
+                                        Release
+                                    </flux:button>
+                                </li>
+                                @endforeach
+                            </ul>
+                            <flux:button wire:click="openAssignModal({{ $managePanelAgent->id }})" variant="outline" class="mt-4 w-full">
+                                Add branch
+                            </flux:button>
+                        @endif
+                    </div>
+                </div>
+            </div>
+            @else
+            <div class="fixed inset-y-0 right-0 w-96 flex flex-col bg-white dark:bg-gray-800 shadow-xl p-6">
+                <p class="text-gray-500 dark:text-gray-400">Agent not found.</p>
+                <flux:button wire:click="closeManagePanel" variant="outline" class="mt-4">Close</flux:button>
+            </div>
+            @endif
+        </div>
+
+        <!-- Deployment History -->
+        <section class="mt-8">
+            <div>
                 {{-- Add the Livewire deployment history component --}}
                 <livewire:deployment-history />
             </div>

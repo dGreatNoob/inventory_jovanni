@@ -911,6 +911,23 @@ class BranchInventory extends Component
     }
 
     /**
+     * Toggle agent dropdown
+     */
+    public function toggleAgentDropdown()
+    {
+        $this->agentDropdown = !$this->agentDropdown;
+    }
+
+    /**
+     * Select agent and close dropdown
+     */
+    public function selectAgent($agentId = null)
+    {
+        $this->selectedAgentId = $agentId ? (int) $agentId : null;
+        $this->agentDropdown = false;
+    }
+
+    /**
      * Filtered selling areas for searchable dropdown
      */
     public function getFilteredSellingAreaOptionsProperty()

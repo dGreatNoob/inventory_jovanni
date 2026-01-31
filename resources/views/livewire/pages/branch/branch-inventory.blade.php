@@ -1093,7 +1093,7 @@
                                                         Agent (Optional)
                                                     </label>
                                                     <div class="relative" wire:click.outside="$set('agentDropdown', false)">
-                                                        <div wire:click="$set('agentDropdown', true)"
+                                                        <div wire:click="toggleAgentDropdown"
                                                             class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-green-500 focus:outline-none focus:ring-green-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm cursor-pointer flex justify-between items-center min-h-[42px]">
                                                             <span class="{{ $selectedAgentId ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500' }}">
                                                                 @if($selectedAgentId && $availableAgents)
@@ -1122,13 +1122,13 @@
                                                                 </div>
                                                                 <div class="max-h-48 overflow-auto">
                                                                     <button type="button"
-                                                                            wire:click="$set('selectedAgentId', ''); $set('agentDropdown', false)"
+                                                                            wire:click="selectAgent()"
                                                                             class="w-full flex items-center px-3 py-2 text-left text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600">
                                                                         <span class="text-gray-400">None</span>
                                                                     </button>
                                                                     @foreach($this->filteredAvailableAgents as $agent)
                                                                         <button type="button"
-                                                                                wire:click="$set('selectedAgentId', {{ $agent->id }}); $set('agentDropdown', false)"
+                                                                                wire:click="selectAgent({{ $agent->id }})"
                                                                                 class="w-full flex items-center justify-between px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600 last:border-b-0 {{ $selectedAgentId == $agent->id ? 'bg-green-50 dark:bg-green-900/20 text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-white' }}">
                                                                             <span>{{ $agent->agent_code }} - {{ $agent->name }}</span>
                                                                             @if($selectedAgentId == $agent->id)

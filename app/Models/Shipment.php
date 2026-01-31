@@ -48,11 +48,14 @@ class Shipment extends Model
 
     public function scopeSearch($query, $search)
     {
-        return $query->where('shipping_plan_num', 'like', "%{$search}%")
-            ->orWhere('delivery_method', 'like', "%{$search}%")
-            ->orWhere('vehicle_plate_number', 'like', "%{$search}%")
-            ->orWhere('shipping_priority', 'like', "%{$search}%")
-            ->orWhere('carrier_name', 'like', "%{$search}%");
+        return $query->where(function ($q) use ($search) {
+            $q->where('shipping_plan_num', 'like', "%{$search}%")
+                ->orWhere('delivery_method', 'like', "%{$search}%")
+                ->orWhere('vehicle_plate_number', 'like', "%{$search}%")
+                ->orWhere('shipping_priority', 'like', "%{$search}%")
+                ->orWhere('carrier_name', 'like', "%{$search}%")
+                ->orWhereHas('vehicles', fn ($v) => $v->where('plate_number', 'like', "%{$search}%"));
+        });
     }
 
     protected static function booted()
@@ -92,6 +95,11 @@ class Shipment extends Model
     public function deliveryReceipt()
     {
         return $this->belongsTo(DeliveryReceipt::class);
+    }
+
+    public function vehicles()
+    {
+        return $this->hasMany(ShipmentVehicle::class)->orderBy('sort_order');
     }
 
     public function statusLogs()

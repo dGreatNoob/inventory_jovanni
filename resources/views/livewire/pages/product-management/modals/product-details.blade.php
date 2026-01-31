@@ -9,6 +9,9 @@
             $lastPriceChangeHuman = $lastPriceChange && ($lastPriceChange['changed_at'] ?? null)
                 ? \Carbon\Carbon::parse($lastPriceChange['changed_at'])->diffForHumans()
                 : null;
+            $hasScheduledPrice = $editingProduct->price_effective_date
+                && $editingProduct->price_effective_date->isFuture()
+                && ($editingProduct->pending_price !== null || $editingProduct->pending_price_note !== null);
         @endphp
         <div class="space-y-6 pr-2">
             <div class="flex flex-col lg:flex-row gap-6">
@@ -132,6 +135,7 @@
                         <div class="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
                             <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">Selling Price</p>
                             <p class="text-2xl font-semibold text-gray-900 dark:text-white">₱{{ number_format($editingProduct->price, 2) }}</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Current effective price</p>
                         </div>
                         <div class="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
                             <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">Cost</p>
@@ -144,6 +148,24 @@
                         </div>
                     </div>
 
+                    @if($hasScheduledPrice)
+                        <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-900/20">
+                            <h4 class="text-sm font-semibold text-amber-800 dark:text-amber-200 flex items-center gap-2 mb-2">
+                                <flux:icon name="calendar-days" class="h-4 w-4" />
+                                Scheduled price change
+                            </h4>
+                            <p class="text-sm text-amber-700 dark:text-amber-300">
+                                A new selling price will take effect on
+                                <strong>{{ $editingProduct->price_effective_date->format('F j, Y') }}</strong>:
+                                <strong>₱{{ number_format($editingProduct->pending_price ?? $editingProduct->price, 2) }}</strong>
+                                @if($editingProduct->pending_price_note)
+                                    <span class="text-amber-600 dark:text-amber-400">({{ $editingProduct->pending_price_note }})</span>
+                                @endif
+                            </p>
+                            <p class="text-xs text-amber-600 dark:text-amber-400 mt-1">Until then, the current price above remains in effect.</p>
+                        </div>
+                    @endif
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">
                             <h4 class="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
@@ -153,7 +175,7 @@
                             <dl class="space-y-2 text-sm">
                                 <div class="flex justify-between gap-4"><dt class="text-gray-500 dark:text-gray-400">Category</dt><dd class="text-gray-900 dark:text-white text-right">{{ $editingProduct->category->name ?? 'N/A' }}</dd></div>
                                 <div class="flex justify-between gap-4"><dt class="text-gray-500 dark:text-gray-400">Supplier</dt><dd class="text-gray-900 dark:text-white text-right">{{ $editingProduct->supplier->name ?? 'N/A' }}</dd></div>
-                                <div class="flex justify-between gap-4"><dt class="text-gray-500 dark:text-gray-400">Supplier SKU</dt><dd class="text-gray-900 dark:text-white text-right">{{ $editingProduct->supplier_code ?: '—' }}</dd></div>
+                                <div class="flex justify-between gap-4"><dt class="text-gray-500 dark:text-gray-400">Supplier Code (SKU)</dt><dd class="text-gray-900 dark:text-white text-right">{{ $editingProduct->supplier_code ?: '—' }}</dd></div>
                                 <div class="flex justify-between gap-4"><dt class="text-gray-500 dark:text-gray-400">Color</dt><dd class="text-gray-900 dark:text-white text-right">{{ optional($editingProduct->color)->shortcut ?: optional($editingProduct->color)->name ?: '—' }}</dd></div>
                             </dl>
                         </div>
@@ -175,6 +197,15 @@
                                 <div class="flex justify-between gap-4"><dt class="text-gray-500 dark:text-gray-400">Last Change</dt><dd class="text-gray-900 dark:text-white text-right">
                                     {{ $lastPriceChangeHuman ?? '—' }}
                                 </dd></div>
+                                @if($hasScheduledPrice)
+                                    <div class="flex justify-between gap-4 pt-2 border-t border-gray-200 dark:border-gray-700">
+                                        <dt class="text-gray-500 dark:text-gray-400">Scheduled</dt>
+                                        <dd class="text-amber-700 dark:text-amber-300 text-right">
+                                            ₱{{ number_format($editingProduct->pending_price ?? $editingProduct->price, 2) }}
+                                            ({{ $editingProduct->pending_price_note ?: '—' }}) on {{ $editingProduct->price_effective_date->format('M j, Y') }}
+                                        </dd>
+                                    </div>
+                                @endif
                             </dl>
                         </div>
                         <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-900">

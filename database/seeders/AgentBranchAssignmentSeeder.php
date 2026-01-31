@@ -25,14 +25,14 @@ class AgentBranchAssignmentSeeder extends Seeder
         // Assign agents to branches
         $assignments = [
             // Agent 1 assigned to multiple branches
-            ['agent_code' => 'AGT001', 'branch_codes' => ['BR001', 'BR002'], 'subclass' => 'Premium'],
-            ['agent_code' => 'AGT002', 'branch_codes' => ['BR003', 'BR004'], 'subclass' => 'Standard'],
-            ['agent_code' => 'AGT003', 'branch_codes' => ['BR005'], 'subclass' => 'Premium'],
-            ['agent_code' => 'AGT004', 'branch_codes' => ['BR006', 'BR007'], 'subclass' => 'Standard'],
-            ['agent_code' => 'AGT005', 'branch_codes' => ['BR001', 'BR003'], 'subclass' => 'High Traffic'],
-            ['agent_code' => 'AGT006', 'branch_codes' => ['BR002'], 'subclass' => 'Standard'],
-            ['agent_code' => 'AGT007', 'branch_codes' => ['BR004', 'BR005'], 'subclass' => 'Premium'],
-            ['agent_code' => 'AGT008', 'branch_codes' => ['BR006'], 'subclass' => 'Standard'],
+            ['agent_code' => 'AGT001', 'branch_codes' => ['BR001', 'BR002'], 'selling_area' => 'Premium'],
+            ['agent_code' => 'AGT002', 'branch_codes' => ['BR003', 'BR004'], 'selling_area' => 'Standard'],
+            ['agent_code' => 'AGT003', 'branch_codes' => ['BR005'], 'selling_area' => 'Premium'],
+            ['agent_code' => 'AGT004', 'branch_codes' => ['BR006', 'BR007'], 'selling_area' => 'Standard'],
+            ['agent_code' => 'AGT005', 'branch_codes' => ['BR001', 'BR003'], 'selling_area' => 'High Traffic'],
+            ['agent_code' => 'AGT006', 'branch_codes' => ['BR002'], 'selling_area' => 'Standard'],
+            ['agent_code' => 'AGT007', 'branch_codes' => ['BR004', 'BR005'], 'selling_area' => 'Premium'],
+            ['agent_code' => 'AGT008', 'branch_codes' => ['BR006'], 'selling_area' => 'Standard'],
         ];
 
         foreach ($assignments as $assignment) {
@@ -57,7 +57,7 @@ class AgentBranchAssignmentSeeder extends Seeder
                     AgentBranchAssignment::create([
                         'agent_id' => $agent->id,
                         'branch_id' => $branch->id,
-                        'subclass' => $assignment['subclass'],
+                        'selling_area' => $assignment['selling_area'],
                         'assigned_at' => now()->subDays(rand(1, 90)),
                         'released_at' => null,
                     ]);
@@ -79,7 +79,7 @@ class AgentBranchAssignmentSeeder extends Seeder
                 AgentBranchAssignment::create([
                     'agent_id' => $agent->id,
                     'branch_id' => $branch->id,
-                    'subclass' => 'Standard',
+                    'selling_area' => 'Standard',
                     'assigned_at' => now()->subDays($hist['assigned_days_ago']),
                     'released_at' => now()->subDays($hist['released_days_ago']),
                 ]);

@@ -52,6 +52,11 @@ class DeliveryReceipt extends Model
         return $this->hasMany(Shipment::class);
     }
 
+    public function shipmentVehicles()
+    {
+        return $this->hasMany(ShipmentVehicle::class);
+    }
+
     public function isMother()
     {
         return $this->type === 'mother';

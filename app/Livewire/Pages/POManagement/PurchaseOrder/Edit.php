@@ -35,9 +35,6 @@ class Edit extends Component
     #[Validate('nullable|date|after_or_equal:order_date')]
     public $expected_delivery_date;
 
-    #[Validate('required|string|max:255')]
-    public $payment_terms;
-
     #[Validate('required|exists:departments,id')]
     public $deliver_to;
 
@@ -105,7 +102,6 @@ class Edit extends Component
         $this->supplier_id = $this->purchaseOrder->supplier_id;
         $this->order_date = $this->purchaseOrder->order_date->format('Y-m-d');
         $this->expected_delivery_date = $this->purchaseOrder->expected_delivery_date ? $this->purchaseOrder->expected_delivery_date->format('Y-m-d') : null;
-        $this->payment_terms = $this->purchaseOrder->payment_terms;
         $this->deliver_to = $this->purchaseOrder->del_to;
 
         // Set ordered items from productOrders
@@ -336,7 +332,6 @@ class Edit extends Component
                 'order_date' => $this->order_date,
                 'expected_delivery_date' => $this->expected_delivery_date,
                 'del_to' => $this->deliver_to,
-                'payment_terms' => $this->payment_terms,
                 'total_qty' => $total_qty,
                 'total_price' => $total_price,
             ]);

@@ -4,10 +4,12 @@ namespace App\Livewire\Pages\Branch;
 
 use Livewire\Component;
 use Livewire\WithFileUploads;
+use Illuminate\Support\Facades\DB;
 use App\Models\Branch;
 use App\Models\Shipment;
 use App\Models\BranchAllocation;
 use App\Models\BranchAllocationItem;
+use App\Models\BranchCustomerSale;
 use App\Models\Promo;
 use Spatie\Activitylog\Models\Activity;
 
@@ -45,8 +47,14 @@ class BranchInventory extends Component
     public $selectedSalesProduct = null;
     public $salesQuantity = 1;
     public $salesItems = [];
+    public $selectedSellingArea = null;
+    public $sellingAreaOptions = [];
+    public $sellingAreaSearch = '';
+    public $sellingAreaDropdown = false;
     public $selectedAgentId = null;
     public $availableAgents = [];
+    public $agentSearch = '';
+    public $agentDropdown = false;
 
     // File upload properties
     public $textFile;
@@ -270,8 +278,10 @@ class BranchInventory extends Component
             return [
                 'id' => $productId,
                 'name' => $productItems->first()->getDisplayNameAttribute(),
-                'barcode' => $productItems->first()->getDisplayBarcodeAttribute(),
+                'product_number' => $product->product_number ?? null,
                 'sku' => $productItems->first()->getDisplaySkuAttribute(),
+                'supplier_code' => $product->supplier_code ?? null,
+                'barcode' => $productItems->first()->getDisplayBarcodeAttribute(),
                 'total_quantity' => $totalQuantity,
                 'total_sold' => $totalSold,
                 'remaining_quantity' => $totalQuantity - $totalSold,
@@ -616,6 +626,7 @@ class BranchInventory extends Component
                 $message .= "No variances found - inventory matches allocation.";
             }
 
+            $this->successMessage = $message;
             $this->showSuccessModal = true;
 
         } catch (\Exception $e) {
@@ -744,10 +755,13 @@ class BranchInventory extends Component
             $barcode = $item->getDisplayBarcodeAttribute();
             if (!empty($barcode) && $barcode !== 'N/A') {
                 if (!isset($allocatedProducts[$barcode])) {
+                    $product = $item->product;
                     $allocatedProducts[$barcode] = [
                         'product_id' => $item->product_id,
+                        'product_number' => $product ? ($product->product_number ?? null) : null,
                         'product_name' => $item->getDisplayNameAttribute(),
                         'sku' => $item->getDisplaySkuAttribute(),
+                        'supplier_code' => $product ? ($product->supplier_code ?? null) : null,
                         'allocated_quantity' => 0,
                     ];
                 }
@@ -773,8 +787,10 @@ class BranchInventory extends Component
                 // Missing item - allocated but not scanned
                 $this->missingItems[] = [
                     'barcode' => $barcode,
+                    'product_number' => $product['product_number'] ?? null,
                     'product_name' => $product['product_name'],
                     'sku' => $product['sku'],
+                    'supplier_code' => $product['supplier_code'] ?? null,
                     'allocated_quantity' => $product['allocated_quantity'],
                     'scanned_quantity' => 0,
                     'variance' => -$product['allocated_quantity'],
@@ -783,8 +799,10 @@ class BranchInventory extends Component
                 // Quantity variance - scanned count doesn't match allocated
                 $this->quantityVariances[] = [
                     'barcode' => $barcode,
+                    'product_number' => $product['product_number'] ?? null,
                     'product_name' => $product['product_name'],
                     'sku' => $product['sku'],
+                    'supplier_code' => $product['supplier_code'] ?? null,
                     'allocated_quantity' => $product['allocated_quantity'],
                     'scanned_quantity' => $scannedCount,
                     'variance' => $scannedCount - $product['allocated_quantity'],
@@ -827,6 +845,7 @@ class BranchInventory extends Component
     {
         $this->showCustomerSalesModal = true;
         $this->resetSalesModal();
+        $this->loadSellingAreaOptions();
     }
 
     /**
@@ -847,7 +866,96 @@ class BranchInventory extends Component
         $this->selectedSalesProduct = null;
         $this->salesQuantity = 1;
         $this->salesItems = [];
+        $this->selectedSellingArea = null;
+        $this->sellingAreaSearch = '';
+        $this->sellingAreaDropdown = false;
         $this->selectedAgentId = null;
+        $this->agentSearch = '';
+        $this->agentDropdown = false;
+    }
+
+    /**
+     * Load selling area options from the selected branch
+     */
+    protected function loadSellingAreaOptions()
+    {
+        if (!$this->selectedBranchId) {
+            $this->sellingAreaOptions = [];
+            return;
+        }
+        $branch = Branch::find($this->selectedBranchId);
+        if (!$branch) {
+            $this->sellingAreaOptions = [];
+            return;
+        }
+        $this->sellingAreaOptions = $branch->getSellingAreas();
+    }
+
+    /**
+     * Toggle selling area dropdown (only when options available)
+     */
+    public function toggleSellingAreaDropdown()
+    {
+        if (!empty($this->sellingAreaOptions)) {
+            $this->sellingAreaDropdown = !$this->sellingAreaDropdown;
+        }
+    }
+
+    /**
+     * Select selling area and close dropdown
+     */
+    public function selectSellingArea($value = null)
+    {
+        $this->selectedSellingArea = $value ?? '';
+        $this->sellingAreaDropdown = false;
+    }
+
+    /**
+     * Toggle agent dropdown
+     */
+    public function toggleAgentDropdown()
+    {
+        $this->agentDropdown = !$this->agentDropdown;
+    }
+
+    /**
+     * Select agent and close dropdown
+     */
+    public function selectAgent($agentId = null)
+    {
+        $this->selectedAgentId = $agentId ? (int) $agentId : null;
+        $this->agentDropdown = false;
+    }
+
+    /**
+     * Filtered selling areas for searchable dropdown
+     */
+    public function getFilteredSellingAreaOptionsProperty()
+    {
+        $options = $this->sellingAreaOptions;
+        $query = trim($this->sellingAreaSearch);
+        if ($query === '') {
+            return collect($options)->values();
+        }
+        $lower = strtolower($query);
+        return collect($options)->filter(fn ($v) => str_contains(strtolower((string) $v), $lower))->values();
+    }
+
+    /**
+     * Filtered agents for searchable dropdown (by name or agent_code).
+     */
+    public function getFilteredAvailableAgentsProperty()
+    {
+        $agents = collect($this->availableAgents);
+        $query = trim($this->agentSearch);
+        if ($query === '') {
+            return $agents;
+        }
+        $lower = strtolower($query);
+        return $agents->filter(function ($agent) use ($lower) {
+            return str_contains(strtolower((string) ($agent->name ?? '')), $lower)
+                || str_contains(strtolower((string) ($agent->agent_code ?? '')), $lower);
+        })->values();
     }
 
     /**
@@ -891,6 +999,9 @@ class BranchInventory extends Component
         $item = [
             'id' => $this->selectedSalesProduct['id'],
             'name' => $this->selectedSalesProduct['name'],
+            'product_number' => $this->selectedSalesProduct['product_number'] ?? null,
+            'sku' => $this->selectedSalesProduct['sku'] ?? null,
+            'supplier_code' => $this->selectedSalesProduct['supplier_code'] ?? null,
             'barcode' => $this->selectedSalesProduct['barcode'],
             'quantity' => $this->salesQuantity,
             'unit_price' => $this->selectedSalesProduct['unit_price'],
@@ -934,9 +1045,32 @@ class BranchInventory extends Component
         }
 
         try {
-            // Process each sales item
+            DB::beginTransaction();
+
+            $totalAmount = collect($this->salesItems)->sum('total');
+
+            // 1. Create branch_customer_sales record (with selling_area)
+            $sale = BranchCustomerSale::create([
+                'branch_id' => $this->selectedBranchId,
+                'selling_area' => $this->selectedSellingArea ?: null,
+                'agent_id' => $this->selectedAgentId ?: null,
+                'total_amount' => $totalAmount,
+            ]);
+
+            // 2. Create branch_customer_sale_items for each product
             foreach ($this->salesItems as $item) {
-                // Find and update the corresponding branch allocation items
+                $sale->items()->create([
+                    'product_id' => $item['id'],
+                    'product_name' => $item['name'],
+                    'barcode' => $item['barcode'] ?? null,
+                    'quantity' => $item['quantity'],
+                    'unit_price' => $item['unit_price'],
+                    'total_amount' => $item['total'],
+                ]);
+            }
+
+            // 3. Update sold_quantity on branch_allocation_items
+            foreach ($this->salesItems as $item) {
                 $allocationItems = BranchAllocationItem::whereHas('product', function($q) use ($item) {
                     $q->where('id', $item['id']);
                 })
@@ -946,7 +1080,7 @@ class BranchInventory extends Component
                 ->whereHas('branchAllocation.shipments', function ($q) {
                     $q->where('shipping_status', 'completed');
                 })
-                ->where('box_id', null) // Only unpacked items
+                ->where('box_id', null)
                 ->orderBy('id')
                 ->get();
 
@@ -962,14 +1096,14 @@ class BranchInventory extends Component
                 }
             }
 
-            // Log activity
+            // 4. Log activity for audit trail
             $agent = $this->selectedAgentId ? \App\Models\Agent::find($this->selectedAgentId) : null;
             foreach ($this->salesItems as $item) {
                 Activity::create([
                     'log_name' => 'branch_inventory',
-                    'description' => "Customer sale recorded for product {$item['barcode']} in branch {$this->selectedBranchId}" . ($agent ? " by agent {$agent->name}" : ""),
-                    'subject_type' => BranchAllocationItem::class,
-                    'subject_id' => null,
+                    'description' => "Customer sale recorded for product {$item['barcode']} in branch {$this->selectedBranchId}" . ($this->selectedSellingArea ? " at selling area {$this->selectedSellingArea}" : "") . ($agent ? " by agent {$agent->name}" : ""),
+                    'subject_type' => BranchCustomerSale::class,
+                    'subject_id' => $sale->id,
                     'causer_type' => null,
                     'causer_id' => null,
                     'properties' => [
@@ -980,12 +1114,15 @@ class BranchInventory extends Component
                         'unit_price' => $item['unit_price'],
                         'total_amount' => $item['total'],
                         'branch_id' => $this->selectedBranchId,
+                        'selling_area' => $this->selectedSellingArea,
                         'agent_id' => $this->selectedAgentId,
                         'agent_name' => $agent ? $agent->name : null,
                         'customer_sale' => true,
                     ],
                 ]);
             }
+
+            DB::commit();
 
             // Refresh data
             $this->loadBranchProducts();
@@ -996,6 +1133,7 @@ class BranchInventory extends Component
             $this->showSuccessModal = true;
 
         } catch (\Exception $e) {
+            DB::rollBack();
             session()->flash('error', 'Error recording sales: ' . $e->getMessage());
         }
     }

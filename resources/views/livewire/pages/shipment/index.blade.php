@@ -48,13 +48,12 @@
                                 </div>
 
                                 <div>
-
                                     <x-input
                                         type="text"
                                         wire:model.defer="vehicle_plate_number"
                                         name="vehicle_plate_number"
-                                        label="Vehicle Plate Number"
-                                        placeholder="Vehicle Plate Number"
+                                        label="Default Vehicle Plate (if not set per vehicle)"
+                                        placeholder="e.g. ABC-1234"
                                         class="w-full"
                                     />
                                 </div>
@@ -128,7 +127,7 @@
                                 @if($dispatchedMotherDRs->count() > 0)
                                     <div class="mb-4">
                                         <p class="text-sm text-gray-600 dark:text-gray-400">
-                                            {{ $dispatchedMotherDRs->count() }} shipment{{ $dispatchedMotherDRs->count() > 1 ? 's' : '' }} will be created for different DRs
+                                            1 shipment with {{ $dispatchedMotherDRs->count() }} vehicle{{ $dispatchedMotherDRs->count() > 1 ? 's' : '' }} (one DR per vehicle)
                                         </p>
                                     </div>
 
@@ -153,13 +152,18 @@
 
                                             <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
                                                 <div class="flex justify-between items-start mb-2">
-                                                    <div>
+                                                    <div class="flex-1">
                                                         <h5 class="font-medium text-gray-900 dark:text-white">
-                                                            Shipment {{ $index + 1 }}: {{ $this->shipping_plan_num }}-{{ str_pad($index + 1, 2, '0', STR_PAD_LEFT) }}
+                                                            Vehicle {{ $index + 1 }}: DR {{ $motherDR->dr_number }}
                                                         </h5>
-                                                        <p class="text-sm text-gray-600 dark:text-gray-400">
-                                                            DR: {{ $motherDR->dr_number }}
-                                                        </p>
+                                                        <div class="mt-2">
+                                                            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Plate Number</label>
+                                                            <input type="text"
+                                                                wire:model.defer="vehiclePlates.{{ $motherDR->id }}"
+                                                                placeholder="{{ $vehicle_plate_number ?: 'e.g. ABC-1234' }}"
+                                                                class="w-full md:w-48 px-3 py-2 text-sm border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                                            />
+                                                        </div>
                                                     </div>
                                                     <div class="text-right">
                                                         <div class="text-sm font-medium text-gray-900 dark:text-white">
@@ -192,7 +196,7 @@
                                         <div class="flex justify-between items-center">
                                             <span class="text-sm font-medium text-blue-900 dark:text-blue-100">Total Summary:</span>
                                             <span class="text-sm font-bold text-blue-900 dark:text-blue-100">
-                                                {{ $totalScannedItems }} items across {{ $dispatchedMotherDRs->count() }} shipment{{ $dispatchedMotherDRs->count() > 1 ? 's' : '' }}
+                                                {{ $totalScannedItems }} items across {{ $dispatchedMotherDRs->count() }} vehicle{{ $dispatchedMotherDRs->count() > 1 ? 's' : '' }}
                                             </span>
                                         </div>
                                     </div>
@@ -284,7 +288,7 @@
                                 <thead class="text-sm text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                                     <tr>
                                         <th scope="col" class="px-6 py-3">Shipment Reference Number</th>
-                                        <th scope="col" class="px-6 py-3">DR Number</th>
+                                        <th scope="col" class="px-6 py-3">Vehicles / DR</th>
                                         <th scope="col" class="px-6 py-3">Branch</th>
                                         <th scope="col" class="px-6 py-3">Shipping Date</th>
                                         <th scope="col" class="px-6 py-3">Status</th>
@@ -300,7 +304,13 @@
                                                 {{ ucfirst($data->shipping_plan_num) }}
                                             </th>
                                             <td class="px-6 py-4 text-sm text-gray-900 dark:text-white">
-                                                {{ $data->deliveryReceipt->dr_number ?? '—' }}
+                                                @if($data->vehicles->isNotEmpty())
+                                                    @foreach($data->vehicles as $v)
+                                                        <div>{{ $v->plate_number ?: '—' }} (DR: {{ $v->deliveryReceipt->dr_number ?? '—' }})</div>
+                                                    @endforeach
+                                                @else
+                                                    {{ $data->deliveryReceipt->dr_number ?? $data->vehicle_plate_number ?? '—' }}
+                                                @endif
                                             </td>
                                             <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                                                 {{ $data->branchAllocation->branch->name ?? '—' }}

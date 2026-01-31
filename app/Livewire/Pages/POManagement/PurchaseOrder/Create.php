@@ -24,7 +24,6 @@ class Create extends Component
     public $supplier_id;
     public $order_date;
     public $expected_delivery_date;
-    public $payment_terms;
     public $deliver_to;
 
     public $selected_product;
@@ -45,7 +44,6 @@ class Create extends Component
         'supplier_id' => 'required|exists:suppliers,id',
         'order_date' => 'required|date',
         'expected_delivery_date' => 'nullable|date|after_or_equal:order_date',
-        'payment_terms' => 'required|string|max:255',
         'deliver_to' => 'required|exists:departments,id',
         'orderedItems' => 'required|array|min:1',
     ];
@@ -54,7 +52,6 @@ class Create extends Component
         'supplier_id.required' => 'Please select a supplier.',
         'order_date.required' => 'Please select an order date.',
         'expected_delivery_date.after_or_equal' => 'Expected delivery date must be on or after the order date.',
-        'payment_terms.required' => 'Please enter payment terms.',
         'deliver_to.required' => 'Please select a delivery department.',
         'orderedItems.required' => 'Please add at least one product.',
         'orderedItems.min' => 'Please add at least one product.',
@@ -110,13 +107,19 @@ class Create extends Component
             );
         }
 
-        $query = Product::with(['category', 'supplier'])
+        $query = Product::with(['category', 'supplier', 'color'])
             ->where('supplier_id', $this->supplier_id)
             ->where('disabled', false)
             ->where(function($q) {
-                $q->where('name', 'like', '%' . $this->search . '%')
-                  ->orWhere('sku', 'like', '%' . $this->search . '%')
-                  ->orWhere('barcode', 'like', '%' . $this->search . '%');
+                $search = trim($this->search);
+                if ($search) {
+                    $q->where('name', 'like', '%' . $search . '%')
+                      ->orWhere('remarks', 'like', '%' . $search . '%')
+                      ->orWhere('sku', 'like', '%' . $search . '%')
+                      ->orWhere('product_number', 'like', '%' . $search . '%')
+                      ->orWhere('supplier_code', 'like', '%' . $search . '%')
+                      ->orWhere('barcode', 'like', '%' . $search . '%');
+                }
             });
 
         if ($this->categoryFilter) {
@@ -190,9 +193,10 @@ class Create extends Component
             // Add new item
             $this->orderedItems[] = [
                 'product_id' => $product->id,
+                'product_number' => $product->product_number ?? null,
                 'sku' => $product->sku,
                 'barcode' => $product->barcode,
-                'name' => $product->name,
+                'name' => $product->remarks ?? $product->name,
                 'category' => $product->category ? $product->category->name : 'N/A',
                 'supplier' => $product->supplier ? $product->supplier->name : 'N/A',
                 'supplier_code' => $product->supplier_code ?? 'N/A',
@@ -278,7 +282,6 @@ class Create extends Component
                 'ordered_by' => Auth::id(),
                 'del_to' => $this->deliver_to,
                 'del_on' => null,
-                'payment_terms' => $this->payment_terms,
                 'total_qty' => $total_qty,
                 'total_price' => $total_price, 
                 'approver' => null,

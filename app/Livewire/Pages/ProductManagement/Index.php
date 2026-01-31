@@ -68,6 +68,8 @@ class Index extends Component
         'price' => '',
         'original_price' => '',
         'price_note' => 'REG1',
+        'price_effective_option' => 'immediately',
+        'price_effective_date' => '',
         'cost' => '',
         'uom' => 'pcs',
         'shelf_life_days' => '',
@@ -91,6 +93,9 @@ class Index extends Component
     public $regularPriceChangeCount = 0;
     public $salePriceChangeCount = 0;
 
+    // Effective date confirmation (when user sets/edits effective date)
+    public $showEffectiveDateConfirmModal = false;
+
     // Bulk Actions
     public $bulkAction = '';
     public $bulkActionValue = '';
@@ -106,6 +111,10 @@ class Index extends Component
     {
         $this->loadFilters();
         $this->loadColors();
+        // Apply any due pending prices (effective date <= today) so masterlist barcode colors match effective price note
+        if ($this->productService) {
+            $this->productService->applyDuePendingPrices();
+        }
     }
 
     public function loadFilters()
@@ -375,6 +384,9 @@ class Index extends Component
     public function editProduct($productId)
     {
         $this->editingProduct = Product::findOrFail($productId);
+        $this->productService = $this->productService ?? app(\App\Services\ProductService::class);
+        $this->productService->applyDuePendingPriceForProduct($this->editingProduct);
+        $this->editingProduct->refresh();
         $this->loadProductData();
         $this->isEditMode = true;
         $this->loadPriceHistory($productId);
@@ -499,6 +511,8 @@ class Index extends Component
             'price' => '',
             'original_price' => '',
             'price_note' => 'REG1',
+            'price_effective_option' => 'immediately',
+            'price_effective_date' => '',
             'cost' => '',
             'uom' => 'pcs',
             'shelf_life_days' => '',
@@ -533,6 +547,8 @@ class Index extends Component
                 'price' => $this->editingProduct->price,
                 'original_price' => $this->editingProduct->original_price,
                 'price_note' => $this->editingProduct->price_note,
+                'price_effective_option' => !empty($this->editingProduct->price_effective_date) ? 'date' : 'immediately',
+                'price_effective_date' => $this->editingProduct->price_effective_date?->format('Y-m-d') ?? '',
                 'cost' => $this->editingProduct->cost,
                 'uom' => $this->editingProduct->uom,
                 'shelf_life_days' => $this->editingProduct->shelf_life_days,
@@ -574,6 +590,31 @@ class Index extends Component
         $this->updateLastPrices($histories, $productId);
     }
 
+    /**
+     * Called when user submits the product form. If "On a specific date" is chosen and a date is set, show confirmation before saving.
+     */
+    public function requestSaveProduct()
+    {
+        $option = $this->form['price_effective_option'] ?? 'immediately';
+        $effectiveDate = trim((string) ($this->form['price_effective_date'] ?? ''));
+        if ($option === 'date' && $effectiveDate !== '') {
+            $this->showEffectiveDateConfirmModal = true;
+            return;
+        }
+        $this->saveProduct();
+    }
+
+    public function confirmSaveProduct()
+    {
+        $this->showEffectiveDateConfirmModal = false;
+        $this->saveProduct();
+    }
+
+    public function cancelEffectiveDateConfirm()
+    {
+        $this->showEffectiveDateConfirmModal = false;
+    }
+
     public function saveProduct()
     {
         Log::info('=== saveProduct() called ===', [
@@ -598,6 +639,14 @@ class Index extends Component
             $this->form['product_number'] = $this->normalizeProductNumber($this->form['product_number']);
             Log::info('After normalizeProductNumber:', ['product_number' => $this->form['product_number']]);
             
+            // Normalize effective date: "immediately" => no date; "date" => use form value
+            $effectiveOption = $this->form['price_effective_option'] ?? 'immediately';
+            if ($effectiveOption !== 'date') {
+                $this->form['price_effective_date'] = null;
+            } elseif (isset($this->form['price_effective_date']) && (string) $this->form['price_effective_date'] === '') {
+                $this->form['price_effective_date'] = null;
+            }
+
             // Normalize product_color_id: convert empty string to null, ensure it's an integer if set
             if (isset($this->form['product_color_id'])) {
                 $originalColorId = $this->form['product_color_id'];
@@ -648,6 +697,11 @@ class Index extends Component
                 'form.supplier_id' => 'required|exists:suppliers,id',
                 'form.price' => 'required|numeric|min:0',
                 'form.original_price' => 'nullable|numeric|min:0',
+                'form.price_effective_date' => [
+                    Rule::requiredIf(($this->form['price_effective_option'] ?? '') === 'date'),
+                    'nullable',
+                    'date',
+                ],
                 'form.cost' => 'required|numeric|min:0',
                 'form.uom' => 'required|string|max:255',
                 'form.shelf_life_days' => 'nullable|integer|min:0',
@@ -710,8 +764,11 @@ class Index extends Component
 
     public function openProductViewer($productId, $startImageId = null)
     {
-        // Load product details and images
+        // Load product details and images; apply any due pending price so displayed price is current
         $this->editingProduct = Product::with(['category', 'supplier'])->findOrFail($productId);
+        $this->productService = $this->productService ?? app(\App\Services\ProductService::class);
+        $this->productService->applyDuePendingPriceForProduct($this->editingProduct);
+        $this->editingProduct->refresh();
         $this->viewerProductId = (int) $productId;
 
         $images = ProductImage::where('product_id', $this->viewerProductId)

@@ -133,7 +133,7 @@ class View extends Component
     public function render()
     {
         return view('livewire.pages.shipment.view', [
-            'shipment_view' => Shipment::with(['salesOrder', 'branchAllocation', 'deliveryReceipt'])->find($this->shipmentId),
+            'shipment_view' => Shipment::with(['salesOrder', 'branchAllocation', 'deliveryReceipt', 'vehicles.deliveryReceipt.box'])->find($this->shipmentId),
         ]);
     }
 }

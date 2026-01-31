@@ -41,7 +41,6 @@ class Supplier extends Model
         'terms',
         'tax_id',
         'status',
-        'tin_num',
         'credit_limit',
         'payment_terms_days',
         'is_active',
@@ -110,7 +109,6 @@ class Supplier extends Model
                 $name = $this->name ?? 'N/A';
                 $address = $this->address ?? 'N/A';
                 $contact = $this->contact_num ?? 'N/A';
-                $tin = $this->tin_num ?? 'N/A';
 
                 if ($eventName === 'updated') {
                     $changes = collect($this->getChanges())->only($this->fillable);
@@ -135,7 +133,7 @@ class Supplier extends Model
                     })->implode('<br>');
                 }
 
-                return "Name: {$name}<br>Address: {$address}<br>Contact: {$contact}<br>TIN: {$tin}";
+                return "Name: {$name}<br>Address: {$address}<br>Contact: {$contact}";
             });
     }
     

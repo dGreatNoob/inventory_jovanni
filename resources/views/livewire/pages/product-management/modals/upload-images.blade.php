@@ -20,18 +20,72 @@
         <form wire:submit.prevent="submitImageUpload" class="space-y-6">
         <!-- Product Selection -->
         <div>
-            <flux:select 
-                wire:model.live="uploadProductId" 
-                label="Product" 
-                placeholder="Select a product..."
-                required
-                class="dark:bg-gray-700 dark:text-white dark:border-gray-600"
-            >
-                @foreach($products as $product)
-                    <option value="{{ $product->id }}">{{ $product->name }} ({{ $product->sku }})</option>
-                @endforeach
-            </flux:select>
-            @error('uploadProductId') 
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Product <span class="text-red-500">*</span>
+            </label>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Search by name, SKU, or Supplier Code</p>
+            <div class="relative" wire:click.outside="$set('uploadProductDropdown', false)">
+                <div wire:click="toggleUploadProductDropdown"
+                    class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm cursor-pointer flex justify-between items-center min-h-[42px]">
+                    <span class="{{ $uploadProductId ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500' }}">
+                        @if($uploadProductId)
+                            @php
+                                $selectedProduct = collect($products)->firstWhere('id', (int) $uploadProductId);
+                            @endphp
+                            @if($selectedProduct)
+                                {{ $selectedProduct->name }} ({{ $selectedProduct->sku }}{{ $selectedProduct->supplier_code ? ' · ' . $selectedProduct->supplier_code : '' }})
+                            @else
+                                Product #{{ $uploadProductId }}
+                            @endif
+                        @else
+                            Select a product...
+                        @endif
+                    </span>
+                    <svg class="w-4 h-4 ml-2 flex-shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </div>
+                @if($uploadProductDropdown)
+                    <div class="absolute z-20 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg dark:bg-gray-700 dark:border-gray-600">
+                        <div class="p-2 border-b border-gray-200 dark:border-gray-600 sticky top-0 bg-white dark:bg-gray-700">
+                            <input type="text"
+                                wire:model.live.debounce.200ms="uploadProductSearch"
+                                placeholder="Search by name, SKU, or Supplier Code..."
+                                onclick="event.stopPropagation()"
+                                class="block w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-600 dark:text-white dark:placeholder-gray-400" />
+                        </div>
+                        <div class="max-h-48 overflow-auto">
+                            @foreach($this->filteredUploadProducts as $product)
+                                <button type="button"
+                                        wire:click="selectUploadProduct({{ $product->id }})"
+                                        class="w-full flex items-center px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600 last:border-b-0 {{ $uploadProductId == $product->id ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-900 dark:text-blue-100' : 'text-gray-900 dark:text-white' }}">
+                                    <span class="flex-1 min-w-0">
+                                        <span class="font-medium truncate block">{{ $product->name }}</span>
+                                        <span class="text-xs text-gray-500 dark:text-gray-400">
+                                            SKU: {{ $product->sku ?? '—' }}{{ $product->supplier_code ? ' · Supplier Code: ' . $product->supplier_code : '' }}
+                                        </span>
+                                    </span>
+                                    @if($uploadProductId == $product->id)
+                                        <svg class="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                    @endif
+                                </button>
+                            @endforeach
+                            @if($this->filteredUploadProducts->isEmpty())
+                                <div class="px-3 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                                    @if($uploadProductSearch)
+                                        No products match "{{ $uploadProductSearch }}"
+                                    @else
+                                        No products available
+                                    @endif
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                @endif
+            </div>
+            @error('uploadProductId')
                 <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
             @enderror
 

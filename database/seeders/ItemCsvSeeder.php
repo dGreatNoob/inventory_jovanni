@@ -50,6 +50,11 @@ class ItemCsvSeeder extends Seeder
     ];
 
     /**
+     * Rows per transaction chunk to avoid lock timeouts on large imports.
+     */
+    private const CHUNK_SIZE = 500;
+
+    /**
      * Run the database seeds.
      */
     public function run(): void
@@ -87,11 +92,10 @@ class ItemCsvSeeder extends Seeder
             fseek($handle, 3);
         }
 
-        $rows = [];
         $lineNumber = 0;
         $skipped = 0;
         $processed = 0;
-        $errors = [];
+        $chunkProcessed = 0;
 
         DB::beginTransaction();
 
@@ -293,6 +297,14 @@ class ItemCsvSeeder extends Seeder
                 }
 
                 $processed++;
+                $chunkProcessed++;
+
+                // Chunk commit to avoid lock timeouts
+                if ($chunkProcessed >= self::CHUNK_SIZE) {
+                    DB::commit();
+                    DB::beginTransaction();
+                    $chunkProcessed = 0;
+                }
 
                 // Progress indicator
                 if ($processed % 100 === 0) {
@@ -309,9 +321,11 @@ class ItemCsvSeeder extends Seeder
             $this->command->info("Products imported/updated: {$processed}");
             $this->command->info("Lines skipped: {$skipped}");
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
-            fclose($handle);
+            if (isset($handle) && is_resource($handle)) {
+                fclose($handle);
+            }
             $this->command->error("Error importing CSV: " . $e->getMessage());
             $this->command->error("Stack trace: " . $e->getTraceAsString());
             throw $e;

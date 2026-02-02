@@ -119,9 +119,11 @@ class LocationCsvSeeder extends Seeder
             $this->command->info("Branches imported/updated: {$processed}");
             $this->command->info("Lines skipped: {$skipped}");
             $this->command->info("ID mapping: " . count(self::$locationIdMapping) . " entries");
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
-            fclose($handle);
+            if (isset($handle) && is_resource($handle)) {
+                fclose($handle);
+            }
             $this->command->error("Error: " . $e->getMessage());
             throw $e;
         }

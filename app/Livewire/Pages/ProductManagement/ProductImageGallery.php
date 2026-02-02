@@ -43,6 +43,8 @@ class ProductImageGallery extends Component
     // Upload
     public $uploadImages = [];
     public $uploadProductId = '';
+    public $uploadProductSearch = '';
+    public $uploadProductDropdown = false;
     public $uploadAltText = '';
     public $uploadSetAsPrimary = false;
 
@@ -73,7 +75,33 @@ class ProductImageGallery extends Component
     {
         $this->products = Product::with('category')
             ->orderBy('name')
-            ->get(['id', 'name', 'sku']);
+            ->get(['id', 'name', 'sku', 'supplier_code']);
+    }
+
+    public function getFilteredUploadProductsProperty()
+    {
+        $products = collect($this->products);
+        $query = trim($this->uploadProductSearch);
+        if ($query === '') {
+            return $products->take(100)->values();
+        }
+        $lower = strtolower($query);
+        return $products->filter(function ($p) use ($lower) {
+            return str_contains(strtolower((string) ($p->name ?? '')), $lower)
+                || str_contains(strtolower((string) ($p->sku ?? '')), $lower)
+                || str_contains(strtolower((string) ($p->supplier_code ?? '')), $lower);
+        })->take(100)->values();
+    }
+
+    public function toggleUploadProductDropdown()
+    {
+        $this->uploadProductDropdown = !$this->uploadProductDropdown;
+    }
+
+    public function selectUploadProduct($productId = null)
+    {
+        $this->uploadProductId = $productId ? (string) $productId : '';
+        $this->uploadProductDropdown = false;
     }
 
     public function updatedSearch()
@@ -266,6 +294,8 @@ class ProductImageGallery extends Component
     {
         $this->uploadImages = [];
         $this->uploadProductId = '';
+        $this->uploadProductSearch = '';
+        $this->uploadProductDropdown = false;
         $this->uploadAltText = '';
         $this->uploadSetAsPrimary = false;
     }

@@ -56,6 +56,9 @@ RUN npm run build
 # Run post-install scripts
 RUN php artisan package:discover --ansi
 
+# PHP upload limits for file uploads (product images, Livewire)
+COPY php/local.ini /usr/local/etc/php/conf.d/99-upload-limits.ini
+
 # Set permissions
 RUN chown -R www-data:www-data /var/www && \
     chmod -R 755 /var/www && \

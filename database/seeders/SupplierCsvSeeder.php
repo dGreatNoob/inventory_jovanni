@@ -160,9 +160,11 @@ class SupplierCsvSeeder extends Seeder
             $this->command->info("Lines skipped: {$skipped}");
             $this->command->info("ID Mapping created: " . count(self::$supplierIdMapping) . " entries");
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
-            fclose($handle);
+            if (isset($handle) && is_resource($handle)) {
+                fclose($handle);
+            }
             $this->command->error("Error importing supplier CSV: " . $e->getMessage());
             $this->command->error("Stack trace: " . $e->getTraceAsString());
             throw $e;

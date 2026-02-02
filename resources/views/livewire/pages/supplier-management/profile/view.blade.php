@@ -496,7 +496,7 @@
                                         </select>
                                     </div>
                                     <div>
-                                        {{ $items->links() }}
+                                        {{ $items->links('livewire::tailwind', ['scrollTo' => false]) }}
                                     </div>
                                 </div>
                             </div>

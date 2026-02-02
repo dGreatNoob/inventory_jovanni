@@ -15,11 +15,12 @@ class Index extends Component
 
     public $name, $address, $contact_num, $manager_name, $email;
     public $selling_area1, $selling_area2, $selling_area3, $selling_area4;
-    public $code, $category, $remarks, $batch, $branch_code, $company_name, $company_tin, $dept_code, $pull_out_address, $vendor_code;
+    public $code, $category, $remarks, $batch, $batchSelect = '', $batchNew = '', $branch_code, $company_name, $company_tin, $dept_code, $pull_out_address, $vendor_code;
 
     public $editData = [];
     public $perPage = 10;
     public $search = '';
+    public $batchFilter = '';
     public $showDeleteModal = false;
     public $showEditModal = false;
     public $deleteId = null;
@@ -31,10 +32,15 @@ class Index extends Component
     public $sortBy = 'agent_count';
     public $sortDirection = 'desc';
 
+    protected $queryString = [
+        'search' => ['except' => ''],
+        'batchFilter' => ['except' => ''],
+    ];
+
     // Edit properties
     public $edit_name, $edit_address, $edit_contact_num, $edit_manager_name, $edit_email;
     public $edit_selling_area1, $edit_selling_area2, $edit_selling_area3, $edit_selling_area4;
-    public $edit_code, $edit_category, $edit_remarks, $edit_batch, $edit_branch_code, $edit_company_name, $edit_company_tin, $edit_dept_code, $edit_pull_out_address, $edit_vendor_code;
+    public $edit_code, $edit_category, $edit_remarks, $edit_batch, $edit_batchSelect = '', $edit_batchNew = '', $edit_branch_code, $edit_company_name, $edit_company_tin, $edit_dept_code, $edit_pull_out_address, $edit_vendor_code;
 
     public function updatingSearch()
     {
@@ -44,6 +50,21 @@ class Index extends Component
     public function updatedPerPage()
     {
         $this->resetPage();
+    }
+
+    public function updatedBatchFilter()
+    {
+        $this->resetPage();
+    }
+
+    public function getBatchOptionsProperty()
+    {
+        return Branch::whereNotNull('batch')
+            ->where('batch', '!=', '')
+            ->distinct()
+            ->orderBy('batch')
+            ->pluck('batch', 'batch')
+            ->toArray();
     }
 
     public function sortByColumn($column)
@@ -80,6 +101,8 @@ class Index extends Component
             'vendor_code' => 'nullable|string',
         ]);
 
+        $batchValue = ($this->batchSelect === '__new__') ? trim($this->batchNew ?? '') : ($this->batchSelect ?: null);
+
         Branch::create([
             'name' => $this->name,
             'code' => $this->code,
@@ -93,7 +116,7 @@ class Index extends Component
             'selling_area3' => $this->selling_area3,
             'selling_area4' => $this->selling_area4,
             'remarks' => $this->remarks,
-            'batch' => $this->batch,
+            'batch' => $batchValue ?: null,
             'branch_code' => $this->branch_code,
             'company_name' => $this->company_name,
             'company_tin' => $this->company_tin,
@@ -106,7 +129,7 @@ class Index extends Component
         $this->reset([
             'name', 'code', 'category', 'address', 'contact_num', 'manager_name', 'email',
             'selling_area1', 'selling_area2', 'selling_area3', 'selling_area4',
-            'remarks', 'batch', 'branch_code', 'company_name', 'company_tin',
+            'remarks', 'batch', 'batchSelect', 'batchNew', 'branch_code', 'company_name', 'company_tin',
             'dept_code', 'pull_out_address', 'vendor_code'
         ]);
     }
@@ -129,6 +152,9 @@ class Index extends Component
         $this->edit_selling_area4 = $branch->selling_area4;
         $this->edit_remarks = $branch->remarks;
         $this->edit_batch = $branch->batch;
+        $batchOptions = $this->batchOptions;
+        $this->edit_batchSelect = ($branch->batch && isset($batchOptions[$branch->batch])) ? $branch->batch : ($branch->batch ? '__new__' : '');
+        $this->edit_batchNew = ($this->edit_batchSelect === '__new__' && $branch->batch) ? $branch->batch : '';
         $this->edit_branch_code = $branch->branch_code;
         $this->edit_company_name = $branch->company_name;
         $this->edit_company_tin = $branch->company_tin;
@@ -163,6 +189,8 @@ class Index extends Component
             'edit_vendor_code' => 'nullable|string',
         ]);
 
+        $editBatchValue = ($this->edit_batchSelect === '__new__') ? trim($this->edit_batchNew ?? '') : ($this->edit_batchSelect ?: null);
+
         $branch = Branch::findOrFail($this->selectedItemId);
         $branch->update([
             'name' => $this->edit_name,
@@ -177,7 +205,7 @@ class Index extends Component
             'selling_area3' => $this->edit_selling_area3,
             'selling_area4' => $this->edit_selling_area4,
             'remarks' => $this->edit_remarks,
-            'batch' => $this->edit_batch,
+            'batch' => $editBatchValue ?: null,
             'branch_code' => $this->edit_branch_code,
             'company_name' => $this->edit_company_name,
             'company_tin' => $this->edit_company_tin,
@@ -324,13 +352,16 @@ class Index extends Component
         }
 
         $items = Branch::query()
-            ->where(function ($query) {
-                $query->where('name', 'like', '%'.$this->search.'%')
-                    ->orWhere('address', 'like', '%'.$this->search.'%')
-                    ->orWhere('contact_num', 'like', '%'.$this->search.'%')
-                    ->orWhere('email', 'like', '%'.$this->search.'%')
-                    ->orWhere('manager_name', 'like', '%'.$this->search.'%');
+            ->when($this->search, function ($query) {
+                $query->where(function ($q) {
+                    $q->where('name', 'like', '%'.$this->search.'%')
+                        ->orWhere('address', 'like', '%'.$this->search.'%')
+                        ->orWhere('contact_num', 'like', '%'.$this->search.'%')
+                        ->orWhere('email', 'like', '%'.$this->search.'%')
+                        ->orWhere('manager_name', 'like', '%'.$this->search.'%');
+                });
             })
+            ->when($this->batchFilter, fn ($q) => $q->where('batch', $this->batchFilter))
             ->latest()
             ->paginate($this->perPage);
 

@@ -467,14 +467,16 @@ jobs:
           PROJECT_DIR="${PROJECT_DIR:-/var/www/inventory_jovanni}"
           echo "Syncing checkout from $GITHUB_WORKSPACE to $PROJECT_DIR..."
           mkdir -p "$PROJECT_DIR"
-          rsync -a --delete \
+          # --no-owner --no-group: runner (jovanni) cannot chgrp files owned by www-data
+          # --exclude: avoid touching dirs owned by www-data (container recreates these)
+          # No --delete: prevents runner from deleting www-data-owned files
+          rsync -a --no-owner --no-group \
             --exclude='node_modules' \
             --exclude='vendor' \
-            --exclude='storage/logs/*' \
-            --exclude='storage/framework/cache/*' \
-            --exclude='storage/framework/sessions/*' \
-            --exclude='storage/framework/views/*' \
             --exclude='.env' \
+            --exclude='bootstrap/cache' \
+            --exclude='storage' \
+            --exclude='public/build' \
             "$GITHUB_WORKSPACE/" "$PROJECT_DIR/"
           echo "Code sync complete. Deployed commit: $(cd "$PROJECT_DIR" && git rev-parse HEAD 2>/dev/null || echo 'N/A')"
 

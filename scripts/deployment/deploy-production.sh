@@ -328,6 +328,7 @@ while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
         docker compose -f "$COMPOSE_FILE" exec -T app chmod -R 775 /var/www/storage /var/www/bootstrap/cache 2>/dev/null || true
         
         if docker compose -f "$COMPOSE_FILE" exec -T app php artisan config:cache 2>&1; then
+            docker compose -f "$COMPOSE_FILE" exec -T app php artisan livewire:publish --assets --force 2>/dev/null || true
             docker compose -f "$COMPOSE_FILE" exec -T app php artisan route:cache 2>/dev/null || true
             docker compose -f "$COMPOSE_FILE" exec -T app php artisan view:cache 2>/dev/null || true
             docker compose -f "$COMPOSE_FILE" exec -T app php artisan storage:link 2>/dev/null || true

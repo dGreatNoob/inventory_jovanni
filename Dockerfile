@@ -1,9 +1,12 @@
 # Laravel + Livewire Dockerfile
 FROM php:8.3-fpm
 
-# Install system dependencies
+# Install system dependencies (libwebp-dev required for WebP image uploads)
 RUN apt-get update && apt-get install -y \
     libpng-dev \
+    libwebp-dev \
+    libjpeg62-turbo-dev \
+    libfreetype6-dev \
     libonig-dev \
     libxml2-dev \
     zip \
@@ -17,6 +20,7 @@ RUN apt-get update && apt-get install -y \
     nodejs \
     npm \
     netcat-openbsd \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
     && docker-php-ext-install pdo pdo_mysql pdo_sqlite mbstring exif pcntl bcmath gd zip \
     && pecl install redis \
     && docker-php-ext-enable redis \

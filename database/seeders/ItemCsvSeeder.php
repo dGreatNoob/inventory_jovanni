@@ -15,17 +15,51 @@ use Database\Seeders\SupplierCsvSeeder;
 class ItemCsvSeeder extends Seeder
 {
     /**
+     * Product type (col 8) -> category name mapping.
+     * Unmapped types fall back to Accessories.
+     */
+    private static array $productTypeToCategory = [
+        'Cross Bag' => 'Crossbody Bags',
+        'Shoulder Bag' => 'Handbags',
+        'Shoulder Bag.' => 'Handbags',
+        'Back Pack' => 'Backpacks',
+        'Hand Bag' => 'Handbags',
+        'Sling Bag' => 'Crossbody Bags',
+        'Hobo Bag' => 'Handbags',
+        'Ladies Bag' => 'Handbags',
+        'Satchel Bag' => 'Handbags',
+        'Doctors Bag' => 'Handbags',
+        'Laptop' => 'Laptop Bags',
+        'LappyTop' => 'Laptop Bags',
+        'Tote Bag' => 'Tote Bags',
+        'Clutch' => 'Clutches',
+        'Travel Bag' => 'Travel Bags',
+    ];
+
+    /**
+     * Known color names - col 7 values matching these become ProductColor.
+     * Others are appended to remarks.
+     */
+    private static array $knownColors = [
+        'red', 'blue', 'green', 'yellow', 'black', 'white', 'brown', 'beige', 'tan',
+        'grey', 'gray', 'pink', 'purple', 'orange', 'maroon', 'navy', 'gold', 'silver',
+        'bronze', 'olive', 'cream', 'khaki', 'apricot', 'burgundy', 'charcoal', 'coral',
+        'fuchsia', 'mustard', 'peach', 'plum', 'sage', 'teal', 'turquoise', 'ivory',
+        'lavender', 'lime', 'mint', 'off white', 'old rose', 'monza', 'ruby', 'rust',
+        'blue/red', 'black/white',
+    ];
+
+    /**
      * Run the database seeds.
      */
     public function run(): void
     {
-        // Check if supplier mapping exists (suppliers should be imported first)
+        // Ensure supplier mapping exists (run SupplierCsvSeeder if needed)
         if (empty(SupplierCsvSeeder::$supplierIdMapping)) {
-            $this->command->warn("Warning: Supplier ID mapping is empty. Make sure to run SupplierCsvSeeder first!");
-            $this->command->warn("Run: php artisan db:seed --class=SupplierCsvSeeder");
-        } else {
-            $this->command->info("Found " . count(SupplierCsvSeeder::$supplierIdMapping) . " supplier ID mappings");
+            $this->command->info("Running SupplierCsvSeeder first...");
+            $this->call(SupplierCsvSeeder::class);
         }
+        $this->command->info("Found " . count(SupplierCsvSeeder::$supplierIdMapping) . " supplier ID mappings");
 
         $csvPath = base_path('backups_csv/item.csv');
 
@@ -108,8 +142,8 @@ class ItemCsvSeeder extends Seeder
                 $updatedBy = $this->parseInt(trim($row[4] ?? ''));
                 $supplierId = $this->parseInt(trim($row[5] ?? ''));
                 $productNumberRaw = trim($row[6] ?? '');
-                $colorName = trim($row[7] ?? '');
-                $name = trim($row[8] ?? '');
+                $colorOrSpecs = trim($row[7] ?? '');
+                $productType = trim($row[8] ?? '');
                 $sku = trim($row[9] ?? '');
                 $barcode = trim($row[10] ?? '');
                 $uom = trim($row[11] ?? 'PC');
@@ -123,21 +157,15 @@ class ItemCsvSeeder extends Seeder
                 $pictName = trim($row[19] ?? '');
 
                 // Validate required fields
-                if (empty($name)) {
-                    $skipped++;
-                    $this->command->warn("Line {$lineNumber}: Missing product name");
-                    continue;
-                }
-
                 if (empty($supplierId)) {
                     $skipped++;
                     $this->command->warn("Line {$lineNumber}: Missing supplier_id");
                     continue;
                 }
 
-                if (empty($categoryId)) {
+                if (empty($productNumberRaw) && empty($productType)) {
                     $skipped++;
-                    $this->command->warn("Line {$lineNumber}: Missing category_id");
+                    $this->command->warn("Line {$lineNumber}: Missing product_number and product type");
                     continue;
                 }
 
@@ -163,45 +191,40 @@ class ItemCsvSeeder extends Seeder
                 // Use the mapped/new supplier ID
                 $supplierId = $supplier->id;
 
-                // Check if category exists
-                $category = Category::find($categoryId);
-                if (!$category) {
-                    $skipped++;
-                    $this->command->warn("Line {$lineNumber}: Category ID {$categoryId} not found");
-                    continue;
-                }
+                // Resolve category from product type (col 8)
+                $category = $this->resolveCategoryFromProductType($productType);
 
-                // Handle product_number - extract from format like "LD2501-81"
-                // Note: product_number has a 6-character limit and unique constraint
-                $productNumber = $this->extractProductNumber($productNumberRaw);
-                
-                // If product_number exceeds 6 characters, truncate it
-                if ($productNumber && strlen($productNumber) > 6) {
-                    $productNumber = substr($productNumber, 0, 6);
-                }
-                
-                // Check if product_number already exists (unique constraint)
-                // Since product_number must be unique, if it already exists, set to null
-                if ($productNumber && Product::where('product_number', $productNumber)->exists()) {
-                    // Product number already exists, set to null to avoid unique constraint violation
-                    $productNumber = null;
-                }
+                // product_number: keep full value (max 20 chars)
+                $productNumber = !empty($productNumberRaw)
+                    ? substr(trim($productNumberRaw), 0, 20)
+                    : null;
 
-                // Handle ProductColor - find or create by name
+                // Col 7: if known color -> ProductColor; else append to remarks
                 $productColorId = null;
-                if (!empty($colorName)) {
-                    $color = ProductColor::firstOrCreate(
-                        ['name' => $colorName],
-                        [
-                            'code' => $this->generateColorCode($colorName),
-                            'name' => $colorName,
-                        ]
-                    );
-                    $productColorId = $color->id;
+                $remarksFromColor = '';
+                if (!empty($colorOrSpecs)) {
+                    if ($this->isKnownColor($colorOrSpecs)) {
+                        $color = ProductColor::firstOrCreate(
+                            ['name' => $colorOrSpecs],
+                            [
+                                'code' => $this->generateColorCode($colorOrSpecs),
+                                'name' => $colorOrSpecs,
+                            ]
+                        );
+                        $productColorId = $color->id;
+                    } else {
+                        $remarksFromColor = $colorOrSpecs;
+                    }
                 }
 
-                // Handle SKU - if empty, generate one or make nullable
-                $finalSku = !empty($sku) ? $sku : null;
+                // Build product name: product_number + color + type
+                $productName = $this->buildProductName($productNumber, $productColorId ? $colorOrSpecs : null, $productType);
+
+                // Append non-color specs to remarks
+                $finalRemarks = trim(implode(' ', array_filter([$remarks, $remarksFromColor])));
+
+                // SKU: use col 9 when present; else generate unique CSV-{oldId}
+                $finalSku = !empty($sku) ? $sku : ($oldId ? 'CSV-' . $oldId : null);
 
                 // Handle barcode - if empty, make nullable
                 $finalBarcode = !empty($barcode) ? $barcode : null;
@@ -221,9 +244,9 @@ class ItemCsvSeeder extends Seeder
                     'product_type' => 'regular',
                     'sku' => $finalSku,
                     'barcode' => $finalBarcode,
-                    'name' => $name,
-                    'category_id' => $categoryId,
-                    'remarks' => !empty($remarks) ? $remarks : null,
+                    'name' => $productName,
+                    'category_id' => $category->id,
+                    'remarks' => !empty($finalRemarks) ? $finalRemarks : null,
                     'uom' => $finalUom,
                     'supplier_id' => $supplierId,
                     'supplier_code' => !empty($supplierCode) ? $supplierCode : null,
@@ -262,11 +285,11 @@ class ItemCsvSeeder extends Seeder
                 if ($existingProduct) {
                     // Update existing product
                     $existingProduct->update($productData);
-                    $this->command->info("Line {$lineNumber}: Updated product - {$name} (ID: {$existingProduct->id})");
+                    $this->command->info("Line {$lineNumber}: Updated product - {$productName} (ID: {$existingProduct->id})");
                 } else {
                     // Create new product
                     $product = Product::create($productData);
-                    $this->command->info("Line {$lineNumber}: Created product - {$name} (ID: {$product->id})");
+                    $this->command->info("Line {$lineNumber}: Created product - {$productName} (ID: {$product->id})");
                 }
 
                 $processed++;
@@ -296,22 +319,43 @@ class ItemCsvSeeder extends Seeder
     }
 
     /**
-     * Extract product number from format like "LD2501-81" or "TY2506-932"
-     * Returns the part before the dash, or the whole string if no dash
+     * Resolve category from product type (col 8). Fallback to Accessories.
      */
-    private function extractProductNumber(string $raw): ?string
+    private function resolveCategoryFromProductType(string $productType): Category
     {
-        if (empty($raw)) {
-            return null;
-        }
+        $categoryName = self::$productTypeToCategory[$productType] ?? 'Accessories';
+        $category = Category::where('name', $categoryName)->whereNull('parent_id')->first();
+        return $category ?? Category::where('name', 'Accessories')->whereNull('parent_id')->firstOrFail();
+    }
 
-        // If contains dash, take the part before it
-        if (strpos($raw, '-') !== false) {
-            $parts = explode('-', $raw);
-            return strtoupper(trim($parts[0]));
+    /**
+     * Check if col 7 value is a known color (vs description like "Leather brown 5x4inch size").
+     */
+    private function isKnownColor(string $value): bool
+    {
+        $normalized = strtolower(trim($value));
+        if (empty($normalized) || strlen($normalized) > 30) {
+            return false;
         }
+        // Descriptor patterns: skip
+        if (preg_match('/\d+\s*(x|inch|in\.?)\s*\d+|inch|size|leather|dimension/i', $value)) {
+            return false;
+        }
+        return in_array($normalized, self::$knownColors)
+            || in_array(str_replace(' ', '', $normalized), array_map(fn ($c) => str_replace(' ', '', $c), self::$knownColors));
+    }
 
-        return strtoupper(trim($raw));
+    /**
+     * Build product name from product_number + color + product type.
+     */
+    private function buildProductName(?string $productNumber, ?string $colorName, string $productType): string
+    {
+        $parts = array_filter([
+            $productNumber,
+            $colorName,
+            $productType,
+        ]);
+        return implode(' ', $parts) ?: 'Imported Product';
     }
 
     /**

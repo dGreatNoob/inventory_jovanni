@@ -268,6 +268,11 @@ class Index extends Component
         $this->resetPage();
     }
 
+    public function updatedPerPage()
+    {
+        $this->resetPage();
+    }
+
     public function updatedCategoryFilter()
     {
         $this->resetPage();

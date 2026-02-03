@@ -210,29 +210,31 @@
         <div class="mb-6">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                 <div>
-                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Warehouse Batch Allocations</h2>
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Manage and dispatch batch allocations to
-                        branches</p>
+                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Create Allocation</h2>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Manage and dispatch allocations to branches</p>
                 </div>
 
                 <!-- Only show Create buttons when stepper is NOT open -->
                 @if (!$showStepper)
-                    <div class="flex gap-3">
-                        <button wire:click="createAllocationsForAllBatches"
-                            class="inline-flex items-center px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-                            </svg>
-                            Create for All Batches
-                        </button>
-                        <button wire:click="openStepper"
-                            class="inline-flex items-center px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                            </svg>
-                            Create New Batch
-                        </button>
+                    <div class="flex flex-col gap-3">
+                        <div class="flex gap-3">
+                            <button wire:click="createAllocationsForAllBatches"
+                                class="inline-flex items-center px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                                </svg>
+                                Create for All Batches
+                            </button>
+                            <button wire:click="openStepper"
+                                class="inline-flex items-center px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                </svg>
+                                New Allocation
+                            </button>
+                        </div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Use <strong>Create for All Batches</strong> to pre-create allocations for all branch batches; then edit each to add products. Use <strong>New Allocation</strong> for a single allocation with full setup.</p>
                     </div>
                 @endif
             </div>
@@ -246,7 +248,7 @@
                 <!-- Stepper Header -->
                 <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                     <div class="flex justify-between items-center">
-                        <h3 class="text-lg font-medium text-gray-900 dark:text-white">Create New Batch Allocation</h3>
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-white">New Allocation</h3>
                         <button wire:click="closeStepper"
                             class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -262,63 +264,75 @@
                     <nav aria-label="Progress">
                         <ol class="flex items-center w-full space-x-4">
                             <li
-                                class="flex w-full items-center after:content-[''] after:w-full after:h-1 {{ $currentStep > 1 ? 'after:border-gray-300' : 'after:border-gray-200 dark:after:border-gray-600' }} after:border-4 after:inline-block after:ms-4 after:rounded-full">
-                                <span
-                                    class="flex items-center justify-center w-10 h-10 {{ $currentStep > 1 ? 'bg-gray-100' : ($currentStep == 1 ? 'bg-gray-100' : 'bg-gray-100 dark:bg-gray-700') }} rounded-full lg:h-12 lg:w-12 shrink-0">
-                                    @if ($currentStep > 1)
-                                        <svg class="w-5 h-5 text-gray-600" aria-hidden="true"
-                                            xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                            fill="none" viewBox="0 0 24 24">
-                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                                                stroke-width="2" d="M5 11.917 9.724 16.5 19 7.5" />
-                                        </svg>
-                                    @else
-                                        <svg class="w-5 h-5 {{ $currentStep == 1 ? 'text-gray-600' : 'text-gray-400' }}"
+                                class="flex flex-col w-full items-center flex-1">
+                                <div class="flex w-full items-center after:content-[''] after:w-full after:h-1 {{ $currentStep > 1 ? 'after:border-gray-300' : 'after:border-gray-200 dark:after:border-gray-600' }} after:border-4 after:inline-block after:ms-4 after:rounded-full">
+                                    <span
+                                        class="flex items-center justify-center w-10 h-10 {{ $currentStep > 1 ? 'bg-gray-100' : ($currentStep == 1 ? 'bg-gray-100' : 'bg-gray-100 dark:bg-gray-700') }} rounded-full lg:h-12 lg:w-12 shrink-0">
+                                        @if ($currentStep > 1)
+                                            <svg class="w-5 h-5 text-gray-600" aria-hidden="true"
+                                                xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                                fill="none" viewBox="0 0 24 24">
+                                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                                    stroke-width="2" d="M5 11.917 9.724 16.5 19 7.5" />
+                                            </svg>
+                                        @else
+                                            <svg class="w-5 h-5 {{ $currentStep == 1 ? 'text-gray-600' : 'text-gray-400' }}"
+                                                aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24"
+                                                height="24" fill="none" viewBox="0 0 24 24">
+                                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                                    stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                            </svg>
+                                        @endif
+                                    </span>
+                                </div>
+                                <span class="mt-2 text-xs font-medium {{ $currentStep >= 1 ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 dark:text-gray-500' }}">Batch</span>
+                            </li>
+                            <li
+                                class="flex flex-col w-full items-center flex-1">
+                                <div class="flex w-full items-center after:content-[''] after:w-full after:h-1 {{ $currentStep > 2 ? 'after:border-gray-300' : 'after:border-gray-200 dark:after:border-gray-600' }} after:border-4 after:inline-block after:ms-4 after:rounded-full">
+                                    <span
+                                        class="flex items-center justify-center w-10 h-10 {{ $currentStep > 2 ? 'bg-gray-100' : ($currentStep == 2 ? 'bg-gray-100' : 'bg-gray-100 dark:bg-gray-700') }} rounded-full lg:h-12 lg:w-12 shrink-0">
+                                        <svg class="w-5 h-5 {{ $currentStep > 2 ? 'text-gray-600' : ($currentStep == 2 ? 'text-gray-600' : 'text-gray-400') }}"
                                             aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24"
                                             height="24" fill="none" viewBox="0 0 24 24">
                                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                                                stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                                stroke-width="2"
+                                                d="M15 9h3m-3 3h3m-3 3h3m-6 1c-.306-.613-.933-1-1.618-1H7.618c-.685 0-1.312.387-1.618 1M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Zm7 5a2 2 0 1 1-4 0 2 2 0 0 1 4 0Z" />
                                         </svg>
-                                    @endif
-                                </span>
+                                    </span>
+                                </div>
+                                <span class="mt-2 text-xs font-medium {{ $currentStep >= 2 ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 dark:text-gray-500' }}">Branches</span>
                             </li>
                             <li
-                                class="flex w-full items-center after:content-[''] after:w-full after:h-1 {{ $currentStep > 2 ? 'after:border-gray-300' : 'after:border-gray-200 dark:after:border-gray-600' }} after:border-4 after:inline-block after:ms-4 after:rounded-full">
-                                <span
-                                    class="flex items-center justify-center w-10 h-10 {{ $currentStep > 2 ? 'bg-gray-100' : ($currentStep == 2 ? 'bg-gray-100' : 'bg-gray-100 dark:bg-gray-700') }} rounded-full lg:h-12 lg:w-12 shrink-0">
-                                    <svg class="w-5 h-5 {{ $currentStep > 2 ? 'text-gray-600' : ($currentStep == 2 ? 'text-gray-600' : 'text-gray-400') }}"
-                                        aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24"
-                                        height="24" fill="none" viewBox="0 0 24 24">
-                                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                                            stroke-width="2"
-                                            d="M15 9h3m-3 3h3m-3 3h3m-6 1c-.306-.613-.933-1-1.618-1H7.618c-.685 0-1.312.387-1.618 1M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Zm7 5a2 2 0 1 1-4 0 2 2 0 0 1 4 0Z" />
-                                    </svg>
-                                </span>
+                                class="flex flex-col w-full items-center flex-1">
+                                <div class="flex w-full items-center after:content-[''] after:w-full after:h-1 {{ $currentStep > 3 ? 'after:border-gray-300' : 'after:border-gray-200 dark:after:border-gray-600' }} after:border-4 after:inline-block after:ms-4 after:rounded-full">
+                                    <span
+                                        class="flex items-center justify-center w-10 h-10 {{ $currentStep > 3 ? 'bg-gray-100' : ($currentStep == 3 ? 'bg-gray-100' : 'bg-gray-100 dark:bg-gray-700') }} rounded-full lg:h-12 lg:w-12 shrink-0">
+                                        <svg class="w-5 h-5 {{ $currentStep > 3 ? 'text-gray-600' : ($currentStep == 3 ? 'text-gray-600' : 'text-gray-400') }}"
+                                            aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24"
+                                            height="24" fill="none" viewBox="0 0 24 24">
+                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                                stroke-width="2"
+                                                d="M20 7h-3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h3m-5 4H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2Z" />
+                                        </svg>
+                                    </span>
+                                </div>
+                                <span class="mt-2 text-xs font-medium {{ $currentStep >= 3 ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 dark:text-gray-500' }}">Products</span>
                             </li>
-                            <li
-                                class="flex w-full items-center after:content-[''] after:w-full after:h-1 {{ $currentStep > 3 ? 'after:border-gray-300' : 'after:border-gray-200 dark:after:border-gray-600' }} after:border-4 after:inline-block after:ms-4 after:rounded-full">
-                                <span
-                                    class="flex items-center justify-center w-10 h-10 {{ $currentStep > 3 ? 'bg-gray-100' : ($currentStep == 3 ? 'bg-gray-100' : 'bg-gray-100 dark:bg-gray-700') }} rounded-full lg:h-12 lg:w-12 shrink-0">
-                                    <svg class="w-5 h-5 {{ $currentStep > 3 ? 'text-gray-600' : ($currentStep == 3 ? 'text-gray-600' : 'text-gray-400') }}"
-                                        aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24"
-                                        height="24" fill="none" viewBox="0 0 24 24">
-                                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                                            stroke-width="2"
-                                            d="M20 7h-3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h3m-5 4H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2Z" />
-                                    </svg>
-                                </span>
-                            </li>
-                            <li class="flex items-center w-full">
-                                <span
-                                    class="flex items-center justify-center w-10 h-10 {{ $currentStep == 4 ? 'bg-gray-100' : 'bg-gray-100 dark:bg-gray-700' }} rounded-full lg:h-12 lg:w-12 shrink-0">
-                                    <svg class="w-5 h-5 {{ $currentStep == 4 ? 'text-gray-600' : 'text-gray-400' }}"
-                                        aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24"
-                                        height="24" fill="none" viewBox="0 0 24 24">
-                                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                                            stroke-width="2"
-                                            d="M8.5 8.5v.01M8.5 12v.01M8.5 15.5v.01M12 8.5v.01M12 12v.01M12 15.5v.01M15.5 8.5v.01M15.5 12v.01M15.5 15.5v.01" />
-                                    </svg>
-                                </span>
+                            <li class="flex flex-col w-full items-center flex-1">
+                                <div class="flex w-full items-center">
+                                    <span
+                                        class="flex items-center justify-center w-10 h-10 {{ $currentStep == 4 ? 'bg-gray-100' : 'bg-gray-100 dark:bg-gray-700' }} rounded-full lg:h-12 lg:w-12 shrink-0">
+                                        <svg class="w-5 h-5 {{ $currentStep == 4 ? 'text-gray-600' : 'text-gray-400' }}"
+                                            aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24"
+                                            height="24" fill="none" viewBox="0 0 24 24">
+                                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                                stroke-width="2"
+                                                d="M8.5 8.5v.01M8.5 12v.01M8.5 15.5v.01M12 8.5v.01M12 12v.01M12 15.5v.01M15.5 8.5v.01M15.5 12v.01M15.5 15.5v.01" />
+                                        </svg>
+                                    </span>
+                                </div>
+                                <span class="mt-2 text-xs font-medium {{ $currentStep >= 4 ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 dark:text-gray-500' }}">Review</span>
                             </li>
                         </ol>
                     </nav>
@@ -326,7 +340,6 @@
 
                 <!-- Step Content -->
                 <div class="p-6">
-                    <!-- STEP 1: CREATE BATCH -->
                     <!-- STEP 1: CREATE BATCH -->
                     @if ($currentStep === 1)
                         <div>
@@ -433,7 +446,7 @@
                                         <!-- When editing, show Update and Continue buttons separately -->
                                         <button type="submit"
                                             class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                                            💾 Update Details
+                                            Update Details
                                         </button>
                                         <button type="button" wire:click="nextStep"
                                             class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
@@ -451,11 +464,11 @@
                         </div>
                     @endif
 
-                    <!-- STEP 2: DISPLAY BRANCHES -->
+                    <!-- STEP 2: REVIEW BRANCHES -->
                     @if ($currentStep === 2)
                         <div>
-                            <h4 class="text-md font-medium mb-4">Step 2: Branches from Batches:
-                                {{ implode(', ', $selectedBatchNumbers) }}</h4>
+                            <h4 class="text-md font-medium mb-4">Step 2: Review Branches
+                                <span class="text-gray-500 dark:text-gray-400 font-normal">(Batches: {{ implode(', ', $selectedBatchNumbers) }})</span></h4>
                             <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
                                 All branches from the selected batches have been automatically added to this allocation.
                             </p>
@@ -770,6 +783,14 @@
 
                             <!-- Allocation Matrix -->
                             <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6">
+                                @if (!$matrixSavedInSession && !empty($selectedProductIdsForAllocation))
+                                    <div class="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg flex items-center gap-3">
+                                        <svg class="w-5 h-5 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                        </svg>
+                                        <p class="text-sm text-amber-800 dark:text-amber-200">You have unsaved allocation quantities. Save before going to Packing / Scan.</p>
+                                    </div>
+                                @endif
                                 <h5 class="font-medium mb-3">Product Allocation Matrix</h5>
                                 <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
                                     Enter quantities for each product and branch combination. Leave blank or 0 for no
@@ -1022,7 +1043,7 @@
                                     Branches
                                 </h4>
                                 <p class="text-sm text-gray-700 dark:text-gray-300 mb-4">
-                                    Use the Packing / Scan page (link above) to verify products for each branch.
+                                    Use <a href="{{ route('allocation.scan') }}" class="font-semibold text-indigo-600 dark:text-indigo-400 hover:underline" wire:navigate>Packing / Scan</a> to verify products for each branch and box.
                                 </p>
                                 <div
                                     class="overflow-x-auto max-h-96 border border-gray-200 dark:border-gray-700 rounded-lg">
@@ -1060,159 +1081,10 @@
                                 </div>
                             </div>
 
-                            {{-- Box/DR selection moved to Packing / Scan page --}}
-                            @if (false && $activeBranchId)
-                                <div class="mb-6 p-4 bg-white dark:bg-gray-900 border-2 border-green-500 dark:border-green-700 rounded-lg hidden">
-                                    <h4 class="font-bold text-lg text-gray-900 dark:text-gray-100 mb-3">
-                                        Box & Delivery Receipt Management
-                                    </h4>
-                                    <p class="text-sm text-gray-700 dark:text-gray-300 mb-4">
-                                        Create or select boxes and manage delivery receipts for scanning products.
-                                    </p>
-
-                                    <!-- Create New Box and Generate DR Buttons -->
-                                    <div class="mb-4 flex justify-between items-center">
-                                        <button wire:click="createNewBox"
-                                            class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
-                                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                                            </svg>
-                                            Create New Box
-                                        </button>
-
-                                        <button wire:click="generateDRForBranch"
-                                            class="inline-flex items-center px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
-                                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                            </svg>
-                                            Generate DR
-                                        </button>
-                                    </div>
-
-                                    <!-- Available Boxes Table -->
-                                    @if (!empty($availableBoxes))
-                                        <div class="overflow-x-auto max-h-64 border border-gray-200 dark:border-gray-700 rounded-lg">
-                                            <table class="min-w-full bg-white dark:bg-gray-800">
-                                                <thead class="bg-gray-50 dark:bg-gray-700 sticky top-0">
-                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Box Number</th>
-                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Items</th>
-                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Status</th>
-                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">DR Status</th>
-                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Dispatch Status</th>
-                                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Action</th>
-                                                </thead>
-                                                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                                                    @foreach ($availableBoxes as $box)
-                                                        @php
-                                                            $isSelected = $selectedBoxId === $box->id;
-                                                            $dr = \App\Models\DeliveryReceipt::where('box_id', $box->id)->first();
-                                                        @endphp
-                                                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors {{ $isSelected ? 'bg-green-50 dark:bg-green-900/20' : '' }}">
-                                                            <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                                                                {{ $box->box_number }}
-                                                            </td>
-                                                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                                                {{ $box->current_count }}
-                                                            </td>
-                                                            <td class="px-4 py-3 whitespace-nowrap text-sm">
-                                                                @if ($box->status === 'full')
-                                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300">Full</span>
-                                                                @elseif ($box->status === 'open')
-                                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300">Open</span>
-                                                                @else
-                                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-200">Closed</span>
-                                                                @endif
-                                                            </td>
-                                                            <td class="px-4 py-3 whitespace-nowrap text-sm">
-                                                                @if ($dr)
-                                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
-                                                                        {{ $dr->dr_number }} ({{ $dr->type }})
-                                                                    </span>
-                                                                @else
-                                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-200">No DR</span>
-                                                                @endif
-                                                            </td>
-                                                            <td class="px-4 py-3 whitespace-nowrap text-sm">
-                                                                @if ($box->dispatched_at)
-                                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300">
-                                                                        Dispatched {{ $box->dispatched_at->format('M d, Y H:i') }}
-                                                                    </span>
-                                                                @else
-                                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-200">Pending</span>
-                                                                @endif
-                                                            </td>
-                                                            <td class="px-4 py-3 whitespace-nowrap text-sm">
-                                                                <div class="flex items-center space-x-2">
-                                                                    @if (!$isSelected && $box->status !== 'closed')
-                                                                        <button type="button" wire:click="selectBox({{ $box->id }})"
-                                                                            class="px-3 py-1 text-xs font-medium text-white bg-blue-600 border border-transparent rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                                                            Select
-                                                                        </button>
-                                                                    @elseif ($isSelected)
-                                                                        <span class="px-3 py-1 text-xs font-medium text-green-600 bg-green-100 rounded dark:bg-green-900/20 dark:text-green-300">
-                                                                            Active
-                                                                        </span>
-                                                                    @else
-                                                                        <span class="px-3 py-1 text-xs font-medium text-gray-400 bg-gray-100 rounded dark:bg-gray-600 dark:text-gray-200">
-                                                                            Closed
-                                                                        </span>
-                                                                    @endif
-                                                                    @if ($box->status !== 'closed')
-                                                                        <button type="button" wire:click="deleteBox({{ $box->id }})"
-                                                                            wire:confirm="Are you sure you want to delete this box? All scanned items will be reset."
-                                                                            class="px-3 py-1 text-xs font-medium text-white bg-red-600 border border-transparent rounded hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                                                                            Delete
-                                                                        </button>
-                                                                    @endif
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                    @endforeach
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    @else
-                                        <div class="text-center py-8 border border-gray-200 dark:border-gray-600 rounded-lg">
-                                            <p class="text-gray-500 dark:text-gray-400 mb-4">No boxes available for this branch.</p>
-                                            <p class="text-sm text-gray-400 dark:text-gray-500">Create a new box to start scanning products.</p>
-                                        </div>
-                                    @endif
-
-                                    <!-- Current DR Info -->
-                                    {{-- @if ($currentDr)
-                                        <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                                            <h5 class="font-medium text-blue-900 dark:text-blue-100 mb-2">Active Delivery Receipt</h5>
-                                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                                                <div>
-                                                    <span class="text-blue-700 dark:text-blue-300">DR Number:</span>
-                                                    <div class="font-medium text-blue-900 dark:text-blue-100">{{ $currentDr->dr_number }}</div>
-                                                </div>
-                                                <div>
-                                                    <span class="text-blue-700 dark:text-blue-300">Type:</span>
-                                                    <div class="font-medium text-blue-900 dark:text-blue-100">{{ ucfirst($currentDr->type) }}</div>
-                                                </div>
-                                                <div>
-                                                    <span class="text-blue-700 dark:text-blue-300">Status:</span>
-                                                    <div class="font-medium text-blue-900 dark:text-blue-100">{{ ucfirst($currentDr->status) }}</div>
-                                                </div>
-                                                <div>
-                                                    <span class="text-blue-700 dark:text-blue-300">Items Scanned:</span>
-                                                    <div class="font-medium text-blue-900 dark:text-blue-100">{{ $currentDr->scanned_items }} / {{ $currentDr->total_items }}</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    @endif --}}
-                                </div>
-                            @endif
-
-                            <!-- Barcode Scanner Modal will be shown when box is selected -->
-
-
-                                <div class="space-y-4"> <!-- COLUMN 2 -->
-                                    <h3 class="text-lg font-medium mb-4">Step 4: Dispatch Batch</h3>
+                                <div class="space-y-4">
+                                    <h3 class="text-lg font-medium mb-4">Step 4: Review & Dispatch</h3>
                                     <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">
-                                        Review and dispatch your batch allocation. Scan items based on container/truck capacity.
-                                        Dispatch is allowed even if all items are not scanned.
+                                        Review your allocation. Use <a href="{{ route('allocation.scan') }}" class="font-semibold text-indigo-600 dark:text-indigo-400 hover:underline" wire:navigate>Packing / Scan</a> to verify products per branch and box.
                                     </p>
 
                                     @if ($currentBatch)
@@ -1411,7 +1283,7 @@
                                             </div>
                                         @endif
 
-                                </div> <!-- END COLUMN 2 -->
+                                </div>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
     <!-- Batch Summary -->
@@ -1468,7 +1340,7 @@
 
 
                                
-                </div> <!-- END OF 2 COLUMNS -->
+                </div>
                  <div
                                     class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-6">
                                     <div class="flex">
@@ -2006,7 +1878,7 @@
     @php
         $steps = [
             1 => 'Step 1: Creating New Branch',
-            2 => 'Step 2: Branches Adding',
+            2 => 'Step 2: Review Branches',
             3 => 'Step 3: Adding Products',
             4 => 'Step 4: Dispatch Scanning',
         ];
@@ -2101,7 +1973,7 @@
                             $batchStep = $batchSteps[$record->id] ?? 1;
                             $stepLabels = [
                                 1 => 'Step 1: Creating New Batch',
-                                2 => 'Step 2: Branches Adding',
+                                2 => 'Step 2: Review Branches',
                                 3 => 'Step 3: Adding Products',
                                 4 => 'Step 4: Dispatch Scanning',
                             ];

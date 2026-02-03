@@ -138,7 +138,7 @@
                             @empty
                                 <tr>
                                     <td colspan="5" class="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
-                                        No products allocated to this branch yet. Add products in <a href="{{ route('allocation.warehouse') }}" class="font-medium text-indigo-600 dark:text-indigo-400 hover:underline" wire:navigate>Warehouse Transfer</a> (Step 2–3) first.
+                                        No products allocated to this branch yet. Add products in <a href="{{ route('allocation.warehouse') }}" class="font-medium text-indigo-600 dark:text-indigo-400 hover:underline" wire:navigate>Create Allocation</a> (Step 2–3) first.
                                     </td>
                                 </tr>
                             @endforelse

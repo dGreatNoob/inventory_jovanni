@@ -16,7 +16,7 @@ use Livewire\Attributes\Layout;
 use Illuminate\Support\Facades\DB;
 
 #[Layout('components.layouts.app')]
-#[Title('Allocation - Warehouse')]
+#[Title('Create Allocation')]
 class Warehouse extends Component
 {
     public $batchAllocations = [];
@@ -87,6 +87,7 @@ class Warehouse extends Component
     public $productAllocations = []; // Array to store product allocations for all branches
     public $branchQuantities = []; // Array of branch_id => quantity for per-branch allocation
     public $matrixQuantities = []; // Matrix: branch_id => product_id => quantity
+    public $matrixSavedInSession = true; // Tracks if matrix has unsaved changes
     public $selectedProductIdsForAllocation = []; // Selected products for allocation matrix
     public $temporarySelectedProducts = []; // Temporary selection for current filter
 
@@ -1609,6 +1610,11 @@ class Warehouse extends Component
         return Product::orderBy('name')->get();
     }
 
+    public function updatedMatrixQuantities()
+    {
+        $this->matrixSavedInSession = false;
+    }
+
     public function loadMatrix()
     {
         if (!$this->currentBatch) {
@@ -1627,6 +1633,7 @@ class Warehouse extends Component
                 }
             }
         }
+        $this->matrixSavedInSession = true;
     }
 
     public function saveMatrixAllocations()
@@ -1699,6 +1706,7 @@ class Warehouse extends Component
         if ($changes > 0) {
             $this->loadMatrix(); // Reload to reflect changes
             $this->loadBatchAllocations();
+            $this->matrixSavedInSession = true;
             session()->flash('success', "Allocations updated successfully!");
         } else {
             session()->flash('info', 'No changes were made to the allocations.');
@@ -2041,6 +2049,7 @@ class Warehouse extends Component
             'branchRemarks',
             'selectedProductIdsForAllocation',
             'matrixQuantities',
+            'matrixSavedInSession',
             'productAllocations',
             'activeBranchId',
             'scannedQuantities',

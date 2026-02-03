@@ -220,7 +220,7 @@
                             :current="request()->routeIs('allocation.warehouse')"
                             wire:navigate
                         >
-                            {{ __('Warehouse Transfer') }}
+                            {{ __('Create Allocation') }}
                         </flux:navlist.item>
 
                         <flux:navlist.item

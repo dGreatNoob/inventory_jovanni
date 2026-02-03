@@ -571,16 +571,20 @@
                                         </div>
                                     </div>
 
-                                    <!-- Product Filter (searchable: name, Product ID, Supplier Code, SKU) -->
+                                    <!-- Product Filter (searchable: product number, name, SKU, Supplier Code) -->
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
-                                            Product Name
+                                            Product Number
                                         </label>
                                         <div class="relative" wire:click.outside="$set('productDropdown', false)">
                                             <div wire:click="$set('productDropdown', true)"
                                                 class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm cursor-pointer flex justify-between items-center min-h-[42px]">
-                                                <span class="{{ $selectedProductFilterName ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400' }}">
-                                                    {{ $selectedProductFilterName ?: 'All Products' }}
+                                                <span class="{{ ($selectedProductFilterProductNumber || $selectedProductFilterName) ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400' }}">
+                                                    @if($selectedProductFilterProductNumber)
+                                                        {{ $selectedProductFilterProductNumber }}
+                                                    @else
+                                                        {{ $selectedProductFilterName ?: 'All Products' }}
+                                                    @endif
                                                 </span>
                                                 <svg class="w-4 h-4 ml-2 flex-shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
@@ -591,7 +595,7 @@
                                                     <div class="p-2 border-b border-gray-200 dark:border-gray-600 sticky top-0 bg-white dark:bg-gray-700">
                                                         <input type="text"
                                                             wire:model.live.debounce.200ms="productSearch"
-                                                            placeholder="Search by name, Product ID, Supplier Code, or SKU..."
+                                                            placeholder="Search by product number, name, SKU, or Supplier Code..."
                                                             onclick="event.stopPropagation()"
                                                             class="block w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-600 dark:text-white dark:placeholder-gray-400" />
                                                     </div>
@@ -601,22 +605,22 @@
                                                                 class="w-full flex items-center px-3 py-2 text-left text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600">
                                                             All Products
                                                         </button>
-                                                        @foreach($this->filteredProductNamesForDropdown as $index => $productName)
+                                                        @foreach($this->filteredProductNumbersForDropdown as $item)
                                                             <button type="button"
-                                                                    wire:click="selectProductFilterByIndex({{ $index }})"
-                                                                    class="w-full flex items-center justify-between px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600 last:border-b-0 {{ $selectedProductFilterName === $productName ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-900 dark:text-blue-100' : 'text-gray-900 dark:text-white' }}">
-                                                                <span>{{ $productName }}</span>
-                                                                @if($selectedProductFilterName === $productName)
+                                                                    wire:click="selectProductFilterByProductNumber({{ json_encode($item['product_number']) }})"
+                                                                    class="w-full flex items-center justify-between px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600 last:border-b-0 {{ $selectedProductFilterProductNumber === $item['product_number'] ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-900 dark:text-blue-100' : 'text-gray-900 dark:text-white' }}">
+                                                                <span>{{ $item['product_number'] }} ({{ $item['variant_count'] }} variant{{ $item['variant_count'] !== 1 ? 's' : '' }})</span>
+                                                                @if($selectedProductFilterProductNumber === $item['product_number'])
                                                                     <svg class="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                                                                     </svg>
                                                                 @endif
                                                             </button>
                                                         @endforeach
-                                                        @if($this->filteredProductNamesForDropdown->isEmpty())
+                                                        @if($this->filteredProductNumbersForDropdown->isEmpty())
                                                             <div class="px-3 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
                                                                 @if($productSearch)
-                                                                    No products match "{{ $productSearch }}"
+                                                                    No product numbers match "{{ $productSearch }}"
                                                                 @else
                                                                     No products in this category
                                                                 @endif
@@ -641,7 +645,7 @@
                                 <div class="flex items-center justify-between mb-3">
                                     <h5 class="font-medium">Select Products for Allocation</h5>
                                     <div class="flex items-center space-x-2">
-                                        @if ($selectedCategoryId || $selectedProductFilterName || $showAllProducts)
+                                        @if ($selectedCategoryId || $selectedProductFilterName || $selectedProductFilterProductNumber || $showAllProducts)
                                             <button type="button" wire:click="selectAllVisible"
                                                 class="px-3 py-1 text-sm font-medium text-gray-600 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
                                                 Select All Visible
@@ -677,18 +681,18 @@
                                     </div>
                                 @endif
 
-                                @if ($selectedCategoryId || $selectedProductFilterName || $showAllProducts)
+                                @if ($selectedCategoryId || $selectedProductFilterName || $selectedProductFilterProductNumber || $showAllProducts)
                                     @if (($showAllProducts ? $availableProducts : $filteredProducts)->count() > 0)
                                         @php
                                             $products = $showAllProducts
                                                 ? $availableProducts
                                                 : $filteredProducts;
-                                            $groupedProducts = $products->groupBy('name');
+                                            $groupedProducts = $products->groupBy(fn ($p) => $p->product_number ?? $p->name);
                                         @endphp
-                                        @foreach ($groupedProducts as $productName => $productVariants)
+                                        @foreach ($groupedProducts as $productNumber => $productVariants)
                                             <!-- Product Group Header (above table) -->
                                             <div class="mb-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-t-lg border border-gray-200 dark:border-gray-600 border-b-0">
-                                                <span class="text-sm font-semibold text-gray-800 dark:text-white">{{ $productName }}</span>
+                                                <span class="text-sm font-semibold text-gray-800 dark:text-white">{{ $productNumber }}</span>
                                                 <span class="text-xs text-gray-500 dark:text-gray-400 ml-2">({{ $productVariants->count() }} variant{{ $productVariants->count() !== 1 ? 's' : '' }})</span>
                                             </div>
                                             <!-- Product Variants Table -->

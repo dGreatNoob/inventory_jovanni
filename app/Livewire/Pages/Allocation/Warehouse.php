@@ -5,6 +5,7 @@ namespace App\Livewire\Pages\Allocation;
 use App\Models\BatchAllocation;
 use App\Models\Branch;
 use App\Models\BranchAllocation;
+use App\Support\ProductSearchHelper;
 use App\Models\BranchAllocationItem;
 use App\Models\Product;
 use App\Models\Box;
@@ -93,6 +94,7 @@ class Warehouse extends Component
     public $availableCategories = [];
     public $selectedCategoryId = null;
     public $selectedProductFilterName = null;
+    public $selectedProductFilterProductNumber = null;
     public $showAllProducts = false;
     public $filteredProducts = [];
     public $categorySearch = '';
@@ -929,7 +931,7 @@ class Warehouse extends Component
     }
 
     /**
-     * Filtered product names for searchable dropdown (search by name, Product ID, supplier code, SKU).
+     * Filtered product names for searchable dropdown (legacy; search by name, product_number, remarks, supplier_code, SKU).
      */
     public function getFilteredProductNamesForDropdownProperty()
     {
@@ -939,15 +941,49 @@ class Warehouse extends Component
         }
         $query = trim($this->productSearch);
         if ($query !== '') {
-            $lower = strtolower($query);
-            $products = $products->filter(function ($product) use ($lower) {
-                return str_contains(strtolower((string) ($product->name ?? '')), $lower)
-                    || str_contains(strtolower((string) ($product->product_number ?? '')), $lower)
-                    || str_contains(strtolower((string) ($product->supplier_code ?? '')), $lower)
-                    || str_contains(strtolower((string) ($product->sku ?? '')), $lower);
+            $products = $products->filter(function ($product) use ($query) {
+                return ProductSearchHelper::matchesAnyField($query, [
+                    $product->name ?? '',
+                    $product->remarks ?? '',
+                    $product->product_number ?? '',
+                    $product->supplier_code ?? '',
+                    $product->sku ?? '',
+                ]);
             });
         }
         return $products->pluck('name')->unique()->values();
+    }
+
+    /**
+     * Filtered product numbers for searchable dropdown (search by product_number, name, remarks, supplier_code, SKU).
+     * Returns unique product_number values with variant count for grouping color variants.
+     */
+    public function getFilteredProductNumbersForDropdownProperty()
+    {
+        $products = $this->availableProducts;
+        if ($this->selectedCategoryId) {
+            $products = $products->where('category_id', $this->selectedCategoryId);
+        }
+        $query = trim($this->productSearch);
+        if ($query !== '') {
+            $products = $products->filter(function ($product) use ($query) {
+                return ProductSearchHelper::matchesAnyField($query, [
+                    $product->name ?? '',
+                    $product->remarks ?? '',
+                    $product->product_number ?? '',
+                    $product->supplier_code ?? '',
+                    $product->sku ?? '',
+                ]);
+            });
+        }
+        return $products->groupBy('product_number')
+            ->map(fn ($group, $productNumber) => [
+                'product_number' => $productNumber ?? '',
+                'variant_count' => $group->count(),
+            ])
+            ->values()
+            ->filter(fn ($item) => !empty(trim((string) $item['product_number'])))
+            ->values();
     }
 
     public function filterProducts()
@@ -958,7 +994,9 @@ class Warehouse extends Component
             $query->where('category_id', $this->selectedCategoryId);
         }
 
-        if ($this->selectedProductFilterName) {
+        if ($this->selectedProductFilterProductNumber) {
+            $query->where('product_number', $this->selectedProductFilterProductNumber);
+        } elseif ($this->selectedProductFilterName) {
             $query->where('name', $this->selectedProductFilterName);
         }
 
@@ -1020,14 +1058,13 @@ class Warehouse extends Component
     }
 
 
-    public function toggleProductGroup($productName)
+    public function toggleProductGroup($productKey)
     {
-        // Get all product IDs for this base product name from filtered products
+        // Get all product IDs for this group (by product_number or name) from filtered products
         $products = $this->showAllProducts ? $this->availableProducts : $this->filteredProducts;
-        
-        // Filter products that have the same product name
-        $productGroupIds = $products->filter(function($product) use ($productName) {
-            return $product->name === $productName;
+
+        $productGroupIds = $products->filter(function ($product) use ($productKey) {
+            return ($product->product_number ?? $product->name) === $productKey;
         })->pluck('id')->toArray();
 
         // Check if all products in this group are already selected
@@ -1070,6 +1107,15 @@ class Warehouse extends Component
     public function selectProductFilter($productName)
     {
         $this->selectedProductFilterName = $productName ?: null;
+        $this->selectedProductFilterProductNumber = null;
+        $this->productDropdown = false;
+        $this->filterProducts();
+    }
+
+    public function selectProductFilterByProductNumber(string $productNumber)
+    {
+        $this->selectedProductFilterProductNumber = $productNumber ?: null;
+        $this->selectedProductFilterName = null;
         $this->productDropdown = false;
         $this->filterProducts();
     }
@@ -1962,6 +2008,7 @@ class Warehouse extends Component
         // Reset filtering - don't show products by default
         $this->selectedCategoryId = null;
         $this->selectedProductFilterName = null;
+        $this->selectedProductFilterProductNumber = null;
         $this->showAllProducts = false; // Changed to false to not show products by default
         $this->filteredProducts = [];
         $this->categorySearch = '';

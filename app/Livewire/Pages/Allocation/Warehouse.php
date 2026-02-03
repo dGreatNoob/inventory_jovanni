@@ -1575,8 +1575,8 @@ class Warehouse extends Component
         if (!empty($this->selectedProductIdsForAllocation)) {
             foreach ($this->currentBatch->branchAllocations as $branchAllocation) {
                 foreach ($this->selectedProductIdsForAllocation as $productId) {
-                    // Find existing allocation for this product and branch
-                    $existingItem = $branchAllocation->items->where('product_id', $productId)->first();
+                    // Find existing base allocation (box_id null) for this product and branch
+                    $existingItem = $branchAllocation->items()->whereNull('box_id')->where('product_id', $productId)->first();
                     $this->matrixQuantities[$branchAllocation->id][$productId] = $existingItem ? $existingItem->quantity : 4;
                 }
             }
@@ -1597,9 +1597,10 @@ class Warehouse extends Component
 
         $changes = 0;
 
-        // First, delete any existing allocation items for products that are no longer selected
+        // First, delete any existing base allocation items (box_id null) for products that are no longer selected
         $branchAllocationIds = $this->currentBatch->branchAllocations->pluck('id')->toArray();
         $deletedItems = BranchAllocationItem::whereIn('branch_allocation_id', $branchAllocationIds)
+            ->whereNull('box_id')
             ->whereNotIn('product_id', $this->selectedProductIdsForAllocation)
             ->delete();
         
@@ -1618,6 +1619,7 @@ class Warehouse extends Component
 
                 $existingItem = BranchAllocationItem::where('branch_allocation_id', $branchAllocationId)
                     ->where('product_id', $productId)
+                    ->whereNull('box_id')
                     ->first();
 
                 if ($quantity > 0) {
@@ -1858,6 +1860,77 @@ class Warehouse extends Component
         $lastBatch = BatchAllocation::orderBy('id', 'desc')->first();
         $nextNumber = $lastBatch ? $lastBatch->id + 1 : 1;
         return 'A' . now()->format('Ymd') . '-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Create draft allocations for all batch numbers (one allocation per batch).
+     * Skips batches that already have a draft allocation.
+     */
+    public function createAllocationsForAllBatches()
+    {
+        $batchNumbers = Branch::whereNotNull('batch')
+            ->where('batch', '!=', '')
+            ->distinct()
+            ->pluck('batch')
+            ->sort()
+            ->values();
+
+        if ($batchNumbers->isEmpty()) {
+            session()->flash('error', 'No batch numbers found in branches.');
+            return;
+        }
+
+        $created = 0;
+        $skipped = 0;
+        $base = 'WT-' . now()->format('Ymd') . '-';
+
+        foreach ($batchNumbers as $batchNum) {
+            $existingDraft = BatchAllocation::where('status', 'draft')
+                ->where('batch_number', $batchNum)
+                ->exists();
+
+            if ($existingDraft) {
+                $skipped++;
+                continue;
+            }
+
+            $suffix = 1;
+            do {
+                $refNo = $base . str_pad($suffix++, 4, '0', STR_PAD_LEFT);
+            } while (BatchAllocation::where('ref_no', $refNo)->exists());
+
+            $branches = Branch::where('batch', $batchNum)->get();
+            if ($branches->isEmpty()) {
+                continue;
+            }
+
+            $batch = BatchAllocation::create([
+                'ref_no' => $refNo,
+                'batch_number' => $batchNum,
+                'remarks' => "Auto-created for batch {$batchNum}",
+                'status' => 'draft',
+                'workflow_step' => 1,
+            ]);
+
+            foreach ($branches as $branch) {
+                BranchAllocation::create([
+                    'batch_allocation_id' => $batch->id,
+                    'branch_id' => $branch->id,
+                    'status' => 'pending',
+                ]);
+            }
+
+            $created++;
+        }
+
+        $this->loadBatchAllocations();
+        $this->initializeBatchSteps();
+
+        if ($created > 0) {
+            session()->flash('message', "Created {$created} allocation(s) for all batches." . ($skipped > 0 ? " Skipped {$skipped} (already exist)." : ''));
+        } else {
+            session()->flash('message', $skipped > 0 ? "All {$skipped} batches already have draft allocations." : 'No allocations created.');
+        }
     }
 
     public function openStepper()

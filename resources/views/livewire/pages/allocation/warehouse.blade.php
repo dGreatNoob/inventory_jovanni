@@ -215,16 +215,25 @@
                         branches</p>
                 </div>
 
-                <!-- Only show Create button when stepper is NOT open -->
+                <!-- Only show Create buttons when stepper is NOT open -->
                 @if (!$showStepper)
-                    <button wire:click="openStepper"
-                        class="inline-flex items-center px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                        </svg>
-                        Create New Batch
-                    </button>
+                    <div class="flex gap-3">
+                        <button wire:click="createAllocationsForAllBatches"
+                            class="inline-flex items-center px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+                            </svg>
+                            Create for All Batches
+                        </button>
+                        <button wire:click="openStepper"
+                            class="inline-flex items-center px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                            Create New Batch
+                        </button>
+                    </div>
                 @endif
             </div>
         </div>
@@ -849,10 +858,13 @@
                                                 </div>
                                             @endif
 
-                                            <button wire:click="saveMatrixAllocations"
-                                                class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                                                Save All Allocations
-                                            </button>
+                                            <div class="flex flex-col items-end gap-1">
+                                                <p class="text-xs text-gray-500 dark:text-gray-400">Save before using Packing / Scan</p>
+                                                <button wire:click="saveMatrixAllocations"
+                                                    class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                                    Save All Allocations
+                                                </button>
+                                            </div>
                                         </div>
                                     @else
                                         <p class="text-gray-500 dark:text-gray-400">No products match the selected
@@ -980,8 +992,16 @@
                     <!-- STEP 4: DISPATCH -->
                     @if ($currentStep === 4)
                         <div>
-                            <!-- Export Allocation Matrix Button -->
-                            <div class="mb-6 flex justify-end space-x-3">
+                            <!-- Export Allocation Matrix and Go to Scanning -->
+                            <div class="mb-6 flex justify-between items-center flex-wrap gap-4">
+                                <a href="{{ route('allocation.scan') }}"
+                                    class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                                    wire:navigate>
+                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
+                                    </svg>
+                                    Packing / Scan
+                                </a>
                                 <button wire:click="exportAllocationToPDF"
                                     class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
                                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -991,15 +1011,14 @@
                                 </button>
                             </div>
 
-                            <!-- Branch Selection for Scanning -->
+                            <!-- Branch Summary (scanning moved to Packing / Scan page) -->
                             <div
                                 class="mb-6 p-4 bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 rounded-lg">
                                 <h4 class="font-bold text-lg text-gray-900 dark:text-gray-100 mb-3">
-                                    Select Branch to Scan
+                                    Branches
                                 </h4>
                                 <p class="text-sm text-gray-700 dark:text-gray-300 mb-4">
-                                    Choose which branch you are currently scanning products for. You must select a
-                                    branch before scanning.
+                                    Use the Packing / Scan page (link above) to verify products for each branch.
                                 </p>
                                 <div
                                     class="overflow-x-auto max-h-96 border border-gray-200 dark:border-gray-700 rounded-lg">
@@ -1015,60 +1034,21 @@
                                                 <th
                                                     class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
                                                     Products</th>
-                                                <th
-                                                    class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
-                                                    Action</th>
                                             </tr>
                                         </thead>
                                         <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                                             @foreach ($currentBatch->branchAllocations as $branchAllocation)
-                                                @php
-                                                    $isActive = $activeBranchId === $branchAllocation->id;
-                                                    $isComplete = $this->isBranchComplete($branchAllocation->id);
-                                                @endphp
-                                                <tr
-                                                    class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors
-                                                        @if ($isActive) bg-blue-50 dark:bg-blue-900/20 @endif">
+                                                @php $isComplete = $this->isBranchComplete($branchAllocation->id); @endphp
+                                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
                                                     <td class="px-4 py-3 whitespace-nowrap text-sm">
                                                         @if ($isComplete)
-                                                            <span
-                                                                class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300">
-                                                                ✅ Complete
-                                                            </span>
-                                                        @elseif($isActive)
-                                                            <span
-                                                                class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
-                                                                🔄 Active
-                                                            </span>
+                                                            <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300">Complete</span>
                                                         @else
-                                                            <span
-                                                                class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-200">
-                                                                ⏳ Pending
-                                                            </span>
+                                                            <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-200">Pending</span>
                                                         @endif
                                                     </td>
-                                                    <td
-                                                        class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                                                        {{ $branchAllocation->branch->name }}
-                                                    </td>
-                                                    <td
-                                                        class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                                        {{ $branchAllocation->items()->whereNull('box_id')->count() }} products
-                                                    </td>
-                                                    <td class="px-4 py-3 whitespace-nowrap text-sm">
-                                                        @if (!$isActive)
-                                                            <button type="button"
-                                                                wire:click="setActiveBranch({{ $branchAllocation->id }})"
-                                                                class="px-3 py-1 text-xs font-medium text-white bg-blue-600 border border-transparent rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                                                Select
-                                                            </button>
-                                                        @else
-                                                            <span
-                                                                class="px-3 py-1 text-xs font-medium text-blue-600 bg-blue-100 rounded dark:bg-blue-900/20 dark:text-blue-300">
-                                                                Current
-                                                            </span>
-                                                        @endif
-                                                    </td>
+                                                    <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{{ $branchAllocation->branch->name }}</td>
+                                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ $branchAllocation->items()->whereNull('box_id')->count() }} products</td>
                                                 </tr>
                                             @endforeach
                                         </tbody>
@@ -1076,9 +1056,9 @@
                                 </div>
                             </div>
 
-                            <!-- Box and DR Selection for Active Branch -->
-                            @if ($activeBranchId)
-                                <div class="mb-6 p-4 bg-white dark:bg-gray-900 border-2 border-green-500 dark:border-green-700 rounded-lg">
+                            {{-- Box/DR selection moved to Packing / Scan page --}}
+                            @if (false && $activeBranchId)
+                                <div class="mb-6 p-4 bg-white dark:bg-gray-900 border-2 border-green-500 dark:border-green-700 rounded-lg hidden">
                                     <h4 class="font-bold text-lg text-gray-900 dark:text-gray-100 mb-3">
                                         Box & Delivery Receipt Management
                                     </h4>
@@ -1422,17 +1402,8 @@
                                                 </div>
                                             @endif
                                         @else
-                                            {{-- Show message when no branch is selected --}}
-                                            <div
-                                                class="bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-300 dark:border-yellow-700 rounded-lg p-8 mb-6 text-center">
-                                                <div class="text-6xl mb-4">⚠️</div>
-                                                <h4
-                                                    class="text-xl font-bold text-yellow-800 dark:text-yellow-200 mb-2">
-                                                    No Branch Selected
-                                                </h4>
-                                                <p class="text-yellow-700 dark:text-yellow-300">
-                                                    Please select a branch above to view and scan products.
-                                                </p>
+                                            <div class="bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-700 rounded-lg p-6 mb-6 text-center">
+                                                <p class="text-blue-800 dark:text-blue-200">Use the <a href="{{ route('allocation.scan') }}" class="font-semibold underline" wire:navigate>Packing / Scan</a> page to verify products for each branch.</p>
                                             </div>
                                         @endif
 

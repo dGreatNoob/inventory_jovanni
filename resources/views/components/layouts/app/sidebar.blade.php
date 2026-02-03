@@ -223,6 +223,15 @@
                             {{ __('Warehouse Transfer') }}
                         </flux:navlist.item>
 
+                        <flux:navlist.item
+                            icon="qr-code"
+                            href="{{ route('allocation.scan') }}"
+                            :current="request()->routeIs('allocation.scan')"
+                            wire:navigate
+                        >
+                            {{ __('Packing / Scan') }}
+                        </flux:navlist.item>
+
                     <!-- <flux:navlist.item
                             icon="chart-bar"
                             href="{{ route('allocation.sales') }}"

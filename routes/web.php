@@ -21,6 +21,7 @@ use App\Livewire\Pages\Notifications\Index as Notifications;
 // Allocation Management
 use App\Livewire\Pages\Allocation\Warehouse;
 use App\Livewire\Pages\Allocation\Sales;
+use App\Livewire\Pages\Allocation\Scanning;
 
 // Product Management
 use App\Livewire\Pages\ProductManagement\Index as ProductManagement;
@@ -210,7 +211,7 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('allocation')->name('allocation.')->group(function () {
         Route::get('/warehouse', Warehouse::class)->name('warehouse');
         Route::get('/sales', Sales::class)->name('sales');
-        
+        Route::get('/scan', Scanning::class)->name('scan');
     });
 
 

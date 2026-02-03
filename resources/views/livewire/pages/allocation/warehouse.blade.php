@@ -350,115 +350,76 @@
                                     Step 1: Create New Batch
                                 @endif
                             </h4>
-                            <form wire:submit="createBatch" class="space-y-4">
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label for="batch_number"
-                                            class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
-                                            Batch Numbers *
-                                        </label>
-                                        <div
-                                            class="border border-gray-300 rounded-md shadow-sm p-2 max-h-48 overflow-y-auto dark:bg-gray-600 dark:border-gray-500">
-                                            @foreach ($availableBatchNumbers as $batchNum)
-                                                <label
-                                                    class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-500 cursor-pointer">
-                                                    <input type="checkbox" wire:model.live="selectedBatchNumbers"
-                                                        value="{{ $batchNum }}"
-                                                        class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                                                    <span
-                                                        class="ml-2 text-sm text-gray-900 dark:text-white">{{ $batchNum }}</span>
-                                                </label>
-                                            @endforeach
+                            <form wire:submit="createBatch" class="space-y-5">
+                                <!-- Primary: Batch selection (full width) -->
+                                <div>
+                                    <label for="batch_number" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                                        Batch Numbers *
+                                    </label>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                                        Select which batches to include. Branches from these batches will be added to the allocation.
+                                    </p>
+                                    @if (count($availableBatchNumbers) > 3)
+                                        <div class="flex gap-2 mb-2">
+                                            <button type="button" wire:click="selectAllBatches"
+                                                class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline font-medium">
+                                                Select All
+                                            </button>
+                                            <span class="text-gray-400 dark:text-gray-500">|</span>
+                                            <button type="button" wire:click="clearBatchSelection"
+                                                class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline font-medium">
+                                                Clear
+                                            </button>
                                         </div>
-                                        @if ($isEditing)
-                                            <p class="mt-1 text-xs text-blue-600 dark:text-blue-400">
-                                                You can modify batch selection when editing
-                                            </p>
-                                        @endif
-                                        @error('selectedBatchNumbers')
-                                            <span class="text-red-500 text-sm">{{ $message }}</span>
-                                        @enderror
+                                    @endif
+                                    <div class="border border-gray-300 rounded-md shadow-sm p-2 max-h-48 overflow-y-auto dark:bg-gray-600 dark:border-gray-500">
+                                        @forelse ($availableBatchNumbers as $batchNum)
+                                            <label class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-500 cursor-pointer rounded">
+                                                <input type="checkbox" wire:model.live="selectedBatchNumbers"
+                                                    value="{{ $batchNum }}"
+                                                    class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                                <span class="ml-2 text-sm text-gray-900 dark:text-white">{{ $batchNum }}</span>
+                                            </label>
+                                        @empty
+                                            <div class="px-3 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                                                No batches found. Ensure branches have batch numbers assigned in <a href="{{ route('branch.profile') }}" class="font-medium text-indigo-600 dark:text-indigo-400 hover:underline" wire:navigate>Branch Management</a>.
+                                            </div>
+                                        @endforelse
                                     </div>
-
-                                    <div>
-                                        <label for="ref_no"
-                                            class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
-                                            Reference Number
-                                        </label>
-                                        <input type="text" id="ref_no" wire:model="ref_no" readonly
-                                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100 dark:bg-gray-500 dark:border-gray-500 dark:text-white">
-                                    </div>
-
-                                    <div>
-                                        <label for="remarks"
-                                            class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
-                                            Remarks (Optional)
-                                        </label>
-                                        <textarea id="remarks" wire:model="remarks" rows="2"
-                                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white"
-                                            placeholder="e.g., 'Dispatched by Mark', 'For VisMin route'"></textarea>
-                                        @error('remarks')
-                                            <span class="text-red-500 text-sm">{{ $message }}</span>
-                                        @enderror
-                                    </div>
-
-                                    <div>
-                                        <label for="status"
-                                            class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
-                                            Status
-                                        </label>
-                                        <select id="status" wire:model="status"
-                                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
-                                            <option value="draft">Draft</option>
-                                        </select>
-                                    </div>
+                                    @error('selectedBatchNumbers')
+                                        <span class="text-red-500 text-sm mt-1 block">{{ $message }}</span>
+                                    @enderror
                                 </div>
 
-                                @if ($isEditing)
-                                    <!-- Show current batch info when editing -->
-                                    <div
-                                        class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                                        <h5 class="font-medium text-blue-900 dark:text-blue-100 mb-2">Editing Batch
-                                            Information</h5>
-                                        <div class="grid grid-cols-2 gap-4 text-sm">
-                                            <div>
-                                                <span class="text-blue-700 dark:text-blue-300">Batch Number:</span>
-                                                <div class="font-medium text-blue-900 dark:text-blue-100">
-                                                    {{ $batch_number }}</div>
-                                            </div>
-                                            <div>
-                                                <span class="text-blue-700 dark:text-blue-300">Branches:</span>
-                                                <div class="font-medium text-blue-900 dark:text-blue-100">
-                                                    {{ $currentBatch->branchAllocations->count() }} branches</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                @endif
+                                <!-- Secondary: Remarks -->
+                                <div>
+                                    <label for="remarks" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                                        Remarks (Optional)
+                                    </label>
+                                    <textarea id="remarks" wire:model="remarks" rows="2"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white"
+                                        placeholder="e.g., Dispatched by Mark, For VisMin route"></textarea>
+                                    @error('remarks')
+                                        <span class="text-red-500 text-sm">{{ $message }}</span>
+                                    @enderror
+                                </div>
 
-                                <div
-                                    class="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
+                                <!-- Metadata: Ref + Status inline -->
+                                <div class="text-sm text-gray-500 dark:text-gray-400 pt-2 border-t border-gray-200 dark:border-gray-600">
+                                    <span>Ref: <span class="font-mono text-gray-700 dark:text-gray-300">{{ $ref_no }}</span></span>
+                                    <span class="mx-2">·</span>
+                                    <span>Status: Draft</span>
+                                </div>
+
+                                <div class="flex justify-end space-x-3 pt-2">
                                     <button type="button" wire:click="closeStepper"
                                         class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
                                         Cancel
                                     </button>
-
-                                    @if ($isEditing)
-                                        <!-- When editing, show Update and Continue buttons separately -->
-                                        <button type="submit"
-                                            class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                                            Update Details
-                                        </button>
-                                        <button type="button" wire:click="nextStep"
-                                            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                            Continue to Branches →
-                                        </button>
-                                    @else
-                                        <!-- When creating, show single button -->
-                                        <button type="submit"
-                                            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                            Create & Continue
-                                        </button>
-                                    @endif
+                                    <button type="submit"
+                                        class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                        {{ $isEditing ? 'Save & Continue' : 'Create & Continue' }}
+                                    </button>
                                 </div>
                             </form>
                         </div>
@@ -467,37 +428,68 @@
                     <!-- STEP 2: REVIEW BRANCHES -->
                     @if ($currentStep === 2)
                         <div>
-                            <h4 class="text-md font-medium mb-4">Step 2: Review Branches
+                            <h4 class="text-md font-medium mb-2">Step 2: Review Branches
                                 <span class="text-gray-500 dark:text-gray-400 font-normal">(Batches: {{ implode(', ', $selectedBatchNumbers) }})</span></h4>
                             <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                                All branches from the selected batches have been automatically added to this allocation.
+                                {{ count($filteredBranchesByBatch) }} {{ Str::plural('branch', count($filteredBranchesByBatch)) }} from the selected batches have been automatically added.
                             </p>
 
-                            <div
-                                class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-64 overflow-y-auto mb-6">
-                                @foreach ($filteredBranchesByBatch as $branch)
-                                    <div
-                                        class="flex items-center p-3 border border-gray-200 dark:border-gray-600 rounded-lg">
-                                        <div class="flex-1">
-                                            <div class="text-sm font-medium text-gray-900 dark:text-white">
-                                                {{ $branch['name'] }}</div>
-                                            @if ($branch['address'])
-                                                <div class="text-sm text-gray-500 dark:text-gray-400">
-                                                    {{ $branch['address'] }}</div>
-                                            @endif
-                                        </div>
-                                        <span
-                                            class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300 rounded-full">
-                                            Auto-added
-                                        </span>
-                                    </div>
-                                @endforeach
-                            </div>
-
                             @if (empty($filteredBranchesByBatch))
-                                <div class="text-center py-8">
-                                    <p class="text-gray-500 dark:text-gray-400">No branches found for batch:
-                                        {{ $batch_number }}</p>
+                                <div class="text-center py-8 border border-gray-200 dark:border-gray-600 rounded-lg mb-6">
+                                    <p class="text-gray-500 dark:text-gray-400">No branches found for batches: {{ implode(', ', $selectedBatchNumbers) }}</p>
+                                    <p class="text-sm text-gray-400 dark:text-gray-500 mt-2">Ensure branches have batch numbers assigned in <a href="{{ route('branch.profile') }}" class="font-medium text-indigo-600 dark:text-indigo-400 hover:underline" wire:navigate>Branch Management</a>.</p>
+                                </div>
+                            @else
+                                <div class="mb-4">
+                                    <input type="text"
+                                        wire:model.live.debounce.200ms="branchSearch"
+                                        placeholder="Search branches by name, code, or address..."
+                                        class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white dark:placeholder-gray-400">
+                                </div>
+
+                                <div class="border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden mb-6 max-h-[32rem] overflow-y-auto">
+                                    @php
+                                        $groupedBranches = collect($this->filteredBranchesForReview)->groupBy('batch');
+                                    @endphp
+                                    @if ($this->filteredBranchesForReview->isEmpty())
+                                        <div class="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                                            No branches match "{{ $branchSearch }}"
+                                        </div>
+                                    @else
+                                        @foreach ($groupedBranches as $batchName => $branches)
+                                            <div class="border-b border-gray-200 dark:border-gray-600 last:border-b-0" x-data="{ expanded: true }">
+                                                <button type="button"
+                                                    @click="expanded = !expanded"
+                                                    class="w-full flex items-center justify-between px-4 py-3 text-left bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600">
+                                                    <span class="text-sm font-medium text-gray-900 dark:text-white">{{ $batchName }}</span>
+                                                    <span class="text-sm text-gray-500 dark:text-gray-400">{{ $branches->count() }} {{ Str::plural('branch', $branches->count()) }}</span>
+                                                    <svg class="w-5 h-5 text-gray-500 transition-transform" :class="{ 'rotate-180': expanded }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                    </svg>
+                                                </button>
+                                                <div x-show="expanded" x-collapse class="overflow-hidden">
+                                                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
+                                                        <thead class="bg-gray-50 dark:bg-gray-700 sticky top-0">
+                                                            <tr>
+                                                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Name</th>
+                                                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Code</th>
+                                                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase hidden sm:table-cell">Address</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700">
+                                                            @foreach ($branches as $branch)
+                                                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                                                    <td class="px-4 py-2 text-sm font-medium text-gray-900 dark:text-white">{{ $branch['name'] }}</td>
+                                                                    <td class="px-4 py-2 text-sm text-gray-600 dark:text-gray-300">{{ $branch['code'] ?? '—' }}</td>
+                                                                    <td class="px-4 py-2 text-sm text-gray-500 dark:text-gray-400 hidden sm:table-cell">{{ $branch['address'] ?: '—' }}</td>
+                                                                </tr>
+                                                            @endforeach
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    @endif
                                 </div>
                             @endif
 
@@ -518,183 +510,89 @@
                     <!-- STEP 3: ADD PRODUCTS (Applied to all branches) -->
                     @if ($currentStep === 3)
                         <div>
-                            <h4 class="text-md font-medium mb-4">Step 3: Add Products to All Branches</h4>
-                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">
-                                Select products to allocate and enter quantities for each product and branch
-                                combination.
-                            </p>
+                            <h4 class="text-md font-medium mb-2">Step 3: Add Products to All Branches</h4>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Filter to find products, select, then enter quantities in the matrix below.</p>
 
                             <!-- Product Filtering Controls -->
-                            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6">
-                                <h5 class="font-medium mb-3">Filter Products</h5>
-                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                                    <!-- Category Filter (searchable) -->
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
-                                            Category
-                                        </label>
-                                        <div class="relative" wire:click.outside="$set('categoryDropdown', false)">
-                                            <div wire:click="$set('categoryDropdown', true)"
-                                                class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm cursor-pointer flex justify-between items-center min-h-[42px]">
-                                                <span class="{{ $selectedCategoryId ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400' }}">
-                                                    @if($selectedCategoryId && $availableCategories)
-                                                        @php $selCat = collect($availableCategories)->firstWhere('id', $selectedCategoryId); @endphp
-                                                        {{ $selCat ? $selCat->name : 'All Categories' }}
-                                                    @else
-                                                        All Categories
-                                                    @endif
-                                                </span>
-                                                <svg class="w-4 h-4 ml-2 flex-shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                                </svg>
+                            <div class="flex flex-wrap items-end gap-3 mb-4" x-data="{ productDropdownOpen: false }">
+                                <!-- Product Number Dropdown (Alpine for instant open, no Livewire round-trip) -->
+                                <div class="w-48 flex-shrink-0">
+                                    <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-0.5">Product Number</label>
+                                    <div class="relative" @click.outside="productDropdownOpen = false">
+                                        <div @click="productDropdownOpen = !productDropdownOpen"
+                                            class="block w-full rounded border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white cursor-pointer flex justify-between items-center">
+                                            <span class="{{ ($selectedProductFilterProductNumber || $selectedProductFilterName) ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400' }}">
+                                                @if($selectedProductFilterProductNumber)
+                                                    {{ $selectedProductFilterProductNumber }}
+                                                @else
+                                                    {{ $selectedProductFilterName ?: 'All Products' }}
+                                                @endif
+                                            </span>
+                                            <svg class="w-4 h-4 ml-2 flex-shrink-0 text-gray-400 transition-transform" :class="{ 'rotate-180': productDropdownOpen }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                            </svg>
+                                        </div>
+                                        <div x-show="productDropdownOpen" x-cloak
+                                            class="absolute z-20 mt-1 w-full min-w-[16rem] bg-white border border-gray-300 rounded-lg shadow-lg dark:bg-gray-700 dark:border-gray-600">
+                                            <div class="p-2 border-b border-gray-200 dark:border-gray-600 sticky top-0 bg-white dark:bg-gray-700">
+                                                <input type="text"
+                                                    wire:model.live.debounce.300ms="productSearch"
+                                                    placeholder="Search by product number, name, SKU..."
+                                                    onclick="event.stopPropagation()"
+                                                    class="block w-full rounded border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-600 dark:text-white" />
                                             </div>
-                                            @if($categoryDropdown)
-                                                <div class="absolute z-20 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg dark:bg-gray-700 dark:border-gray-600">
-                                                    <div class="p-2 border-b border-gray-200 dark:border-gray-600 sticky top-0 bg-white dark:bg-gray-700">
-                                                        <input type="text"
-                                                            wire:model.live.debounce.200ms="categorySearch"
-                                                            placeholder="Search categories..."
-                                                            onclick="event.stopPropagation()"
-                                                            class="block w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-600 dark:text-white dark:placeholder-gray-400" />
-                                                    </div>
-                                                    <div class="max-h-48 overflow-auto">
-                                                        <button type="button"
-                                                                wire:click="selectCategoryFilter(null)"
-                                                                class="w-full flex items-center px-3 py-2 text-left text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600">
-                                                            All Categories
-                                                        </button>
-                                                        @foreach($this->filteredCategories as $category)
-                                                            <button type="button"
-                                                                    wire:click="selectCategoryFilter({{ $category->id }})"
-                                                                    class="w-full flex items-center justify-between px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600 last:border-b-0 {{ $selectedCategoryId == $category->id ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-900 dark:text-blue-100' : 'text-gray-900 dark:text-white' }}">
-                                                                <span>{{ $category->name }}</span>
-                                                                @if($selectedCategoryId == $category->id)
-                                                                    <svg class="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                                                    </svg>
-                                                                @endif
-                                                            </button>
-                                                        @endforeach
-                                                        @if($this->filteredCategories->isEmpty())
-                                                            <div class="px-3 py-4 text-center text-sm text-gray-500 dark:text-gray-400">No categories match</div>
+                                            <div class="max-h-48 overflow-auto">
+                                                <button type="button"
+                                                        wire:click="selectProductFilter(null)"
+                                                        @click="productDropdownOpen = false"
+                                                        class="w-full flex items-center px-3 py-2 text-left text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600">
+                                                    All Products
+                                                </button>
+                                                @foreach($this->filteredProductNumbersForDropdown as $item)
+                                                    <button type="button"
+                                                            wire:click="selectProductFilterByProductNumber({{ json_encode($item['product_number']) }})"
+                                                            @click="productDropdownOpen = false"
+                                                            class="w-full flex items-center justify-between px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600 last:border-b-0 {{ $selectedProductFilterProductNumber === $item['product_number'] ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-900 dark:text-blue-100' : 'text-gray-900 dark:text-white' }}">
+                                                        <span>{{ $item['product_number'] }} ({{ $item['variant_count'] }} variant{{ $item['variant_count'] !== 1 ? 's' : '' }})</span>
+                                                        @if($selectedProductFilterProductNumber === $item['product_number'])
+                                                            <svg class="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                                            </svg>
+                                                        @endif
+                                                    </button>
+                                                @endforeach
+                                                @if($this->filteredProductNumbersForDropdown->isEmpty())
+                                                    <div class="px-3 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                                                        @if($productSearch)
+                                                            No product numbers match "{{ $productSearch }}"
+                                                        @else
+                                                            No products found
                                                         @endif
                                                     </div>
-                                                </div>
-                                            @endif
-                                        </div>
-                                    </div>
-
-                                    <!-- Product Filter (searchable: product number, name, SKU, Supplier Code) -->
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
-                                            Product Number
-                                        </label>
-                                        <div class="relative" wire:click.outside="$set('productDropdown', false)">
-                                            <div wire:click="$set('productDropdown', true)"
-                                                class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm cursor-pointer flex justify-between items-center min-h-[42px]">
-                                                <span class="{{ ($selectedProductFilterProductNumber || $selectedProductFilterName) ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400' }}">
-                                                    @if($selectedProductFilterProductNumber)
-                                                        {{ $selectedProductFilterProductNumber }}
-                                                    @else
-                                                        {{ $selectedProductFilterName ?: 'All Products' }}
-                                                    @endif
-                                                </span>
-                                                <svg class="w-4 h-4 ml-2 flex-shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                                </svg>
+                                                @endif
                                             </div>
-                                            @if($productDropdown)
-                                                <div class="absolute z-20 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg dark:bg-gray-700 dark:border-gray-600">
-                                                    <div class="p-2 border-b border-gray-200 dark:border-gray-600 sticky top-0 bg-white dark:bg-gray-700">
-                                                        <input type="text"
-                                                            wire:model.live.debounce.200ms="productSearch"
-                                                            placeholder="Search by product number, name, SKU, or Supplier Code..."
-                                                            onclick="event.stopPropagation()"
-                                                            class="block w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-600 dark:text-white dark:placeholder-gray-400" />
-                                                    </div>
-                                                    <div class="max-h-48 overflow-auto">
-                                                        <button type="button"
-                                                                wire:click="selectProductFilter(null)"
-                                                                class="w-full flex items-center px-3 py-2 text-left text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600">
-                                                            All Products
-                                                        </button>
-                                                        @foreach($this->filteredProductNumbersForDropdown as $item)
-                                                            <button type="button"
-                                                                    wire:click="selectProductFilterByProductNumber({{ json_encode($item['product_number']) }})"
-                                                                    class="w-full flex items-center justify-between px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600 last:border-b-0 {{ $selectedProductFilterProductNumber === $item['product_number'] ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-900 dark:text-blue-100' : 'text-gray-900 dark:text-white' }}">
-                                                                <span>{{ $item['product_number'] }} ({{ $item['variant_count'] }} variant{{ $item['variant_count'] !== 1 ? 's' : '' }})</span>
-                                                                @if($selectedProductFilterProductNumber === $item['product_number'])
-                                                                    <svg class="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                                                    </svg>
-                                                                @endif
-                                                            </button>
-                                                        @endforeach
-                                                        @if($this->filteredProductNumbersForDropdown->isEmpty())
-                                                            <div class="px-3 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
-                                                                @if($productSearch)
-                                                                    No product numbers match "{{ $productSearch }}"
-                                                                @else
-                                                                    No products in this category
-                                                                @endif
-                                                            </div>
-                                                        @endif
-                                                    </div>
-                                                </div>
-                                            @endif
                                         </div>
                                     </div>
-
-                                    <!-- Show All Button -->
-                                    <!-- <div class="flex items-end">
-                                        <button wire:click="showAllProducts"
-                                                class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                            Show All Products
-                                        </button>
-                                    </div> -->
                                 </div>
 
-                                <!-- Filtered Product Selection -->
-                                <div class="flex items-center justify-between mb-3">
-                                    <h5 class="font-medium">Select Products for Allocation</h5>
-                                    <div class="flex items-center space-x-2">
-                                        @if ($selectedCategoryId || $selectedProductFilterName || $selectedProductFilterProductNumber || $showAllProducts)
-                                            <button type="button" wire:click="selectAllVisible"
-                                                class="px-3 py-1 text-sm font-medium text-gray-600 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
-                                                Select All Visible
-                                            </button>
-                                        @endif
-                                        @if (!empty($temporarySelectedProducts))
-                                            <button type="button" wire:click="addSelectedProductsToAllocation"
-                                                class="px-3 py-1 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                                Add Selected ({{ count($temporarySelectedProducts) }})
-                                            </button>
-                                        @endif
-                                    </div>
-                                </div>
-                                <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                                    Choose which products you want to allocate to branches. Only selected products will
-                                    appear in the allocation matrix below.
-                                </p>
-
-                                <!-- Show Already Selected Products -->
+                                @if ($selectedProductFilterName || $selectedProductFilterProductNumber || $showAllProducts)
+                                    <button type="button" wire:click="selectAllVisible"
+                                        class="px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 border border-gray-300 rounded hover:bg-gray-200 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
+                                        Select All
+                                    </button>
+                                @endif
+                                @if (!empty($temporarySelectedProducts))
+                                    <button type="button" wire:click="addSelectedProductsToAllocation"
+                                        class="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 border border-transparent rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        Add Selected ({{ count($temporarySelectedProducts) }})
+                                    </button>
+                                @endif
+                            </div>
                                 @if (!empty($selectedProductIdsForAllocation))
-                                    <div class="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg">
-                                        <h6 class="text-sm font-medium text-green-800 dark:text-green-200 mb-2">
-                                            Products Added to Allocation ({{ count($selectedProductIdsForAllocation) }})
-                                        </h6>
-                                        <div class="flex flex-wrap gap-2">
-                                            @foreach ($availableProducts->whereIn('id', $selectedProductIdsForAllocation) as $product)
-                                                <span class="inline-flex flex-col items-start px-2.5 py-1 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
-                                                    <span>{{ $product->remarks ?? $product->name }}@if ($product->color) · {{ $product->color->name ?? $product->color->code }}@endif</span>
-                                                    <span class="text-[11px] opacity-90">SKU: {{ $product->sku ?? '—' }} · Supplier Code (SKU): {{ $product->supplier_code ?? '—' }}</span>
-                                                </span>
-                                            @endforeach
-                                        </div>
-                                    </div>
+                                    <p class="mb-3 text-sm text-green-700 dark:text-green-300"><strong>{{ count($selectedProductIdsForAllocation) }} products</strong> in allocation</p>
                                 @endif
 
-                                @if ($selectedCategoryId || $selectedProductFilterName || $selectedProductFilterProductNumber || $showAllProducts)
+                                @if ($selectedProductFilterName || $selectedProductFilterProductNumber || $showAllProducts)
                                     @if (($showAllProducts ? $availableProducts : $filteredProducts)->count() > 0)
                                         @php
                                             $products = $showAllProducts
@@ -702,52 +600,47 @@
                                                 : $filteredProducts;
                                             $groupedProducts = $products->groupBy(fn ($p) => $p->product_number ?? $p->name);
                                         @endphp
-                                        @foreach ($groupedProducts as $productNumber => $productVariants)
-                                            <!-- Product Group Header (above table) -->
-                                            <div class="mb-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-t-lg border border-gray-200 dark:border-gray-600 border-b-0">
-                                                <span class="text-sm font-semibold text-gray-800 dark:text-white">{{ $productNumber }}</span>
-                                                <span class="text-xs text-gray-500 dark:text-gray-400 ml-2">({{ $productVariants->count() }} variant{{ $productVariants->count() !== 1 ? 's' : '' }})</span>
-                                            </div>
-                                            <!-- Product Variants Table -->
-                                            <div class="border border-gray-200 dark:border-gray-600 rounded-b-lg overflow-hidden {{ !$loop->last ? 'mb-6' : '' }} max-h-80 overflow-y-auto">
-                                                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
-                                                    <thead class="bg-gray-50 dark:bg-gray-700 sticky top-0">
-                                                        <tr>
-                                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-14">Select</th>
-                                                            <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap">Product ID</th>
-                                                            <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[12rem]">Product Name</th>
-                                                            <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap">SKU</th>
-                                                            <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap">Supplier Code (SKU)</th>
-                                                            <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap">Price</th>
-                                                            <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap">Stock</th>
+                                        <div class="border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden max-h-80 overflow-y-auto">
+                                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
+                                                <thead class="bg-gray-50 dark:bg-gray-700 sticky top-0">
+                                                    <tr>
+                                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase w-12">Select</th>
+                                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase min-w-[8rem]">Product</th>
+                                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase whitespace-nowrap">Color</th>
+                                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase whitespace-nowrap">SKU</th>
+                                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase whitespace-nowrap">Supplier Code</th>
+                                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase whitespace-nowrap">Stock</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700">
+                                                    @foreach ($groupedProducts as $productNumber => $productVariants)
+                                                        <tr class="bg-gray-100 dark:bg-gray-700">
+                                                            <td colspan="6" class="px-3 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300">
+                                                                {{ $productNumber }} ({{ $productVariants->count() }} variant{{ $productVariants->count() !== 1 ? 's' : '' }})
+                                                            </td>
                                                         </tr>
-                                                    </thead>
-                                                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700">
                                                         @foreach ($productVariants as $product)
-                                                            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 border-l-4 border-blue-200 dark:border-blue-700">
-                                                                <td class="px-4 py-3 align-top">
-                                                                    <input type="checkbox"
-                                                                        wire:model.live="temporarySelectedProducts"
-                                                                        value="{{ $product->id }}"
-                                                                        class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                                                                </td>
-                                                                <td class="px-5 py-3 text-sm font-mono text-gray-600 dark:text-gray-300 align-top">{{ $product->product_number ?? '—' }}</td>
-                                                                <td class="px-5 py-3 text-sm text-gray-900 dark:text-white align-top">
-                                                                    <span class="font-medium">{{ $product->remarks ?? $product->name }}</span>
-                                                                    @if ($product->color)
-                                                                        <span class="text-gray-500 dark:text-gray-400"> · {{ $product->color->name ?? $product->color->code }}</span>
-                                                                    @endif
-                                                                </td>
-                                                                <td class="px-5 py-3 text-sm font-mono text-gray-600 dark:text-gray-400 align-top">{{ $product->sku ?? '—' }}</td>
-                                                                <td class="px-5 py-3 text-sm text-gray-600 dark:text-gray-400 align-top">{{ $product->supplier_code ?? '—' }}</td>
-                                                                <td class="px-5 py-3 text-sm text-gray-900 dark:text-white align-top">₱{{ number_format($product->price ?? ($product->selling_price ?? 0), 2) }}</td>
-                                                                <td class="px-5 py-3 text-sm text-gray-600 dark:text-gray-400 align-top">{{ intval($product->initial_quantity ?? 0) }}</td>
-                                                            </tr>
+                                                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 border-l-2 border-blue-200 dark:border-blue-700">
+                                                            <td class="px-3 py-2">
+                                                                <input type="checkbox"
+                                                                    wire:model.live="temporarySelectedProducts"
+                                                                    value="{{ $product->id }}"
+                                                                    class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                                            </td>
+                                                            <td class="px-3 py-2 text-sm">
+                                                                <span class="font-mono text-gray-600 dark:text-gray-300">{{ $product->product_number ?? '—' }}</span>
+                                                                <span class="text-gray-900 dark:text-white"> · {{ $product->remarks ?? $product->name }}</span>
+                                                            </td>
+                                                            <td class="px-3 py-2 text-sm text-gray-600 dark:text-gray-400">{{ $product->color ? ($product->color->name ?? $product->color->code) : '—' }}</td>
+                                                            <td class="px-3 py-2 text-sm font-mono text-gray-600 dark:text-gray-400">{{ $product->sku ?? '—' }}</td>
+                                                            <td class="px-3 py-2 text-sm text-gray-600 dark:text-gray-400">{{ $product->supplier_code ?? '—' }}</td>
+                                                            <td class="px-3 py-2 text-sm text-gray-600 dark:text-gray-400">{{ intval($product->initial_quantity ?? 0) }}</td>
+                                                        </tr>
                                                         @endforeach
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        @endforeach
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     @else
                                         <div
                                             class="text-center py-8 border border-gray-200 dark:border-gray-600 rounded-lg">
@@ -773,16 +666,12 @@
                                 @endif
 
                                 @if (empty($selectedProductIdsForAllocation))
-                                    <div
-                                        class="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-                                        <p class="text-sm text-yellow-700 dark:text-yellow-300">Please select at least
-                                            one product to proceed with allocation.</p>
-                                    </div>
+                                    <p class="mt-3 text-sm text-yellow-700 dark:text-yellow-300">Select at least one product to proceed.</p>
                                 @endif
                             </div>
 
                             <!-- Allocation Matrix -->
-                            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6">
+                            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6 mt-8">
                                 @if (!$matrixSavedInSession && !empty($selectedProductIdsForAllocation))
                                     <div class="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg flex items-center gap-3">
                                         <svg class="w-5 h-5 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -901,14 +790,18 @@
                                 @endif
                             </div>
 
-                            <!-- Product Allocations Table -->
+                            <!-- Product Allocations Summary (collapsible) -->
                             @if (!empty($productAllocations))
-                                <div
-                                    class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-                                    <div class="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-                                        <h5 class="font-medium text-gray-900 dark:text-white">Product Allocations</h5>
-                                    </div>
-                                    <div class="overflow-x-auto">
+                                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden mt-4" x-data="{ expanded: false }">
+                                    <button type="button" @click="expanded = !expanded"
+                                        class="w-full flex items-center justify-between px-4 py-2 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                        <span class="text-sm font-medium text-gray-900 dark:text-white">Summary ({{ count($productAllocations) }} {{ Str::plural('product', count($productAllocations)) }})</span>
+                                        <svg class="w-5 h-5 text-gray-500 transition-transform" :class="{ 'rotate-180': expanded }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                        </svg>
+                                    </button>
+                                    <div x-show="expanded" x-collapse class="overflow-hidden">
+                                        <div class="overflow-x-auto border-t border-gray-200 dark:border-gray-700">
                                         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                                             <thead class="bg-gray-50 dark:bg-gray-700">
                                                 <tr>
@@ -994,9 +887,9 @@
                                                 @endforeach
                                             </tbody>
                                         </table>
+                                        </div>
                                     </div>
-                                    </div>
-                                    
+                                </div>
                             @endif
 
 

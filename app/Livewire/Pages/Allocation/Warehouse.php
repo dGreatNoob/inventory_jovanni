@@ -92,16 +92,14 @@ class Warehouse extends Component
     public $temporarySelectedProducts = []; // Temporary selection for current filter
 
     // Product filtering fields
-    public $availableCategories = [];
-    public $selectedCategoryId = null;
     public $selectedProductFilterName = null;
     public $selectedProductFilterProductNumber = null;
     public $showAllProducts = false;
     public $filteredProducts = [];
-    public $categorySearch = '';
-    public $categoryDropdown = false;
     public $productSearch = '';
-    public $productDropdown = false;
+
+    // Step 2 branch review
+    public $branchSearch = '';
 
     // Add branches fields
     public $availableBranches = [];
@@ -123,7 +121,6 @@ class Warehouse extends Component
         // Load data
         $this->loadAvailableBatchNumbers();
         $this->loadAvailableProducts();
-        $this->loadAvailableCategories();
         $this->loadBatchAllocations();
 
         // Initialize batch steps for the table
@@ -524,6 +521,16 @@ class Warehouse extends Component
             ->values()
             ->toArray();
     }
+
+    public function selectAllBatches()
+    {
+        $this->selectedBatchNumbers = $this->availableBatchNumbers;
+    }
+
+    public function clearBatchSelection()
+    {
+        $this->selectedBatchNumbers = [];
+    }
     public function processBarcodeScanner()
     {
         if (empty($this->barcodeInput)) {
@@ -910,24 +917,21 @@ class Warehouse extends Component
         $this->availableProducts = Product::orderBy('name')->get();
     }
 
-    public function loadAvailableCategories()
-    {
-        $this->availableCategories = \App\Models\Category::orderBy('name')->get();
-    }
-
     /**
-     * Filtered categories for searchable dropdown (by name).
+     * Filtered branches for Step 2 review (by name, code, address).
      */
-    public function getFilteredCategoriesProperty()
+    public function getFilteredBranchesForReviewProperty()
     {
-        $categories = collect($this->availableCategories);
-        $query = trim($this->categorySearch);
+        $branches = collect($this->filteredBranchesByBatch);
+        $query = trim($this->branchSearch);
         if ($query === '') {
-            return $categories;
+            return $branches;
         }
         $lower = strtolower($query);
-        return $categories->filter(function ($category) use ($lower) {
-            return str_contains(strtolower((string) ($category->name ?? '')), $lower);
+        return $branches->filter(function ($branch) use ($lower) {
+            return str_contains(strtolower((string) ($branch['name'] ?? '')), $lower)
+                || str_contains(strtolower((string) ($branch['code'] ?? '')), $lower)
+                || str_contains(strtolower((string) ($branch['address'] ?? '')), $lower);
         })->values();
     }
 
@@ -937,9 +941,6 @@ class Warehouse extends Component
     public function getFilteredProductNamesForDropdownProperty()
     {
         $products = $this->availableProducts;
-        if ($this->selectedCategoryId) {
-            $products = $products->where('category_id', $this->selectedCategoryId);
-        }
         $query = trim($this->productSearch);
         if ($query !== '') {
             $products = $products->filter(function ($product) use ($query) {
@@ -962,9 +963,6 @@ class Warehouse extends Component
     public function getFilteredProductNumbersForDropdownProperty()
     {
         $products = $this->availableProducts;
-        if ($this->selectedCategoryId) {
-            $products = $products->where('category_id', $this->selectedCategoryId);
-        }
         $query = trim($this->productSearch);
         if ($query !== '') {
             $products = $products->filter(function ($product) use ($query) {
@@ -990,10 +988,6 @@ class Warehouse extends Component
     public function filterProducts()
     {
         $query = Product::query();
-
-        if ($this->selectedCategoryId) {
-            $query->where('category_id', $this->selectedCategoryId);
-        }
 
         if ($this->selectedProductFilterProductNumber) {
             $query->where('product_number', $this->selectedProductFilterProductNumber);
@@ -1089,20 +1083,10 @@ class Warehouse extends Component
     public function showAllProducts()
     {
         $this->showAllProducts = true;
-        $this->selectedCategoryId = null;
         $this->selectedProductFilterName = null;
+        $this->selectedProductFilterProductNumber = null;
         $this->filteredProducts = $this->availableProducts;
-        $this->categorySearch = '';
-        $this->categoryDropdown = false;
         $this->productSearch = '';
-        $this->productDropdown = false;
-    }
-
-    public function selectCategoryFilter($categoryId)
-    {
-        $this->selectedCategoryId = $categoryId ?: null;
-        $this->categoryDropdown = false;
-        $this->filterProducts();
     }
 
     public function selectProductFilter($productName)
@@ -2014,15 +1998,12 @@ class Warehouse extends Component
         $this->branchRemarks = [];
 
         // Reset filtering - don't show products by default
-        $this->selectedCategoryId = null;
         $this->selectedProductFilterName = null;
         $this->selectedProductFilterProductNumber = null;
-        $this->showAllProducts = false; // Changed to false to not show products by default
+        $this->showAllProducts = false;
         $this->filteredProducts = [];
-        $this->categorySearch = '';
-        $this->categoryDropdown = false;
         $this->productSearch = '';
-        $this->productDropdown = false;
+        $this->branchSearch = '';
 
         // Load fresh data
         $this->loadAvailableBatchNumbers();
@@ -2095,7 +2076,7 @@ class Warehouse extends Component
                 'batch_number' => implode(', ', $this->selectedBatchNumbers),
                 'remarks' => $this->remarks,
                 'status' => $this->status,
-                'workflow_step' => $this->currentStep, // Save current step
+                'workflow_step' => 2, // Advance to step 2
             ];
             
             // Only update transaction_date if it exists
@@ -2112,6 +2093,8 @@ class Warehouse extends Component
             $this->loadBranchesByBatch();
 
             session()->flash('message', 'Batch details updated successfully.');
+
+            $this->currentStep = 2;
 
         } else {
             // CREATE NEW BATCH

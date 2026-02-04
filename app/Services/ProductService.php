@@ -24,7 +24,123 @@ class ProductService
     {
         $products = Product::with(['category', 'supplier', 'images', 'inventory'])
             ->active()
-            ->when($query, fn($q) => $q->search($query))
+            // Advanced search: product masterlist search with special handling
+            // for product-number style queries (e.g. "LD-127").
+            ->when($query, function ($q) use ($query) {
+                $rawQuery = trim($query);
+                if ($rawQuery === '') {
+                    return;
+                }
+
+                // Detect a structured product-number style query:
+                // - has both letters and digits
+                // - and includes a separator (space, dash, underscore)
+                $hasLetters = (bool) preg_match('/[A-Za-z]/', $rawQuery);
+                $hasDigits  = (bool) preg_match('/\d/', $rawQuery);
+                $hasSep     = (bool) preg_match('/[\s\-_]/', $rawQuery);
+                $isProductNumberQuery = $hasLetters && $hasDigits && $hasSep;
+
+                // Normalize query for prefix matching (remove spaces, lowercase)
+                $normalizedQuery = strtolower(preg_replace('/\s+/', '', $rawQuery));
+
+                // Build prefix segments for product_number matching
+                $prefixes = [];
+                $len = strlen($normalizedQuery);
+                for ($i = 1; $i <= $len; $i++) {
+                    $prefixes[] = substr($normalizedQuery, 0, $i);
+                }
+
+                // Tokenize original query (by spaces, hyphens, underscores) and normalize each token
+                $queryTokens = preg_split('/[\s\-_]+/', $rawQuery);
+                $queryTokens = array_values(array_filter(array_map(function ($t) {
+                    $normalized = strtolower(trim($t));
+                    return $normalized !== '' ? $normalized : null;
+                }, $queryTokens)));
+
+                $q->where(function ($base) use ($rawQuery, $normalizedQuery, $prefixes, $queryTokens, $isProductNumberQuery) {
+                    // If this looks like a product-number query (e.g. "LD-127"),
+                    // restrict results to product_number matches only:
+                    // - first token is treated as a prefix
+                    // - all tokens must appear (AND) in product_number.
+                    if ($isProductNumberQuery && !empty($queryTokens)) {
+                        $base->where(function ($qp) use ($queryTokens) {
+                            foreach ($queryTokens as $index => $token) {
+                                if (strlen($token) < 1) {
+                                    continue;
+                                }
+
+                                if ($index === 0) {
+                                    // First token: strict prefix on product_number
+                                    $qp->where('product_number', 'like', $token . '%');
+                                } else {
+                                    // Subsequent tokens: must appear somewhere after
+                                    $qp->where('product_number', 'like', '%' . $token . '%');
+                                }
+                            }
+                        });
+
+                        return;
+                    }
+
+                    // Generic / fallback behaviour (non-product-number queries)
+                    $like = '%' . $rawQuery . '%';
+
+                    // 1) Base "contains" search on primary fields (backwards compatible)
+                    $base->where(function ($q1) use ($like) {
+                        $q1->where('name', 'like', $like)
+                            ->orWhere('sku', 'like', $like)
+                            ->orWhere('barcode', 'like', $like)
+                            ->orWhere('remarks', 'like', $like)
+                            ->orWhere('supplier_code', 'like', $like)
+                            ->orWhere('product_number', 'like', $like)
+                            ->orWhereHas('supplier', function ($supplierQuery) use ($like) {
+                                $supplierQuery->where('name', 'like', $like);
+                            })
+                            ->orWhereHas('category', function ($categoryQuery) use ($like) {
+                                $categoryQuery->where('name', 'like', $like);
+                            });
+                    });
+
+                    // 2) Prefix segmentation matching for product_number
+                    if (!empty($normalizedQuery) && !empty($prefixes)) {
+                        $base->orWhere(function ($q2) use ($prefixes) {
+                            foreach ($prefixes as $prefix) {
+                                if (strlen($prefix) < 2) {
+                                    continue;
+                                }
+                                $q2->orWhere('product_number', 'like', $prefix . '%');
+                            }
+                        });
+                    }
+
+                    // 3) Token-based matching (all tokens must be present across fields)
+                    if (!empty($queryTokens)) {
+                        $base->orWhere(function ($q3) use ($queryTokens) {
+                            foreach ($queryTokens as $token) {
+                                if (strlen($token) < 1) {
+                                    continue;
+                                }
+                                $likeToken = '%' . $token . '%';
+                                // Each token must match at least one of the fields
+                                $q3->where(function ($qt) use ($likeToken) {
+                                    $qt->where('name', 'like', $likeToken)
+                                        ->orWhere('sku', 'like', $likeToken)
+                                        ->orWhere('barcode', 'like', $likeToken)
+                                        ->orWhere('remarks', 'like', $likeToken)
+                                        ->orWhere('supplier_code', 'like', $likeToken)
+                                        ->orWhere('product_number', 'like', $likeToken)
+                                        ->orWhereHas('supplier', function ($supplierQuery) use ($likeToken) {
+                                            $supplierQuery->where('name', 'like', $likeToken);
+                                        })
+                                        ->orWhereHas('category', function ($categoryQuery) use ($likeToken) {
+                                            $categoryQuery->where('name', 'like', $likeToken);
+                                        });
+                                });
+                            }
+                        });
+                    }
+                });
+            })
             ->when($filters['category'] ?? null, fn($q) => $q->byCategory($filters['category']))
             ->when($filters['supplier'] ?? null, fn($q) => $q->bySupplier($filters['supplier']))
             ->when($filters['stock_level'] ?? null, function($q) use ($filters) {

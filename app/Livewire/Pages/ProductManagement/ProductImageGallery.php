@@ -75,7 +75,7 @@ class ProductImageGallery extends Component
     {
         $this->products = Product::with('category')
             ->orderBy('name')
-            ->get(['id', 'name', 'sku', 'supplier_code']);
+            ->get(['id', 'name', 'sku', 'supplier_code', 'product_number']);
     }
 
     public function getFilteredUploadProductsProperty()
@@ -85,11 +85,109 @@ class ProductImageGallery extends Component
         if ($query === '') {
             return $products->take(100)->values();
         }
-        $lower = strtolower($query);
-        return $products->filter(function ($p) use ($lower) {
-            return str_contains(strtolower((string) ($p->name ?? '')), $lower)
-                || str_contains(strtolower((string) ($p->sku ?? '')), $lower)
-                || str_contains(strtolower((string) ($p->supplier_code ?? '')), $lower);
+
+        // Normalize query: remove spaces, convert to lowercase
+        $normalizedQuery = strtolower(preg_replace('/\s+/', '', $query));
+        
+        // Generate prefix segments (e.g., "LD2501" -> ["L", "LD", "LD2", "LD25", "LD250", "LD2501"])
+        $prefixes = [];
+        for ($i = 1; $i <= strlen($normalizedQuery); $i++) {
+            $prefixes[] = substr($normalizedQuery, 0, $i);
+        }
+
+        // Tokenize query BEFORE normalization (split by spaces, hyphens, underscores)
+        // e.g., "LD 2501" -> ["LD", "2501"], "LD2501-81" -> ["LD2501", "81"]
+        // Then normalize each token
+        $queryTokens = preg_split('/[\s\-_]+/', $query);
+        $queryTokens = array_filter(array_map(function($t) {
+            $normalized = strtolower(trim($t));
+            return $normalized !== '' ? $normalized : null;
+        }, $queryTokens));
+
+        // Detect structured product-number style query: has letters, digits, and a separator
+        $hasLetters = (bool) preg_match('/[A-Za-z]/', $query);
+        $hasDigits  = (bool) preg_match('/\d/', $query);
+        $hasSep     = (bool) preg_match('/[\s\-_]/', $query);
+        $isProductNumberQuery = $hasLetters && $hasDigits && $hasSep;
+
+        return $products->filter(function ($p) use ($normalizedQuery, $prefixes, $queryTokens, $isProductNumberQuery) {
+            // Normalize product fields
+            $name = strtolower(preg_replace('/\s+/', '', (string) ($p->name ?? '')));
+            $sku = strtolower(preg_replace('/\s+/', '', (string) ($p->sku ?? '')));
+            $supplierCode = strtolower(preg_replace('/\s+/', '', (string) ($p->supplier_code ?? '')));
+            $productNumber = strtolower(preg_replace('/\s+/', '', (string) ($p->product_number ?? '')));
+
+            // If this looks like a product-number query (e.g. "LD-127"),
+            // restrict results to product_number only:
+            // - first token must match as a prefix
+            // - all remaining tokens must also appear in product_number.
+            if ($isProductNumberQuery && !empty($queryTokens)) {
+                if (empty($productNumber)) {
+                    return false;
+                }
+
+                $tokens = array_values($queryTokens);
+                foreach ($tokens as $index => $token) {
+                    if (strlen($token) < 1) {
+                        continue;
+                    }
+
+                    if ($index === 0) {
+                        if (!str_starts_with($productNumber, $token)) {
+                            return false;
+                        }
+                    } else {
+                        if (!str_contains($productNumber, $token)) {
+                            return false;
+                        }
+                    }
+                }
+
+                return true;
+            }
+
+            // 1. Exact/contains match (original behavior)
+            if (str_contains($name, $normalizedQuery)
+                || str_contains($sku, $normalizedQuery)
+                || str_contains($supplierCode, $normalizedQuery)
+                || str_contains($productNumber, $normalizedQuery)) {
+                return true;
+            }
+
+            // 2. Prefix segmentation matching for product_number
+            // Check if any prefix matches the start of product_number
+            if (!empty($productNumber)) {
+                foreach ($prefixes as $prefix) {
+                    if (strlen($prefix) >= 2 && str_starts_with($productNumber, $prefix)) {
+                        return true;
+                    }
+                }
+            }
+
+            // 3. Token-based matching
+            // Check if all query tokens are found in any product field
+            if (!empty($queryTokens)) {
+                $allTokensMatch = true;
+                foreach ($queryTokens as $token) {
+                    if (strlen($token) < 1) {
+                        continue;
+                    }
+                    $tokenFound = str_contains($name, $token)
+                        || str_contains($sku, $token)
+                        || str_contains($supplierCode, $token)
+                        || str_contains($productNumber, $token);
+                    
+                    if (!$tokenFound) {
+                        $allTokensMatch = false;
+                        break;
+                    }
+                }
+                if ($allTokensMatch) {
+                    return true;
+                }
+            }
+
+            return false;
         })->take(100)->values();
     }
 

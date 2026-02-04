@@ -95,6 +95,8 @@ class ItemCsvSeeder extends Seeder
         $lineNumber = 0;
         $skipped = 0;
         $processed = 0;
+        $created = 0;
+        $updated = 0;
         $chunkProcessed = 0;
 
         DB::beginTransaction();
@@ -289,10 +291,12 @@ class ItemCsvSeeder extends Seeder
                 if ($existingProduct) {
                     // Update existing product
                     $existingProduct->update($productData);
+                    $updated++;
                     $this->command->info("Line {$lineNumber}: Updated product - {$productName} (ID: {$existingProduct->id})");
                 } else {
                     // Create new product
                     $product = Product::create($productData);
+                    $created++;
                     $this->command->info("Line {$lineNumber}: Created product - {$productName} (ID: {$product->id})");
                 }
 
@@ -318,8 +322,12 @@ class ItemCsvSeeder extends Seeder
 
             $this->command->info("\n=== Import Summary ===");
             $this->command->info("Total lines processed: {$lineNumber}");
-            $this->command->info("Products imported/updated: {$processed}");
+            $this->command->info("Total operations: {$processed} (creates + updates)");
+            $this->command->info("  - New products created: {$created}");
+            $this->command->info("  - Existing products updated: {$updated}");
             $this->command->info("Lines skipped: {$skipped}");
+            $this->command->info("\n💡 Note: The 'Total operations' count includes both creates and updates.");
+            $this->command->info("   The actual unique product count in the database may be lower if some products were updated multiple times.");
 
         } catch (\Throwable $e) {
             DB::rollBack();

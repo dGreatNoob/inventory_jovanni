@@ -2,8 +2,13 @@
     <flux:main>
         
         <div class="mb-4">
-            <h1 class="text-2xl font-semibold text-gray-800 dark:text-white"> {{ $header ?? null }} </h1>
-            <p class="text-sm text-gray-600 dark:text-neutral-300">{{ $subheader ?? null}}</p>
+            <h1 class="text-2xl font-semibold text-gray-800 dark:text-white">
+                @if(isset($header) && isset($subheader))
+                    {{ $header }} <span class="text-gray-400 dark:text-gray-500 font-normal">&gt;</span> {{ $subheader }}
+                @else
+                    {{ $header ?? $subheader ?? null }}
+                @endif
+            </h1>
         </div>
 @if (session()->has('success'))
     <div

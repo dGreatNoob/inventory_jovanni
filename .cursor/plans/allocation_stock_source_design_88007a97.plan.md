@@ -1,57 +1,34 @@
 ---
 name: Allocation Stock Source Design
-overview: Senior ERP design analysis comparing pre-receipt allocation (stock + PO expected) vs. manual stock-in with PO reference. Recommends the manual/expected-inventory approach for reporting clarity and single source of truth.
-todos: []
+overview: Finalized plan for Manual Stock-In with Expected Inventory Ledger approach. Single source of truth for available quantity; allocation reads from ProductInventory + ProductInventoryExpected.
+todos:
+  - id: schema-migration
+    content: Create product_inventory_expected migration and ProductInventoryExpected model
+    status: pending
+  - id: allocation-helper
+    content: Update AllocationAvailabilityHelper to read from ProductInventoryExpected
+    status: pending
+  - id: stockin-integration
+    content: Update Real Stock-In flow to increment ProductInventoryExpected.received_quantity
+    status: pending
+  - id: manual-expected-ui
+    content: Add Manual Expected Stock-In UI (select PO, products, expected qty)
+    status: pending
+  - id: optional-autosync
+    content: (Optional) Auto-sync ProductInventoryExpected from ProductOrder when PO approved
+    status: pending
 isProject: false
 ---
 
-# Allocation Stock Source: ERP Design Analysis
+# Allocation Stock Source: Manual Stock-In / Expected Ledger
 
-## The Two Approaches
-
-### Approach A: Pre-Receipt Allocation (Current)
-
-- **Available to allocate** = `ProductInventory.available_quantity` + `ProductOrder.remaining` (from linked PO)
-- Allocation can exceed physical warehouse stock
-- Two sources of "available": ProductInventory and ProductOrder
-
-### Approach B: Manual Stock-In with PO Reference (Your Idea)
-
-- Add expected quantity into the inventory ledger (or a dedicated "expected" bucket) with a PO reference
-- Allocation always draws from warehouse/inventory ledger
-- Single source of truth for available quantity
+**Decision:** Approach B (Manual Stock-In with PO Reference) is the chosen design. This plan documents the finalized model and implementation.
 
 ---
 
-## Design Assessment
+## Data Model: Expected Inventory Ledger
 
-### Approach A: Drawbacks
-
-
-| Issue                     | Impact                                                                                                                                          |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| Dual source of truth      | Reports must combine ProductInventory + ProductOrder. Queries are more complex and easier to get wrong.                                         |
-| Over-commitment risk      | If PO is delayed/cancelled, allocations exceed actual stock. No clean way to "release" committed quantity.                                      |
-| Reconciliation complexity | "What can we fulfill today?" vs "What have we allocated?" need different formulas. Inventory reports vs allocation reports use different logic. |
-| Audit trail               | Allocation does not record which PO the quantity was sourced from. Hard to trace back when stock does not arrive.                               |
-
-
-### Approach B: Advantages
-
-
-| Benefit                | Impact                                                                                                  |
-| ---------------------- | ------------------------------------------------------------------------------------------------------- |
-| Single source of truth | All "available" logic lives in the inventory ledger. Reports and allocation use the same data.          |
-| Clear audit trail      | Expected quantity tied to PO. When real receipt happens, expected is reduced and physical is increased. |
-| Standard ERP pattern   | Matches "on order" / "in transit" / "expected receipts" in many ERPs.                                   |
-| Simpler reporting      | Inventory report = sum of ledger buckets. Allocation = reads from same ledger.                          |
-
-
----
-
-## Recommended Model: Expected Inventory Ledger
-
-Use an **expected inventory** bucket linked to PO, instead of computing from ProductOrder on the fly.
+Use a dedicated `product_inventory_expected` table linked to PO, instead of deriving expected from ProductOrder on the fly.
 
 ```mermaid
 erDiagram
@@ -76,63 +53,159 @@ erDiagram
 
 **Available to allocate** = `ProductInventory.available_quantity` + `SUM(ProductInventoryExpected.expected_quantity - received_quantity)` for the product (optionally filtered by linked PO).
 
-**Manual stock-in with PO reference** = Create/update `ProductInventoryExpected` for a product + PO with `expected_quantity`. User enters "We expect X from PO-YYY."
+**Manual Expected Stock-In** = Create/update `ProductInventoryExpected` for a product + PO with `expected_quantity`. User enters "We expect X from PO-YYY."
 
-**Real stock-in** = When goods arrive via normal Stock-In:
+**Real Stock-In** (when goods arrive):
 
 1. Increment `ProductInventory.quantity`
 2. Increment `ProductInventoryExpected.received_quantity` for that product + PO
-3. Optionally mark PO/ProductOrder as received as today
+3. Mark PO/ProductOrder as received as today
 
 No double-counting: expected is reduced as physical is increased.
 
 ---
 
-## Alternative: Simpler "Expected" on ProductInventory
+## Workflow
 
-If you want minimal schema changes, add to `product_inventory`:
+**Important:** The PO must exist first. Manual Expected Stock-In always references an existing PO.
 
-- `expected_quantity` (decimal, default 0)
-- `expected_from_po_id` (nullable FK to purchase_orders)
+### High-Level Flow
 
-**Manual stock-in**: User selects PO, product, quantity. Set `expected_quantity` and `expected_from_po_id`.
+```mermaid
+flowchart LR
+    A["1. Create PO<br/>existing"] --> B["2. Manual Expected<br/>Stock-In new"]
+    B --> C["3. Allocation<br/>uses stock + expected"]
+    C --> D["4. Real Stock-In<br/>goods arrive"]
+    
+    A -.-> A1["ProductOrder rows"]
+    B -.-> B1["ProductInventoryExpected"]
+    C -.-> C1["Allocate against<br/>stock + expected"]
+    D -.-> D1["ProductInventory.quantity + ProductInventoryExpected.received_quantity"]
+```
 
-**Available** = `quantity` + `expected_quantity` (or only when `expected_from_po_id` matches batch's linked PO).
 
-**Real stock-in**: Increment `quantity`, decrement `expected_quantity` by received amount, clear `expected_from_po_id` when fully received.
 
-Caveat: Only one PO per product can be tracked this way. For multiple POs per product, use the separate `product_inventory_expected` table.
+### Detailed Flowchart
+
+```mermaid
+flowchart TD
+    subgraph PO["PO Management (existing)"]
+        A[User creates PO with product lines & quantities]
+        B[PO approved / to_receive]
+    end
+    
+    A --> B
+    
+    B --> C{Path}
+    C -->|Option A| D[Manual Expected Stock-In<br/>Select PO → enter expected qty per product]
+    C -->|Option B| E[Skip manual entry<br/>if auto-sync from ProductOrder]
+    C --> F[Allocation<br/>Available = stock + SUM expected - received]
+    
+    D --> G[ProductInventoryExpected records exist]
+    E --> G
+    
+    G --> F
+    
+    F --> H[Physical goods arrive]
+    H --> I[Real Stock-In flow<br/>scan PO / enter DR]
+    I --> J[Enter received qty<br/>good vs damaged]
+    J --> K[System updates:<br/>ProductInventory.quantity<br/>ProductOrder.received_qty<br/>ProductInventoryExpected.received_quantity]
+```
+
+
+
+### Sequence Summary
+
+
+| Step | Action                           | Who                 | When                                         |
+| ---- | -------------------------------- | ------------------- | -------------------------------------------- |
+| 1    | Create PO with product lines     | Buyer / Purchasing  | Before anything                              |
+| 2    | Approve PO                       | Approver            | After creation                               |
+| 3    | Record expected from PO (manual) | Warehouse / Planner | When PO is confirmed (optional if auto-sync) |
+| 4    | Allocate                         | Allocation staff    | Anytime; uses stock + expected               |
+| 5    | Physical arrival – Real Stock-In | Warehouse staff     | When goods arrive                            |
+
+
+**Manual Expected Stock-In** does not create the PO. It explicitly records "we expect X units from PO-YYY" so allocation treats it as available. Without it (and without auto-sync), expected = 0. With it, allocation can use stock + expected.
 
 ---
 
-## Comparison Summary
+## Implementation Plan
+
+### Schema & Model (~0.5 day)
+
+- Create migration for `product_inventory_expected`:
+  - `product_id`, `purchase_order_id`, `expected_quantity`, `received_quantity`, timestamps
+  - Unique index on `(product_id, purchase_order_id)`
+- Create `ProductInventoryExpected` model with relationships to Product and PurchaseOrder
+
+### Allocation Logic (~0.5 day)
+
+- Update `AllocationAvailabilityHelper::getExpectedQuantityFromPO()` to read from `ProductInventoryExpected` instead of `ProductOrder.remaining`
+- Formula: `SUM(expected_quantity - received_quantity)` for product (optionally filtered by PO)
+
+### Real Stock-In Integration (~1 day)
+
+- In `StockIn/Index::submitStockInReport()`, after updating ProductInventory and ProductOrder:
+  - Find or create `ProductInventoryExpected` for product + PO
+  - Increment `received_quantity` by the received amount
+- Handle case when `ProductInventoryExpected` does not exist (create on first receipt or skip)
+
+### Manual Expected Stock-In UI (~1–2 days)
+
+- New route and Livewire page (e.g. `/warehousestaff/expected-stockin` or under existing Stock-In)
+- Flow: Select PO → list products (from PO or manual add) → enter expected qty per product → save
+- Creates/updates `ProductInventoryExpected` records
+- Use slideover or form pattern per project conventions
+
+### Optional: Auto-Sync from ProductOrder (+0.5–1 day)
+
+- When PO is approved (or to_receive), create/update `ProductInventoryExpected` from `ProductOrder` lines
+- One-time migration to seed from existing approved POs (optional)
+- Preserves current "expected = PO remaining" behavior without manual entry
+
+### Effort Summary
 
 
-| Aspect            | Pre-Receipt (Current)          | Manual Stock-In / Expected Ledger                |
-| ----------------- | ------------------------------ | ------------------------------------------------ |
-| Source of truth   | Two (Inventory + ProductOrder) | One (Inventory ledger)                           |
-| Reporting         | More complex                   | Simpler                                          |
-| PO traceability   | Weak                           | Strong (expected linked to PO)                   |
-| Implementation    | Already done                   | New table + manual stock-in UI                   |
-| Double-count risk | None                           | None if real stock-in updates expected correctly |
+| Variant                          | Estimate  |
+| -------------------------------- | --------- |
+| Minimal (manual only, no sync)   | ~3–4 days |
+| With auto-sync from ProductOrder | ~4–5 days |
+| With one-time data migration     | +0.5 day  |
 
 
 ---
 
-## Recommendation
+## Key Files to Modify
 
-From an ERP design perspective, **Approach B (manual stock-in with PO reference)** is the better long-term design because:
 
-1. **Single source of truth** – allocation and reports read from the same inventory model.
-2. **Clear audit trail** – expected quantity is tied to PO and reconciled on receipt.
-3. **Simpler mental model** – "what’s in the warehouse" includes both physical and expected.
+| File                                                                        | Change                                                             |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `app/Support/AllocationAvailabilityHelper.php`                              | Switch expected source to ProductInventoryExpected                 |
+| `app/Livewire/Pages/Warehousestaff/StockIn/Index.php`                       | Update ProductInventoryExpected.received_quantity on real stock-in |
+| New: `database/migrations/xxxx_create_product_inventory_expected_table.php` | Add table                                                          |
+| New: `app/Models/ProductInventoryExpected.php`                              | Add model                                                          |
+| New: Manual Expected Stock-In Livewire component + view                     | New UI flow                                                        |
 
-**Migration path**:
 
-1. Introduce `product_inventory_expected` (or add expected fields to ProductInventory).
-2. Add a "Manual Stock-In (Expected)" UI: select PO, product, quantity; creates/updates expected record.
-3. Change allocation availability to: `stock + expected` from this ledger (instead of ProductOrder).
-4. Adjust Stock-In flow to decrement expected and increment physical when receiving.
-5. Phase out the current "available = stock + ProductOrder.remaining" logic.
+---
 
-The current pre-receipt approach works and is common in distribution, but the manual stock-in model will scale better and keep reporting and allocations consistent over time.
+## Rationale: Why This Approach
+
+
+| Benefit                      | Impact                                                  |
+| ---------------------------- | ------------------------------------------------------- |
+| Single source of truth       | Allocation and reports use the same inventory model     |
+| Clear audit trail            | Expected quantity tied to PO; reconciled on receipt     |
+| Standard ERP pattern         | Matches "on order" / "in transit" / "expected receipts" |
+| Simpler reporting            | Inventory report = sum of ledger buckets                |
+| No over-commitment confusion | Expected ledger is explicit, not derived from PO lines  |
+
+
+---
+
+## Appendix: Rejected Alternative (ProductOrder.remaining)
+
+**Approach A (Pre-Receipt / Current):** Available = `ProductInventory.available_quantity` + `ProductOrder.remaining`. Rejected due to dual source of truth, reconciliation complexity, and weak PO traceability.
+
+**Simpler schema alternative:** Add `expected_quantity` and `expected_from_po_id` directly to `product_inventory`. Rejected because only one PO per product can be tracked; separate `product_inventory_expected` table supports multiple POs per product.

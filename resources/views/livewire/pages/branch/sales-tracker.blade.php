@@ -3,8 +3,6 @@
     <x-slot:subheader>Sales Tracker</x-slot:subheader>
     <div class="pt-4">
         <div class="space-y-6">
-            @include('livewire.pages.branch.branch-management-tabs')
-
             <!-- Header Section with Add Sales Button -->
             <div class="mb-6">
                 <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">

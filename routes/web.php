@@ -116,7 +116,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/agentmanagement/profile', AgentProfile::class)
         ->name('agent.profile');
 
-    Route::get('/Branchmanagement/profile', BranchProfile::class)
+    Route::redirect('/Branchmanagement/profile', '/branch-management/profile', 301);
+    Route::get('/branch-management/profile', BranchProfile::class)
         ->name('branch.profile');
     
     Route::get('/branch-inventory', BranchInventory::class)

@@ -19,6 +19,7 @@ class BranchInventory extends Component
     // Batch selection
     public $selectedBatch = null;
     public $batches = [];
+    public $batchesWithoutCompletedShipments = [];
 
     // Branch selection within batch
     public $selectedBranchId = null;
@@ -133,6 +134,58 @@ class BranchInventory extends Component
                 'last_shipment_date' => $this->getLastShipmentDateForBatch($batchName),
             ];
         });
+
+        $this->loadBatchesWithoutCompletedShipments($batchesWithShipments->toArray());
+    }
+
+    /**
+     * Load batches that exist but have no completed shipments (exclusions)
+     */
+    protected function loadBatchesWithoutCompletedShipments(array $excludeBatchNames)
+    {
+        $allBatchNames = Branch::whereNotNull('batch')
+            ->where('batch', '!=', '')
+            ->distinct()
+            ->pluck('batch')
+            ->filter()
+            ->sort()
+            ->values()
+            ->diff($excludeBatchNames)
+            ->values();
+
+        $this->batchesWithoutCompletedShipments = $allBatchNames->map(function ($batchName) {
+            $branchCount = Branch::where('batch', $batchName)->count();
+
+            $branchesWithAllocations = Branch::where('batch', $batchName)
+                ->whereHas('branchAllocations')
+                ->count();
+
+            $branchesWithShipments = Branch::where('batch', $batchName)
+                ->whereHas('branchAllocations.shipments')
+                ->count();
+
+            $branchesWithCompletedShipments = Branch::where('batch', $batchName)
+                ->whereHas('branchAllocations.shipments', fn ($q) => $q->where('shipping_status', 'completed'))
+                ->count();
+
+            if ($branchesWithAllocations === 0) {
+                $status = 'no_allocations';
+                $status_label = 'No allocations';
+            } elseif ($branchesWithShipments === 0) {
+                $status = 'no_shipments';
+                $status_label = 'No shipments';
+            } else {
+                $status = 'pending_shipments';
+                $status_label = 'Pending shipments';
+            }
+
+            return [
+                'name' => $batchName,
+                'branch_count' => $branchCount,
+                'status' => $status,
+                'status_label' => $status_label,
+            ];
+        })->values()->all();
     }
 
     /**

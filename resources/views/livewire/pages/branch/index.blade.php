@@ -3,11 +3,9 @@
 
 <div class="pt-4">
     <div class="space-y-6">
-        <!-- Tabs Navigation -->
-        @include('livewire.pages.branch.branch-management-tabs')
         <!-- Create New Branch Form (Collapsible) -->
          @can ('branch create')
-        <section class="bg-white dark:bg-gray-800 shadow rounded-lg mb-8" x-data="{ open: false }">
+        <section class="bg-white dark:bg-gray-800 shadow rounded-lg mb-8" x-data="{ open: @entangle('showCreateSection').live }" x-effect="if (open) $el.scrollIntoView({ behavior: 'smooth', block: 'start' })" id="create-branch-section">
             <button type="button"
                 @click="open = !open"
                 class="w-full px-6 py-5 flex items-center justify-between text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-inset">
@@ -218,11 +216,7 @@
         </section>
         @endcan
 
-        @if (session()->has('message'))
-            <div class="mb-6 p-4 text-sm text-green-700 bg-green-100 rounded-lg dark:bg-green-200 dark:text-green-800">
-                {{ session('message') }}
-            </div>
-        @endif
+        {{-- Success messages shown via layout toast (session 'success') --}}
 
         @can('branch edit')
         <!-- Batch Management -->
@@ -232,7 +226,7 @@
                 class="w-full px-6 py-5 flex items-center justify-between text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-inset">
                 <div>
                     <h3 class="text-lg font-medium text-gray-900 dark:text-white">Batch Management</h3>
-                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Assign branches to batches, delete batch names</p>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Assign batches when creating a branch, via bulk selection in the Branch List, or by adding branches here.</p>
                 </div>
                 <svg class="w-5 h-5 text-gray-500 dark:text-gray-400 transition-transform duration-200"
                     :class="{ 'rotate-180': open }"
@@ -338,12 +332,12 @@
                     <h3 class="text-lg font-medium text-gray-900 dark:text-white">Branch List</h3>
                     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Manage existing branches</p>
                 </div>
-                <div>
-                    <!-- <button type="button" 
-                            class="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800 transition-colors">
-                        Create Branch
-                    </button> -->
-                </div>
+                @can('branch create')
+                <flux:button wire:click="openCreateSection" size="sm" class="flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                    Add Branch
+                </flux:button>
+                @endcan
             </div>
             
             <!-- Search and Filter Section -->
@@ -518,24 +512,46 @@
             </div>
         </section>
 
-        <!-- Edit Modal -->
-        @if($showEditModal)
-            <div class="fixed inset-0 z-50 w-full p-4 overflow-x-hidden overflow-y-auto flex items-center justify-center">
-                <div class="relative w-full max-w-2xl max-h-full">
-                    <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
-                        <!-- Modal Header -->
-                        <div class="flex items-start justify-between p-4 border-b rounded-t dark:border-gray-600">
-                            <h3 class="text-xl font-semibold text-gray-900 dark:text-white">Edit Branch</h3>
-                            <button type="button" wire:click="cancel"
-                                    class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
-                                <svg class="w-3 h-3" fill="none" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg">
-                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
-                                </svg>
-                            </button>
-                        </div>
-
-                        <!-- Modal Body -->
-                        <div class="p-6 space-y-6 max-h-96 overflow-y-auto">
+        <!-- Edit Branch Slideover -->
+        <div
+            x-data="{ open: @entangle('showEditModal').live }"
+            x-cloak
+            x-on:keydown.escape.window="if (open) { open = false; $wire.cancel(); }"
+        >
+            <template x-teleport="body">
+                <div x-show="open" x-transition.opacity class="fixed inset-0 z-50 flex">
+                    <div x-show="open" x-transition.opacity class="fixed inset-0 bg-neutral-900/30 dark:bg-neutral-900/50" @click="open = false; $wire.cancel()"></div>
+                    <section
+                        x-show="open"
+                        x-transition:enter="transform transition ease-in-out duration-300"
+                        x-transition:enter-start="translate-x-full"
+                        x-transition:enter-end="translate-x-0"
+                        x-transition:leave="transform transition ease-in-out duration-300"
+                        x-transition:leave-start="translate-x-0"
+                        x-transition:leave-end="translate-x-full"
+                        class="relative ml-auto flex h-full w-full max-w-2xl"
+                    >
+                        <div class="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500 dark:bg-indigo-400"></div>
+                        <div class="ml-[0.25rem] flex h-full w-full flex-col bg-white shadow-xl dark:bg-zinc-900">
+                            <header class="flex items-start justify-between border-b border-gray-200 px-6 py-5 dark:border-zinc-700">
+                                <div class="flex items-start gap-3">
+                                    <div class="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-300">
+                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Edit Branch</h2>
+                                        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">Update branch details.</p>
+                                    </div>
+                                </div>
+                                <button type="button" class="rounded-full p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-gray-500 dark:hover:bg-zinc-800 dark:hover:text-gray-200" @click="open = false; $wire.cancel()" aria-label="Close">
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                </button>
+                            </header>
+                            <div class="flex-1 overflow-hidden">
+                                <div class="flex h-full flex-col">
+                                    <div class="flex-1 overflow-y-auto px-6 py-6 space-y-6">
                             <!-- Basic Information -->
                             <div>
                                 <h4 class="text-md font-semibold text-gray-900 dark:text-white mb-4">Basic Information</h4>
@@ -704,21 +720,18 @@
                                     </div>
                                 </div>
                             </div>
+                                    </div>
+                                    <div class="flex shrink-0 items-center p-6 space-x-2 border-t border-gray-200 dark:border-gray-600">
+                                        <flux:button wire:click="update">Save changes</flux:button>
+                                        <flux:button wire:click="cancel" variant="outline">Cancel</flux:button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-
-                        <!-- Modal Footer -->
-                        <div class="flex items-center p-6 space-x-2 border-t border-gray-200 rounded-b dark:border-gray-600">
-                            <flux:button wire:click="update">
-                                Save changes
-                            </flux:button>
-                            <flux:button wire:click="cancel" variant="outline">
-                                Cancel
-                            </flux:button>
-                        </div>
-                    </div>
+                    </section>
                 </div>
-            </div>
-        @endif
+            </template>
+        </div>
 
         <!-- Delete Confirmation Modal -->
         @if($showDeleteModal)

@@ -2,20 +2,35 @@
 name: Allocation Stock Source Design
 overview: Finalized plan for Manual Stock-In with Expected Inventory Ledger approach. Single source of truth for available quantity; allocation reads from ProductInventory + ProductInventoryExpected.
 todos:
-  - id: schema-migration
-    content: Create product_inventory_expected migration and ProductInventoryExpected model
+  - id: T1-migration
+    content: "[Phase 1] Create product_inventory_expected migration"
     status: pending
-  - id: allocation-helper
-    content: Update AllocationAvailabilityHelper to read from ProductInventoryExpected
+  - id: T2-model
+    content: "[Phase 1] Create ProductInventoryExpected model with relations"
     status: pending
-  - id: stockin-integration
-    content: Update Real Stock-In flow to increment ProductInventoryExpected.received_quantity
+  - id: T3-helper
+    content: "[Phase 2] Update AllocationAvailabilityHelper to read from ProductInventoryExpected"
     status: pending
-  - id: manual-expected-ui
-    content: Add Manual Expected Stock-In UI (select PO, products, expected qty)
+  - id: T4-stockin
+    content: "[Phase 3] Update Real Stock-In to increment ProductInventoryExpected.received_quantity"
     status: pending
-  - id: optional-autosync
-    content: (Optional) Auto-sync ProductInventoryExpected from ProductOrder when PO approved
+  - id: T5-route
+    content: "[Phase 4] Add route and nav entry for Manual Expected Stock-In"
+    status: pending
+  - id: T6-component
+    content: "[Phase 4] Create Manual Expected Stock-In Livewire component"
+    status: pending
+  - id: T7-view
+    content: "[Phase 4] Build Manual Expected Stock-In view (PO select, products, qty form)"
+    status: pending
+  - id: T8-validation
+    content: "[Phase 4] Add validation and save logic for Manual Expected Stock-In"
+    status: pending
+  - id: T9-autosync
+    content: "[Phase 5 Optional] Auto-sync ProductInventoryExpected when PO approved"
+    status: pending
+  - id: T10-seed
+    content: "[Phase 5 Optional] One-time migration to seed from existing ProductOrders"
     status: pending
 isProject: false
 ---
@@ -173,6 +188,90 @@ flowchart TD
 | With auto-sync from ProductOrder | ~4–5 days |
 | With one-time data migration     | +0.5 day  |
 
+
+---
+
+## Task Breakdown (Senior Engineer)
+
+Each task includes requirement mapping, acceptance criteria, dependencies, and edge cases.
+
+### Phase 1: Schema & Model
+
+
+| ID  | Task                                          | Requirement | Acceptance Criteria                                                                                                                                                                                                                                              | Dependencies | Edge Cases                                                                                                           |
+| --- | --------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------- |
+| T1  | Create `product_inventory_expected` migration | Data model  | Table exists with `product_id`, `purchase_order_id`, `expected_quantity`, `received_quantity`, timestamps; unique index on `(product_id, purchase_order_id)`; FKs to products and purchase_orders; `expected_quantity` and `received_quantity` are decimal(15,3) | None         | Handle down migration; ensure FK cascade/restrict is appropriate                                                     |
+| T2  | Create `ProductInventoryExpected` model       | Data model  | Model with fillable, casts, `product()`, `purchaseOrder()` relations; scopes for byProduct, byPO; docblocks                                                                                                                                                      | T1           | Add `expected_quantity` ≥ 0, `received_quantity` ≤ `expected_quantity` validation in model/business layer if desired |
+
+
+### Phase 2: Allocation Logic
+
+
+| ID  | Task                                  | Requirement                  | Acceptance Criteria                                                                                                                                                                                                                                                                 | Dependencies | Edge Cases                                                                      |
+| --- | ------------------------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------- |
+| T3  | Update `AllocationAvailabilityHelper` | Available = stock + expected | `getExpectedQuantityFromPO(product, poId)` reads from `ProductInventoryExpected`; returns 0 when poId is null; formula: `SUM(expected_quantity - received_quantity)` for product+PO; only include POs with status approved/to_receive; `getAvailableToAllocate` unchanged signature | T1, T2       | When no ProductInventoryExpected rows exist, return 0; handle decimal precision |
+
+
+### Phase 3: Real Stock-In Integration
+
+
+| ID  | Task                      | Requirement                           | Acceptance Criteria                                                                                                                                                                                                                   | Dependencies | Edge Cases                                                                                                                                                                  |
+| --- | ------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T4  | Update Real Stock-In flow | Real stock-in updates expected ledger | In `submitStockInReport()`, after updating ProductInventory and ProductOrder for good items: find `ProductInventoryExpected` for product+PO; if exists, increment `received_quantity` by `actualReceive`; if not exists, skip (no-op) | T1, T2       | Record may not exist (manual entry not done); never create on receipt; cap `received_quantity` at `expected_quantity` to avoid overflow; run inside existing DB transaction |
+
+
+### Phase 4: Manual Expected Stock-In UI
+
+
+| ID  | Task                      | Requirement                              | Acceptance Criteria                                                                                                                                           | Dependencies | Edge Cases                                                |
+| --- | ------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | --------------------------------------------------------- |
+| T5  | Add route and nav         | Users can reach Manual Expected Stock-In | Route `/warehousestaff/expected-stockin` (or equivalent); nav link under Warehousestaff/Stock-In area                                                         | None         | Gate by same permissions as existing Stock-In             |
+| T6  | Create Livewire component | Manual Expected Stock-In flow            | Component: `loadAvailablePurchaseOrders()` (approved/to_receive); `loadProductsForPO(poId)`; `expectedQuantities` array keyed by product_id; `saveExpected()` | T1, T2       | Handle empty PO list; handle PO with no products          |
+| T7  | Build view                | UI for Manual Expected Stock-In          | PO dropdown; product list with expected qty input per product; Save button; success/error feedback; use slideover or form per project patterns                | T6           | Validate qty ≥ 0; allow 0 to clear expected               |
+| T8  | Validation and save       | Manual entry creates/updates expected    | On save: upsert `ProductInventoryExpected` per product with qty > 0; delete or set 0 when user clears; validate expected_quantity ≥ received_quantity         | T6, T7       | Concurrent edits; ensure PO exists and is in valid status |
+
+
+### Phase 5: Optional Auto-Sync & Seeding
+
+
+| ID  | Task                    | Requirement           | Acceptance Criteria                                                                                                                                                                                                        | Dependencies     | Edge Cases                                                             |
+| --- | ----------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- | ---------------------------------------------------------------------- |
+| T9  | Auto-sync on PO approve | Option B in workflow  | When PO status becomes approved/to_receive: create/update `ProductInventoryExpected` from ProductOrder lines; expected_quantity = ProductOrder.quantity (or remaining); received_quantity = ProductOrder.received_quantity | T1, T2           | Use Observer or event; handle status transitions; idempotent on re-run |
+| T10 | One-time seed migration | Backfill existing POs | Migration: for each approved/to_receive PO, create ProductInventoryExpected from ProductOrder where not exists; expected_quantity = remaining, received_quantity = received_quantity                                       | T1, T2, T9 logic | Run once; safe to re-run (use firstOrCreate)                           |
+
+
+### Requirement Coverage
+
+
+| Requirement                                                         | Tasks                        |
+| ------------------------------------------------------------------- | ---------------------------- |
+| Available = stock + SUM(expected - received)                        | T3                           |
+| Manual Expected Stock-In creates ProductInventoryExpected           | T6, T7, T8                   |
+| Real Stock-In increments ProductInventoryExpected.received_quantity | T4                           |
+| PO must exist first                                                 | T6 (load POs), T8 (validate) |
+| Single source of truth for expected                                 | T1, T2, T3, T4               |
+| No double-counting (expected reduced as physical increased)         | T4                           |
+| Optional auto-sync from ProductOrder                                | T9, T10                      |
+
+
+### Execution Order
+
+```
+T1 → T2 → T3 (allocation works with new source)
+        ↘ T4 (real stock-in updates expected)
+        ↘ T5 → T6 → T7 → T8 (manual expected UI)
+        ↘ T9 → T10 (optional)
+```
+
+T3 and T4 can run in parallel after T2. T5–T8 are sequential. T9–T10 depend on T2.
+
+### Testing Checklist (Per Phase)
+
+- **Phase 1:** Run migration up/down; verify table structure and FKs
+- **Phase 2:** Unit test `getExpectedQuantityFromPO` and `getAvailableToAllocate` with ProductInventoryExpected data; verify allocation matrix shows correct Expected and Total Available
+- **Phase 3:** E2E: Real stock-in → verify ProductInventoryExpected.received_quantity increments; verify no create when record absent
+- **Phase 4:** E2E: Manual Expected Stock-In → save → verify ProductInventoryExpected created/updated; verify allocation matrix reflects new expected
+- **Phase 5:** (If implemented) Verify auto-sync on PO approve; verify seed migration is idempotent
 
 ---
 

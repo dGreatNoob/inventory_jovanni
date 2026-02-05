@@ -90,8 +90,8 @@ class Edit extends Component
             'department'
         ])->findOrFail($Id);
 
-        if ($this->purchaseOrder->status !== 'pending') {
-            session()->flash('error', 'Only pending purchase orders can be edited.');
+        if (! $this->purchaseOrder->canEdit()) {
+            session()->flash('error', 'Only open purchase orders can be edited.');
             return redirect()->route('pomanagement.purchaseorder');
         }
 

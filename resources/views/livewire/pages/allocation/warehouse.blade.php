@@ -301,10 +301,10 @@
                                         Link this allocation to a PO to filter products and show expected quantities.
                                     </p>
                                     <select id="batch_purchase_order" wire:model.live="batchPurchaseOrderId"
-                                        class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                                        class="block w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm pl-3 pr-10 py-2">
                                         <option value="">No PO linked</option>
                                         @foreach ($this->availablePurchaseOrders as $po)
-                                            <option value="{{ $po->id }}">{{ $po->po_num }} @if($po->expected_delivery_date) ({{ $po->expected_delivery_date->format('M d, Y') }}) @endif</option>
+                                            <option value="{{ $po->id }}">{{ $po->po_num }} — {{ $po->supplier?->name ?? 'No supplier' }}@if($po->expected_delivery_date) ({{ $po->expected_delivery_date->format('M d, Y') }})@endif</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -345,7 +345,12 @@
                     @if ($currentStep === 2)
                         <div>
                             <h4 class="text-md font-medium mb-2">Step 2: Review Branches
-                                <span class="text-gray-500 dark:text-gray-400 font-normal">(Batches: {{ implode(', ', $selectedBatchNumbers) }})</span></h4>
+                                <span class="text-gray-500 dark:text-gray-400 font-normal">(Batches: {{ implode(', ', $selectedBatchNumbers) }})</span>
+                                @if ($currentBatch?->purchaseOrder)
+                                    <span class="text-gray-400 dark:text-gray-500">·</span>
+                                    <span class="text-indigo-600 dark:text-indigo-400 font-medium">Linked PO: {{ $currentBatch->purchaseOrder->po_num }}</span>
+                                @endif
+                            </h4>
                             <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
                                 {{ count($filteredBranchesByBatch) }} {{ Str::plural('branch', count($filteredBranchesByBatch)) }} from the selected batches have been automatically added.
                             </p>
@@ -443,8 +448,13 @@
                                         <h5 class="font-medium text-gray-900 dark:text-white">Product Allocation Matrix</h5>
                                         <p class="text-sm text-gray-600 dark:text-gray-400">
                                             Enter quantities for each product and branch combination.
+                                        </p>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
                                             @if ($currentBatch?->purchaseOrder)
                                                 <span class="text-indigo-600 dark:text-indigo-400 font-medium">Linked PO: {{ $currentBatch->purchaseOrder->po_num }}</span>
+                                                @if (!empty($selectedProductIdsForAllocation))
+                                                    <span class="text-gray-400 dark:text-gray-500 mx-1">|</span>
+                                                @endif
                                             @endif
                                             @if (!empty($selectedProductIdsForAllocation))
                                                 <strong>{{ count($selectedProductIdsForAllocation) }} products</strong> in allocation.
@@ -580,20 +590,20 @@
                             <!-- Add Products Modal -->
                             <x-product-selection-modal wire:model.live="showAddProductsModal">
                                 <x-slot:search>
-                                    <div class="flex flex-col gap-3">
-                                        <div class="flex flex-col sm:flex-row sm:items-center gap-2">
-                                            <label for="add-products-po-filter" class="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">Filter by PO</label>
+                                    <div class="space-y-3">
+                                        <div class="space-y-2">
+                                            <label for="add-products-po-filter" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Filter by PO</label>
                                             <select id="add-products-po-filter" wire:model.live="selectedPurchaseOrderId"
-                                                class="flex-1 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                                                class="block w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm pl-3 pr-10 py-2">
                                                 <option value="">All products</option>
                                                 @foreach ($this->availablePurchaseOrders as $po)
-                                                    <option value="{{ $po->id }}">{{ $po->po_num }} @if($po->expected_delivery_date) ({{ $po->expected_delivery_date->format('M d, Y') }}) @endif</option>
+                                                    <option value="{{ $po->id }}">{{ $po->po_num }} — {{ $po->supplier?->name ?? 'No supplier' }}@if($po->expected_delivery_date) ({{ $po->expected_delivery_date->format('M d, Y') }})@endif</option>
                                                 @endforeach
                                             </select>
+                                            @if($selectedPurchaseOrderId)
+                                                <p class="text-xs text-gray-500 dark:text-gray-400">Showing products from selected PO.</p>
+                                            @endif
                                         </div>
-                                        @if($selectedPurchaseOrderId)
-                                            <p class="text-xs text-gray-500 dark:text-gray-400">Showing products from selected PO.</p>
-                                        @endif
                                         <x-product-search-bar
                                             wire:model.live.debounce.300ms="addProductsModalSearch"
                                             placeholder="Search by product number (e.g. LD-127 matches LD2505-127)..."

@@ -231,14 +231,9 @@
                     </div>
                 </div>
 
-                <!-- Items Section with Comprehensive Batch Input -->
+                <!-- Items Section (read-only in Approved status) -->
                 <div class="mb-6">
-                    <h4 class="text-md font-medium text-zinc-900 dark:text-white mb-3">📋 Purchase Order Items - Enter Batch Details</h4>
-                    <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 mb-4 border border-blue-200 dark:border-blue-700">
-                        <p class="text-sm text-blue-900 dark:text-blue-100">
-                            <strong>📝 Note:</strong> Please enter batch numbers for tracking purposes.
-                        </p>
-                    </div>
+                    <h4 class="text-md font-medium text-zinc-900 dark:text-white mb-3">📋 Purchase Order Items</h4>
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm text-left text-zinc-500 dark:text-zinc-400">
                             <thead class="text-sm text-zinc-700 uppercase bg-zinc-50 dark:bg-zinc-700 dark:text-zinc-400">
@@ -248,9 +243,6 @@
                                     <th scope="col" class="px-5 py-3 text-left">Supplier Code (SKU)</th>
                                     <th scope="col" class="px-5 py-3 text-left">Category</th>
                                     <th scope="col" class="px-5 py-3 text-left">Ordered Qty</th>
-                                    <th scope="col" class="px-5 py-3 bg-amber-50 dark:bg-amber-900/20">
-                                        Batch Number
-                                    </th>
                                     <th scope="col" class="px-5 py-3 text-right">Unit Price</th>
                                     <th scope="col" class="px-5 py-3 text-right">Total Price</th>
                                 </tr>
@@ -272,13 +264,6 @@
                                         </td>
                                         <td class="px-5 py-4 text-left">
                                             {{ number_format($order->quantity, 0) }} {{ $order->product->uom ?? 'pcs' }}
-                                        </td>
-                                        <!-- Batch Number Input -->
-                                        <td class="px-5 py-4 bg-amber-50 dark:bg-amber-900/20">
-                                            <input type="text"
-                                                wire:model="batch_numbers.{{ $order->id }}"
-                                                class="bg-white border border-amber-300 text-zinc-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2 dark:bg-zinc-700 dark:border-amber-600 dark:text-white"
-                                                placeholder="Enter batch #">
                                         </td>
                                         <td class="px-5 py-4 text-right">₱{{ number_format($order->unit_price, 2) }}</td>
                                         <td class="px-5 py-4 text-right font-semibold text-zinc-900 dark:text-white">
@@ -597,15 +582,7 @@
                                                 {{ number_format($order->expected_qty ?? $order->quantity, 0) }} {{ $order->product->uom ?? 'pcs' }}
                                             </div>
                                         </td>
-                                        <td class="px-5 py-4 bg-amber-50 dark:bg-amber-900/20">
-                                            @if($order->batch_number)
-                                                <span class="text-xs text-zinc-400 dark:text-zinc-500 ">
-                                                    {{ $order->batch_number }}
-                                                </span>
-                                            @else
-                                                <span class="text-xs text-zinc-400 dark:text-zinc-500 italic">No batch assigned</span>
-                                            @endif
-                                        </td>
+                                        <!-- Batch information shown via Product Batches below; no per-line batch on product orders -->
                                     </tr>
                                 @empty
                                     <tr class="bg-white border-b dark:bg-zinc-800 dark:border-zinc-700">

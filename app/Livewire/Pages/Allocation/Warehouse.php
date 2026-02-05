@@ -557,6 +557,16 @@ class Warehouse extends Component
             ->values()
             ->toArray();
     }
+
+    public function selectAllBatches()
+    {
+        $this->selectedBatchNumbers = $this->availableBatchNumbers;
+    }
+
+    public function clearBatchSelection()
+    {
+        $this->selectedBatchNumbers = [];
+    }
     public function processBarcodeScanner()
     {
         if (empty($this->barcodeInput)) {
@@ -1072,10 +1082,11 @@ class Warehouse extends Component
             PurchaseOrderStatus::TO_RECEIVE->value,
         ];
 
-        return PurchaseOrder::whereIn('status', $validStatuses)
+        return PurchaseOrder::with('supplier')
+            ->whereIn('status', $validStatuses)
             ->orderByDesc('expected_delivery_date')
             ->orderByDesc('created_at')
-            ->get(['id', 'po_num', 'status', 'expected_delivery_date']);
+            ->get();
     }
 
     public function openAddProductsModal()
@@ -2193,6 +2204,10 @@ class Warehouse extends Component
 
             $this->currentBatch->refresh();
             $this->loadBranchesByBatch();
+
+            // Advance to Step 2 when saving from Step 1 (same as Create flow)
+            $this->currentStep = 2;
+            $this->currentBatch->update(['workflow_step' => 2]);
 
             session()->flash('success', 'Batch details updated successfully.');
 

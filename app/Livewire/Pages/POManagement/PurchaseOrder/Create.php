@@ -9,6 +9,7 @@ use App\Models\Supplier;
 use App\Models\Department;
 use App\Models\User;
 use App\Models\Category;
+use App\Enums\PurchaseOrderStatus;
 use App\Support\ProductSearchHelper;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -339,10 +340,10 @@ class Create extends Component
                 $total_qty += (float)$item['order_qty']; 
             } 
 
-            // Create the purchase order
+            // Create the purchase order (auto-approved/open)
             $purchaseOrder = PurchaseOrder::create([ 
                 'po_num' => $poNum,
-                'status' => 'pending', 
+                'status' => PurchaseOrderStatus::APPROVED,
                 'supplier_id' => $this->supplier_id, 
                 'order_date' => $this->order_date,
                 'expected_delivery_date' => $this->expected_delivery_date,

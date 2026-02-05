@@ -28,7 +28,6 @@ class Index extends Component
     public $generalRemarks = '';
     public $receivedQuantities = [];
     public $destroyedQuantities = []; // Added for destroyed items
-    public $batch_numbers = []; // Added for batch numbers
     public $scannedPONumber = '';
 
     // Delivery Information
@@ -121,7 +120,6 @@ class Index extends Component
             $this->itemRemarks[$productOrder->id] = '';
             $this->receivedQuantities[$productOrder->id] = $productOrder->getRemainingQuantityAttribute();
             $this->destroyedQuantities[$productOrder->id] = 0;
-            $this->batch_numbers[$productOrder->id] = $productOrder->batch_number ?? '';
         }
     }
 
@@ -205,7 +203,7 @@ class Index extends Component
             foreach ($this->foundPurchaseOrder->productOrders as $productOrder) {
                 $itemCondition = $this->itemStatuses[$productOrder->id] ?? 'good';
                 $remarks = $this->itemRemarks[$productOrder->id] ?? '';
-                $batchNumber = $this->batch_numbers[$productOrder->id] ?? '';
+                $batchNumber = ''; // Product-level batch number no longer used here
                 $receiveQty = (float) ($this->receivedQuantities[$productOrder->id] ?? 0);
                 $destroyedQty = (float) ($this->destroyedQuantities[$productOrder->id] ?? 0);
 
@@ -227,7 +225,6 @@ class Index extends Component
                         'good_qty' => $receiveQty,
                         'destroyed_qty' => $destroyedQty,
                         'total_delivered' => $totalDelivered,
-                        'batch_number' => $batchNumber,
                         'remaining_qty' => $productOrder->getRemainingQuantityAttribute(),
                         'user' => 'Wts135',
                         'timestamp' => '2025-11-11 08:42:44',
@@ -288,11 +285,6 @@ class Index extends Component
                     }
                     
                     $productOrder->notes = $remarks;
-                    
-                    if (!empty($batchNumber)) {
-                        $productOrder->batch_number = $batchNumber;
-                        $needsSaving = true;
-                    }
 
                     // ✅ CREATE BATCH (even if only damaged items or remaining = 0)
                     if (!empty($batchNumber)) {
@@ -312,7 +304,6 @@ class Index extends Component
                             $newBatch = \App\Models\ProductBatch::create([
                                 'product_id' => $productOrder->product->id,
                                 'purchase_order_id' => $this->foundPurchaseOrder->id,
-                                'batch_number' => $batchNumber,
                                 'initial_qty' => $totalDelivered,
                                 'current_qty' => $actualReceive,
                                 'received_date' => now()->toDateString(),
@@ -323,7 +314,6 @@ class Index extends Component
                             
                             Log::info('Batch created with PO tracking', [
                                 'batch_id' => $newBatch->id,
-                                'batch_number' => $batchNumber,
                                 'product_id' => $productOrder->product->id,
                                 'product_sku' => $productOrder->product->sku,
                                 'purchase_order_id' => $this->foundPurchaseOrder->id,
@@ -337,7 +327,6 @@ class Index extends Component
                         } catch (\Exception $e) {
                             Log::error('Failed to create batch', [
                                 'product_sku' => $productOrder->product->sku,
-                                'batch_number' => $batchNumber,
                                 'error' => $e->getMessage(),
                                 'trace' => $e->getTraceAsString(),
                                 'user' => 'Wts135',
@@ -364,7 +353,6 @@ class Index extends Component
                                 'inventory_from' => $oldQty,
                                 'inventory_to' => $oldQty + $actualReceive,
                                 'dr_number' => $this->drNumber,
-                                'batch_number' => $batchNumber,
                             ])
                             ->log($logMessage);
                     }
@@ -378,7 +366,6 @@ class Index extends Component
                         'product_order_id' => $productOrder->id,
                         'received_quantity' => $productOrder->received_quantity,
                         'destroyed_qty' => $productOrder->destroyed_qty,
-                        'batch_number' => $productOrder->batch_number,
                         'total' => $productOrder->received_quantity + ($productOrder->destroyed_qty ?? 0),
                         'user' => 'Wts135',
                         'timestamp' => '2025-11-11 08:42:44',
@@ -400,7 +387,6 @@ class Index extends Component
                             'sku' => $productOrder->product->sku,
                             'destroyed_qty' => $destroyedQty,
                             'dr_number' => $this->drNumber,
-                            'batch_number' => $batchNumber,
                             'remarks' => $remarks,
                             'product_order_id' => $productOrder->id,
                         ])
@@ -432,8 +418,7 @@ class Index extends Component
                         $destroyedQty = (float) ($this->destroyedQuantities[$productOrder->id] ?? 0);
                         
                         if ($receiveQty > 0) {
-                            $batchInfo = !empty($this->batch_numbers[$productOrder->id]) ? " (Batch: {$this->batch_numbers[$productOrder->id]})" : "";
-                            $receivedItems[] = "✅ " . $productOrder->product->name . ': ' . $receiveQty . ' units (Good)' . $batchInfo;
+                            $receivedItems[] = "✅ " . $productOrder->product->name . ': ' . $receiveQty . ' units (Good)';
                             $receivedTotal += $receiveQty;
                         }
                         
@@ -531,12 +516,19 @@ class Index extends Component
     {
         Log::info("goBackToStep1 called - resetting all state");
         $this->currentStep = 0;
-        $this->reset([
-            'scannedCode', 'foundPurchaseOrder', 'showResult',
-            'message', 'messageType', 'itemStatuses', 'itemRemarks', 'generalRemarks',
-            'scannedPONumber', 'receivedQuantities', 'destroyedQuantities', 'batch_numbers',
-            'showManualInput', 'manualPONumber', 'drNumber'
-        ]);
+                        // batch_number logged at ProductBatch level only
+                        // batch_number logged at ProductBatch level only
+                        // batch_number logged at ProductBatch level only
+                        // batch_number logged at ProductBatch level only
+                        // batch_number logged at ProductBatch level only
+                        // product_orders no longer persist batch_number directly
+                        // batch_number logged at ProductBatch level only
+            $this->reset([
+                'scannedCode', 'foundPurchaseOrder', 'showResult',
+                'message', 'messageType', 'itemStatuses', 'itemRemarks', 'generalRemarks',
+                'scannedPONumber', 'receivedQuantities', 'destroyedQuantities',
+                'showManualInput', 'manualPONumber', 'drNumber'
+            ]);
         Log::info("State reset complete");
     }
 

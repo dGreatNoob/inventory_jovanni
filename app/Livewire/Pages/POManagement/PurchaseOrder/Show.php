@@ -29,7 +29,6 @@ class Show extends Component
     public $totalDelivered;
     public $totalReceived;
     public $totalDestroyed;
-    public $batch_numbers = [];
     public $batches; // ✅ ADDED - Store batches for this PO
 
     public function mount($Id)
@@ -60,33 +59,6 @@ class Show extends Component
         // ✅ ADDED - Load batches for this PO
         $this->loadBatches();
 
-        // ✅ CORRECT - Compare enum to enum
-        if ($this->purchaseOrder->status === PurchaseOrderStatus::APPROVED) {
-            if ($this->purchaseOrder->expected_delivery_date) {
-                $this->expected_delivery_date = $this->purchaseOrder->expected_delivery_date->format('Y-m-d');
-            }
-            
-            // Initialize arrays
-            $this->expected_quantities = [];
-            $this->batch_numbers = [];
-            
-            foreach ($this->purchaseOrder->productOrders as $order) {
-                $this->expected_quantities[$order->id] = (int) ($order->expected_qty ?? $order->quantity);
-                // Load existing batch numbers
-                $this->batch_numbers[$order->id] = $order->batch_number ?? '';
-            }
-        }
-        
-        // ✅ CORRECT - Compare enum values
-        if (in_array($this->purchaseOrder->status, [
-            PurchaseOrderStatus::TO_RECEIVE,
-            PurchaseOrderStatus::RECEIVED
-        ])) {
-            foreach ($this->purchaseOrder->productOrders as $order) {
-                $this->batch_numbers[$order->id] = $order->batch_number ?? '';
-            }
-        }
-        
         Log::info('Purchase Order loaded successfully', [
             'po_id' => $Id,
             'po_num' => $this->purchaseOrder->po_num,
@@ -120,7 +92,6 @@ class Show extends Component
             'po_id' => $this->purchaseOrder->id,
             'po_num' => $this->purchaseOrder->po_num,
             'batch_count' => $this->batches->count(),
-            'batch_numbers' => $this->batches->pluck('batch_number')->unique()->toArray(),
             'product_ids' => $this->batches->pluck('product_id')->unique()->toArray(),
             'user' => 'Wts135',
             'timestamp' => '2025-11-11 08:01:50',
@@ -195,100 +166,35 @@ class Show extends Component
                 session()->flash('message', 'Purchase order #' . $this->purchaseOrder->po_num . ' approved successfully! Expected delivery: ' . now()->addDays(7)->format('M d, Y'));
                 
             } elseif ($this->purchaseOrder->status === PurchaseOrderStatus::APPROVED) {
-                // ✅ Second approval: APPROVED → TO_RECEIVE (with batch numbers)
-                
-                Log::info('Attempting to save batch numbers', [
-                    'batch_numbers' => $this->batch_numbers,
-                    'po_id' => $this->purchaseOrder->id,
-                    'user' => 'Wts135',
-                    'timestamp' => '2025-11-11 08:01:50',
+                // ✅ Second approval: APPROVED → TO_RECEIVE (no batch number handling)
+
+                $this->purchaseOrder->update([
+                    'status' => PurchaseOrderStatus::TO_RECEIVE,
                 ]);
-                
-                // Check if batch numbers are provided
-                $batchNumbersProvided = array_filter($this->batch_numbers, function($value) {
-                    return !empty(trim($value));
-                });
-                
-                if (empty($batchNumbersProvided)) {
-                    DB::rollBack();
-                    Log::warning('No batch numbers provided', [
-                        'po_id' => $this->purchaseOrder->id,
-                        'user' => 'Wts135',
-                        'timestamp' => '2025-11-11 08:01:50',
-                    ]);
-                    session()->flash('error', 'Please enter at least one batch number before completing approval.');
-                    return;
-                }
-
-                // Save batch numbers to product orders
-                $savedCount = 0;
-                foreach ($this->batch_numbers as $orderId => $batchNumber) {
-                    if (!empty(trim($batchNumber))) {
-                        $productOrder = ProductOrder::where('id', $orderId)
-                            ->where('purchase_order_id', $this->purchaseOrder->id)
-                            ->first();
-                        
-                        if ($productOrder) {
-                            $productOrder->batch_number = trim($batchNumber);
-                            $productOrder->save();
-                            $savedCount++;
-                            
-                            Log::info('Batch number saved to product order', [
-                                'order_id' => $orderId,
-                                'product_id' => $productOrder->product_id,
-                                'batch_number' => trim($batchNumber),
-                                'user' => 'Wts135',
-                                'timestamp' => '2025-11-11 08:01:50',
-                            ]);
-                        } else {
-                            Log::warning('Product order not found', [
-                                'order_id' => $orderId,
-                                'user' => 'Wts135',
-                                'timestamp' => '2025-11-11 08:01:50',
-                            ]);
-                        }
-                    }
-                }
-
-                if ($savedCount === 0) {
-                    DB::rollBack();
-                    Log::error('Failed to save batch numbers', [
-                        'po_id' => $this->purchaseOrder->id,
-                        'user' => 'Wts135',
-                        'timestamp' => '2025-11-11 08:01:50',
-                    ]);
-                    session()->flash('error', 'Failed to save batch numbers. Please try again.');
-                    return;
-                }
-
-                // Update status to TO_RECEIVE
-                $this->purchaseOrder->status = PurchaseOrderStatus::TO_RECEIVE;
-                $this->purchaseOrder->save();
 
                 PurchaseOrderApprovalLog::create([
                     'purchase_order_id' => $this->purchaseOrder->id,
                     'user_id' => Auth::id(),
                     'action' => 'approved',
-                    'remarks' => "Purchase order marked as ready for receiving. {$savedCount} batch number(s) saved.",
+                    'remarks' => 'Purchase order marked as ready for receiving.',
                     'ip_address' => request()->ip(),
                 ]);
 
                 DB::commit();
-                
+
                 // Refresh data
                 $this->purchaseOrder->refresh();
                 $this->updateComputedProperties();
-                $this->loadBatches(); // ✅ ADDED - Refresh batches
-                
+                $this->loadBatches();
+
                 Log::info('Purchase order marked as ready to receive (APPROVED → TO_RECEIVE)', [
                     'po_id' => $this->purchaseOrder->id,
                     'po_num' => $this->purchaseOrder->po_num,
-                    'batch_count' => $savedCount,
                     'user' => 'Wts135',
                     'timestamp' => '2025-11-11 08:01:50',
                 ]);
-                
-                session()->flash('message', "Purchase order is now ready for receiving. {$savedCount} batch number(s) have been saved.");
+
+                session()->flash('message', 'Purchase order is now ready for receiving.');
             }
             
         } catch (\Exception $e) {
@@ -382,16 +288,6 @@ class Show extends Component
                     'loaded_date' => null,
                     'return_reason' => $this->cancellation_reason,
                 ]);
-
-                // Reset batch numbers in database
-                foreach ($this->purchaseOrder->productOrders as $order) {
-                    $order->update([
-                        'batch_number' => null,
-                    ]);
-                }
-
-                // Clear the batch_numbers array in component
-                $this->batch_numbers = [];
 
                 // Log the return action
                 PurchaseOrderApprovalLog::create([

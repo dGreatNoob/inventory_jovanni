@@ -999,9 +999,9 @@ class Warehouse extends Component
         }
 
         // Fetch candidates: for each segment, include products where any searchable field
-        // contains that segment (broader net so "127" alone can find "LD2505-127")
-        $query = Product::with('color')->active()->where(function ($qb) use ($segments) {
-            $searchableFields = ['product_number', 'supplier_code', 'name', 'remarks', 'sku'];
+        // contains that segment. "LD" matches "LD****", "LD-127" matches "LD****-127****"
+        $searchableFields = ['product_number', 'supplier_code', 'name', 'remarks', 'sku'];
+        $query = Product::with('color')->active()->where(function ($qb) use ($segments, $searchableFields) {
             foreach ($segments as $segment) {
                 if ($segment === '') {
                     continue;
@@ -1015,7 +1015,14 @@ class Warehouse extends Component
             }
         });
 
-        $products = $query->orderBy('product_number')->limit(300)->get();
+        // Prioritize products where product_number starts with first segment (e.g. "LD" -> "LD2505-127" first)
+        $firstSegment = $segments[0];
+        $prefixPattern = $firstSegment . '%';
+        $products = $query
+            ->orderByRaw("CASE WHEN LOWER(product_number) LIKE ? THEN 0 ELSE 1 END", [$prefixPattern])
+            ->orderBy('product_number')
+            ->limit(300)
+            ->get();
 
         // Strict prefix-segmentation: each query token must match PREFIX of corresponding value segment
         return $products->filter(function ($p) use ($q) {

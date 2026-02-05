@@ -411,129 +411,111 @@
                         <div>
                             <h4 class="text-md font-medium mb-2">Step 3: Add Products to All Branches</h4>
 
-                            <div class="flex justify-center py-8">
-                                <flux:button type="button" wire:click="openAddProductsModal" icon="plus">
-                                    Add Products
-                                </flux:button>
-                            </div>
+                            @php
+                                $filteredProductsForMatrix = $currentBatch && !empty($selectedProductIdsForAllocation)
+                                    ? $this->availableProductsForBatch->whereIn('id', $selectedProductIdsForAllocation)
+                                    : collect();
+                                $hasMatrixData = $currentBatch && $filteredProductsForMatrix->count() > 0;
+                            @endphp
 
-                            @if (!empty($selectedProductIdsForAllocation))
-                                <p class="mb-3 text-sm text-green-700 dark:text-green-300"><strong>{{ count($selectedProductIdsForAllocation) }} products</strong> in allocation</p>
-                            @endif
+                            {{-- Product Allocation Matrix Section: Header | Matrix | Footer --}}
+                            <div class="flex flex-col max-h-[calc(100vh-12rem)] rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 overflow-hidden">
+                                {{-- Header: Title / Subheading ---- Add Products --}}
+                                <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 flex-shrink-0">
+                                    <div>
+                                        <h5 class="font-medium text-gray-900 dark:text-white">Product Allocation Matrix</h5>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">
+                                            Enter quantities for each product and branch combination.
+                                            @if (!empty($selectedProductIdsForAllocation))
+                                                <strong>{{ count($selectedProductIdsForAllocation) }} products</strong> in allocation.
+                                            @else
+                                                Leave blank or 0 for no allocation.
+                                            @endif
+                                        </p>
+                                    </div>
+                                    <flux:button type="button" wire:click="openAddProductsModal" icon="plus">
+                                        Add Products
+                                    </flux:button>
+                                </div>
 
-                            <!-- Product Allocations Summary (collapsible) -->
-                            @if (!empty($productAllocations))
-                                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden mt-4" x-data="{ expanded: false }">
-                                    <button type="button" @click="expanded = !expanded"
-                                        class="w-full flex items-center justify-between px-4 py-2 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                        <span class="text-sm font-medium text-gray-900 dark:text-white">Summary ({{ count($productAllocations) }} {{ Str::plural('product', count($productAllocations)) }})</span>
-                                        <svg class="w-5 h-5 text-gray-500 transition-transform" :class="{ 'rotate-180': expanded }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                {{-- Amber Warning (when matrix shown and unsaved) --}}
+                                @if ($hasMatrixData && !$matrixSavedInSession)
+                                    <div class="flex-shrink-0 px-4 py-3 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800 flex items-center gap-3">
+                                        <svg class="w-5 h-5 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
                                         </svg>
-                                    </button>
-                                    <div x-show="expanded" x-collapse class="overflow-hidden">
-                                        <div class="overflow-x-auto border-t border-gray-200 dark:border-gray-700">
-                                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                            <thead class="bg-gray-50 dark:bg-gray-700">
+                                        <p class="text-sm text-amber-800 dark:text-amber-200">You have unsaved allocation quantities. Save before going to Packing / Scan.</p>
+                                    </div>
+                                @endif
+
+                                {{-- Matrix Scroll Area --}}
+                                <div class="flex-1 min-h-0 overflow-auto">
+                                    @if ($hasMatrixData)
+                                        <table class="w-full table-fixed bg-white dark:bg-gray-800 border-collapse border border-gray-300 dark:border-gray-600" style="min-width: max-content;">
+                                            <thead>
                                                 <tr>
-                                                    <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase w-16">Image</th>
-                                                    <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase min-w-[200px]">Product</th>
-                                                    <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase whitespace-nowrap">Quantity</th>
-                                                    <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase whitespace-nowrap">Unit Price</th>
-                                                    <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase whitespace-nowrap">Total Value</th>
-                                                    <th class="px-5 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase whitespace-nowrap">Applied to Branches</th>
+                                                    <th class="sticky top-0 left-0 z-20 w-[180px] min-w-[180px] px-4 py-2 border border-gray-300 dark:border-gray-600 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase bg-gray-100 dark:bg-gray-700">Branch</th>
+                                                    @foreach ($filteredProductsForMatrix as $product)
+                                                        <th class="sticky top-0 z-10 w-[140px] min-w-[140px] px-3 py-2 border border-gray-300 dark:border-gray-600 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase bg-gray-100 dark:bg-gray-700">
+                                                            <div class="flex flex-col items-center space-y-1.5">
+                                                                <button type="button" wire:click="removeProductFromAllocation({{ $product->id }})" class="text-red-500 hover:text-red-700 self-end mb-1" title="Remove this product from allocation">
+                                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                                                </button>
+                                                                <div class="text-xs font-mono text-gray-700 dark:text-gray-300">{{ $product->product_number ?? '—' }} - {{ $product->sku ?? '—' }}</div>
+                                                                <div class="text-xs text-gray-600 dark:text-gray-400">{{ $product->supplier_code ?? '—' }}</div>
+                                                                <div class="text-xs text-gray-500 dark:text-gray-500">Stock: {{ intval($product->initial_quantity ?? 0) }}</div>
+                                                            </div>
+                                                        </th>
+                                                    @endforeach
                                                 </tr>
                                             </thead>
-                                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                                @foreach ($productAllocations as $index => $allocation)
-                                                    @php
-                                                        $product = $availableProducts->firstWhere('id', $allocation['product_id'] ?? null);
-                                                    @endphp
-                                                    <tr>
-                                                        <td class="px-5 py-4 align-top">
-                                                            @if ($allocation['image'])
-                                                                <img src="{{ asset('storage/' . $allocation['image']) }}"
-                                                                    alt="{{ $allocation['product_name'] }}"
-                                                                    class="w-12 h-12 rounded object-cover">
-                                                            @else
-                                                                <div class="w-12 h-12 bg-gray-200 dark:bg-gray-600 rounded flex items-center justify-center">
-                                                                    <svg class="w-6 h-6 text-gray-400" fill="none"
-                                                                        stroke="currentColor" viewBox="0 0 24 24">
-                                                                        <path stroke-linecap="round"
-                                                                            stroke-linejoin="round" stroke-width="2"
-                                                                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
-                                                                        </path>
-                                                                    </svg>
-                                                                </div>
-                                                            @endif
-                                                        </td>
-                                                        <td class="px-5 py-4 text-sm">
-                                                            <div class="space-y-1.5">
-                                                                <div>
-                                                                    <div class="text-[10px] text-gray-400 dark:text-gray-500 font-medium uppercase tracking-wider">Product Name</div>
-                                                                    <div class="text-sm font-semibold text-gray-900 dark:text-white">
-                                                                        {{ $product ? ($product->remarks ?? $product->name) : $allocation['product_name'] }}
-                                                                        @if ($product && $product->color)
-                                                                            <span class="text-gray-500 dark:text-gray-400"> · {{ $product->color->name ?? $product->color->code }}</span>
-                                                                        @endif
-                                                                    </div>
-                                                                </div>
-                                                                <div class="grid grid-cols-2 gap-x-3 gap-y-1">
-                                                                    <div>
-                                                                        <div class="text-[10px] text-gray-400 dark:text-gray-500 font-medium uppercase tracking-wider">Product ID</div>
-                                                                        <div class="text-xs font-mono text-gray-600 dark:text-gray-300">{{ $product->product_number ?? '—' }}</div>
-                                                                    </div>
-                                                                    <div>
-                                                                        <div class="text-[10px] text-gray-400 dark:text-gray-500 font-medium uppercase tracking-wider">SKU</div>
-                                                                        <div class="text-xs font-mono text-gray-600 dark:text-gray-300">{{ $product->sku ?? '—' }}</div>
-                                                                    </div>
-                                                                    <div class="col-span-2">
-                                                                        <div class="text-[10px] text-gray-400 dark:text-gray-500 font-medium uppercase tracking-wider">Supplier Code (SKU)</div>
-                                                                        <div class="text-xs text-gray-600 dark:text-gray-300">{{ $product->supplier_code ?? '—' }}</div>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </td>
-                                                        <td class="px-5 py-4 text-sm text-gray-900 dark:text-white align-top">
-                                                            {{ $allocation['quantity'] }}
-                                                        </td>
-                                                        <td class="px-5 py-4 text-sm text-gray-900 dark:text-white align-top">
-                                                            @if ($allocation['unit_price'])
-                                                                ₱{{ number_format($allocation['unit_price'], 2) }}
-                                                            @else
-                                                                N/A
-                                                            @endif
-                                                        </td>
-                                                        <td class="px-5 py-4 text-sm text-gray-900 dark:text-white align-top">
-                                                            @if ($allocation['total_value'] === 'Varies')
-                                                                {{ $allocation['total_value'] }}
-                                                            @else
-                                                                ₱{{ number_format($allocation['total_value'], 2) }}
-                                                            @endif
-                                                        </td>
-                                                        <td class="px-5 py-4 text-sm text-gray-900 dark:text-white align-top">
-                                                            {{ $allocation['applied_to_branches'] }}
-                                                        </td>
+                                            <tbody>
+                                                @foreach ($currentBatch->branchAllocations as $branchAllocation)
+                                                    <tr class="bg-white dark:bg-gray-800 even:bg-gray-50 dark:even:bg-gray-800">
+                                                        <td class="sticky left-0 z-10 w-[180px] min-w-[180px] px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700">{{ $branchAllocation->branch->name }}</td>
+                                                        @foreach ($filteredProductsForMatrix as $product)
+                                                            <td class="w-[140px] min-w-[140px] px-4 py-2 border border-gray-300 dark:border-gray-600 text-center bg-white dark:bg-gray-800">
+                                                                <input type="number" wire:model.blur="matrixQuantities.{{ $branchAllocation->id }}.{{ $product->id }}" value="{{ $matrixQuantities[$branchAllocation->id][$product->id] ?? '' }}" min="0" placeholder="0" class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white text-center">
+                                                            </td>
+                                                        @endforeach
                                                     </tr>
                                                 @endforeach
                                             </tbody>
                                         </table>
+                                    @else
+                                        <div class="flex flex-col items-center justify-center py-16 px-4 text-center">
+                                            <p class="text-sm text-gray-500 dark:text-gray-400">
+                                                @if (!empty($selectedProductIdsForAllocation) && !$currentBatch)
+                                                    Ensure branches are selected (Step 1) to display the allocation matrix.
+                                                @else
+                                                    Click Add Products to add items to allocate.
+                                                @endif
+                                            </p>
                                         </div>
+                                    @endif
+                                </div>
+
+                                {{-- Footer: Save | Back | Continue --}}
+                                <div class="flex-shrink-0 flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800">
+                                    @if ($hasMatrixData)
+                                        <div class="flex flex-col items-start gap-1">
+                                            <p class="text-xs text-gray-500 dark:text-gray-400">Save before using Packing / Scan</p>
+                                            <flux:button wire:click="saveMatrixAllocations" class="bg-green-600 hover:bg-green-700">Save All Allocations</flux:button>
+                                        </div>
+                                    @else
+                                        <div></div>
+                                    @endif
+                                    <div class="flex gap-3">
+                                        <button type="button" wire:click="previousStep"
+                                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
+                                            Back
+                                        </button>
+                                        <button type="button" wire:click="nextStep"
+                                            class="px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                                            Continue to Dispatch
+                                        </button>
                                     </div>
                                 </div>
-                            @endif
-
-
-                            <div
-                                class="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600 mt-6">
-                                <button type="button" wire:click="previousStep"
-                                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
-                                    Back
-                                </button>
-                                <button type="button" wire:click="nextStep"
-                                    class="px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
-                                    Continue to Dispatch
-                                </button>
                             </div>
 
                             <!-- Add Products Modal -->

@@ -7,8 +7,12 @@ use App\Models\Branch;
 use App\Models\BranchAllocation;
 use App\Models\BranchAllocationItem;
 use App\Models\Product;
+use App\Models\ProductOrder;
 use App\Models\Box;
 use App\Models\DeliveryReceipt;
+use App\Models\PurchaseOrder;
+use App\Enums\PurchaseOrderStatus;
+use App\Support\AllocationAvailabilityHelper;
 use App\Support\ProductSearchHelper;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -74,6 +78,7 @@ class Warehouse extends Component
     public $status = 'draft';
     public $batch_number = ''; // Old field for single batch number selection
     public $selectedBatchNumbers = []; // New field for multiple batch number selection
+    public ?int $batchPurchaseOrderId = null; // PO to link to batch (Step 1)
 
     // Stepper workflow fields
     public $currentStep = 1;
@@ -102,6 +107,12 @@ class Warehouse extends Component
     // Add Products modal (Step 3)
     public $showAddProductsModal = false;
     public $addProductsModalSearch = '';
+    public ?int $selectedPurchaseOrderId = null;
+
+    // Allocation validation (Phase 2)
+    public string $allocationValidationMode = 'strict'; // 'strict' | 'warn'
+    public array $allocationValidationErrors = [];
+    public bool $showOverAllocationConfirm = false;
 
     // Step 2 branch review
     public $branchSearch = '';
@@ -978,30 +989,26 @@ class Warehouse extends Component
      * Add Products modal: search results with prefix segmentation and token-based matching.
      * Empty search: shows initial products (first 50). With query "LD-127" returns only
      * products matching "LD***-127***" (each token matches prefix of corresponding segment).
+     * When selectedPurchaseOrderId is set, filters to products that appear in that PO.
      */
     public function getAddProductsModalResultsProperty()
     {
         $q = trim($this->addProductsModalSearch ?? '');
+        $baseQuery = $this->applyPOFilterToProductQuery(Product::with('color')->active());
 
         if ($q === '') {
-            return Product::with('color')->active()
-                ->orderBy('product_number')
-                ->limit(50)
-                ->get();
+            return $baseQuery->orderBy('product_number')->limit(50)->get();
         }
 
         $segments = preg_split('/[\s\-_]+/', strtolower($q), -1, PREG_SPLIT_NO_EMPTY);
         if (empty($segments)) {
-            return Product::with('color')->active()
-                ->orderBy('product_number')
-                ->limit(50)
-                ->get();
+            return $baseQuery->orderBy('product_number')->limit(50)->get();
         }
 
         // Fetch candidates: for each segment, include products where any searchable field
         // contains that segment. "LD" matches "LD****", "LD-127" matches "LD****-127****"
         $searchableFields = ['product_number', 'supplier_code', 'name', 'remarks', 'sku'];
-        $query = Product::with('color')->active()->where(function ($qb) use ($segments, $searchableFields) {
+        $query = $baseQuery->where(function ($qb) use ($segments, $searchableFields) {
             foreach ($segments as $segment) {
                 if ($segment === '') {
                     continue;
@@ -1034,6 +1041,41 @@ class Warehouse extends Component
                 (string) ($p->sku ?? ''),
             ]);
         })->values();
+    }
+
+    /**
+     * Apply PO filter to product query: when selectedPurchaseOrderId is set,
+     * restrict to products that have a ProductOrder for that PO.
+     */
+    protected function applyPOFilterToProductQuery($query)
+    {
+        if ($this->selectedPurchaseOrderId !== null) {
+            $productIds = ProductOrder::where('purchase_order_id', $this->selectedPurchaseOrderId)
+                ->pluck('product_id')
+                ->unique()
+                ->filter()
+                ->values()
+                ->all();
+            $query = $query->whereIn('id', $productIds ?: [-1]); // empty array would return no rows
+        }
+
+        return $query;
+    }
+
+    /**
+     * Purchase orders with status approved or to_receive (expected receipts).
+     */
+    public function getAvailablePurchaseOrdersProperty()
+    {
+        $validStatuses = [
+            PurchaseOrderStatus::APPROVED->value,
+            PurchaseOrderStatus::TO_RECEIVE->value,
+        ];
+
+        return PurchaseOrder::whereIn('status', $validStatuses)
+            ->orderByDesc('expected_delivery_date')
+            ->orderByDesc('created_at')
+            ->get(['id', 'po_num', 'status', 'expected_delivery_date']);
     }
 
     public function openAddProductsModal()
@@ -1162,8 +1204,11 @@ class Warehouse extends Component
                 $this->loadBranchesByBatch();
             }
 
-            // When moving to step 3, initialize products
+            // When moving to step 3, initialize products and sync PO from batch
             if ($this->currentStep === 3) {
+                if ($this->currentBatch?->purchase_order_id) {
+                    $this->selectedPurchaseOrderId = $this->currentBatch->purchase_order_id;
+                }
                 $this->loadMatrix();
 
                 if ($this->isEditing && $this->currentBatch) {
@@ -1207,6 +1252,8 @@ class Warehouse extends Component
         $this->ref_no = $batch->ref_no;
         $this->status = $batch->status;
         $this->remarks = $batch->remarks;
+        $this->batchPurchaseOrderId = $batch->purchase_order_id;
+        $this->selectedPurchaseOrderId = $batch->purchase_order_id;
 
         // Load available batch numbers
         $this->loadAvailableBatchNumbers();
@@ -1599,9 +1646,49 @@ class Warehouse extends Component
     public function updatedMatrixQuantities()
     {
         $this->matrixSavedInSession = false;
+        $this->allocationValidationErrors = [];
+        $this->showOverAllocationConfirm = false;
     }
 
-    public function saveMatrixAllocations()
+    /**
+     * Validate matrix allocations against available stock + expected PO.
+     * Returns ['valid' => bool, 'errors' => array of strings].
+     */
+    protected function validateMatrixAllocations(): array
+    {
+        $errors = [];
+        $poId = $this->selectedPurchaseOrderId;
+
+        foreach ($this->selectedProductIdsForAllocation as $productId) {
+            $product = Product::find($productId);
+            if (!$product) {
+                continue;
+            }
+            $available = AllocationAvailabilityHelper::getAvailableToAllocate($product, $poId);
+            $allocated = 0;
+            foreach ($this->currentBatch->branchAllocations as $branchAllocation) {
+                $qty = (int) ($this->matrixQuantities[$branchAllocation->id][$productId] ?? 0);
+                $allocated += $qty;
+            }
+            if ($allocated > $available) {
+                $errors[] = sprintf(
+                    '%s (%s): allocated %d, available %d (over by %d)',
+                    $product->name ?? $product->product_number ?? 'Product #' . $productId,
+                    $product->product_number ?? $product->sku ?? '',
+                    $allocated,
+                    (int) $available,
+                    $allocated - (int) $available
+                );
+            }
+        }
+
+        return [
+            'valid' => empty($errors),
+            'errors' => $errors,
+        ];
+    }
+
+    public function saveMatrixAllocations(bool $skipValidation = false)
     {
         if (!$this->currentBatch) {
             session()->flash('error', 'No batch selected.');
@@ -1611,6 +1698,22 @@ class Warehouse extends Component
         if (empty($this->selectedProductIdsForAllocation)) {
             session()->flash('error', 'No products selected for allocation.');
             return;
+        }
+
+        $this->showOverAllocationConfirm = false;
+        $this->allocationValidationErrors = [];
+
+        if (!$skipValidation) {
+            $result = $this->validateMatrixAllocations();
+            if (!$result['valid']) {
+                $this->allocationValidationErrors = $result['errors'];
+                if ($this->allocationValidationMode === 'strict') {
+                    session()->flash('error', 'Allocation exceeds available quantity. Please reduce quantities.');
+                    return;
+                }
+                $this->showOverAllocationConfirm = true;
+                return;
+            }
         }
 
         $changes = 0;
@@ -1677,6 +1780,17 @@ class Warehouse extends Component
             session()->flash('success', 'No changes were made to the allocations.');
             $this->matrixSavedInSession = true;
         }
+    }
+
+    public function saveMatrixAllocationsAnyway()
+    {
+        $this->saveMatrixAllocations(skipValidation: true);
+    }
+
+    public function dismissOverAllocationConfirm()
+    {
+        $this->showOverAllocationConfirm = false;
+        $this->allocationValidationErrors = [];
     }
 
     public function removeProductAllocation($index)
@@ -1966,6 +2080,8 @@ class Warehouse extends Component
         $this->ref_no = $this->generateRefNo();
         $this->batch_number = '';
         $this->selectedBatchNumbers = []; // Reset selected batches
+        $this->batchPurchaseOrderId = null;
+        $this->selectedPurchaseOrderId = null;
         $this->remarks = '';
 
         // Reset allocations
@@ -2005,6 +2121,7 @@ class Warehouse extends Component
         $this->reset([
             'batch_number',
             'ref_no',
+            'batchPurchaseOrderId',
             'remarks',
             'status',
             'currentBatch',
@@ -2058,6 +2175,7 @@ class Warehouse extends Component
             // UPDATE EXISTING BATCH
             $updateData = [
                 'batch_number' => implode(', ', $this->selectedBatchNumbers),
+                'purchase_order_id' => $this->batchPurchaseOrderId ?: null,
                 'remarks' => $this->remarks,
                 'status' => $this->status,
                 'workflow_step' => $this->currentStep, // Save current step
@@ -2083,6 +2201,7 @@ class Warehouse extends Component
             $batch = BatchAllocation::create([
                 'ref_no' => $this->ref_no,
                 'batch_number' => implode(', ', $this->selectedBatchNumbers),
+                'purchase_order_id' => $this->batchPurchaseOrderId ?: null,
                 'remarks' => $this->remarks,
                 'status' => $this->status,
                 'workflow_step' => 1, // Start at step 1

@@ -9,8 +9,10 @@ use App\Models\Supplier;
 use App\Models\Department;
 use App\Models\User;
 use App\Models\Category;
+use App\Support\ProductSearchHelper;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -99,7 +101,7 @@ class Create extends Component
     public function getProductsProperty()
     {
         if (empty($this->supplier_id)) {
-            return new \Illuminate\Pagination\LengthAwarePaginator(
+            return new LengthAwarePaginator(
                 collect([]),
                 0,
                 5,
@@ -107,26 +109,90 @@ class Create extends Component
             );
         }
 
-        $query = Product::with(['category', 'supplier', 'color'])
+        $baseQuery = Product::with(['category', 'supplier', 'color'])
             ->where('supplier_id', $this->supplier_id)
-            ->where('disabled', false)
-            ->where(function($q) {
-                $search = trim($this->search);
-                if ($search) {
-                    $q->where('name', 'like', '%' . $search . '%')
-                      ->orWhere('remarks', 'like', '%' . $search . '%')
-                      ->orWhere('sku', 'like', '%' . $search . '%')
-                      ->orWhere('product_number', 'like', '%' . $search . '%')
-                      ->orWhere('supplier_code', 'like', '%' . $search . '%')
-                      ->orWhere('barcode', 'like', '%' . $search . '%');
-                }
-            });
+            ->where('disabled', false);
 
-        if ($this->categoryFilter) {
-            $query->where('category_id', $this->categoryFilter);
+        // Exclude products already added to the order
+        $alreadyAddedIds = collect($this->orderedItems)
+            ->pluck('product_id')
+            ->filter()
+            ->values()
+            ->all();
+
+        if (!empty($alreadyAddedIds)) {
+            $baseQuery->whereNotIn('id', $alreadyAddedIds);
         }
 
-        return $query->orderBy('name')->paginate(5);
+        if ($this->categoryFilter) {
+            $baseQuery->where('category_id', $this->categoryFilter);
+        }
+
+        $rawSearch = trim((string) $this->search);
+
+        // No search text: fall back to simple paginated list
+        if ($rawSearch === '') {
+            return $baseQuery->orderBy('name')->paginate(5);
+        }
+
+        // Segment-aware prefilter: similar to allocation warehouse search
+        $segments = preg_split('/[\\s\\-_]+/', strtolower($rawSearch), -1, PREG_SPLIT_NO_EMPTY);
+        if (empty($segments)) {
+            return $baseQuery->orderBy('name')->paginate(5);
+        }
+
+        $searchableFields = ['product_number', 'supplier_code', 'name', 'remarks', 'sku'];
+
+        $query = $baseQuery->where(function ($qb) use ($segments, $searchableFields) {
+            foreach ($segments as $segment) {
+                if ($segment === '') {
+                    continue;
+                }
+                $pattern = '%' . $segment . '%';
+                $qb->where(function ($inner) use ($pattern, $searchableFields) {
+                    foreach ($searchableFields as $field) {
+                        $inner->orWhere($field, 'like', $pattern);
+                    }
+                });
+            }
+        });
+
+        // Prioritize products where product_number starts with first segment
+        $firstSegment = $segments[0];
+        $prefixPattern = $firstSegment . '%';
+
+        $candidates = $query
+            ->orderByRaw("CASE WHEN LOWER(product_number) LIKE ? THEN 0 ELSE 1 END", [$prefixPattern])
+            ->orderBy('product_number')
+            ->limit(300)
+            ->get();
+
+        // Strict prefix-segmentation filter in PHP
+        $filtered = $candidates->filter(function ($product) use ($rawSearch) {
+            return ProductSearchHelper::matchesAnyField($rawSearch, [
+                (string) ($product->product_number ?? ''),
+                (string) ($product->supplier_code ?? ''),
+                (string) ($product->name ?? ''),
+                (string) ($product->remarks ?? ''),
+                (string) ($product->sku ?? ''),
+            ]);
+        })->values();
+
+        // Manual pagination for the filtered collection (5 per page)
+        $perPage = 5;
+        $currentPage = LengthAwarePaginator::resolveCurrentPage() ?: 1;
+        $currentItems = $filtered->slice(($currentPage - 1) * $perPage, $perPage)->values();
+
+        return new LengthAwarePaginator(
+            $currentItems,
+            $filtered->count(),
+            $perPage,
+            $currentPage,
+            [
+                'path' => request()->url(),
+                'query' => request()->query(),
+            ]
+        );
     }
 
     public function getSuppliersProperty()
@@ -175,7 +241,7 @@ class Create extends Component
             'unit_price.min' => 'Unit price cannot be negative.',
         ]);
 
-        $product = Product::with(['category', 'supplier'])->find($this->selected_product);
+        $product = Product::with(['category', 'supplier', 'color'])->find($this->selected_product);
 
         // Check if product already exists in ordered items
         $existingIndex = collect($this->orderedItems)->search(function($item) use ($product) {
@@ -197,6 +263,7 @@ class Create extends Component
                 'sku' => $product->sku,
                 'barcode' => $product->barcode,
                 'name' => $product->remarks ?? $product->name,
+                'color' => $product->color ? ($product->color->name ?? $product->color->code) : null,
                 'category' => $product->category ? $product->category->name : 'N/A',
                 'supplier' => $product->supplier ? $product->supplier->name : 'N/A',
                 'supplier_code' => $product->supplier_code ?? 'N/A',

@@ -292,6 +292,23 @@
                                     @enderror
                                 </div>
 
+                                <!-- Optional: Link to Purchase Order -->
+                                <div>
+                                    <label for="batch_purchase_order" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                                        Purchase Order (Optional)
+                                    </label>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                                        Link this allocation to a PO to filter products and show expected quantities.
+                                    </p>
+                                    <select id="batch_purchase_order" wire:model.live="batchPurchaseOrderId"
+                                        class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                                        <option value="">No PO linked</option>
+                                        @foreach ($this->availablePurchaseOrders as $po)
+                                            <option value="{{ $po->id }}">{{ $po->po_num }} @if($po->expected_delivery_date) ({{ $po->expected_delivery_date->format('M d, Y') }}) @endif</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
                                 <!-- Secondary: Remarks -->
                                 <div>
                                     <label for="remarks" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
@@ -426,6 +443,9 @@
                                         <h5 class="font-medium text-gray-900 dark:text-white">Product Allocation Matrix</h5>
                                         <p class="text-sm text-gray-600 dark:text-gray-400">
                                             Enter quantities for each product and branch combination.
+                                            @if ($currentBatch?->purchaseOrder)
+                                                <span class="text-indigo-600 dark:text-indigo-400 font-medium">Linked PO: {{ $currentBatch->purchaseOrder->po_num }}</span>
+                                            @endif
                                             @if (!empty($selectedProductIdsForAllocation))
                                                 <strong>{{ count($selectedProductIdsForAllocation) }} products</strong> in allocation.
                                             @else
@@ -437,6 +457,18 @@
                                         Add Products
                                     </flux:button>
                                 </div>
+
+                                {{-- Validation errors (strict mode - allocation exceeds available) --}}
+                                @if (!empty($allocationValidationErrors) && !$showOverAllocationConfirm)
+                                    <div class="flex-shrink-0 px-4 py-3 bg-red-50 dark:bg-red-900/20 border-b border-red-200 dark:border-red-800">
+                                        <p class="text-sm font-medium text-red-800 dark:text-red-200 mb-2">Allocation exceeds available quantity:</p>
+                                        <ul class="text-xs text-red-700 dark:text-red-300 list-disc list-inside space-y-1">
+                                            @foreach ($allocationValidationErrors as $err)
+                                                <li>{{ $err }}</li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
+                                @endif
 
                                 {{-- Amber Warning (when matrix shown and unsaved) --}}
                                 @if ($hasMatrixData && !$matrixSavedInSession)
@@ -461,9 +493,16 @@
                                                                 <button type="button" wire:click="removeProductFromAllocation({{ $product->id }})" class="text-red-500 hover:text-red-700 self-end mb-1" title="Remove this product from allocation">
                                                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                                                                 </button>
+                                                                @php
+                                                                    $stockQty = \App\Support\AllocationAvailabilityHelper::getStockQuantity($product);
+                                                                    $expectedQty = \App\Support\AllocationAvailabilityHelper::getExpectedQuantityFromPO($product, $selectedPurchaseOrderId);
+                                                                    $totalAvailable = \App\Support\AllocationAvailabilityHelper::getAvailableToAllocate($product, $selectedPurchaseOrderId);
+                                                                @endphp
                                                                 <div class="text-xs font-mono text-gray-700 dark:text-gray-300">{{ $product->product_number ?? '—' }} - {{ $product->sku ?? '—' }}</div>
                                                                 <div class="text-xs text-gray-600 dark:text-gray-400">{{ $product->supplier_code ?? '—' }}</div>
-                                                                <div class="text-xs text-gray-500 dark:text-gray-500">Stock: {{ intval($product->initial_quantity ?? 0) }}</div>
+                                                                <div class="text-xs text-gray-500 dark:text-gray-500">Stock: {{ (int) $stockQty }}</div>
+                                                                <div class="text-xs text-gray-500 dark:text-gray-500">Expected: {{ (int) $expectedQty }}</div>
+                                                                <div class="text-xs font-medium text-gray-700 dark:text-gray-300">Avail: {{ (int) $totalAvailable }}</div>
                                                             </div>
                                                         </th>
                                                     @endforeach
@@ -495,12 +534,32 @@
                                     @endif
                                 </div>
 
+                                {{-- Over-allocation warning (warn mode) --}}
+                                @if ($showOverAllocationConfirm && !empty($allocationValidationErrors))
+                                    <div class="flex-shrink-0 px-4 py-3 bg-amber-50 dark:bg-amber-900/20 border-t border-amber-200 dark:border-amber-800">
+                                        <p class="text-sm font-medium text-amber-800 dark:text-amber-200 mb-2">Allocation exceeds available quantity:</p>
+                                        <ul class="text-xs text-amber-700 dark:text-amber-300 list-disc list-inside mb-3 space-y-1">
+                                            @foreach ($allocationValidationErrors as $err)
+                                                <li>{{ $err }}</li>
+                                            @endforeach
+                                        </ul>
+                                        <div class="flex gap-2">
+                                            <flux:button wire:click="saveMatrixAllocationsAnyway" class="bg-amber-600 hover:bg-amber-700">Save anyway</flux:button>
+                                            <flux:button wire:click="dismissOverAllocationConfirm" variant="ghost">Cancel</flux:button>
+                                        </div>
+                                    </div>
+                                @endif
+
                                 {{-- Footer: Save | Back | Continue --}}
                                 <div class="flex-shrink-0 flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800">
                                     @if ($hasMatrixData)
                                         <div class="flex flex-col items-start gap-1">
-                                            <p class="text-xs text-gray-500 dark:text-gray-400">Save before using Packing / Scan</p>
-                                            <flux:button wire:click="saveMatrixAllocations" class="bg-green-600 hover:bg-green-700">Save All Allocations</flux:button>
+                                            @if (!empty($allocationValidationErrors) && $showOverAllocationConfirm)
+                                                <p class="text-xs text-amber-600 dark:text-amber-400">Review over-allocation above</p>
+                                            @else
+                                                <p class="text-xs text-gray-500 dark:text-gray-400">Save before using Packing / Scan</p>
+                                                <flux:button wire:click="saveMatrixAllocations" class="bg-green-600 hover:bg-green-700">Save All Allocations</flux:button>
+                                            @endif
                                         </div>
                                     @else
                                         <div></div>
@@ -521,10 +580,25 @@
                             <!-- Add Products Modal -->
                             <x-product-selection-modal wire:model.live="showAddProductsModal">
                                 <x-slot:search>
-                                    <x-product-search-bar
-                                        wire:model.live.debounce.300ms="addProductsModalSearch"
-                                        placeholder="Search by product number (e.g. LD-127 matches LD2505-127)..."
-                                    />
+                                    <div class="flex flex-col gap-3">
+                                        <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+                                            <label for="add-products-po-filter" class="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">Filter by PO</label>
+                                            <select id="add-products-po-filter" wire:model.live="selectedPurchaseOrderId"
+                                                class="flex-1 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                                                <option value="">All products</option>
+                                                @foreach ($this->availablePurchaseOrders as $po)
+                                                    <option value="{{ $po->id }}">{{ $po->po_num }} @if($po->expected_delivery_date) ({{ $po->expected_delivery_date->format('M d, Y') }}) @endif</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        @if($selectedPurchaseOrderId)
+                                            <p class="text-xs text-gray-500 dark:text-gray-400">Showing products from selected PO.</p>
+                                        @endif
+                                        <x-product-search-bar
+                                            wire:model.live.debounce.300ms="addProductsModalSearch"
+                                            placeholder="Search by product number (e.g. LD-127 matches LD2505-127)..."
+                                        />
+                                    </div>
                                 </x-slot:search>
 
                                 <x-product-list

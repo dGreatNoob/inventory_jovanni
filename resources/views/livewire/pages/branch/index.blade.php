@@ -780,11 +780,28 @@
                             <input type="text" wire:model.live.debounce.200ms="addBranchesSearch"
                                 placeholder="Search by name, code, address..."
                                 class="mb-4 block w-full rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white">
-                            <div class="max-h-64 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-lg">
-                                @foreach($this->addBranchesCandidates as $cand)
-                                    <label class="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer {{ in_array($cand->id, $addBranchesSelectedIds) ? 'bg-indigo-50 dark:bg-indigo-900/20' : '' }}">
-                                        <input type="checkbox" wire:model.live="addBranchesSelectedIds" value="{{ $cand->id }}"
-                                            class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                            <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">
+                                <kbd class="px-1 py-0.5 rounded bg-gray-200 dark:bg-gray-600 text-xs">Shift</kbd>+click: range select · <kbd class="px-1 py-0.5 rounded bg-gray-200 dark:bg-gray-600 text-xs">Ctrl</kbd>+click: multi-select · Click outside: deselect all
+                            </p>
+                            <div class="max-h-64 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-lg cursor-default"
+                                x-data="{ lastClickedIndex: null }"
+                                @click.self="$wire.deselectAllBranches()">
+                                @foreach($this->addBranchesCandidates as $idx => $cand)
+                                    @php $isSelected = in_array($cand->id, $addBranchesSelectedIds); @endphp
+                                    <label class="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer {{ $isSelected ? 'bg-indigo-50 dark:bg-indigo-900/20' : '' }}"
+                                        @click.prevent="
+                                            if ($event.ctrlKey || $event.metaKey) {
+                                                $wire.toggleBranchSelection({{ $cand->id }});
+                                            } else if ($event.shiftKey) {
+                                                $wire.selectBranchRange(lastClickedIndex ?? {{ $idx }}, {{ $idx }});
+                                            } else {
+                                                $wire.handlePlainBranchClick({{ $cand->id }});
+                                            }
+                                            lastClickedIndex = {{ $idx }};
+                                        ">
+                                        <input type="checkbox" {{ $isSelected ? 'checked' : '' }}
+                                            class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 pointer-events-none"
+                                            tabindex="-1">
                                         <span class="text-sm text-gray-900 dark:text-white">{{ $cand->name }}</span>
                                         <span class="text-xs text-gray-500 dark:text-gray-400">{{ $cand->code }}</span>
                                         @if($cand->batch)

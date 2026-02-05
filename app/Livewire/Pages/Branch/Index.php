@@ -158,6 +158,56 @@ class Index extends Component
         $this->addBranchesSelectedIds = [];
     }
 
+    public function deselectAllBranches()
+    {
+        $this->addBranchesSelectedIds = [];
+    }
+
+    /**
+     * Plain click: if item is selected, remove it; else deselect all.
+     */
+    public function handlePlainBranchClick(int $branchId)
+    {
+        $ids = $this->addBranchesSelectedIds ?? [];
+        if (in_array($branchId, $ids)) {
+            $this->addBranchesSelectedIds = array_values(array_diff($ids, [$branchId]));
+        } else {
+            $this->addBranchesSelectedIds = [];
+        }
+    }
+
+    /**
+     * Ctrl+Click: toggle single item (multi-select non-contiguous).
+     */
+    public function toggleBranchSelection(int $branchId)
+    {
+        $ids = $this->addBranchesSelectedIds ?? [];
+        $key = array_search($branchId, $ids);
+        if ($key !== false) {
+            unset($ids[$key]);
+            $this->addBranchesSelectedIds = array_values($ids);
+        } else {
+            $this->addBranchesSelectedIds = array_values(array_merge($ids, [$branchId]));
+        }
+    }
+
+    /**
+     * Shift+Click: select contiguous range. Extends selection if clicking outside current range.
+     */
+    public function selectBranchRange(int $fromIndex, int $toIndex)
+    {
+        $candidates = $this->addBranchesCandidates;
+        $selectedIds = $this->addBranchesSelectedIds ?? [];
+
+        $selectedIndices = $candidates->keys()->filter(fn ($idx) => in_array($candidates->get($idx)?->id, $selectedIds))->values();
+        $allIndices = $selectedIndices->merge([$fromIndex, $toIndex])->unique()->values();
+        $low = $allIndices->min();
+        $high = $allIndices->max();
+
+        $idsInRange = $candidates->slice($low, $high - $low + 1)->pluck('id')->toArray();
+        $this->addBranchesSelectedIds = array_values(array_unique(array_merge($selectedIds, $idsInRange)));
+    }
+
     public function addBranchesToBatch()
     {
         if (empty($this->addBranchesSelectedIds) || empty($this->addBranchesTargetBatch)) {
@@ -171,9 +221,9 @@ class Index extends Component
 
     public function getAddBranchesCandidatesProperty()
     {
-        $targetBatch = $this->addBranchesTargetBatch ?? '';
-        $all = Branch::where(function ($q) use ($targetBatch) {
-            $q->whereNull('batch')->orWhere('batch', '!=', $targetBatch);
+        // Only branches with no batch assigned (exclude branches already in any batch)
+        $all = Branch::where(function ($q) {
+            $q->whereNull('batch')->orWhere('batch', '');
         })->orderBy('name')->get();
         $search = trim($this->addBranchesSearch ?? '');
         if ($search !== '') {

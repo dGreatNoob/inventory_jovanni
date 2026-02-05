@@ -6,6 +6,7 @@ use App\Livewire\Settings\Password;
 use App\Livewire\Settings\Profile;
 use Illuminate\Support\Facades\Route;
 use App\Livewire\Pages\Warehousestaff\StockIn\Index as StockIn;
+use App\Livewire\Pages\Warehousestaff\StockIn\ExpectedStockIn as ExpectedStockIn;
 
 
 
@@ -142,6 +143,9 @@ Route::middleware(['auth'])->group(function () {
     
     Route::get('/warehousestaff/stockin', StockIn::class)
         ->name('warehousestaff.stockin');
+
+    Route::get('/warehousestaff/expected-stockin', ExpectedStockIn::class)
+        ->name('warehousestaff.expected-stockin');
 
 
 

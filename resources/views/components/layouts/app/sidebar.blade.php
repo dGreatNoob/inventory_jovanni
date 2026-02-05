@@ -323,6 +323,11 @@
                                 :current="request()->routeIs('warehousestaff.stockin')" wire:navigate>{{ __('Stock In') }}
                             </flux:navlist.item>
                         @endif
+                        @if (Route::has('warehousestaff.expected-stockin'))
+                            <flux:navlist.item icon="clipboard-document-list" href="{{ route('warehousestaff.expected-stockin') }}"
+                                :current="request()->routeIs('warehousestaff.expected-stockin')" wire:navigate>{{ __('Expected Stock-In') }}
+                            </flux:navlist.item>
+                        @endif
                         @if (Route::has('warehousestaff.stockout'))
                             <flux:navlist.item icon="qr-code" href="{{ route('warehousestaff.stockout') }}"
                                 :current="request()->routeIs('warehousestaff.stockout')" wire:navigate>{{ __('Stock Out') }}

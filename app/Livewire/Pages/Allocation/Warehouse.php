@@ -9,6 +9,7 @@ use App\Models\BranchAllocationItem;
 use App\Models\Product;
 use App\Models\Box;
 use App\Models\DeliveryReceipt;
+use App\Support\ProductSearchHelper;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Livewire\Attributes\Title;
@@ -90,20 +91,17 @@ class Warehouse extends Component
     public $productAllocations = []; // Array to store product allocations for all branches
     public $branchQuantities = []; // Array of branch_id => quantity for per-branch allocation
     public $matrixQuantities = []; // Matrix: branch_id => product_id => quantity
+    public $matrixSavedInSession = true; // Tracks whether matrix has unsaved changes
     public $selectedProductIdsForAllocation = []; // Selected products for allocation matrix
     public $temporarySelectedProducts = []; // Temporary selection for current filter
 
     // Product filtering fields
     public $availableCategories = [];
-    public $selectedCategoryId = null;
-    public $selectedProductFilterName = null;
-    public $selectedProductFilterProductNumber = null;
-    public $showAllProducts = false;
     public $filteredProducts = [];
-    public $categorySearch = '';
-    public $categoryDropdown = false;
-    public $productSearch = '';
-    public $productDropdown = false;
+
+    // Add Products modal (Step 3)
+    public $showAddProductsModal = false;
+    public $addProductsModalSearch = '';
 
     // Step 2 branch review
     public $branchSearch = '';
@@ -931,7 +929,26 @@ class Warehouse extends Component
 
     public function loadAvailableProducts()
     {
-        $this->availableProducts = Product::orderBy('name')->get();
+        $orderedCategoryIds = \App\Models\Category::orderBy('parent_id')
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->pluck('id')
+            ->toArray();
+        $orderMap = array_flip($orderedCategoryIds);
+
+        $this->availableProducts = Product::with(['category.parent'])
+            ->get()
+            ->sort(function ($a, $b) use ($orderMap) {
+                $catIdA = $a->category_id ?? 0;
+                $catIdB = $b->category_id ?? 0;
+                $posA = isset($orderMap[$catIdA]) ? $orderMap[$catIdA] : 99999;
+                $posB = isset($orderMap[$catIdB]) ? $orderMap[$catIdB] : 99999;
+                if ($posA !== $posB) {
+                    return $posA - $posB;
+                }
+                return strcmp($a->name ?? '', $b->name ?? '');
+            })
+            ->values();
     }
 
     public function loadAvailableCategories()
@@ -958,60 +975,69 @@ class Warehouse extends Component
     }
 
     /**
-     * Filtered categories for searchable dropdown (by name).
+     * Add Products modal: search results with prefix segmentation and token-based matching.
+     * Empty search: shows initial products (first 50). With query "LD-127" returns only
+     * products matching "LD***-127***" (each token matches prefix of corresponding segment).
      */
-    public function getFilteredCategoriesProperty()
+    public function getAddProductsModalResultsProperty()
     {
-        $categories = collect($this->availableCategories);
-        $query = trim($this->categorySearch);
-        if ($query === '') {
-            return $categories;
+        $q = trim($this->addProductsModalSearch ?? '');
+
+        if ($q === '') {
+            return Product::with('color')->active()
+                ->orderBy('product_number')
+                ->limit(50)
+                ->get();
         }
-        $lower = strtolower($query);
-        return $categories->filter(function ($category) use ($lower) {
-            return str_contains(strtolower((string) ($category->name ?? '')), $lower);
+
+        $segments = preg_split('/[\s\-_]+/', $q, -1, PREG_SPLIT_NO_EMPTY);
+        $firstSegment = $segments[0] ?? '';
+        if ($firstSegment === '') {
+            return Product::with('color')->active()
+                ->orderBy('product_number')
+                ->limit(50)
+                ->get();
+        }
+
+        // Fetch candidates: any field starts with first token (DB optimization)
+        $query = Product::with('color')->active()->where(function ($qb) use ($firstSegment) {
+            $pattern = $firstSegment . '%';
+            $qb->where('product_number', 'like', $pattern)
+                ->orWhere('supplier_code', 'like', $pattern)
+                ->orWhere('name', 'like', $pattern)
+                ->orWhere('remarks', 'like', $pattern);
+        });
+
+        $products = $query->orderBy('product_number')->limit(200)->get();
+
+        // Strict segment-prefix + token-based: each query token must match prefix of corresponding value segment
+        return $products->filter(function ($p) use ($q) {
+            return ProductSearchHelper::matchesAnyField($q, [
+                (string) ($p->product_number ?? ''),
+                (string) ($p->supplier_code ?? ''),
+                (string) ($p->name ?? ''),
+                (string) ($p->remarks ?? ''),
+                (string) ($p->sku ?? ''),
+            ]);
         })->values();
     }
 
-    /**
-     * Filtered product names for searchable dropdown (search by name, Product ID, supplier code, SKU).
-     */
-    public function getFilteredProductNamesForDropdownProperty()
+    public function openAddProductsModal()
     {
-        $products = $this->availableProducts;
-        if ($this->selectedCategoryId) {
-            $products = $products->where('category_id', $this->selectedCategoryId);
-        }
-        $query = trim($this->productSearch);
-        if ($query !== '') {
-            $lower = strtolower($query);
-            $products = $products->filter(function ($product) use ($lower) {
-                return str_contains(strtolower((string) ($product->name ?? '')), $lower)
-                    || str_contains(strtolower((string) ($product->product_number ?? '')), $lower)
-                    || str_contains(strtolower((string) ($product->supplier_code ?? '')), $lower)
-                    || str_contains(strtolower((string) ($product->sku ?? '')), $lower);
-            });
-        }
-        return $products->pluck('name')->unique()->values();
+        $this->addProductsModalSearch = '';
+        $this->temporarySelectedProducts = [];
+        $this->showAddProductsModal = true;
     }
 
-    public function filterProducts()
+    public function closeAddProductsModal()
     {
-        $query = Product::query();
+        $this->showAddProductsModal = false;
+    }
 
-        if ($this->selectedCategoryId) {
-            $query->where('category_id', $this->selectedCategoryId);
-        }
-
-        if ($this->selectedProductFilterName) {
-            $query->where('name', $this->selectedProductFilterName);
-        }
-
-        $this->filteredProducts = $query->orderBy('name')->get();
-        $this->showAllProducts = false;
-
-        // Clear temporary selection when filtering
-        $this->temporarySelectedProducts = [];
+    public function addSelectedProductsAndCloseModal()
+    {
+        $this->addSelectedProductsToAllocation();
+        $this->closeAddProductsModal();
     }
 
     public function addSelectedProductsToAllocation()
@@ -1029,19 +1055,6 @@ class Warehouse extends Component
         $this->loadMatrix();
 
         session()->flash('success', 'Products added to allocation list!');
-    }
-
-    public function selectAllVisible()
-    {
-        // Get all visible products based on current filter
-        $visibleProducts = $this->showAllProducts ? $this->availableProducts : $this->filteredProducts;
-        $visibleProductIds = $visibleProducts->pluck('id')->toArray();
-        
-        // Add all visible products to temporary selection
-        $this->temporarySelectedProducts = array_unique(array_merge(
-            $this->temporarySelectedProducts,
-            $visibleProductIds
-        ));
     }
 
     public function removeProductFromAllocation($productId)
@@ -1064,67 +1077,6 @@ class Warehouse extends Component
         session()->flash('success', 'Product removed from allocation!');
     }
 
-
-    public function toggleProductGroup($productName)
-    {
-        // Get all product IDs for this base product name from filtered products
-        $products = $this->showAllProducts ? $this->availableProducts : $this->filteredProducts;
-        
-        // Filter products that have the same product name
-        $productGroupIds = $products->filter(function($product) use ($productName) {
-            return $product->name === $productName;
-        })->pluck('id')->toArray();
-
-        // Check if all products in this group are already selected
-        $allSelected = !array_diff($productGroupIds, $this->selectedProductIdsForAllocation);
-
-        if ($allSelected) {
-            // Deselect all products in this group
-            $this->selectedProductIdsForAllocation = array_diff(
-                $this->selectedProductIdsForAllocation,
-                $productGroupIds
-            );
-        } else {
-            // Select all products in this group
-            $this->selectedProductIdsForAllocation = array_unique(array_merge(
-                $this->selectedProductIdsForAllocation,
-                $productGroupIds
-            ));
-        }
-    }
-
-    public function showAllProducts()
-    {
-        $this->showAllProducts = true;
-        $this->selectedCategoryId = null;
-        $this->selectedProductFilterName = null;
-        $this->filteredProducts = $this->availableProducts;
-        $this->categorySearch = '';
-        $this->categoryDropdown = false;
-        $this->productSearch = '';
-        $this->productDropdown = false;
-    }
-
-    public function selectCategoryFilter($categoryId)
-    {
-        $this->selectedCategoryId = $categoryId ?: null;
-        $this->categoryDropdown = false;
-        $this->filterProducts();
-    }
-
-    public function selectProductFilter($productName)
-    {
-        $this->selectedProductFilterName = $productName ?: null;
-        $this->productDropdown = false;
-        $this->filterProducts();
-    }
-
-    public function selectProductFilterByIndex($index)
-    {
-        $names = $this->filteredProductNamesForDropdown;
-        $name = $names->get((int) $index);
-        $this->selectProductFilter($name);
-    }
 
     public function loadBranchesByBatch()
     {
@@ -1361,7 +1313,8 @@ class Warehouse extends Component
                 }
             }
         }
-        
+        $this->matrixSavedInSession = true;
+
         // Reload product allocations
         $this->loadProductAllocations();
     }
@@ -1626,6 +1579,12 @@ class Warehouse extends Component
                 }
             }
         }
+        $this->matrixSavedInSession = true;
+    }
+
+    public function updatedMatrixQuantities()
+    {
+        $this->matrixSavedInSession = false;
     }
 
     public function saveMatrixAllocations()
@@ -1699,8 +1658,10 @@ class Warehouse extends Component
             $this->loadMatrix(); // Reload to reflect changes
             $this->loadBatchAllocations();
             session()->flash('success', "Allocations updated successfully!");
+            $this->matrixSavedInSession = true;
         } else {
             session()->flash('success', 'No changes were made to the allocations.');
+            $this->matrixSavedInSession = true;
         }
     }
 
@@ -2004,15 +1965,11 @@ class Warehouse extends Component
         $this->lastScannedBarcode = '';
         $this->branchRemarks = [];
 
-        // Reset filtering - don't show products by default
-        $this->selectedCategoryId = null;
-        $this->selectedProductFilterName = null;
-        $this->showAllProducts = false;
+        // Reset filtering and modal state
         $this->filteredProducts = [];
-        $this->categorySearch = '';
-        $this->categoryDropdown = false;
-        $this->productSearch = '';
-        $this->productDropdown = false;
+        $this->showAddProductsModal = false;
+        $this->addProductsModalSearch = '';
+        $this->temporarySelectedProducts = [];
         $this->branchSearch = '';
 
         // Load fresh data
@@ -2046,7 +2003,10 @@ class Warehouse extends Component
             'scannedQuantities',
             'barcodeInput',
             'scanFeedback',
-            'lastScannedBarcode'
+            'lastScannedBarcode',
+            'showAddProductsModal',
+            'addProductsModalSearch',
+            'temporarySelectedProducts'
         ]);
 
         // Reset to defaults
@@ -2496,16 +2456,21 @@ class Warehouse extends Component
 
     public function render()
     {
-        $batches = $this->getBatchesQuery()->paginate($this->perPage);
+        $showTable = !$this->showStepper || $this->currentStep >= 3;
 
-        foreach ($batches as $batch) {
-            if (!isset($this->openBatches[$batch->id])) {
-                $this->openBatches[$batch->id] = false;
+        if ($showTable) {
+            $batches = $this->getBatchesQuery()->paginate($this->perPage);
+            foreach ($batches as $batch) {
+                if (!isset($this->openBatches[$batch->id])) {
+                    $this->openBatches[$batch->id] = false;
+                }
             }
+            $this->initializeBatchSteps($batches);
+            $scanProgress = $this->computeScanProgressForBatches($batches);
+        } else {
+            $batches = new \Illuminate\Pagination\LengthAwarePaginator([], 0, $this->perPage);
+            $scanProgress = [];
         }
-
-        $this->initializeBatchSteps($batches);
-        $scanProgress = $this->computeScanProgressForBatches($batches);
 
         return view('livewire.pages.allocation.warehouse', [
             'batches' => $batches,

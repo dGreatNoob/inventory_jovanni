@@ -232,6 +232,17 @@
                             {{ __('Packing / Scan') }}
                         </flux:navlist.item>
 
+                        @if (Route::has('allocation.manual-stockin'))
+                            <flux:navlist.item
+                                icon="clipboard-document-list"
+                                href="{{ route('allocation.manual-stockin') }}"
+                                :current="request()->routeIs('allocation.manual-stockin')"
+                                wire:navigate
+                            >
+                                {{ __('Manual Stock-In') }}
+                            </flux:navlist.item>
+                        @endif
+
                     <!-- <flux:navlist.item
                             icon="chart-bar"
                             href="{{ route('allocation.sales') }}"
@@ -321,11 +332,6 @@
                         @if (Route::has('warehousestaff.stockin'))
                             <flux:navlist.item icon="qr-code" href="{{ route('warehousestaff.stockin') }}"
                                 :current="request()->routeIs('warehousestaff.stockin')" wire:navigate>{{ __('Stock In') }}
-                            </flux:navlist.item>
-                        @endif
-                        @if (Route::has('warehousestaff.expected-stockin'))
-                            <flux:navlist.item icon="clipboard-document-list" href="{{ route('warehousestaff.expected-stockin') }}"
-                                :current="request()->routeIs('warehousestaff.expected-stockin')" wire:navigate>{{ __('Expected Stock-In') }}
                             </flux:navlist.item>
                         @endif
                         @if (Route::has('warehousestaff.stockout'))

@@ -144,9 +144,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/warehousestaff/stockin', StockIn::class)
         ->name('warehousestaff.stockin');
 
-    Route::get('/warehousestaff/expected-stockin', ExpectedStockIn::class)
-        ->name('warehousestaff.expected-stockin');
-
 
 
 
@@ -215,6 +212,7 @@ Route::middleware(['auth'])->group(function () {
     // Allocation Management
     Route::prefix('allocation')->name('allocation.')->group(function () {
         Route::get('/warehouse', Warehouse::class)->name('warehouse');
+        Route::get('/manual-stockin', ExpectedStockIn::class)->name('manual-stockin');
         Route::get('/sales', Sales::class)->name('sales');
         Route::get('/scan', Scanning::class)->name('scan');
     });

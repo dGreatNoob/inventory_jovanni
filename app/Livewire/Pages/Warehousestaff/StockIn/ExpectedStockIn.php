@@ -17,6 +17,10 @@ class ExpectedStockIn extends Component
 {
     public ?int $selectedPurchaseOrderId = null;
 
+    public string $poSearch = '';
+
+    public bool $showPoDropdown = false;
+
     /** @var array<int, float> product_id => expected_quantity */
     public array $expectedQuantities = [];
 
@@ -33,10 +37,52 @@ class ExpectedStockIn extends Component
 
     public function getAvailablePurchaseOrdersProperty()
     {
-        return PurchaseOrder::with('supplier')
-            ->whereIn('status', $this->validPOStatuses())
+        $query = PurchaseOrder::with('supplier')
+            ->whereIn('status', $this->validPOStatuses());
+
+        if (trim($this->poSearch) !== '') {
+            $search = trim($this->poSearch);
+            $query->where(function ($q) use ($search) {
+                $q->where('po_num', 'like', "%{$search}%")
+                    ->orWhereHas('supplier', function ($sq) use ($search) {
+                        $sq->where('name', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        return $query
             ->orderByDesc('order_date')
+            ->limit(25)
             ->get();
+    }
+
+    public function updatedPoSearch(): void
+    {
+        // Keep selection; only refresh suggestion list.
+    }
+
+    public function selectPurchaseOrder(int $purchaseOrderId): void
+    {
+        $po = PurchaseOrder::find($purchaseOrderId);
+
+        if (!$po) {
+            $this->message = 'Selected PO not found.';
+            $this->messageType = 'error';
+            return;
+        }
+
+        $status = $po->status instanceof PurchaseOrderStatus ? $po->status->value : (string) $po->status;
+        if (!in_array($status, $this->validPOStatuses())) {
+            $this->message = 'Selected PO is not in a valid status for expected stock-in.';
+            $this->messageType = 'error';
+            return;
+        }
+
+        $this->selectedPurchaseOrderId = $po->id;
+        $this->loadExpectedQuantities();
+        $this->showPoDropdown = false;
+        $this->message = '';
+        $this->messageType = '';
     }
 
     public function getSelectedPurchaseOrderProperty()
@@ -123,12 +169,21 @@ class ExpectedStockIn extends Component
             return;
         }
 
+        $po->loadMissing('productOrders');
+        $poQtyByProduct = $po->productOrders->groupBy('product_id')->map(fn ($lines) => $lines->sum('quantity'));
+
         $errors = [];
         foreach ($this->expectedQuantities as $productId => $qty) {
             $qty = (float) $qty;
             if ($qty < 0) {
                 $errors[] = "Expected quantity cannot be negative.";
                 break;
+            }
+            $poQty = (float) ($poQtyByProduct->get($productId) ?? 0);
+            if ($poQty > 0 && $qty > $poQty) {
+                $product = \App\Models\Product::find($productId);
+                $name = $product?->name ?? $product?->product_number ?? "Product #{$productId}";
+                $errors[] = "{$name}: Expected quantity ({$qty}) cannot exceed PO quantity ({$poQty}).";
             }
             $existing = ProductInventoryExpected::where('product_id', $productId)
                 ->where('purchase_order_id', $this->selectedPurchaseOrderId)
@@ -179,6 +234,64 @@ class ExpectedStockIn extends Component
             $this->message = 'Failed to save: ' . $e->getMessage();
             $this->messageType = 'error';
         }
+    }
+
+    /**
+     * UX helper: fill all expected quantities from the PO quantities.
+     */
+    public function fillAllToPOQty(): void
+    {
+        $this->message = '';
+        $this->messageType = '';
+
+        if (!$this->selectedPurchaseOrderId) {
+            $this->message = 'Please select a Purchase Order first.';
+            $this->messageType = 'error';
+            return;
+        }
+
+        $po = PurchaseOrder::with('productOrders')->find($this->selectedPurchaseOrderId);
+        if (!$po) {
+            $this->message = 'Selected PO not found.';
+            $this->messageType = 'error';
+            return;
+        }
+
+        $status = $po->status instanceof PurchaseOrderStatus ? $po->status->value : (string) $po->status;
+        if (!in_array($status, $this->validPOStatuses())) {
+            $this->message = 'Selected PO is not in a valid status for expected stock-in.';
+            $this->messageType = 'error';
+            return;
+        }
+
+        $poQtyByProduct = $po->productOrders
+            ->groupBy('product_id')
+            ->map(fn ($lines) => $lines->sum('quantity'));
+
+        $products = $this->getProductsForSelectedPOProperty();
+        foreach ($products as $product) {
+            $this->expectedQuantities[$product->id] = (float) ($poQtyByProduct->get($product->id) ?? 0);
+        }
+    }
+
+    /**
+     * UX helper: clear all expected quantities for the selected PO in-memory.
+     */
+    public function clearAllExpected(): void
+    {
+        if (!$this->selectedPurchaseOrderId) {
+            $this->message = 'Please select a Purchase Order first.';
+            $this->messageType = 'error';
+            return;
+        }
+
+        $products = $this->getProductsForSelectedPOProperty();
+        foreach ($products as $product) {
+            $this->expectedQuantities[$product->id] = 0;
+        }
+
+        $this->message = '';
+        $this->messageType = '';
     }
 
     public function mount(): void

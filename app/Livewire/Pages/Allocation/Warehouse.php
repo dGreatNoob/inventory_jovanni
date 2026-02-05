@@ -990,27 +990,34 @@ class Warehouse extends Component
                 ->get();
         }
 
-        $segments = preg_split('/[\s\-_]+/', $q, -1, PREG_SPLIT_NO_EMPTY);
-        $firstSegment = $segments[0] ?? '';
-        if ($firstSegment === '') {
+        $segments = preg_split('/[\s\-_]+/', strtolower($q), -1, PREG_SPLIT_NO_EMPTY);
+        if (empty($segments)) {
             return Product::with('color')->active()
                 ->orderBy('product_number')
                 ->limit(50)
                 ->get();
         }
 
-        // Fetch candidates: any field starts with first token (DB optimization)
-        $query = Product::with('color')->active()->where(function ($qb) use ($firstSegment) {
-            $pattern = $firstSegment . '%';
-            $qb->where('product_number', 'like', $pattern)
-                ->orWhere('supplier_code', 'like', $pattern)
-                ->orWhere('name', 'like', $pattern)
-                ->orWhere('remarks', 'like', $pattern);
+        // Fetch candidates: for each segment, include products where any searchable field
+        // contains that segment (broader net so "127" alone can find "LD2505-127")
+        $query = Product::with('color')->active()->where(function ($qb) use ($segments) {
+            $searchableFields = ['product_number', 'supplier_code', 'name', 'remarks', 'sku'];
+            foreach ($segments as $segment) {
+                if ($segment === '') {
+                    continue;
+                }
+                $pattern = '%' . $segment . '%';
+                $qb->where(function ($inner) use ($pattern, $searchableFields) {
+                    foreach ($searchableFields as $field) {
+                        $inner->orWhere($field, 'like', $pattern);
+                    }
+                });
+            }
         });
 
-        $products = $query->orderBy('product_number')->limit(200)->get();
+        $products = $query->orderBy('product_number')->limit(300)->get();
 
-        // Strict segment-prefix + token-based: each query token must match prefix of corresponding value segment
+        // Strict prefix-segmentation: each query token must match PREFIX of corresponding value segment
         return $products->filter(function ($p) use ($q) {
             return ProductSearchHelper::matchesAnyField($q, [
                 (string) ($p->product_number ?? ''),

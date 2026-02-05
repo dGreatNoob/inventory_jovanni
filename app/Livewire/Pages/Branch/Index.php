@@ -7,6 +7,7 @@ use Livewire\WithPagination;
 use App\Models\Branch;
 use App\Models\Agent;
 use App\Models\AgentBranchAssignment;
+use App\Support\ProductSearchHelper;
 use Illuminate\Support\Facades\DB;
 
 class Index extends Component
@@ -25,6 +26,17 @@ class Index extends Component
     public $showEditModal = false;
     public $deleteId = null;
     public $selectedItemId;
+
+    // Bulk assign and Batch Management
+    public $selectedBranchIds = [];
+    public $bulkAssignBatch = '';
+    public $bulkAssignBatchNew = '';
+    public $showDeleteBatchModal = false;
+    public $deleteBatchName = null;
+    public $showAddBranchesModal = false;
+    public $addBranchesTargetBatch = '';
+    public $addBranchesSearch = '';
+    public $addBranchesSelectedIds = [];
 
     // Agent per branch dashboard properties
     public $dashboardSearch = '';
@@ -65,6 +77,115 @@ class Index extends Component
             ->orderBy('batch')
             ->pluck('batch', 'batch')
             ->toArray();
+    }
+
+    public function getBatchSummaryProperty()
+    {
+        return Branch::whereNotNull('batch')
+            ->where('batch', '!=', '')
+            ->selectRaw('batch, count(*) as count')
+            ->groupBy('batch')
+            ->orderBy('batch')
+            ->get()
+            ->map(fn ($row) => ['batch' => $row->batch, 'count' => (int) $row->count])
+            ->toArray();
+    }
+
+    public function bulkAssignToBatch()
+    {
+        if ($this->bulkAssignBatch === '' || empty($this->selectedBranchIds)) {
+            return;
+        }
+        $batchToAssign = ($this->bulkAssignBatch === '__new__')
+            ? trim($this->bulkAssignBatchNew ?? '')
+            : (($this->bulkAssignBatch === '__none__') ? null : $this->bulkAssignBatch);
+
+        Branch::whereIn('id', $this->selectedBranchIds)->update(['batch' => $batchToAssign]);
+
+        $count = count($this->selectedBranchIds);
+        $label = $batchToAssign ?? 'No batch';
+        session()->flash('message', "{$count} branch(es) assigned to {$label}.");
+        $this->clearBulkSelection();
+    }
+
+    public function selectAllOnPage(array $ids = [])
+    {
+        $this->selectedBranchIds = array_values(array_unique(array_merge($this->selectedBranchIds, $ids)));
+    }
+
+    public function clearBulkSelection()
+    {
+        $this->selectedBranchIds = [];
+        $this->bulkAssignBatch = '';
+        $this->bulkAssignBatchNew = '';
+    }
+
+    public function confirmDeleteBatch(string $batchName)
+    {
+        $this->deleteBatchName = $batchName;
+        $this->showDeleteBatchModal = true;
+    }
+
+    public function deleteBatch()
+    {
+        $batchName = $this->deleteBatchName;
+        $count = Branch::where('batch', $batchName)->count();
+        Branch::where('batch', $batchName)->update(['batch' => null]);
+        session()->flash('message', "Batch '{$batchName}' removed. {$count} branch(es) now have no batch.");
+        $this->showDeleteBatchModal = false;
+        $this->deleteBatchName = null;
+    }
+
+    public function removeBranchFromBatch(int $branchId)
+    {
+        Branch::where('id', $branchId)->update(['batch' => null]);
+        session()->flash('message', 'Branch removed from batch.');
+    }
+
+    public function openAddBranchesModal(string $batchName)
+    {
+        $this->addBranchesTargetBatch = $batchName;
+        $this->addBranchesSearch = '';
+        $this->addBranchesSelectedIds = [];
+        $this->showAddBranchesModal = true;
+    }
+
+    public function closeAddBranchesModal()
+    {
+        $this->showAddBranchesModal = false;
+        $this->addBranchesTargetBatch = '';
+        $this->addBranchesSearch = '';
+        $this->addBranchesSelectedIds = [];
+    }
+
+    public function addBranchesToBatch()
+    {
+        if (empty($this->addBranchesSelectedIds) || empty($this->addBranchesTargetBatch)) {
+            return;
+        }
+        Branch::whereIn('id', $this->addBranchesSelectedIds)->update(['batch' => $this->addBranchesTargetBatch]);
+        $count = count($this->addBranchesSelectedIds);
+        session()->flash('message', "{$count} branch(es) added to batch '{$this->addBranchesTargetBatch}'.");
+        $this->closeAddBranchesModal();
+    }
+
+    public function getAddBranchesCandidatesProperty()
+    {
+        $targetBatch = $this->addBranchesTargetBatch ?? '';
+        $all = Branch::where(function ($q) use ($targetBatch) {
+            $q->whereNull('batch')->orWhere('batch', '!=', $targetBatch);
+        })->orderBy('name')->get();
+        $search = trim($this->addBranchesSearch ?? '');
+        if ($search !== '') {
+            return $all->filter(function ($branch) use ($search) {
+                return ProductSearchHelper::matchesAnyField($search, [
+                    $branch->name ?? '',
+                    $branch->code ?? '',
+                    $branch->address ?? '',
+                ]);
+            })->values();
+        }
+        return $all;
     }
 
     public function sortByColumn($column)
@@ -237,9 +358,15 @@ class Index extends Component
         $this->reset([
             'showDeleteModal',
             'showEditModal',
+            'showDeleteBatchModal',
+            'showAddBranchesModal',
             'deleteId',
+            'deleteBatchName',
             'selectedItemId',
-            'editData'
+            'editData',
+            'addBranchesTargetBatch',
+            'addBranchesSearch',
+            'addBranchesSelectedIds',
         ]);
     }
 
@@ -302,14 +429,18 @@ class Index extends Component
         $branches = Branch::with(['activeAgents' => function($query) {
                 $query->with('agent');
             }])
-            ->when($this->dashboardSearch, function($query) {
-                $query->where(function($q) {
-                    $q->where('name', 'like', '%'.$this->dashboardSearch.'%')
-                      ->orWhere('address', 'like', '%'.$this->dashboardSearch.'%')
-                      ->orWhere('manager_name', 'like', '%'.$this->dashboardSearch.'%');
-                });
-            })
             ->get();
+
+        $dashboardSearch = trim($this->dashboardSearch ?? '');
+        if ($dashboardSearch !== '') {
+            $branches = $branches->filter(function ($branch) use ($dashboardSearch) {
+                return ProductSearchHelper::matchesAnyField($dashboardSearch, [
+                    $branch->name ?? '',
+                    $branch->address ?? '',
+                    $branch->manager_name ?? '',
+                ]);
+            })->values();
+        }
 
         // Calculate agent_count for each branch
         foreach ($branches as $branch) {
@@ -351,19 +482,33 @@ class Index extends Component
             return view('livewire.pages.errors.403');
         }
 
-        $items = Branch::query()
-            ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->where('name', 'like', '%'.$this->search.'%')
-                        ->orWhere('address', 'like', '%'.$this->search.'%')
-                        ->orWhere('contact_num', 'like', '%'.$this->search.'%')
-                        ->orWhere('email', 'like', '%'.$this->search.'%')
-                        ->orWhere('manager_name', 'like', '%'.$this->search.'%');
-                });
-            })
+        $query = Branch::query()
             ->when($this->batchFilter, fn ($q) => $q->where('batch', $this->batchFilter))
-            ->latest()
-            ->paginate($this->perPage);
+            ->latest();
+
+        $search = trim($this->search ?? '');
+        if ($search !== '') {
+            $all = $query->get();
+            $filtered = $all->filter(function ($branch) use ($search) {
+                return ProductSearchHelper::matchesAnyField($search, [
+                    $branch->name ?? '',
+                    $branch->address ?? '',
+                    $branch->code ?? '',
+                    $branch->contact_num ?? '',
+                    $branch->email ?? '',
+                    $branch->manager_name ?? '',
+                ]);
+            })->values();
+            $items = new \Illuminate\Pagination\LengthAwarePaginator(
+                $filtered->forPage($this->getPage(), $this->perPage)->values(),
+                $filtered->count(),
+                $this->perPage,
+                $this->getPage(),
+                ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath(), 'pageName' => 'page']
+            );
+        } else {
+            $items = $query->paginate($this->perPage);
+        }
 
         // Total agents (all agents in the system)
         $totalAgents = Agent::count();

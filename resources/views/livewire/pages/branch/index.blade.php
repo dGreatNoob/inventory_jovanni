@@ -224,6 +224,113 @@
             </div>
         @endif
 
+        @can('branch edit')
+        <!-- Batch Management -->
+        <section class="bg-white dark:bg-gray-800 shadow rounded-lg mb-8" x-data="{ open: false }">
+            <button type="button"
+                @click="open = !open"
+                class="w-full px-6 py-5 flex items-center justify-between text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-inset">
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">Batch Management</h3>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Assign branches to batches, delete batch names</p>
+                </div>
+                <svg class="w-5 h-5 text-gray-500 dark:text-gray-400 transition-transform duration-200"
+                    :class="{ 'rotate-180': open }"
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
+            <div x-show="open"
+                x-collapse
+                class="border-t border-gray-200 dark:border-gray-700">
+                <div class="p-6">
+                    @if(empty($this->batchSummary))
+                        <p class="text-sm text-gray-500 dark:text-gray-400">No batches yet. Assign branches via the Branch List bulk actions or when creating/editing a branch.</p>
+                    @else
+                        <div class="border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden">
+                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-600 table-fixed">
+                                <colgroup>
+                                    <col class="w-44">
+                                    <col>
+                                    <col class="w-52">
+                                </colgroup>
+                                <thead class="bg-gray-50 dark:bg-gray-700">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Batch Name</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Branches</th>
+                                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-600" x-data="{ expandedBatch: null }">
+                                    @foreach($this->batchSummary as $row)
+                                        @php 
+                                            $batchBranches = \App\Models\Branch::where('batch', $row['batch'])->orderBy('name')->get();
+                                            $batchIdx = $loop->index;
+                                        @endphp
+                                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                            <td class="px-4 py-3">
+                                                <button type="button" @click="expandedBatch = expandedBatch === {{ $batchIdx }} ? null : {{ $batchIdx }}" class="flex items-center gap-2 text-left">
+                                                    <svg class="w-4 h-4 text-gray-500 transition-transform" :class="{ 'rotate-90': expandedBatch === {{ $batchIdx }} }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                                    </svg>
+                                                    <span class="font-medium text-gray-900 dark:text-white">{{ $row['batch'] }}</span>
+                                                </button>
+                                            </td>
+                                            <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">{{ $row['count'] }} {{ Str::plural('branch', $row['count']) }}</td>
+                                            <td class="px-4 py-3 text-right">
+                                                <button type="button" wire:click="openAddBranchesModal({{ json_encode($row['batch']) }})"
+                                                    class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline mr-3">Add branches</button>
+                                                <button type="button" wire:click="confirmDeleteBatch({{ json_encode($row['batch']) }})"
+                                                    class="text-sm text-red-600 dark:text-red-400 hover:underline">Delete batch</button>
+                                            </td>
+                                        </tr>
+                                        <tr x-show="expandedBatch === {{ $batchIdx }}" x-collapse class="bg-gray-50 dark:bg-gray-800/50">
+                                            <td colspan="3" class="px-4 py-3">
+                                                <table class="min-w-full border-0 table-fixed">
+                                                    <colgroup>
+                                                        <col class="w-44">
+                                                        <col>
+                                                        <col class="w-20">
+                                                        <col class="w-52">
+                                                    </colgroup>
+                                                    <thead>
+                                                        <tr class="border-0">
+                                                            <th class="px-0 py-1.5 w-44 border-0"></th>
+                                                            <th class="px-3 py-1.5 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-0">Name</th>
+                                                            <th class="px-3 py-1.5 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-0">Code</th>
+                                                            <th class="px-3 py-1.5 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-0">Actions</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody class="divide-y divide-gray-100 dark:divide-gray-600">
+                                                        @foreach($batchBranches as $b)
+                                                            <tr class="border-0 hover:bg-gray-100 dark:hover:bg-gray-700/50">
+                                                                <td class="px-0 py-1.5 w-44 border-0"></td>
+                                                                <td class="px-3 py-1.5 text-sm text-gray-900 dark:text-white border-0">{{ $b->name }}</td>
+                                                                <td class="px-3 py-1.5 text-sm font-mono text-gray-600 dark:text-gray-400 border-0">{{ $b->code ?? '—' }}</td>
+                                                                <td class="px-3 py-1.5 text-right border-0">
+                                                                    <button type="button" wire:click="removeBranchFromBatch({{ $b->id }})"
+                                                                        wire:confirm="Remove this branch from batch?"
+                                                                        title="Remove from batch"
+                                                                        class="p-1.5 rounded text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20">
+                                                                        <flux:icon name="trash" class="h-4 w-4" />
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </section>
+        @endcan
+
         <!-- Branch List -->
         <section class="bg-white dark:bg-gray-800 shadow rounded-lg">
             <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
@@ -296,11 +403,47 @@
                 @endif
             </div>
 
+            @can('branch edit')
+            @if(count($selectedBranchIds) > 0)
+            <!-- Bulk Action Bar -->
+            <div class="px-6 py-3 flex flex-wrap items-center gap-3 bg-indigo-50 dark:bg-indigo-900/20 border-b border-indigo-100 dark:border-indigo-800">
+                <span class="text-sm text-gray-700 dark:text-gray-300">{{ count($selectedBranchIds) }} selected</span>
+                <select wire:model.live="bulkAssignBatch"
+                    class="rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white px-3 py-2">
+                    <option value="">— Assign to batch —</option>
+                    <option value="__none__">No batch</option>
+                    @foreach($this->batchOptions as $value => $label)
+                        <option value="{{ $value }}">{{ $label }}</option>
+                    @endforeach
+                    <option value="__new__">Add new batch…</option>
+                </select>
+                @if($bulkAssignBatch === '__new__')
+                    <input type="text" wire:model="bulkAssignBatchNew" placeholder="New batch name"
+                        class="rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white px-3 py-2 w-40" />
+                @endif
+                @if($bulkAssignBatch === '')
+                    <flux:button size="sm" disabled>Apply</flux:button>
+                @else
+                    <flux:button wire:click="bulkAssignToBatch" size="sm">Apply</flux:button>
+                @endif
+                <button type="button" wire:click="clearBulkSelection"
+                    class="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">Clear</button>
+            </div>
+            @endif
+            @endcan
+
             <!-- Table -->
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                     <thead class="bg-gray-50 dark:bg-gray-700">
                         <tr>
+                            @can('branch edit')
+                            <th scope="col" class="px-4 py-3 text-left w-12">
+                                <input type="checkbox" wire:click="selectAllOnPage({{ json_encode($items->pluck('id')->values()->toArray()) }})"
+                                    class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                    title="Select all on page">
+                            </th>
+                            @endcan
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Code</th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Branch Name</th>
                             <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Address</th>
@@ -313,6 +456,12 @@
                     <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                         @forelse($items as $item)
                             <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                @can('branch edit')
+                                <td class="px-4 py-4">
+                                    <input type="checkbox" wire:model.live="selectedBranchIds" value="{{ $item->id }}"
+                                        class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                                </td>
+                                @endcan
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                                     {{ $item->code }}
                                 </td>
@@ -344,7 +493,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="px-6 py-12 text-center">
+                                <td colspan="{{ auth()->user()->can('branch edit') ? 8 : 7 }}" class="px-6 py-12 text-center">
                                     <div class="flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
                                         <svg class="w-16 h-16 mb-4 text-gray-400 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -588,6 +737,69 @@
                                 <flux:button wire:click="cancel" variant="outline">
                                 Cancel
                                 </flux:button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        <!-- Delete Batch Confirmation Modal -->
+        @if($showDeleteBatchModal && $deleteBatchName)
+            @php $batchBranchCount = \App\Models\Branch::where('batch', $deleteBatchName)->count(); @endphp
+            <div class="fixed inset-0 z-50 w-full p-4 overflow-x-hidden overflow-y-auto flex items-center justify-center bg-black/30">
+                <div class="relative w-full max-w-md max-h-full">
+                    <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
+                        <div class="p-6 text-center">
+                            <svg class="mx-auto mb-4 text-gray-400 w-12 h-12 dark:text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                            </svg>
+                            <h3 class="mb-2 text-lg font-normal text-gray-900 dark:text-white">Delete batch &quot;{{ $deleteBatchName }}&quot;?</h3>
+                            <p class="mb-5 text-sm text-gray-500 dark:text-gray-400">This will remove the batch label from {{ $batchBranchCount }} {{ Str::plural('branch', $batchBranchCount) }}. Branches will not be deleted.</p>
+                            <div class="flex justify-center space-x-3">
+                                <flux:button wire:click="deleteBatch" class="bg-red-600 hover:bg-red-700 text-white">
+                                    Yes, Delete Batch
+                                </flux:button>
+                                <flux:button wire:click="cancel" variant="outline">
+                                    Cancel
+                                </flux:button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        <!-- Add Branches to Batch Modal -->
+        @if($showAddBranchesModal && $addBranchesTargetBatch)
+            <div class="fixed inset-0 z-50 w-full p-4 overflow-x-hidden overflow-y-auto flex items-center justify-center bg-black/30">
+                <div class="relative w-full max-w-lg max-h-full">
+                    <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
+                        <div class="p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Add branches to &quot;{{ $addBranchesTargetBatch }}&quot;</h3>
+                            <input type="text" wire:model.live.debounce.200ms="addBranchesSearch"
+                                placeholder="Search by name, code, address..."
+                                class="mb-4 block w-full rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white">
+                            <div class="max-h-64 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-lg">
+                                @foreach($this->addBranchesCandidates as $cand)
+                                    <label class="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer {{ in_array($cand->id, $addBranchesSelectedIds) ? 'bg-indigo-50 dark:bg-indigo-900/20' : '' }}">
+                                        <input type="checkbox" wire:model.live="addBranchesSelectedIds" value="{{ $cand->id }}"
+                                            class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                                        <span class="text-sm text-gray-900 dark:text-white">{{ $cand->name }}</span>
+                                        <span class="text-xs text-gray-500 dark:text-gray-400">{{ $cand->code }}</span>
+                                        @if($cand->batch)
+                                            <span class="text-xs text-amber-600 dark:text-amber-400">({{ $cand->batch }})</span>
+                                        @endif
+                                    </label>
+                                @endforeach
+                            </div>
+                            <div class="mt-4 flex justify-end gap-2">
+                                <flux:button wire:click="closeAddBranchesModal" variant="outline">Cancel</flux:button>
+                                @if(empty($addBranchesSelectedIds))
+                                    <flux:button disabled>Add 0 branch(es)</flux:button>
+                                @else
+                                    <flux:button wire:click="addBranchesToBatch">Add {{ count($addBranchesSelectedIds) }} branch(es)</flux:button>
+                                @endif
                             </div>
                         </div>
                     </div>

@@ -5,7 +5,6 @@ namespace App\Livewire\Pages\Allocation;
 use App\Models\BatchAllocation;
 use App\Models\Branch;
 use App\Models\BranchAllocation;
-use App\Support\ProductSearchHelper;
 use App\Models\BranchAllocationItem;
 use App\Models\Product;
 use App\Models\Box;
@@ -16,7 +15,7 @@ use Livewire\Attributes\Layout;
 use Illuminate\Support\Facades\DB;
 
 #[Layout('components.layouts.app')]
-#[Title('Create Allocation')]
+#[Title('Allocation - Warehouse')]
 class Warehouse extends Component
 {
     public $batchAllocations = [];
@@ -87,16 +86,20 @@ class Warehouse extends Component
     public $productAllocations = []; // Array to store product allocations for all branches
     public $branchQuantities = []; // Array of branch_id => quantity for per-branch allocation
     public $matrixQuantities = []; // Matrix: branch_id => product_id => quantity
-    public $matrixSavedInSession = true; // Tracks if matrix has unsaved changes
     public $selectedProductIdsForAllocation = []; // Selected products for allocation matrix
     public $temporarySelectedProducts = []; // Temporary selection for current filter
 
     // Product filtering fields
+    public $availableCategories = [];
+    public $selectedCategoryId = null;
     public $selectedProductFilterName = null;
     public $selectedProductFilterProductNumber = null;
     public $showAllProducts = false;
     public $filteredProducts = [];
+    public $categorySearch = '';
+    public $categoryDropdown = false;
     public $productSearch = '';
+    public $productDropdown = false;
 
     // Step 2 branch review
     public $branchSearch = '';
@@ -121,6 +124,7 @@ class Warehouse extends Component
         // Load data
         $this->loadAvailableBatchNumbers();
         $this->loadAvailableProducts();
+        $this->loadAvailableCategories();
         $this->loadBatchAllocations();
 
         // Initialize batch steps for the table
@@ -521,16 +525,6 @@ class Warehouse extends Component
             ->values()
             ->toArray();
     }
-
-    public function selectAllBatches()
-    {
-        $this->selectedBatchNumbers = $this->availableBatchNumbers;
-    }
-
-    public function clearBatchSelection()
-    {
-        $this->selectedBatchNumbers = [];
-    }
     public function processBarcodeScanner()
     {
         if (empty($this->barcodeInput)) {
@@ -917,13 +911,18 @@ class Warehouse extends Component
         $this->availableProducts = Product::orderBy('name')->get();
     }
 
+    public function loadAvailableCategories()
+    {
+        $this->availableCategories = \App\Models\Category::orderBy('name')->get();
+    }
+
     /**
      * Filtered branches for Step 2 review (by name, code, address).
      */
     public function getFilteredBranchesForReviewProperty()
     {
         $branches = collect($this->filteredBranchesByBatch);
-        $query = trim($this->branchSearch);
+        $query = trim($this->branchSearch ?? '');
         if ($query === '') {
             return $branches;
         }
@@ -936,62 +935,52 @@ class Warehouse extends Component
     }
 
     /**
-     * Filtered product names for searchable dropdown (legacy; search by name, product_number, remarks, supplier_code, SKU).
+     * Filtered categories for searchable dropdown (by name).
+     */
+    public function getFilteredCategoriesProperty()
+    {
+        $categories = collect($this->availableCategories);
+        $query = trim($this->categorySearch);
+        if ($query === '') {
+            return $categories;
+        }
+        $lower = strtolower($query);
+        return $categories->filter(function ($category) use ($lower) {
+            return str_contains(strtolower((string) ($category->name ?? '')), $lower);
+        })->values();
+    }
+
+    /**
+     * Filtered product names for searchable dropdown (search by name, Product ID, supplier code, SKU).
      */
     public function getFilteredProductNamesForDropdownProperty()
     {
         $products = $this->availableProducts;
+        if ($this->selectedCategoryId) {
+            $products = $products->where('category_id', $this->selectedCategoryId);
+        }
         $query = trim($this->productSearch);
         if ($query !== '') {
-            $products = $products->filter(function ($product) use ($query) {
-                return ProductSearchHelper::matchesAnyField($query, [
-                    $product->name ?? '',
-                    $product->remarks ?? '',
-                    $product->product_number ?? '',
-                    $product->supplier_code ?? '',
-                    $product->sku ?? '',
-                ]);
+            $lower = strtolower($query);
+            $products = $products->filter(function ($product) use ($lower) {
+                return str_contains(strtolower((string) ($product->name ?? '')), $lower)
+                    || str_contains(strtolower((string) ($product->product_number ?? '')), $lower)
+                    || str_contains(strtolower((string) ($product->supplier_code ?? '')), $lower)
+                    || str_contains(strtolower((string) ($product->sku ?? '')), $lower);
             });
         }
         return $products->pluck('name')->unique()->values();
-    }
-
-    /**
-     * Filtered product numbers for searchable dropdown (search by product_number, name, remarks, supplier_code, SKU).
-     * Returns unique product_number values with variant count for grouping color variants.
-     */
-    public function getFilteredProductNumbersForDropdownProperty()
-    {
-        $products = $this->availableProducts;
-        $query = trim($this->productSearch);
-        if ($query !== '') {
-            $products = $products->filter(function ($product) use ($query) {
-                return ProductSearchHelper::matchesAnyField($query, [
-                    $product->name ?? '',
-                    $product->remarks ?? '',
-                    $product->product_number ?? '',
-                    $product->supplier_code ?? '',
-                    $product->sku ?? '',
-                ]);
-            });
-        }
-        return $products->groupBy('product_number')
-            ->map(fn ($group, $productNumber) => [
-                'product_number' => $productNumber ?? '',
-                'variant_count' => $group->count(),
-            ])
-            ->values()
-            ->filter(fn ($item) => !empty(trim((string) $item['product_number'])))
-            ->values();
     }
 
     public function filterProducts()
     {
         $query = Product::query();
 
-        if ($this->selectedProductFilterProductNumber) {
-            $query->where('product_number', $this->selectedProductFilterProductNumber);
-        } elseif ($this->selectedProductFilterName) {
+        if ($this->selectedCategoryId) {
+            $query->where('category_id', $this->selectedCategoryId);
+        }
+
+        if ($this->selectedProductFilterName) {
             $query->where('name', $this->selectedProductFilterName);
         }
 
@@ -1053,13 +1042,14 @@ class Warehouse extends Component
     }
 
 
-    public function toggleProductGroup($productKey)
+    public function toggleProductGroup($productName)
     {
-        // Get all product IDs for this group (by product_number or name) from filtered products
+        // Get all product IDs for this base product name from filtered products
         $products = $this->showAllProducts ? $this->availableProducts : $this->filteredProducts;
-
-        $productGroupIds = $products->filter(function ($product) use ($productKey) {
-            return ($product->product_number ?? $product->name) === $productKey;
+        
+        // Filter products that have the same product name
+        $productGroupIds = $products->filter(function($product) use ($productName) {
+            return $product->name === $productName;
         })->pluck('id')->toArray();
 
         // Check if all products in this group are already selected
@@ -1083,24 +1073,25 @@ class Warehouse extends Component
     public function showAllProducts()
     {
         $this->showAllProducts = true;
+        $this->selectedCategoryId = null;
         $this->selectedProductFilterName = null;
-        $this->selectedProductFilterProductNumber = null;
         $this->filteredProducts = $this->availableProducts;
+        $this->categorySearch = '';
+        $this->categoryDropdown = false;
         $this->productSearch = '';
+        $this->productDropdown = false;
+    }
+
+    public function selectCategoryFilter($categoryId)
+    {
+        $this->selectedCategoryId = $categoryId ?: null;
+        $this->categoryDropdown = false;
+        $this->filterProducts();
     }
 
     public function selectProductFilter($productName)
     {
         $this->selectedProductFilterName = $productName ?: null;
-        $this->selectedProductFilterProductNumber = null;
-        $this->productDropdown = false;
-        $this->filterProducts();
-    }
-
-    public function selectProductFilterByProductNumber(string $productNumber)
-    {
-        $this->selectedProductFilterProductNumber = $productNumber ?: null;
-        $this->selectedProductFilterName = null;
         $this->productDropdown = false;
         $this->filterProducts();
     }
@@ -1594,11 +1585,6 @@ class Warehouse extends Component
         return Product::orderBy('name')->get();
     }
 
-    public function updatedMatrixQuantities()
-    {
-        $this->matrixSavedInSession = false;
-    }
-
     public function loadMatrix()
     {
         if (!$this->currentBatch) {
@@ -1617,7 +1603,6 @@ class Warehouse extends Component
                 }
             }
         }
-        $this->matrixSavedInSession = true;
     }
 
     public function saveMatrixAllocations()
@@ -1690,7 +1675,6 @@ class Warehouse extends Component
         if ($changes > 0) {
             $this->loadMatrix(); // Reload to reflect changes
             $this->loadBatchAllocations();
-            $this->matrixSavedInSession = true;
             session()->flash('success', "Allocations updated successfully!");
         } else {
             session()->flash('info', 'No changes were made to the allocations.');
@@ -1998,11 +1982,14 @@ class Warehouse extends Component
         $this->branchRemarks = [];
 
         // Reset filtering - don't show products by default
+        $this->selectedCategoryId = null;
         $this->selectedProductFilterName = null;
-        $this->selectedProductFilterProductNumber = null;
         $this->showAllProducts = false;
         $this->filteredProducts = [];
+        $this->categorySearch = '';
+        $this->categoryDropdown = false;
         $this->productSearch = '';
+        $this->productDropdown = false;
         $this->branchSearch = '';
 
         // Load fresh data
@@ -2028,9 +2015,9 @@ class Warehouse extends Component
             'status',
             'currentBatch',
             'branchRemarks',
+            'branchSearch',
             'selectedProductIdsForAllocation',
             'matrixQuantities',
-            'matrixSavedInSession',
             'productAllocations',
             'activeBranchId',
             'scannedQuantities',
@@ -2076,7 +2063,7 @@ class Warehouse extends Component
                 'batch_number' => implode(', ', $this->selectedBatchNumbers),
                 'remarks' => $this->remarks,
                 'status' => $this->status,
-                'workflow_step' => 2, // Advance to step 2
+                'workflow_step' => $this->currentStep, // Save current step
             ];
             
             // Only update transaction_date if it exists
@@ -2093,8 +2080,6 @@ class Warehouse extends Component
             $this->loadBranchesByBatch();
 
             session()->flash('message', 'Batch details updated successfully.');
-
-            $this->currentStep = 2;
 
         } else {
             // CREATE NEW BATCH

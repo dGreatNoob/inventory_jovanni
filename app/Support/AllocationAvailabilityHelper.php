@@ -3,12 +3,12 @@
 namespace App\Support;
 
 use App\Models\Product;
-use App\Models\ProductOrder;
+use App\Models\ProductInventoryExpected;
 use App\Enums\PurchaseOrderStatus;
 
 /**
  * Helper for computing "available to allocate" quantities in the allocation workflow.
- * Available = current stock (ProductInventory.available_quantity) + expected receipts from PO (ProductOrder.remaining).
+ * Available = current stock (ProductInventory.available_quantity) + expected from ledger (ProductInventoryExpected).
  */
 class AllocationAvailabilityHelper
 {
@@ -25,6 +25,8 @@ class AllocationAvailabilityHelper
 
     /**
      * Get expected (remaining) quantity for a product from a specific PO.
+     * Reads from ProductInventoryExpected ledger.
+     * Formula: SUM(expected_quantity - received_quantity) for product+PO.
      * Only includes POs with status approved or to_receive.
      * Returns 0 when purchaseOrderId is null.
      */
@@ -34,15 +36,15 @@ class AllocationAvailabilityHelper
             return 0.0;
         }
 
-        $remaining = ProductOrder::where('purchase_order_id', $purchaseOrderId)
-            ->where('product_id', $product->id)
+        $netExpected = ProductInventoryExpected::where('product_id', $product->id)
+            ->where('purchase_order_id', $purchaseOrderId)
             ->whereHas('purchaseOrder', function ($q) {
                 $q->whereIn('status', self::validPOStatuses());
             })
             ->get()
-            ->sum(fn ($po) => $po->remaining_quantity);
+            ->sum(fn ($record) => (float) $record->expected_quantity - (float) $record->received_quantity);
 
-        return (float) $remaining;
+        return (float) max(0, $netExpected);
     }
 
     /**

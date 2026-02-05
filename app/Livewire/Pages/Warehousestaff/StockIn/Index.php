@@ -6,6 +6,7 @@ use App\Models\PurchaseOrder;
 use App\Models\ProductOrder;
 use App\Models\Product;
 use App\Models\ProductInventory;
+use App\Models\ProductInventoryExpected;
 use Livewire\Component;
 use Livewire\Attributes\On;
 use Illuminate\Support\Facades\Auth;
@@ -264,6 +265,19 @@ class Index extends Component
                         $oldQty = $inventory->quantity ?? 0;
                         $inventory->quantity = $oldQty + $actualReceive;
                         $inventory->save();
+
+                        // Update ProductInventoryExpected ledger (if record exists)
+                        $expectedRecord = ProductInventoryExpected::where('product_id', $product->id)
+                            ->where('purchase_order_id', $this->foundPurchaseOrder->id)
+                            ->first();
+                        if ($expectedRecord) {
+                            $newReceived = min(
+                                (float) $expectedRecord->received_quantity + $actualReceive,
+                                (float) $expectedRecord->expected_quantity
+                            );
+                            $expectedRecord->received_quantity = $newReceived;
+                            $expectedRecord->save();
+                        }
 
                         Log::info('Inventory updated', [
                             'product_sku' => $product->sku,

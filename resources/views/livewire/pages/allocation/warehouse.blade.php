@@ -504,15 +504,15 @@
                                                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                                                                 </button>
                                                                 @php
-                                                                    $stockQty = \App\Support\AllocationAvailabilityHelper::getStockQuantity($product);
                                                                     $expectedQty = \App\Support\AllocationAvailabilityHelper::getExpectedQuantityFromPO($product, $selectedPurchaseOrderId);
                                                                     $totalAvailable = \App\Support\AllocationAvailabilityHelper::getAvailableToAllocate($product, $selectedPurchaseOrderId);
                                                                 @endphp
-                                                                <div class="text-xs font-mono text-gray-700 dark:text-gray-300">{{ $product->product_number ?? '—' }} - {{ $product->sku ?? '—' }}</div>
+                                                                <div class="text-xs font-mono text-gray-700 dark:text-gray-300">{{ $product->product_number ?? '—' }}</div>
+                                                                <div class="text-xs text-gray-600 dark:text-gray-400">{{ $product->name ?? '—' }}</div>
                                                                 <div class="text-xs text-gray-600 dark:text-gray-400">{{ $product->supplier_code ?? '—' }}</div>
-                                                                <div class="text-xs text-gray-500 dark:text-gray-500">Stock: {{ (int) $stockQty }}</div>
+                                                                <div class="text-xs text-gray-600 dark:text-gray-400">{{ $product->color?->code ?? '—' }}</div>
                                                                 <div class="text-xs text-gray-500 dark:text-gray-500">Expected: {{ (int) $expectedQty }}</div>
-                                                                <div class="text-xs font-medium text-gray-700 dark:text-gray-300">Avail: {{ (int) $totalAvailable }}</div>
+                                                                <div class="text-xs font-medium text-gray-700 dark:text-gray-300">In Warehouse: {{ (int) $totalAvailable }}</div>
                                                             </div>
                                                         </th>
                                                     @endforeach

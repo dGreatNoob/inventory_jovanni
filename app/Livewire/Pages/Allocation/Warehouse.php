@@ -1629,8 +1629,8 @@ class Warehouse extends Component
 
     public function getAvailableProductsForBatchProperty()
     {
-        // Return all products for the matrix
-        return Product::orderBy('name')->get();
+        // Return all products for the matrix (with color for display)
+        return Product::with('color')->orderBy('name')->get();
     }
 
     public function loadMatrix()

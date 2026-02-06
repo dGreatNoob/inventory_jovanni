@@ -175,8 +175,6 @@
 @endscript
 
 <div class="pt-4">
-    @include('livewire.pages.branch.branch-management-tabs')
-
     <!-- Success/Error Messages -->
     @if (session()->has('message'))
         <div

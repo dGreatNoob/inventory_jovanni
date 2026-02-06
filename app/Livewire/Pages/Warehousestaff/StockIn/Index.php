@@ -6,6 +6,7 @@ use App\Models\PurchaseOrder;
 use App\Models\ProductOrder;
 use App\Models\Product;
 use App\Models\ProductInventory;
+use App\Models\ProductInventoryExpected;
 use Livewire\Component;
 use Livewire\Attributes\On;
 use Illuminate\Support\Facades\Auth;
@@ -28,11 +29,11 @@ class Index extends Component
     public $generalRemarks = '';
     public $receivedQuantities = [];
     public $destroyedQuantities = []; // Added for destroyed items
-    public $batch_numbers = []; // Added for batch numbers
     public $scannedPONumber = '';
 
     // Delivery Information
     public $drNumber = ''; // Added DR Number
+    public $deliveryDate = '';
 
     // Manual PO input properties
     public $showManualInput = false;
@@ -116,12 +117,13 @@ class Index extends Component
             $this->drNumber = $this->foundPurchaseOrder->dr_number;
         }
 
+        $this->deliveryDate = now()->toDateString();
+
         foreach ($this->foundPurchaseOrder->productOrders as $productOrder) {
             $this->itemStatuses[$productOrder->id] = 'good';
             $this->itemRemarks[$productOrder->id] = '';
             $this->receivedQuantities[$productOrder->id] = $productOrder->getRemainingQuantityAttribute();
             $this->destroyedQuantities[$productOrder->id] = 0;
-            $this->batch_numbers[$productOrder->id] = $productOrder->batch_number ?? '';
         }
     }
 
@@ -140,6 +142,25 @@ class Index extends Component
         // Validate DR Number before proceeding
         if (empty(trim($this->drNumber))) {
             $this->message = 'Delivery Receipt (DR) Number is required';
+            $this->messageType = 'error';
+            return;
+        }
+
+        // Validate Date received
+        if (empty(trim($this->deliveryDate))) {
+            $this->message = 'Date received is required';
+            $this->messageType = 'error';
+            return;
+        }
+        try {
+            $parsed = \Carbon\Carbon::parse($this->deliveryDate);
+            if ($parsed->isFuture()) {
+                $this->message = 'Date received cannot be in the future';
+                $this->messageType = 'error';
+                return;
+            }
+        } catch (\Throwable $e) {
+            $this->message = 'Please enter a valid date received';
             $this->messageType = 'error';
             return;
         }
@@ -191,6 +212,28 @@ class Index extends Component
                 return;
             }
 
+            // Validate Date received
+            if (empty(trim($this->deliveryDate))) {
+                DB::rollBack();
+                $this->message = 'Date received is required.';
+                $this->messageType = 'error';
+                return;
+            }
+            try {
+                $receivedAt = \Carbon\Carbon::parse($this->deliveryDate)->startOfDay();
+                if ($receivedAt->isFuture()) {
+                    DB::rollBack();
+                    $this->message = 'Date received cannot be in the future.';
+                    $this->messageType = 'error';
+                    return;
+                }
+            } catch (\Throwable $e) {
+                DB::rollBack();
+                $this->message = 'Please enter a valid date received.';
+                $this->messageType = 'error';
+                return;
+            }
+
             // Check if DR number is already used (prevent duplicate DR numbers)
             $drExists = \App\Models\PurchaseOrderDelivery::where('dr_number', strtoupper(trim($this->drNumber)))->exists();
             
@@ -201,11 +244,13 @@ class Index extends Component
                 return;
             }
 
+            $receivedAt = \Carbon\Carbon::parse($this->deliveryDate)->startOfDay();
+
             // Process each product order
             foreach ($this->foundPurchaseOrder->productOrders as $productOrder) {
                 $itemCondition = $this->itemStatuses[$productOrder->id] ?? 'good';
                 $remarks = $this->itemRemarks[$productOrder->id] ?? '';
-                $batchNumber = $this->batch_numbers[$productOrder->id] ?? '';
+                $batchNumber = ''; // Product-level batch number no longer used here
                 $receiveQty = (float) ($this->receivedQuantities[$productOrder->id] ?? 0);
                 $destroyedQty = (float) ($this->destroyedQuantities[$productOrder->id] ?? 0);
 
@@ -227,7 +272,6 @@ class Index extends Component
                         'good_qty' => $receiveQty,
                         'destroyed_qty' => $destroyedQty,
                         'total_delivered' => $totalDelivered,
-                        'batch_number' => $batchNumber,
                         'remaining_qty' => $productOrder->getRemainingQuantityAttribute(),
                         'user' => 'Wts135',
                         'timestamp' => '2025-11-11 08:42:44',
@@ -268,6 +312,19 @@ class Index extends Component
                         $inventory->quantity = $oldQty + $actualReceive;
                         $inventory->save();
 
+                        // Update ProductInventoryExpected ledger (if record exists)
+                        $expectedRecord = ProductInventoryExpected::where('product_id', $product->id)
+                            ->where('purchase_order_id', $this->foundPurchaseOrder->id)
+                            ->first();
+                        if ($expectedRecord) {
+                            $newReceived = min(
+                                (float) $expectedRecord->received_quantity + $actualReceive,
+                                (float) $expectedRecord->expected_quantity
+                            );
+                            $expectedRecord->received_quantity = $newReceived;
+                            $expectedRecord->save();
+                        }
+
                         Log::info('Inventory updated', [
                             'product_sku' => $product->sku,
                             'old_qty' => $oldQty,
@@ -288,11 +345,6 @@ class Index extends Component
                     }
                     
                     $productOrder->notes = $remarks;
-                    
-                    if (!empty($batchNumber)) {
-                        $productOrder->batch_number = $batchNumber;
-                        $needsSaving = true;
-                    }
 
                     // ✅ CREATE BATCH (even if only damaged items or remaining = 0)
                     if (!empty($batchNumber)) {
@@ -307,15 +359,14 @@ class Index extends Component
                             $batchNotes .= "\nDR: {$this->drNumber}";
                             $batchNotes .= "\nReceived by: " . auth()->user()->name;
                             $batchNotes .= "\nPO: {$this->foundPurchaseOrder->po_num}";
-                            $batchNotes .= "\nDate: " . now()->format('Y-m-d H:i:s');
+                            $batchNotes .= "\nDate: " . $receivedAt->format('Y-m-d');
                             
                             $newBatch = \App\Models\ProductBatch::create([
                                 'product_id' => $productOrder->product->id,
                                 'purchase_order_id' => $this->foundPurchaseOrder->id,
-                                'batch_number' => $batchNumber,
                                 'initial_qty' => $totalDelivered,
                                 'current_qty' => $actualReceive,
-                                'received_date' => now()->toDateString(),
+                                'received_date' => $receivedAt->toDateString(),
                                 'received_by' => auth()->id(),
                                 'location' => 'Warehouse',
                                 'notes' => $batchNotes,
@@ -323,7 +374,6 @@ class Index extends Component
                             
                             Log::info('Batch created with PO tracking', [
                                 'batch_id' => $newBatch->id,
-                                'batch_number' => $batchNumber,
                                 'product_id' => $productOrder->product->id,
                                 'product_sku' => $productOrder->product->sku,
                                 'purchase_order_id' => $this->foundPurchaseOrder->id,
@@ -337,7 +387,6 @@ class Index extends Component
                         } catch (\Exception $e) {
                             Log::error('Failed to create batch', [
                                 'product_sku' => $productOrder->product->sku,
-                                'batch_number' => $batchNumber,
                                 'error' => $e->getMessage(),
                                 'trace' => $e->getTraceAsString(),
                                 'user' => 'Wts135',
@@ -364,7 +413,6 @@ class Index extends Component
                                 'inventory_from' => $oldQty,
                                 'inventory_to' => $oldQty + $actualReceive,
                                 'dr_number' => $this->drNumber,
-                                'batch_number' => $batchNumber,
                             ])
                             ->log($logMessage);
                     }
@@ -378,7 +426,6 @@ class Index extends Component
                         'product_order_id' => $productOrder->id,
                         'received_quantity' => $productOrder->received_quantity,
                         'destroyed_qty' => $productOrder->destroyed_qty,
-                        'batch_number' => $productOrder->batch_number,
                         'total' => $productOrder->received_quantity + ($productOrder->destroyed_qty ?? 0),
                         'user' => 'Wts135',
                         'timestamp' => '2025-11-11 08:42:44',
@@ -400,7 +447,6 @@ class Index extends Component
                             'sku' => $productOrder->product->sku,
                             'destroyed_qty' => $destroyedQty,
                             'dr_number' => $this->drNumber,
-                            'batch_number' => $batchNumber,
                             'remarks' => $remarks,
                             'product_order_id' => $productOrder->id,
                         ])
@@ -411,7 +457,7 @@ class Index extends Component
             // ✅ UPDATE PO STATUS
             if ($allItemsFullyReceived) {
                 $this->foundPurchaseOrder->status = \App\Enums\PurchaseOrderStatus::RECEIVED;
-                $this->foundPurchaseOrder->del_on = now();
+                $this->foundPurchaseOrder->del_on = $receivedAt;
             } else {
                 $this->foundPurchaseOrder->status = \App\Enums\PurchaseOrderStatus::TO_RECEIVE;
             }
@@ -432,8 +478,7 @@ class Index extends Component
                         $destroyedQty = (float) ($this->destroyedQuantities[$productOrder->id] ?? 0);
                         
                         if ($receiveQty > 0) {
-                            $batchInfo = !empty($this->batch_numbers[$productOrder->id]) ? " (Batch: {$this->batch_numbers[$productOrder->id]})" : "";
-                            $receivedItems[] = "✅ " . $productOrder->product->name . ': ' . $receiveQty . ' units (Good)' . $batchInfo;
+                            $receivedItems[] = "✅ " . $productOrder->product->name . ': ' . $receiveQty . ' units (Good)';
                             $receivedTotal += $receiveQty;
                         }
                         
@@ -458,7 +503,7 @@ class Index extends Component
                     DB::table('purchase_order_deliveries')->insert([
                         'purchase_order_id' => $this->foundPurchaseOrder->id,
                         'dr_number' => strtoupper(trim($this->drNumber)),
-                        'delivery_date' => now()->toDateString(),
+                        'delivery_date' => $receivedAt->toDateString(),
                         'notes' => $deliveryNotes,
                         'created_at' => now(),
                         'updated_at' => now(),
@@ -531,12 +576,19 @@ class Index extends Component
     {
         Log::info("goBackToStep1 called - resetting all state");
         $this->currentStep = 0;
-        $this->reset([
-            'scannedCode', 'foundPurchaseOrder', 'showResult',
-            'message', 'messageType', 'itemStatuses', 'itemRemarks', 'generalRemarks',
-            'scannedPONumber', 'receivedQuantities', 'destroyedQuantities', 'batch_numbers',
-            'showManualInput', 'manualPONumber', 'drNumber'
-        ]);
+                        // batch_number logged at ProductBatch level only
+                        // batch_number logged at ProductBatch level only
+                        // batch_number logged at ProductBatch level only
+                        // batch_number logged at ProductBatch level only
+                        // batch_number logged at ProductBatch level only
+                        // product_orders no longer persist batch_number directly
+                        // batch_number logged at ProductBatch level only
+            $this->reset([
+                'scannedCode', 'foundPurchaseOrder', 'showResult',
+                'message', 'messageType', 'itemStatuses', 'itemRemarks', 'generalRemarks',
+                'scannedPONumber', 'receivedQuantities', 'destroyedQuantities',
+                'showManualInput', 'manualPONumber', 'drNumber', 'deliveryDate'
+            ]);
         Log::info("State reset complete");
     }
 

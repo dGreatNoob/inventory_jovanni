@@ -19,6 +19,7 @@ class BranchInventory extends Component
     // Batch selection
     public $selectedBatch = null;
     public $batches = [];
+    public $batchesWithoutCompletedShipments = [];
 
     // Branch selection within batch
     public $selectedBranchId = null;
@@ -55,6 +56,7 @@ class BranchInventory extends Component
     public $availableAgents = [];
     public $agentSearch = '';
     public $agentDropdown = false;
+    public $lastAddedItem = null;
 
     // File upload properties
     public $textFile;
@@ -133,6 +135,58 @@ class BranchInventory extends Component
                 'last_shipment_date' => $this->getLastShipmentDateForBatch($batchName),
             ];
         });
+
+        $this->loadBatchesWithoutCompletedShipments($batchesWithShipments->toArray());
+    }
+
+    /**
+     * Load batches that exist but have no completed shipments (exclusions)
+     */
+    protected function loadBatchesWithoutCompletedShipments(array $excludeBatchNames)
+    {
+        $allBatchNames = Branch::whereNotNull('batch')
+            ->where('batch', '!=', '')
+            ->distinct()
+            ->pluck('batch')
+            ->filter()
+            ->sort()
+            ->values()
+            ->diff($excludeBatchNames)
+            ->values();
+
+        $this->batchesWithoutCompletedShipments = $allBatchNames->map(function ($batchName) {
+            $branchCount = Branch::where('batch', $batchName)->count();
+
+            $branchesWithAllocations = Branch::where('batch', $batchName)
+                ->whereHas('branchAllocations')
+                ->count();
+
+            $branchesWithShipments = Branch::where('batch', $batchName)
+                ->whereHas('branchAllocations.shipments')
+                ->count();
+
+            $branchesWithCompletedShipments = Branch::where('batch', $batchName)
+                ->whereHas('branchAllocations.shipments', fn ($q) => $q->where('shipping_status', 'completed'))
+                ->count();
+
+            if ($branchesWithAllocations === 0) {
+                $status = 'no_allocations';
+                $status_label = 'No allocations';
+            } elseif ($branchesWithShipments === 0) {
+                $status = 'no_shipments';
+                $status_label = 'No shipments';
+            } else {
+                $status = 'pending_shipments';
+                $status_label = 'Pending shipments';
+            }
+
+            return [
+                'name' => $batchName,
+                'branch_count' => $branchCount,
+                'status' => $status,
+                'status_label' => $status_label,
+            ];
+        })->values()->all();
     }
 
     /**
@@ -872,6 +926,7 @@ class BranchInventory extends Component
         $this->selectedAgentId = null;
         $this->agentSearch = '';
         $this->agentDropdown = false;
+        $this->lastAddedItem = null;
     }
 
     /**
@@ -959,7 +1014,7 @@ class BranchInventory extends Component
     }
 
     /**
-     * Process sales barcode input changes
+     * Process sales barcode input changes - auto-process when barcode is detected
      */
     public function updatedSalesBarcodeInput()
     {
@@ -969,16 +1024,79 @@ class BranchInventory extends Component
             return;
         }
 
-        // Find product by barcode in current branch products
-        $product = collect($this->branchProducts)->first(function ($product) use ($barcode) {
-            return $product['barcode'] === $barcode;
+        // Auto-process barcode when detected (without requiring Enter key)
+        // This provides efficiency for rapid scanning
+        $this->processSalesBarcode();
+    }
+
+    /**
+     * Process barcode on Enter (scan or manual + Enter) – add to sales and clear input
+     */
+    public function processSalesBarcode()
+    {
+        // Validate agent selection first
+        if (!$this->selectedAgentId) {
+            session()->flash('error', 'Please select an agent before scanning products.');
+            $this->dispatch('refocus-sales-barcode');
+            return;
+        }
+
+        $barcode = trim($this->salesBarcodeInput);
+        if (empty($barcode)) {
+            $this->dispatch('refocus-sales-barcode');
+            return;
+        }
+
+        $product = collect($this->branchProducts)->first(function ($p) use ($barcode) {
+            return $p['barcode'] === $barcode;
         });
 
-        if ($product) {
-            $this->selectedSalesProduct = $product;
-        } else {
+        if (!$product) {
+            session()->flash('error', 'Product not found for barcode: ' . $barcode);
+            $this->salesBarcodeInput = '';
             $this->selectedSalesProduct = null;
+            $this->dispatch('refocus-sales-barcode');
+            return;
         }
+
+        $this->selectedSalesProduct = $product;
+        $this->salesQuantity = 1;
+
+        if ($this->salesQuantity > $product['remaining_quantity']) {
+            session()->flash('error', 'Quantity exceeds available stock.');
+            $this->dispatch('refocus-sales-barcode');
+            return;
+        }
+
+        $item = [
+            'id' => $product['id'],
+            'name' => $product['name'],
+            'product_number' => $product['product_number'] ?? null,
+            'sku' => $product['sku'] ?? null,
+            'supplier_code' => $product['supplier_code'] ?? null,
+            'barcode' => $product['barcode'],
+            'quantity' => 1,
+            'unit_price' => $product['unit_price'],
+            'total' => 1 * $product['unit_price'],
+        ];
+
+        $this->salesItems[] = $item;
+        $this->lastAddedItem = $item; // Store for visual feedback
+
+        $this->salesBarcodeInput = '';
+        $this->selectedSalesProduct = null;
+        $this->salesQuantity = 1;
+        $this->dispatch('refocus-sales-barcode');
+    }
+
+    /**
+     * Clear barcode input (e.g. on Escape)
+     */
+    public function clearSalesBarcodeInput()
+    {
+        $this->salesBarcodeInput = '';
+        $this->selectedSalesProduct = null;
+        $this->dispatch('refocus-sales-barcode');
     }
 
     /**
@@ -1040,7 +1158,14 @@ class BranchInventory extends Component
      */
     public function saveCustomerSales()
     {
+        // Validate agent selection
+        if (!$this->selectedAgentId) {
+            session()->flash('error', 'Please select an agent before saving sales.');
+            return;
+        }
+
         if (empty($this->salesItems)) {
+            session()->flash('error', 'Please add at least one item before saving sales.');
             return;
         }
 
@@ -1129,7 +1254,7 @@ class BranchInventory extends Component
 
             // Close modal and show success
             $this->closeCustomerSalesModal();
-            $this->successMessage = 'Customer sales recorded successfully!';
+            $this->successMessage = "Customer sales recorded successfully! Reference Number: {$sale->ref_no}";
             $this->showSuccessModal = true;
 
         } catch (\Exception $e) {

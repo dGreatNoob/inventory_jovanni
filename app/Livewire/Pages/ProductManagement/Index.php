@@ -28,10 +28,12 @@ class Index extends Component
     public $categoryFilter = '';
     public $supplierFilter = '';
     public $stockLevelFilter = '';
+    public $productTypeFilter = ''; // 'placeholder' to filter pending/placeholder products
     public $priceMin = '';
     public $priceMax = '';
     public $sortBy = 'created_at';
     public $sortDirection = 'desc';
+    public $sortOption = 'created_at_desc';
     public $perPage = 20;
     public $viewMode = 'table'; // grid or table
 
@@ -109,6 +111,7 @@ class Index extends Component
 
     public function mount()
     {
+        $this->sortOption = $this->sortBy . '_' . $this->sortDirection;
         $this->loadFilters();
         $this->loadColors();
         // Apply any due pending prices (effective date <= today) so masterlist barcode colors match effective price note
@@ -306,7 +309,25 @@ class Index extends Component
             $this->sortBy = $field;
             $this->sortDirection = 'asc';
         }
+        $this->sortOption = $this->sortBy . '_' . $this->sortDirection;
         $this->resetPage();
+    }
+
+    public function updatedSortOption($value)
+    {
+        $parts = explode('_', $value);
+        if (count($parts) >= 2) {
+            $this->sortDirection = array_pop($parts);
+            $this->sortBy = implode('_', $parts);
+            if (!in_array($this->sortDirection, ['asc', 'desc'], true)) {
+                $this->sortDirection = 'desc';
+            }
+            $allowedSortColumns = ['created_at', 'name', 'price', 'latest_stock_movement'];
+            if (!in_array($this->sortBy, $allowedSortColumns, true)) {
+                $this->sortBy = 'created_at';
+            }
+            $this->resetPage();
+        }
     }
 
     public function toggleViewMode()
@@ -325,8 +346,12 @@ class Index extends Component
         $this->categoryFilter = '';
         $this->supplierFilter = '';
         $this->stockLevelFilter = '';
+        $this->productTypeFilter = '';
         $this->priceMin = '';
         $this->priceMax = '';
+        $this->sortBy = 'created_at';
+        $this->sortDirection = 'desc';
+        $this->sortOption = 'created_at_desc';
         $this->resetPage();
     }
 
@@ -337,8 +362,11 @@ class Index extends Component
                 'category' => $this->categoryFilter,
                 'supplier' => $this->supplierFilter,
                 'stock_level' => $this->stockLevelFilter,
+                'product_type' => $this->productTypeFilter,
                 'price_min' => $this->priceMin,
                 'price_max' => $this->priceMax,
+                'sort_by' => $this->sortBy,
+                'sort_direction' => $this->sortDirection,
             ];
 
             return $this->productService->searchProducts(
@@ -641,7 +669,7 @@ class Index extends Component
             }
 
             // Normalize and prepare form data
-            $this->form['product_number'] = $this->normalizeProductNumber($this->form['product_number']);
+            $this->form['product_number'] = $this->sanitizeProductNumber($this->form['product_number'] ?? '');
             Log::info('After normalizeProductNumber:', ['product_number' => $this->form['product_number']]);
             
             // Normalize effective date: "immediately" => no date; "date" => use form value
@@ -695,7 +723,7 @@ class Index extends Component
             Log::info('Starting validation...');
             $this->validate([
                 'form.name' => 'required|string|max:255',
-                'form.product_number' => 'required|regex:/^\d{6}$/|unique:products,product_number' . ($this->editingProduct ? ',' . $this->editingProduct->id : ''),
+                'form.product_number' => 'required|string|max:6|unique:products,product_number' . ($this->editingProduct ? ',' . $this->editingProduct->id : ''),
                 'form.sku' => 'nullable|string|max:255|unique:products,sku' . ($this->editingProduct ? ',' . $this->editingProduct->id : ''),
                 'form.barcode' => ['required','regex:/^\d{16}$/','unique:products,barcode' . ($this->editingProduct ? ',' . $this->editingProduct->id : '')],
                 'form.category_id' => 'required|exists:categories,id',
@@ -1006,6 +1034,7 @@ class Index extends Component
     protected function refreshBarcode(): void
     {
         $productNumber = $this->normalizeProductNumber($this->form['product_number'] ?? '');
+        $productDigits = substr(preg_replace('/\D/', '', $productNumber), 0, 6);
         $colorCode = $this->getSelectedColorCode();
         $colorDigits = $colorCode ? substr(preg_replace('/\D/', '', $colorCode), 0, 4) : '';
         $price = $this->form['price'] ?? '';
@@ -1013,14 +1042,13 @@ class Index extends Component
         // Check if price is numeric (including 0) and all required fields are present
         $hasValidPrice = $price !== '' && is_numeric($price) && (float) $price >= 0;
 
-        if (strlen($productNumber) === 6 && strlen($colorDigits) === 4 && $hasValidPrice) {
-            // Format price: remove decimal point and zero-pad to 6 digits
+        if ($productDigits !== '' && strlen($colorDigits) === 4 && $hasValidPrice) {
+            $productPadded = str_pad($productDigits, 6, '0', STR_PAD_LEFT);
+            $colorPadded = str_pad($colorDigits, 4, '0', STR_PAD_LEFT);
             $priceValue = (float) $price;
             $priceInCents = (int) ($priceValue * 100);
-            // Ensure price doesn't exceed 999999.99 (99999999 cents = 8 digits, but we need 6)
-            // Take only last 6 digits if price is too large
             $priceDigits = substr(str_pad((string) $priceInCents, 6, '0', STR_PAD_LEFT), -6);
-            $this->form['barcode'] = $productNumber . str_pad($colorDigits, 4, '0', STR_PAD_LEFT) . $priceDigits;
+            $this->form['barcode'] = $productPadded . $colorPadded . $priceDigits;
         } else {
             $this->form['barcode'] = '';
         }

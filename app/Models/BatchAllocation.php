@@ -12,10 +12,11 @@ class BatchAllocation extends Model
     protected $fillable = [
         'ref_no',
         'batch_number',
+        'purchase_order_id',
         'transaction_date',
         'remarks',
         'status',
-        'workflow_step', // Add this
+        'workflow_step',
     ];
 
     protected $casts = [
@@ -26,5 +27,10 @@ class BatchAllocation extends Model
     public function branchAllocations()
     {
         return $this->hasMany(BranchAllocation::class);
+    }
+
+    public function purchaseOrder()
+    {
+        return $this->belongsTo(PurchaseOrder::class);
     }
 }

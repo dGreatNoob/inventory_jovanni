@@ -89,15 +89,13 @@
                                                         wire:model.live="form.product_number"
                                                         label="Product ID"
                                                         required
-                                                        placeholder="6-digit Product ID"
-                                                        inputmode="numeric"
-                                                        pattern="\\d*"
+                                                        placeholder="Up to 6 characters"
                                                         maxlength="6"
                                                         class="dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                                     />
                                                     @error('form.product_number') <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p> @enderror
                                                     <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                                        Enter a 6-digit identifier (leading zeros allowed).
+                                                        Letters, numbers, and symbols allowed. Max 6 characters.
                                                     </p>
                                                 </div>
 
@@ -339,9 +337,8 @@
                                                 <div class="flex items-center gap-2">
                                                     <flux:input
                                                         wire:model.live.debounce.400ms="form.price"
-                                                        type="number"
-                                                        step="0.01"
-                                                        min="0"
+                                                        type="text"
+                                                        inputmode="decimal"
                                                         required
                                                         placeholder="0.00"
                                                         class="flex-1 dark:border-gray-600 dark:bg-gray-700 dark:text-white"

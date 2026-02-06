@@ -134,25 +134,24 @@
                             <td class="px-6 py-4">{{ number_format($po->total_qty, 0) }}</td>
                             <td class="px-6 py-4">₱{{ number_format($po->total_price, 2) }}</td>
                             <td class="px-6 py-4">
-                            <div class="flex space-x-2">
-                                <a href="{{ route('pomanagement.purchaseorder.show', ['Id' => $po->id]) }}"
-                                class="font-medium text-blue-600 dark:text-blue-500 hover:underline">View</a>
-                                
-                                @if ($po->status === 'pending')
-                                @can('po edit') 
-                                <a href="{{ route('pomanagement.purchaseorder.edit', ['Id' => $po->id]) }}"
-                                    class="font-medium text-yellow-600 dark:text-yellow-500 hover:underline">Edit</a>
-                                @endcan
-                                @endif
-                                
-                                
-                                @if ($po->status !== 'received' && $po->status !== 'to_receive')
-                                @can('po delete')
-                                <button type="button" wire:click="confirmDelete({{ $po->id }})"
-                                    class="font-medium text-red-600 dark:text-red-500 hover:underline">Delete</button>
-                                @endcan
-                                @endif
-                            </div>
+                                <div class="flex space-x-2">
+                                    <a href="{{ route('pomanagement.purchaseorder.show', ['Id' => $po->id]) }}"
+                                        class="font-medium text-blue-600 dark:text-blue-500 hover:underline">View</a>
+                                    
+                                    @can('po edit') 
+                                        @if ($po->canEdit())
+                                            <a href="{{ route('pomanagement.purchaseorder.edit', ['Id' => $po->id]) }}"
+                                                class="font-medium text-yellow-600 dark:text-yellow-500 hover:underline">Edit</a>
+                                        @endif
+                                    @endcan
+                                    
+                                    @can('po delete')
+                                        @if (! $po->isReceived() && ! $po->isToReceive())
+                                            <button type="button" wire:click="confirmDelete({{ $po->id }})"
+                                                class="font-medium text-red-600 dark:text-red-500 hover:underline">Delete</button>
+                                        @endif
+                                    @endcan
+                                </div>
                             </td>
                             <td class="px-6 py-4">
                             @if($po->approvalLogs->count() > 0)

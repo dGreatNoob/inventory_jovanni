@@ -2,8 +2,19 @@
     <flux:main>
         
         <div class="mb-4">
-            <h1 class="text-2xl font-semibold text-gray-800 dark:text-white"> {{ $header ?? null }} </h1>
-            <p class="text-sm text-gray-600 dark:text-neutral-300">{{ $subheader ?? null}}</p>
+            <nav class="flex items-center gap-2 text-2xl font-semibold text-gray-800 dark:text-white" aria-label="Breadcrumb">
+                @if(isset($header) && isset($subheader))
+                    @if(isset($headerHref))
+                        <a href="{{ $headerHref }}" class="hover:underline hover:text-gray-600 dark:hover:text-gray-300" wire:navigate>{{ $header }}</a>
+                        <span class="text-gray-400 dark:text-gray-500 font-normal" aria-hidden="true">&gt;</span>
+                        <span>{{ $subheader }}</span>
+                    @else
+                        {{ $header }} <span class="text-gray-400 dark:text-gray-500 font-normal">&gt;</span> {{ $subheader }}
+                    @endif
+                @else
+                    {{ $header ?? $subheader ?? null }}
+                @endif
+            </nav>
         </div>
 @if (session()->has('success'))
     <div

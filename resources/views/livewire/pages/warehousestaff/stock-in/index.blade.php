@@ -220,6 +220,25 @@
                     </p>
                 @endif
             </div>
+            <div class="mt-4">
+                <label for="delivery-date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Date received: <span class="text-red-500">*</span>
+                </label>
+                <input
+                    type="date"
+                    id="delivery-date"
+                    wire:model="deliveryDate"
+                    required
+                    class="w-full px-3 py-2 text-sm border {{ empty(trim($deliveryDate)) && $messageType === 'error' && str_contains($message ?? '', 'date') ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500' }} rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-400 dark:focus:border-blue-400">
+                @if(empty(trim($deliveryDate)) && $messageType === 'error' && str_contains($message ?? '', 'date'))
+                    <p class="mt-2 text-sm text-red-600 dark:text-red-400">
+                        <svg class="inline w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                        </svg>
+                        {{ $message }}
+                    </p>
+                @endif
+            </div>
         </div>
 
         <!-- Items Review Section -->
@@ -252,32 +271,7 @@
                         </div>
                     </div>
 
-                    <!-- ✅ Show Existing Batch Number (from PO approval) -->
-                    @if($productOrder->batch_number)
-                    <div class="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3 border border-amber-200 dark:border-amber-700">
-                        <div class="flex items-center gap-2 mb-1">
-                            <svg class="w-4 h-4 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
-                            </svg>
-                            <span class="text-xs font-medium text-amber-700 dark:text-amber-300">Assigned Batch Number</span>
-                        </div>
-                        <div class="font-mono font-bold text-sm text-amber-900 dark:text-amber-100">
-                            {{ $productOrder->batch_number }}
-                        </div>
-                        <p class="text-xs text-amber-600 dark:text-amber-400 mt-1">
-                            This batch number was assigned during PO approval
-                        </p>
-                    </div>
-                    @else
-                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
-                        <div class="flex items-center gap-2">
-                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            <span class="text-xs text-gray-500 dark:text-gray-400 italic">No batch number assigned for this item</span>
-                        </div>
-                    </div>
-                    @endif
+                    <!-- Batch information is managed via Product Batches; no per-line batch number from PO -->
 
                     <!-- Received Qty input field -->
                     <div class="space-y-2">
@@ -502,12 +496,17 @@
                     <!-- Status with Quantity Details -->
                     <div class="space-y-2">
                         @php
-                            $additionalReceivedQty = $receivedQuantities[$productOrder->id] ?? 0;
-                            $additionalDestroyedQty = $destroyedQuantities[$productOrder->id] ?? 0;
-                            $currentReceivedQty = $productOrder->received_quantity ?? 0;
+                            // Livewire can send empty strings for blank inputs; normalize to numeric
+                            $rawAdditionalReceived = $receivedQuantities[$productOrder->id] ?? 0;
+                            $rawAdditionalDestroyed = $destroyedQuantities[$productOrder->id] ?? 0;
+
+                            $additionalReceivedQty = is_numeric($rawAdditionalReceived) ? (float) $rawAdditionalReceived : 0.0;
+                            $additionalDestroyedQty = is_numeric($rawAdditionalDestroyed) ? (float) $rawAdditionalDestroyed : 0.0;
+
+                            $currentReceivedQty = (float) ($productOrder->received_quantity ?? 0);
                             $totalReceivedQty = $currentReceivedQty + $additionalReceivedQty;
                             $itemStatus = $itemStatuses[$productOrder->id] ?? 'good';
-                            $orderedQty = $productOrder->quantity;
+                            $orderedQty = (float) $productOrder->quantity;
                             $isFullyReceived = $currentReceivedQty >= $orderedQty;
                             $uomName = $productOrder->product->uom ?? 'Units';
                         @endphp

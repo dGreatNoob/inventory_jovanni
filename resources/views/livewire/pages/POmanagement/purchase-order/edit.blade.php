@@ -59,6 +59,67 @@
                         </div>
                         
                         <div class="p-6 space-y-6">
+                            @if($editingItemIndex === null)
+                            <!-- Tabs: Search | Add by Supplier Code -->
+                            <div class="flex border-b border-gray-200 dark:border-gray-600 -mt-2 -mx-6 px-6 pb-0">
+                                <button
+                                    type="button"
+                                    wire:click="$set('addMode', 'search')"
+                                    class="px-4 py-2 text-sm font-medium rounded-t-lg {{ $addMode === 'search' ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border-b-2 border-blue-500' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300' }}"
+                                >
+                                    Search existing product
+                                </button>
+                                <button
+                                    type="button"
+                                    wire:click="$set('addMode', 'supplier_code')"
+                                    class="px-4 py-2 text-sm font-medium rounded-t-lg {{ $addMode === 'supplier_code' ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border-b-2 border-blue-500' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300' }}"
+                                >
+                                    Add by supplier code
+                                </button>
+                            </div>
+
+                            @if($addMode === 'supplier_code')
+                                <!-- Add by supplier code form -->
+                                <div class="space-y-4">
+                                    <div>
+                                        <label for="addBySupplierCode" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Supplier Code</label>
+                                        <input
+                                            type="text"
+                                            id="addBySupplierCode"
+                                            wire:model.live="addBySupplierCode"
+                                            placeholder="Enter supplier code (e.g. ABC-123)"
+                                            class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                                        />
+                                        @error('addBySupplierCode') <p class="mt-1 text-sm text-red-600 dark:text-red-500">{{ $message }}</p> @enderror
+                                    </div>
+                                    <div class="grid gap-4 md:grid-cols-2">
+                                        <div>
+                                            <label for="supplier_code_unit_price" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Unit Price</label>
+                                            <input
+                                                type="number"
+                                                id="supplier_code_unit_price"
+                                                wire:model.live="unit_price"
+                                                step="0.01"
+                                                min="0"
+                                                class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                            />
+                                            @error('unit_price') <p class="mt-1 text-sm text-red-600 dark:text-red-500">{{ $message }}</p> @enderror
+                                        </div>
+                                        <div>
+                                            <label for="supplier_code_order_qty" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Quantity</label>
+                                            <input
+                                                type="number"
+                                                id="supplier_code_order_qty"
+                                                wire:model.live="order_qty"
+                                                step="0.01"
+                                                min="0.01"
+                                                class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                            />
+                                            @error('order_qty') <p class="mt-1 text-sm text-red-600 dark:text-red-500">{{ $message }}</p> @enderror
+                                        </div>
+                                    </div>
+                                </div>
+                            @else
                             <!-- Search and Filter -->
                             <div class="grid gap-4 md:grid-cols-2">
                                 <div>
@@ -102,17 +163,41 @@
                                 </div>
                             @endif
 
-                            <!-- Quantity and Price -->
+                            <!-- Quantity and Price (search mode) -->
                             <div class="grid gap-4 md:grid-cols-2">
                                 <x-input type="number" step="0.01" wire:model="unit_price" name="unit_price" label="Unit Price" placeholder="Enter unit price" />
                                 <x-input type="number" step="0.01" wire:model="order_qty" name="order_qty" label="Quantity" placeholder="Enter quantity" />
                             </div>
+                            @endif
+                            @else
+                            <!-- Edit mode: Quantity and Price -->
+                            <div class="grid gap-4 md:grid-cols-2">
+                                <x-input type="number" step="0.01" wire:model="unit_price" name="unit_price" label="Unit Price" placeholder="Enter unit price" />
+                                <x-input type="number" step="0.01" wire:model="order_qty" name="order_qty" label="Quantity" placeholder="Enter quantity" />
+                            </div>
+                            @endif
                         </div>
 
                         <div class="flex items-center p-6 space-x-2 border-t border-gray-200 rounded-b dark:border-gray-600">
-                            <x-button type="button" wire:click="addItem" variant="primary">
-                                {{ $editingItemIndex !== null ? 'Update Item' : 'Add Item' }}
-                            </x-button>
+                            @if($editingItemIndex !== null)
+                                <x-button type="button" wire:click="addItem" variant="primary">
+                                    Update Item
+                                </x-button>
+                            @elseif($addMode === 'supplier_code')
+                                <x-button
+                                    type="button"
+                                    wire:click="addItemBySupplierCode"
+                                    variant="primary"
+                                    wire:loading.attr="disabled"
+                                    :disabled="empty(trim($addBySupplierCode ?? '')) || (float)($order_qty ?? 0) < 0.01 || (float)($unit_price ?? -1) < 0"
+                                >
+                                    Add Item
+                                </x-button>
+                            @else
+                                <x-button type="button" wire:click="addItem" variant="primary" :disabled="!$selected_product">
+                                    Add Item
+                                </x-button>
+                            @endif
                             <x-button type="button" wire:click="closeModal" variant="secondary">
                                 Cancel
                             </x-button>

@@ -101,7 +101,12 @@
                                     @endif
                                 </div>
                                 <div class="ml-4">
-                                    <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $product->remarks ?? $product->name }}</div>
+                                    <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                        {{ $product->name }}@if(!empty($product->remarks)) - {{ $product->remarks }}@endif
+                                        @if(($product->product_type ?? '') === 'placeholder')
+                                            <span class="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300">Pending</span>
+                                        @endif
+                                    </div>
                                     <div class="text-sm text-gray-500 dark:text-gray-400">{{ $product->sku }}</div>
                                     <div class="text-sm text-gray-500 dark:text-gray-400">Supplier Code (SKU): {{ $product->supplier_code ?? '—' }}</div>
                                 </div>

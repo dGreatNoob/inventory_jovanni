@@ -8,7 +8,9 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Vite;
 use App\Models\SalesOrderItem;
+use App\Models\PurchaseOrder;
 use App\Observers\SalesOrderItemObserver;
+use App\Observers\PurchaseOrderObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -27,6 +29,7 @@ class AppServiceProvider extends ServiceProvider
     {
         // Schema::defaultStringLength(191);
         SalesOrderItem::observe(SalesOrderItemObserver::class);
+        PurchaseOrder::observe(PurchaseOrderObserver::class);
         Gate::before(function ($user, $ability) {
         return $user->hasRole(RolesEnum::SUPERADMIN->value) ? true : null;
     });

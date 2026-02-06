@@ -262,6 +262,42 @@
                                 </div>
                             </div>
                         </div>
+
+                        {{-- CTA: Export and Dispatch (when fully scanned and has boxes) --}}
+                        @if($this->isFullyScanned && $this->branchBoxesSummary->isNotEmpty())
+                        <div class="shrink-0 p-4 rounded-xl border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 shadow-sm">
+                            <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-2">Scanning complete</h3>
+                            @if($this->summaryDrNumber)
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">Summary DR: <span class="font-mono font-medium">{{ $this->summaryDrNumber }}</span></p>
+                            @endif
+                            <div class="flex flex-wrap items-center gap-3">
+                                <flux:button
+                                    type="button"
+                                    icon="document-arrow-down"
+                                    wire:click="exportDeliverySummary"
+                                    class="shrink-0">
+                                    Export Delivery Summary
+                                </flux:button>
+                                <flux:button
+                                    type="button"
+                                    variant="primary"
+                                    icon="truck"
+                                    wire:click="dispatchForShipment"
+                                    wire:confirm="Dispatch this shipment? Summary DR: {{ $this->summaryDrNumber ?? 'N/A' }}. Boxes will be marked as dispatched."
+                                    class="shrink-0">
+                                    Dispatch for shipment
+                                </flux:button>
+                                @if($this->summaryDrId)
+                                <a href="{{ route('shipment.index') }}?summary_dr_id={{ $this->summaryDrId }}"
+                                   class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-zinc-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                   wire:navigate>
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" /></svg>
+                                    Create shipment
+                                </a>
+                                @endif
+                            </div>
+                        </div>
+                        @endif
                     @else
                         {{-- Empty state when no branch selected --}}
                         <div class="flex-1 min-h-0 flex items-center justify-center overflow-auto">
@@ -286,3 +322,13 @@
             </div>
     </div>
 </div>
+
+@script
+<script>
+    Livewire.on('download-delivery-receipt', (event) => {
+        const payload = event?.detail ?? event;
+        const url = payload?.url;
+        if (url) window.open(url, '_blank');
+    });
+</script>
+@endscript

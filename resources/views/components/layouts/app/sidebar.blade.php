@@ -232,6 +232,15 @@
                             {{ __('Packing / Scan') }}
                         </flux:navlist.item>
 
+                        <flux:navlist.item
+                            icon="document-text"
+                            href="{{ route('allocation.for-dispatch') }}"
+                            :current="request()->routeIs('allocation.for-dispatch*')"
+                            wire:navigate
+                        >
+                            {{ __('For Dispatch DRs') }}
+                        </flux:navlist.item>
+
                         @if (Route::has('allocation.manual-stockin'))
                             <flux:navlist.item
                                 icon="clipboard-document-list"

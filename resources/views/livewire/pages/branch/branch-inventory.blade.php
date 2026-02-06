@@ -180,9 +180,9 @@
         @endif
 
         <!-- Selected Branch Products -->
-        @if($selectedBranchId && !empty($branchProducts))
+        @if($selectedBranchId)
             <section class="bg-white dark:bg-gray-800 shadow rounded-lg">
-                <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700 flex flex-wrap items-center justify-between gap-4">
                     <div>
                         <h3 class="text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2">
                             <flux:icon name="building-storefront" class="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
@@ -192,13 +192,13 @@
                             {{ count($branchProducts) }} products from completed shipments
                         </p>
                     </div>
-                    <div class="flex gap-2">
+                    <div class="flex flex-wrap gap-2">
                         <flux:button wire:click="openUploadModal" size="sm" class="flex items-center gap-2">
-                            <flux:icon name="document-text" class="w-4 h-4" />
+                            <!-- <flux:icon name="document-text" class="w-4 h-4" /> -->
                             Upload Text File
                         </flux:button>
                         <flux:button wire:click="openCustomerSalesModal" variant="outline" size="sm" class="flex items-center gap-2">
-                            <flux:icon name="banknotes" class="w-4 h-4" />
+                            <!-- <flux:icon name="banknotes" class="w-4 h-4" /> -->
                             Add Customer Sales
                         </flux:button>
                         <flux:button wire:click="clearBranchSelection" variant="outline" size="sm">Back to Branches</flux:button>
@@ -239,8 +239,8 @@
                     </div>
                 </div>
 
-                <!-- Summary Header -->
                 @if(!empty($branchProducts))
+                <!-- Summary Header -->
                     <div class="mx-6 mb-6 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-6">
                         <h4 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Branch Summary</h4>
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -268,7 +268,6 @@
                             </div>
                         </div>
                     </div>
-                @endif
 
                 <!-- Products List -->
                 <div class="mx-6 mb-6 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
@@ -345,6 +344,11 @@
                         </table>
                     </div>
                 </div>
+                @else
+                <div class="mx-6 mb-6 py-12 text-center rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/30">
+                    <p class="text-gray-500 dark:text-gray-400">No products from completed shipments yet. Adjust date filters or wait for shipments to complete.</p>
+                </div>
+                @endif
             </section>
         @endif
     </div>
@@ -1005,7 +1009,7 @@
                                                 <p class="text-sm text-gray-500 dark:text-gray-400">Scan product barcode or select from inventory.</p>
                                             </div>
 
-                                            <div class="space-y-4">
+                                            <div class="space-y-4" x-data x-init="$wire.on('refocus-sales-barcode', () => $nextTick(() => document.getElementById('sales-barcode-input')?.focus()))">
                                                 <div>
                                                     <label for="sales-barcode-input" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
                                                         Barcode
@@ -1013,8 +1017,11 @@
                                                     <input
                                                         id="sales-barcode-input"
                                                         type="text"
-                                                        wire:model.live="salesBarcodeInput"
-                                                        placeholder="Scan barcode or enter manually..."
+                                                        wire:model.live.debounce.150ms="salesBarcodeInput"
+                                                        wire:keydown.enter.prevent="processSalesBarcode"
+                                                        wire:keydown.escape="clearSalesBarcodeInput"
+                                                        placeholder="Scan barcode or press Enter to add..."
+                                                        autocomplete="off"
                                                         class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                                         x-ref="salesBarcodeInput"
                                                         x-init="$nextTick(() => { if ($el) $el.focus(); })"
@@ -1066,19 +1073,7 @@
                                                     </div>
                                                 @endif
 
-                                                <div>
-                                                    <label for="sales-quantity-input" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
-                                                        Quantity
-                                                    </label>
-                                                    <input
-                                                        id="sales-quantity-input"
-                                                        type="number"
-                                                        wire:model="salesQuantity"
-                                                        min="1"
-                                                        placeholder="Enter quantity..."
-                                                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                                    />
-                                                </div>
+                                                <p class="text-xs text-gray-500 dark:text-gray-400">Scan or type barcode then press Enter to add 1 unit. Repeat for multiple items.</p>
 
                                                 <div>
                                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
@@ -1205,14 +1200,6 @@
                                                         @endif
                                                     </div>
                                                 </div>
-
-                                                <button
-                                                    wire:click="addSalesItem"
-                                                    class="w-full px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-                                                    :disabled="!$wire.selectedSalesProduct || !$wire.salesQuantity"
-                                                >
-                                                    Add to Sales
-                                                </button>
                                             </div>
                                         </section>
 

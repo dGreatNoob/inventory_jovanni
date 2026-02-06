@@ -1012,7 +1012,7 @@ class BranchInventory extends Component
     }
 
     /**
-     * Process sales barcode input changes
+     * Process sales barcode input changes (for display only)
      */
     public function updatedSalesBarcodeInput()
     {
@@ -1032,6 +1032,66 @@ class BranchInventory extends Component
         } else {
             $this->selectedSalesProduct = null;
         }
+    }
+
+    /**
+     * Process barcode on Enter (scan or manual + Enter) – add to sales and clear input
+     */
+    public function processSalesBarcode()
+    {
+        $barcode = trim($this->salesBarcodeInput);
+        if (empty($barcode)) {
+            $this->dispatch('refocus-sales-barcode');
+            return;
+        }
+
+        $product = collect($this->branchProducts)->first(function ($p) use ($barcode) {
+            return $p['barcode'] === $barcode;
+        });
+
+        if (!$product) {
+            session()->flash('error', 'Product not found for barcode: ' . $barcode);
+            $this->salesBarcodeInput = '';
+            $this->selectedSalesProduct = null;
+            $this->dispatch('refocus-sales-barcode');
+            return;
+        }
+
+        $this->selectedSalesProduct = $product;
+        $this->salesQuantity = 1;
+
+        if ($this->salesQuantity > $product['remaining_quantity']) {
+            session()->flash('error', 'Quantity exceeds available stock.');
+            $this->dispatch('refocus-sales-barcode');
+            return;
+        }
+
+        $this->salesItems[] = [
+            'id' => $product['id'],
+            'name' => $product['name'],
+            'product_number' => $product['product_number'] ?? null,
+            'sku' => $product['sku'] ?? null,
+            'supplier_code' => $product['supplier_code'] ?? null,
+            'barcode' => $product['barcode'],
+            'quantity' => 1,
+            'unit_price' => $product['unit_price'],
+            'total' => 1 * $product['unit_price'],
+        ];
+
+        $this->salesBarcodeInput = '';
+        $this->selectedSalesProduct = null;
+        $this->salesQuantity = 1;
+        $this->dispatch('refocus-sales-barcode');
+    }
+
+    /**
+     * Clear barcode input (e.g. on Escape)
+     */
+    public function clearSalesBarcodeInput()
+    {
+        $this->salesBarcodeInput = '';
+        $this->selectedSalesProduct = null;
+        $this->dispatch('refocus-sales-barcode');
     }
 
     /**

@@ -37,6 +37,20 @@ class Scanning extends Component
     public bool $showBranchDropdown = false;
     public string $branchSearch = '';
 
+    public function mount(): void
+    {
+        $branchAllocationId = request()->query('branch_allocation_id');
+        if ($branchAllocationId && is_numeric($branchAllocationId)) {
+            $ba = BranchAllocation::with(['branch', 'batchAllocation'])->find((int) $branchAllocationId);
+            if ($ba && $ba->branch_id && $ba->batchAllocation?->status === 'draft') {
+                $this->selectedBranchId = $ba->branch_id;
+                $this->selectedBranchAllocationId = $ba->id;
+                $this->branchSearch = $ba->branch?->name ?? '';
+                $this->loadAvailableBoxes();
+            }
+        }
+    }
+
     /** Branches that have at least one draft allocation (for scanner selection) */
     public function getBranchesWithAllocationsProperty()
     {
@@ -114,6 +128,40 @@ class Scanning extends Component
                     'dr_number' => $dr?->dr_number ?? '—',
                 ];
             });
+    }
+
+    /** True when all products for this branch are fully scanned (remaining = 0 for each) */
+    public function getIsFullyScannedProperty(): bool
+    {
+        $products = $this->allocatableProducts;
+        if ($products->isEmpty()) {
+            return false;
+        }
+        return $products->every(fn ($p) => $p->remaining <= 0);
+    }
+
+    /** Mother DR number for this branch (summary reference) - null if no boxes/DRs */
+    public function getSummaryDrNumberProperty(): ?string
+    {
+        if (!$this->selectedBranchAllocationId) {
+            return null;
+        }
+        $mother = DeliveryReceipt::where('branch_allocation_id', $this->selectedBranchAllocationId)
+            ->where('type', 'mother')
+            ->first();
+        return $mother?->dr_number;
+    }
+
+    /** Mother DR id for this branch (for Create shipment link) */
+    public function getSummaryDrIdProperty(): ?int
+    {
+        if (!$this->selectedBranchAllocationId) {
+            return null;
+        }
+        $mother = DeliveryReceipt::where('branch_allocation_id', $this->selectedBranchAllocationId)
+            ->where('type', 'mother')
+            ->first();
+        return $mother?->id;
     }
 
     /** Scanned items for the current box (moved from view for performance) */
@@ -316,6 +364,45 @@ class Scanning extends Component
         $this->currentBox = null;
         $this->currentDr = null;
         $this->motherDr = null;
+    }
+
+    /** Export delivery receipt PDF (same as allocation module DR export) */
+    public function exportDeliverySummary(): void
+    {
+        if (!$this->selectedBranchAllocationId) {
+            session()->flash('error', 'No branch selected.');
+            return;
+        }
+
+        $branchAllocation = BranchAllocation::find($this->selectedBranchAllocationId);
+        if (!$branchAllocation) {
+            session()->flash('error', 'Branch allocation not found.');
+            return;
+        }
+
+        $url = route('allocation.delivery-receipt.generate', ['branchAllocationId' => $this->selectedBranchAllocationId]);
+        $branchName = $branchAllocation->branch->name ?? 'Unknown';
+        $refNo = $branchAllocation->batchAllocation->ref_no ?? 'Unknown';
+        $filename = 'delivery_receipt_' . preg_replace('/[^\w\-_.]/', '_', $branchName . '_' . $refNo) . '_' . now()->format('Y-m-d_H-i-s') . '.pdf';
+
+        $this->dispatch('download-delivery-receipt', url: $url, filename: $filename);
+        session()->flash('message', 'Delivery receipt PDF download started.');
+    }
+
+    /** Mark this branch allocation's boxes as dispatched */
+    public function dispatchForShipment(): void
+    {
+        if (!$this->selectedBranchAllocationId) {
+            session()->flash('error', 'No branch selected.');
+            return;
+        }
+
+        Box::where('branch_allocation_id', $this->selectedBranchAllocationId)
+            ->whereNull('dispatched_at')
+            ->update(['dispatched_at' => now()]);
+
+        $this->loadAvailableBoxes();
+        session()->flash('message', 'Branch shipment dispatched. Summary DR: ' . ($this->summaryDrNumber ?? 'N/A'));
     }
 
     /** Create DR for a newly created box (does not set currentBox/currentDr) */

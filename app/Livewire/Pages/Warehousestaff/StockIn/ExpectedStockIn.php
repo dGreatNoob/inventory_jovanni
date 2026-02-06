@@ -81,6 +81,7 @@ class ExpectedStockIn extends Component
         $this->selectedPurchaseOrderId = $po->id;
         $this->loadExpectedQuantities();
         $this->showPoDropdown = false;
+        $this->poSearch = $po->po_num . ' — ' . ($po->supplier?->name ?? 'N/A');
         $this->message = '';
         $this->messageType = '';
     }

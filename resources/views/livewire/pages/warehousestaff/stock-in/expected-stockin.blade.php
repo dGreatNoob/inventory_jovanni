@@ -32,100 +32,60 @@
 
         <div class="bg-white dark:bg-zinc-800 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-700">
             <div class="p-6 border-b border-gray-200 dark:border-zinc-700">
-                @php
-                    $currentPo = $this->getSelectedPurchaseOrderProperty();
-                @endphp
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Select Purchase Order
                 </label>
-                <div class="relative">
-                    <button
-                        type="button"
-                        wire:click="$toggle('showPoDropdown')"
-                        class="inline-flex w-full items-center justify-between gap-2 rounded-lg border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-700 px-3 py-2 text-left text-sm text-gray-900 dark:text-white shadow-sm hover:bg-gray-50 dark:hover:bg-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    >
-                        <span class="flex-1 min-w-0">
-                            @if($currentPo)
-                                <span class="block truncate font-medium">
-                                    {{ $currentPo->po_num }} — {{ $currentPo->supplier?->name ?? 'N/A' }}
-                                </span>
-                                <span class="mt-0.5 block text-xs text-gray-500 dark:text-gray-300">
-                                    @if($currentPo->order_date)
-                                        {{ $currentPo->order_date->format('M d, Y') }}
-                                    @endif
-                                    @if($currentPo->status)
-                                        · Status: {{ $currentPo->status->value ?? $currentPo->status }}
-                                    @endif
-                                </span>
-                            @else
-                                <span class="block text-gray-400 dark:text-gray-500">
-                                    Search and select a Purchase Order…
-                                </span>
-                            @endif
-                        </span>
-                        <span class="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-300">
-                            <svg aria-hidden="true" class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
-                            </svg>
-                            <svg aria-hidden="true" class="h-4 w-4" fill="none" viewBox="0 0 20 20">
-                                <path d="M6 8l4 4 4-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
-                            </svg>
-                        </span>
-                    </button>
+                <div class="relative" x-data x-on:click.outside="$wire.set('showPoDropdown', false)" x-on:keydown.escape.window="$wire.set('showPoDropdown', false)">
+                    <div class="pointer-events-none absolute inset-y-0 left-0 pl-3 flex items-center">
+                        <svg aria-hidden="true" class="h-5 w-5 text-gray-400 dark:text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <input
+                        type="text"
+                        wire:model.live.debounce.300ms="poSearch"
+                        wire:focus="$set('showPoDropdown', true)"
+                        placeholder="Search by PO # or supplier…"
+                        autocomplete="off"
+                        aria-label="Search and select Purchase Order"
+                        class="block w-full min-h-[38px] h-10 pl-10 pr-3 rounded-lg border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    />
 
                     @if($showPoDropdown)
-                        <div class="absolute z-30 mt-2 w-full rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 shadow-lg">
-                            <div class="px-3 pt-3 pb-2 border-b border-gray-100 dark:border-zinc-700">
-                                <div class="relative">
-                                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                                        <svg aria-hidden="true" class="h-4 w-4 text-gray-400 dark:text-gray-500" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
-                                        </svg>
-                                    </div>
-                                    <input
-                                        type="text"
-                                        wire:model.debounce.400ms="poSearch"
-                                        class="block w-full rounded-md border border-gray-200 dark:border-zinc-600 bg-gray-50 dark:bg-zinc-700 pl-9 pr-3 py-1.5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:ring-indigo-500 focus:border-indigo-500"
-                                        placeholder="Search by PO # or supplier…"
-                                    />
-                                </div>
-                                <p class="mt-1 text-[11px] text-gray-400 dark:text-gray-500">
-                                    Showing up to 25 matching POs.
-                                </p>
-                            </div>
-
-                            <div class="max-h-72 overflow-y-auto py-1 text-sm">
-                                @forelse($this->availablePurchaseOrders as $po)
-                                    <button
-                                        type="button"
-                                        wire:click="selectPurchaseOrder({{ $po->id }})"
-                                        class="flex w-full items-start gap-2 px-3 py-2 text-left hover:bg-gray-50 dark:hover:bg-zinc-700 {{ $selectedPurchaseOrderId === $po->id ? 'bg-indigo-50 dark:bg-indigo-900/30' : '' }}"
-                                    >
-                                        <div class="flex-1 min-w-0">
-                                            <div class="font-medium text-gray-900 dark:text-white truncate">
-                                                {{ $po->po_num }} — {{ $po->supplier?->name ?? 'N/A' }}
-                                            </div>
-                                            <div class="mt-0.5 text-xs text-gray-500 dark:text-gray-300">
-                                                @if($po->order_date)
-                                                    {{ $po->order_date->format('M d, Y') }}
-                                                @endif
-                                                @if($po->status)
-                                                    · Status: {{ $po->status->value ?? $po->status }}
-                                                @endif
-                                            </div>
+                        <div class="absolute z-30 mt-2 w-full rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 shadow-lg py-1">
+                            <p class="px-3 py-1.5 text-[11px] text-gray-400 dark:text-gray-500">
+                                Showing up to 25 matching POs.
+                            </p>
+                            @forelse($this->availablePurchaseOrders as $po)
+                                <button
+                                    type="button"
+                                    wire:click="selectPurchaseOrder({{ $po->id }})"
+                                    class="flex w-full items-start gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-zinc-700 {{ $selectedPurchaseOrderId === $po->id ? 'bg-indigo-50 dark:bg-indigo-900/30' : '' }}"
+                                >
+                                    <div class="flex-1 min-w-0">
+                                        <div class="font-medium text-gray-900 dark:text-white truncate">
+                                            {{ $po->po_num }} — {{ $po->supplier?->name ?? 'N/A' }}
                                         </div>
-                                        @if($selectedPurchaseOrderId === $po->id)
-                                            <svg class="h-4 w-4 text-indigo-500" viewBox="0 0 20 20" fill="none">
-                                                <path d="M5 11.5L8.5 15L15 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-                                            </svg>
-                                        @endif
-                                    </button>
-                                @empty
-                                    <div class="px-3 py-3 text-xs text-gray-500 dark:text-gray-400">
-                                        No purchase orders match your search.
+                                        <div class="mt-0.5 text-xs text-gray-500 dark:text-gray-300">
+                                            @if($po->order_date)
+                                                {{ $po->order_date->format('M d, Y') }}
+                                            @endif
+                                            @if($po->status)
+                                                · Status: {{ $po->status->value ?? $po->status }}
+                                            @endif
+                                        </div>
                                     </div>
-                                @endforelse
-                            </div>
+                                    @if($selectedPurchaseOrderId === $po->id)
+                                        <svg class="h-4 w-4 text-indigo-500 shrink-0" viewBox="0 0 20 20" fill="none">
+                                            <path d="M5 11.5L8.5 15L15 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                                        </svg>
+                                    @endif
+                                </button>
+                            @empty
+                                <div class="px-3 py-3 text-xs text-gray-500 dark:text-gray-400">
+                                    No purchase orders match your search.
+                                </div>
+                            @endforelse
                         </div>
                     @endif
                 </div>

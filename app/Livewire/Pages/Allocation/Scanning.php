@@ -45,7 +45,7 @@ class Scanning extends Component
         })->orderBy('name')->get();
     }
 
-    /** Branches filtered by search (sequential token prefix match) */
+    /** Branches filtered by search (token-prefix + substring fallback) */
     public function getFilteredBranchesProperty()
     {
         $branches = $this->branchesWithAllocations;
@@ -53,20 +53,36 @@ class Scanning extends Component
             return $branches;
         }
         $search = trim($this->branchSearch);
-        return $branches->filter(function ($b) use ($search) {
-            return ProductSearchHelper::matchesAnyField($search, [
-                $b->name ?? '',
-                $b->code ?? '',
-            ]);
+        $lower = strtolower($search);
+        return $branches->filter(function ($b) use ($search, $lower) {
+            $name = $b->name ?? '';
+            $code = $b->code ?? '';
+            $nameLower = strtolower($name);
+            $codeLower = strtolower($code);
+            return ProductSearchHelper::matchesAnyField($search, [$name, $code])
+                || str_contains($nameLower, $lower)
+                || str_contains($codeLower, $lower);
         })->values();
+    }
+
+    /** @return \Illuminate\Support\Collection<int> All draft branch_allocation IDs for selected branch */
+    public function getBranchAllocationIdsForSelectedBranchProperty()
+    {
+        if (!$this->selectedBranchId) {
+            return collect();
+        }
+        return BranchAllocation::where('branch_id', $this->selectedBranchId)
+            ->whereHas('batchAllocation', fn ($q) => $q->where('status', 'draft'))
+            ->pluck('id');
     }
 
     public function selectBranch(int $branchId): void
     {
+        $branch = Branch::find($branchId);
         $this->selectedBranchId = $branchId;
         $this->updatedSelectedBranchId();
         $this->showBranchDropdown = false;
-        $this->branchSearch = '';
+        $this->branchSearch = $branch?->name ?? '';
     }
 
     /** Selected branch name (for summary display) */
@@ -111,30 +127,42 @@ class Scanning extends Component
             ->get();
     }
 
-    /** Products allocatable to this branch (included in allocation, for this branch) */
+    /** Products allocatable to this branch (consolidated across all draft allocations) */
     public function getAllocatableProductsProperty()
     {
-        if (!$this->selectedBranchAllocationId) {
+        $allocationIds = $this->branchAllocationIdsForSelectedBranch;
+        if ($allocationIds->isEmpty()) {
             return collect();
         }
-        $items = BranchAllocationItem::where('branch_allocation_id', $this->selectedBranchAllocationId)
+
+        $allocationRows = BranchAllocationItem::whereIn('branch_allocation_id', $allocationIds)
             ->whereNull('box_id')
-            ->orderByRaw('COALESCE(product_snapshot_name, "") ASC')
             ->get();
 
-        return $items->map(function ($item) {
-            $scanned = BranchAllocationItem::where('branch_allocation_id', $this->selectedBranchAllocationId)
-                ->where('product_id', $item->product_id)
-                ->whereNotNull('box_id')
-                ->sum('scanned_quantity');
+        $consumptionRows = BranchAllocationItem::whereIn('branch_allocation_id', $allocationIds)
+            ->whereNotNull('box_id')
+            ->get();
+
+        $productIds = $allocationRows->pluck('product_id')->unique()->merge(
+            $consumptionRows->pluck('product_id')->unique()
+        )->unique();
+
+        return $productIds->map(function ($productId) use ($allocationRows, $consumptionRows) {
+            $allocItems = $allocationRows->where('product_id', $productId);
+            $consumeItems = $consumptionRows->where('product_id', $productId);
+            $allocated = $allocItems->sum('quantity');
+            $scanned = $consumeItems->sum('scanned_quantity');
+            $first = $allocItems->first() ?? $consumeItems->first();
             return (object) [
-                'name' => $item->display_name,
-                'barcode' => $item->display_barcode,
-                'allocated' => $item->quantity,
+                'name' => $first->display_name,
+                'barcode' => $first->display_barcode,
+                'allocated' => $allocated,
                 'scanned' => $scanned,
-                'remaining' => max(0, $item->quantity - $scanned),
+                'remaining' => max(0, $allocated - $scanned),
             ];
-        });
+        })
+            ->sortBy('name', SORT_NATURAL)
+            ->values();
     }
 
     /** Resolve branch to branch_allocation_id (prefer draft with products, else most recent draft) */
@@ -188,6 +216,51 @@ class Scanning extends Component
             ->where('status', '!=', 'closed')
             ->orderBy('created_at', 'desc')
             ->get();
+    }
+
+    public function deleteBox(int $boxId): void
+    {
+        $box = Box::find($boxId);
+        if (!$box) {
+            session()->flash('error', 'Box not found.');
+            return;
+        }
+
+        BranchAllocationItem::where('box_id', $boxId)->update([
+            'scanned_quantity' => 0,
+            'box_id' => null,
+            'delivery_receipt_id' => null,
+        ]);
+
+        $box->delete();
+        DeliveryReceipt::where('box_id', $boxId)->delete();
+
+        $this->loadAvailableBoxes();
+
+        if ((int) $this->selectedBoxId === $boxId) {
+            $this->clearBoxSelection();
+        }
+
+        session()->flash('message', 'Box deleted. Scanned items are available for rescanning.');
+    }
+
+    public function generateDrForBox(int $boxId): void
+    {
+        $box = Box::find($boxId);
+        if (!$box) {
+            session()->flash('error', 'Box not found.');
+            return;
+        }
+
+        $existingDr = DeliveryReceipt::where('box_id', $boxId)->first();
+        if ($existingDr) {
+            session()->flash('message', "DR already exists: {$existingDr->dr_number}");
+            return;
+        }
+
+        $this->createDrForNewBox($boxId);
+        $dr = DeliveryReceipt::where('box_id', $boxId)->first();
+        session()->flash('message', $dr ? "DR created: {$dr->dr_number}" : 'DR created.');
     }
 
     public function createNewBox()
@@ -320,6 +393,13 @@ class Scanning extends Component
         $this->barcodeInput = '';
     }
 
+    public function updatedBarcodeInput(): void
+    {
+        if (trim($this->barcodeInput) !== '') {
+            $this->processBarcodeScanner();
+        }
+    }
+
     public function processBarcodeScanner()
     {
         if (empty(trim($this->barcodeInput))) {
@@ -343,16 +423,17 @@ class Scanning extends Component
             return;
         }
 
-        $branchAllocation = BranchAllocation::with('branch')->find($this->selectedBranchAllocationId);
-        if (!$branchAllocation) {
-            $this->scanFeedback = 'Branch allocation not found.';
+        $branchName = $this->selectedBranchName ?? 'this branch';
+        $allocationIds = $this->branchAllocationIdsForSelectedBranch;
+        if ($allocationIds->isEmpty()) {
+            $this->scanFeedback = 'No draft allocation found for this branch.';
             $this->scanStatus = 'error';
             $this->barcodeInput = '';
             return;
         }
 
         // Validation: find product and check allocation + branch
-        $result = $this->validateScannedProduct($barcode, $branchAllocation);
+        $result = $this->validateScannedProduct($barcode);
         if (!$result['valid']) {
             $this->scanFeedback = $result['message'];
             $this->scanStatus = 'error';
@@ -364,15 +445,13 @@ class Scanning extends Component
 
         $item = $result['item'];
         $productId = $item->product_id;
-        $allocatedQty = $item->quantity;
-        $branchName = $branchAllocation->branch->name;
 
-        $existingScannedItem = BranchAllocationItem::where('branch_allocation_id', $branchAllocation->id)
+        $allocatedQty = BranchAllocationItem::whereIn('branch_allocation_id', $allocationIds)
             ->where('product_id', $productId)
-            ->where('box_id', $this->currentBox->id)
-            ->first();
+            ->whereNull('box_id')
+            ->sum('quantity');
 
-        $totalScannedQty = BranchAllocationItem::where('branch_allocation_id', $branchAllocation->id)
+        $totalScannedQty = BranchAllocationItem::whereIn('branch_allocation_id', $allocationIds)
             ->where('product_id', $productId)
             ->whereNotNull('box_id')
             ->sum('scanned_quantity');
@@ -386,11 +465,16 @@ class Scanning extends Component
             return;
         }
 
-        if ($existingScannedItem) {
-            $existingScannedItem->increment('scanned_quantity');
+        $existingInBox = BranchAllocationItem::whereIn('branch_allocation_id', $allocationIds)
+            ->where('product_id', $productId)
+            ->where('box_id', $this->currentBox->id)
+            ->first();
+
+        if ($existingInBox) {
+            $existingInBox->increment('scanned_quantity');
         } else {
             BranchAllocationItem::create([
-                'branch_allocation_id' => $branchAllocation->id,
+                'branch_allocation_id' => $item->branch_allocation_id,
                 'product_id' => $productId,
                 'quantity' => 1,
                 'scanned_quantity' => 1,
@@ -425,41 +509,57 @@ class Scanning extends Component
     }
 
     /**
-     * Validate scanned product: must be in an allocation AND for the correct branch.
+     * Validate scanned product: must be in an allocation for the selected branch.
+     * Searches across all draft allocations for the branch. Supports barcode/sku lookup.
      */
-    private function validateScannedProduct(string $barcode, BranchAllocation $selectedBranchAllocation): array
+    private function validateScannedProduct(string $barcode): array
     {
-        $productId = Product::where('barcode', $barcode)->value('id');
+        $barcode = trim($barcode);
+        if ($barcode === '') {
+            return ['valid' => false, 'message' => 'Invalid barcode.', 'item' => null];
+        }
+
+        $allocationIds = $this->branchAllocationIdsForSelectedBranch;
+        $selectedBranchName = $this->selectedBranchName ?? 'selected branch';
+
+        // 1. Lookup in any allocation for this branch: allocation item matching barcode/sku
+        $allocationItem = BranchAllocationItem::whereIn('branch_allocation_id', $allocationIds)
+            ->where(function ($q) use ($barcode) {
+                $q->where('product_snapshot_barcode', $barcode)
+                  ->orWhere('product_snapshot_sku', $barcode)
+                  ->orWhereHas('product', function ($pq) use ($barcode) {
+                      $pq->where('barcode', $barcode)->orWhere('sku', $barcode);
+                  });
+            })
+            ->first();
+
+        if ($allocationItem) {
+            return ['valid' => true, 'message' => null, 'item' => $allocationItem];
+        }
+
+        // 2. Product exists but not in this branch - find which branch has it
+        $productId = Product::where('barcode', $barcode)->orWhere('sku', $barcode)->value('id');
         if (!$productId) {
-            $productId = BranchAllocationItem::where('product_snapshot_barcode', $barcode)
-                ->whereNull('box_id')
-                ->value('product_id');
-        }
-        if (!$productId) {
-            return ['valid' => false, 'message' => 'This product is not in any allocation.', 'item' => null];
+            $productId = BranchAllocationItem::where(function ($q) use ($barcode) {
+                $q->where('product_snapshot_barcode', $barcode)
+                  ->orWhere('product_snapshot_sku', $barcode);
+            })->value('product_id');
         }
 
-        $allocationsForProduct = BranchAllocationItem::with('branchAllocation.branch')
-            ->where('product_id', $productId)
-            ->whereNull('box_id')
-            ->get();
-
-        if ($allocationsForProduct->isEmpty()) {
-            return ['valid' => false, 'message' => 'This product is not in any allocation.', 'item' => null];
+        if ($productId) {
+            $otherAllocation = BranchAllocationItem::with('branchAllocation.branch')
+                ->where('product_id', $productId)
+                ->when($allocationIds->isNotEmpty(), fn ($q) => $q->whereNotIn('branch_allocation_id', $allocationIds))
+                ->first();
+            $wrongBranch = $otherAllocation?->branchAllocation?->branch?->name ?? 'another branch';
+            return [
+                'valid' => false,
+                'message' => "This product is allocated to {$wrongBranch}, not {$selectedBranchName}.",
+                'item' => null,
+            ];
         }
 
-        foreach ($allocationsForProduct as $item) {
-            if ((int) $item->branch_allocation_id === (int) $selectedBranchAllocation->id) {
-                return ['valid' => true, 'message' => null, 'item' => $item];
-            }
-        }
-
-        $wrongBranch = $allocationsForProduct->first()->branchAllocation->branch->name ?? 'another branch';
-        return [
-            'valid' => false,
-            'message' => "This product is allocated to {$wrongBranch}, not {$selectedBranchAllocation->branch->name}.",
-            'item' => null,
-        ];
+        return ['valid' => false, 'message' => 'This product is not in any allocation.', 'item' => null];
     }
 
     public function render()

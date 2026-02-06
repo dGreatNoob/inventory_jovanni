@@ -8,7 +8,7 @@ use App\Enums\PurchaseOrderStatus;
 
 /**
  * Helper for computing "available to allocate" quantities in the allocation workflow.
- * Available = current stock (ProductInventory.available_quantity) + expected from ledger (ProductInventoryExpected).
+ * Available = current stock (ProductInventory.quantity) + expected from ledger (ProductInventoryExpected).
  */
 class AllocationAvailabilityHelper
 {
@@ -49,21 +49,22 @@ class AllocationAvailabilityHelper
 
     /**
      * Get available quantity to allocate for a product.
-     * = stock (ProductInventory.available_quantity) + expected from PO.
+     * = stock (ProductInventory.quantity) + expected from PO.
      */
     public static function getAvailableToAllocate(Product $product, ?int $purchaseOrderId): float
     {
-        $stock = (float) $product->available_quantity;
+        $stock = self::getStockQuantity($product);
         $expected = self::getExpectedQuantityFromPO($product, $purchaseOrderId);
 
         return $stock + $expected;
     }
 
     /**
-     * Get stock (available quantity from ProductInventory) for a product.
+     * Get stock quantity for a product.
+     * Uses total_quantity (ProductInventory.quantity) to match Product Masterlist Stock column.
      */
     public static function getStockQuantity(Product $product): float
     {
-        return (float) $product->available_quantity;
+        return (float) $product->total_quantity;
     }
 }

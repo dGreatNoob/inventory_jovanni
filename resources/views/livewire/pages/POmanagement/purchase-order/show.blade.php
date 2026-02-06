@@ -1270,6 +1270,16 @@
                         </svg>
                         Complete Approval
                     </button>
+                    @if($purchaseOrder->canCloseForFulfillment())
+                        <button type="button"
+                            onclick="const reason = prompt('Reason for closing (optional):'); if (reason !== null) $wire.call('closeForFulfillment', [reason || '']);"
+                            class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-300 dark:bg-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-800 transition-colors">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            Close for fulfillment
+                        </button>
+                    @endif
                 @endcan
             @elseif($purchaseOrder->status === \App\Enums\PurchaseOrderStatus::TO_RECEIVE)
                 @can('receive_goods')
@@ -1297,6 +1307,16 @@
                         </svg>
                         Return to Approved
                     </button>
+                    @if($purchaseOrder->canCloseForFulfillment())
+                        <button type="button"
+                            onclick="const reason = prompt('Reason for closing (optional):'); if (reason !== null) $wire.call('closeForFulfillment', [reason || '']);"
+                            class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-300 dark:bg-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-800 transition-colors">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            Close for fulfillment
+                        </button>
+                    @endif
                 @endcan
             @elseif($purchaseOrder->status === \App\Enums\PurchaseOrderStatus::RECEIVED)
                 @can('view_products')
@@ -1307,6 +1327,18 @@
                         </svg>
                         View Products
                     </a>
+                @endcan
+                @can('po approve')
+                    @if($purchaseOrder->canReopen())
+                        <button type="button"
+                            onclick="const reason = prompt('Reason for reopening (optional):'); if (reason !== null) $wire.call('reopenPurchaseOrder', [reason || '']);"
+                            class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300 dark:bg-indigo-600 dark:hover:bg-indigo-700 dark:focus:ring-indigo-800 transition-colors">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                            Reopen PO
+                        </button>
+                    @endif
                 @endcan
             @endif
         </div>

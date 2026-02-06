@@ -292,21 +292,88 @@
                                     @enderror
                                 </div>
 
-                                <!-- Optional: Link to Purchase Order -->
-                                <div>
+                                <!-- Optional: Link to Purchase Order (searchable, prefix-segment) -->
+                                <div
+                                    x-data="{
+                                        open: false,
+                                        search: '',
+                                        selectedId: @entangle('batchPurchaseOrderId').live,
+                                        options: [{ id: null, po_num: '', label: 'No PO linked' }, ...@js($this->availablePurchaseOrders->map(fn($po) => [
+                                            'id' => $po->id,
+                                            'po_num' => $po->po_num,
+                                            'label' => $po->po_num . ' — ' . ($po->supplier?->name ?? 'No supplier') . ($po->expected_delivery_date ? ' (' . $po->expected_delivery_date->format('M d, Y') . ')' : '')
+                                        ])->values()->toArray())],
+                                        matchesSegmentPrefix(query, value) {
+                                            const qSeg = (query || '').toLowerCase().split(/[\s\-_]+/).filter(Boolean);
+                                            const vSeg = (value || '').toLowerCase().split(/[\s\-_]+/).filter(Boolean);
+                                            if (qSeg.length === 0) return true;
+                                            if (qSeg.length > vSeg.length) return false;
+                                            return qSeg.every((q, i) => (vSeg[i] || '').startsWith(q));
+                                        },
+                                        get filtered() {
+                                            if (!this.search.trim()) return this.options;
+                                            return this.options.filter(o => o.po_num === '' || this.matchesSegmentPrefix(this.search, o.po_num));
+                                        },
+                                        selectedLabel() {
+                                            const found = this.options.find(o => o.id === this.selectedId);
+                                            return found ? found.label : '';
+                                        },
+                                        select(option) {
+                                            this.selectedId = option.id;
+                                            this.search = '';
+                                            this.open = false;
+                                            $wire.set('batchPurchaseOrderId', option.id);
+                                        }
+                                    }"
+                                    @click.away="open = false"
+                                >
                                     <label for="batch_purchase_order" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
                                         Purchase Order (Optional)
                                     </label>
                                     <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">
                                         Link this allocation to a PO to filter products and show expected quantities.
                                     </p>
-                                    <select id="batch_purchase_order" wire:model.live="batchPurchaseOrderId"
-                                        class="block w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm pl-3 pr-10 py-2">
-                                        <option value="">No PO linked</option>
-                                        @foreach ($this->availablePurchaseOrders as $po)
-                                            <option value="{{ $po->id }}">{{ $po->po_num }} — {{ $po->supplier?->name ?? 'No supplier' }}@if($po->expected_delivery_date) ({{ $po->expected_delivery_date->format('M d, Y') }})@endif</option>
-                                        @endforeach
-                                    </select>
+                                    <div class="relative">
+                                        <input
+                                            type="text"
+                                            id="batch_purchase_order"
+                                            x-model="search"
+                                            @focus="open = true"
+                                            :placeholder="selectedLabel() || 'Search PO (e.g. P-2-60004)...'"
+                                            class="block w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm pl-3 pr-10 py-2"
+                                        />
+                                        <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                            </svg>
+                                        </div>
+                                        <div
+                                            x-show="open"
+                                            x-transition
+                                            class="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                                        >
+                                            <template x-if="filtered.length === 0">
+                                                <div class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
+                                                    No purchase orders found
+                                                </div>
+                                            </template>
+                                            <template x-for="option in filtered" :key="option.id ?? 'none'">
+                                                <button
+                                                    type="button"
+                                                    class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-between text-gray-900 dark:text-white"
+                                                    @click="select(option)"
+                                                >
+                                                    <span x-text="option.label"></span>
+                                                    <span
+                                                        x-show="option.id === selectedId"
+                                                        class="text-xs text-indigo-600 dark:text-indigo-400"
+                                                    >
+                                                        Selected
+                                                    </span>
+                                                </button>
+                                            </template>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <!-- Secondary: Remarks -->
@@ -511,7 +578,9 @@
                                                                 <div class="text-xs font-mono text-gray-700 dark:text-gray-300">{{ $product->product_number ?? '—' }}</div>
                                                                 <div class="text-xs text-gray-600 dark:text-gray-400">{{ $product->name ?? '—' }}</div>
                                                                 <div class="text-xs text-gray-600 dark:text-gray-400">{{ $product->supplier_code ?? '—' }}</div>
-                                                                <div class="text-xs text-gray-600 dark:text-gray-400">{{ $product->color?->code ?? '—' }}</div>
+                                                                @if(!empty(trim($product->remarks ?? '')))
+                                                                    <div class="text-xs text-gray-500 dark:text-gray-400">{{ $product->remarks }}</div>
+                                                                @endif
                                                                 <div class="text-xs text-gray-500 dark:text-gray-500">Stock: {{ (int) $stockQty }}</div>
                                                                 <div class="text-xs text-gray-500 dark:text-gray-500">Expected: {{ (int) $expectedQty }}</div>
                                                                 <div class="text-xs font-medium text-gray-700 dark:text-gray-300">Total Available: {{ (int) $totalAvailable }}</div>

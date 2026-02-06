@@ -324,6 +324,87 @@ class Show extends Component
         }
     }
 
+    public function closeForFulfillment(?string $reason = null): void
+    {
+        if (! $this->purchaseOrder->canCloseForFulfillment()) {
+            session()->flash('error', 'This purchase order cannot be closed for fulfillment.');
+            return;
+        }
+
+        try {
+            DB::transaction(function () use ($reason) {
+                $remarks = $reason && trim($reason) !== ''
+                    ? trim($reason)
+                    : 'Manually closed for fulfillment (short or complete).';
+
+                $this->purchaseOrder->update([
+                    'status' => PurchaseOrderStatus::RECEIVED,
+                    'del_on' => $this->purchaseOrder->del_on ?? now(),
+                ]);
+
+                PurchaseOrderApprovalLog::create([
+                    'purchase_order_id' => $this->purchaseOrder->id,
+                    'user_id' => Auth::id(),
+                    'action' => 'closed_for_fulfillment',
+                    'remarks' => $remarks,
+                    'ip_address' => request()->ip(),
+                ]);
+
+                $this->purchaseOrder->refresh();
+                $this->updateComputedProperties();
+                $this->loadBatches();
+            });
+
+            session()->flash('message', 'Purchase order closed for fulfillment.');
+        } catch (\Exception $e) {
+            Log::error('Close for fulfillment error', [
+                'po_id' => $this->purchaseOrder->id ?? null,
+                'message' => $e->getMessage(),
+            ]);
+            session()->flash('error', 'Failed to close purchase order: ' . $e->getMessage());
+        }
+    }
+
+    public function reopenPurchaseOrder(?string $reason = null): void
+    {
+        if ($this->purchaseOrder->status !== PurchaseOrderStatus::RECEIVED) {
+            session()->flash('error', 'Only received purchase orders can be reopened.');
+            return;
+        }
+
+        try {
+            DB::transaction(function () use ($reason) {
+                $remarks = $reason && trim($reason) !== ''
+                    ? trim($reason)
+                    : 'PO reopened for receiving or editing.';
+
+                $this->purchaseOrder->update([
+                    'status' => PurchaseOrderStatus::TO_RECEIVE,
+                ]);
+
+                PurchaseOrderApprovalLog::create([
+                    'purchase_order_id' => $this->purchaseOrder->id,
+                    'user_id' => Auth::id(),
+                    'action' => 'reopened',
+                    'remarks' => $remarks,
+                    'ip_address' => request()->ip(),
+                ]);
+
+                $this->purchaseOrder->refresh();
+                $this->updateComputedProperties();
+                $this->loadBatches();
+            });
+
+            session()->flash('message', 'Purchase order reopened. You can receive more or edit lines.');
+        } catch (\Exception $e) {
+            Log::error('Reopen purchase order error', [
+                'po_id' => $this->purchaseOrder->id ?? null,
+                'message' => $e->getMessage(),
+            ]);
+            session()->flash('error', 'Failed to reopen purchase order: ' . $e->getMessage());
+        }
+    }
+
     public function render()
     {
         return view('livewire.pages.POmanagement.purchase-order.show');

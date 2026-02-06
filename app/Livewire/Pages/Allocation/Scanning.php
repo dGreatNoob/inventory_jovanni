@@ -8,6 +8,7 @@ use App\Models\BranchAllocationItem;
 use App\Models\Box;
 use App\Models\DeliveryReceipt;
 use App\Models\Product;
+use App\Support\ProductSearchHelper;
 use Livewire\Component;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Layout;
@@ -25,11 +26,16 @@ class Scanning extends Component
     public $barcodeInput = '';
     public $lastScannedBarcode = '';
     public $scanFeedback = '';
+    /** @var string 'success'|'error'|'neutral' Explicit scan feedback status for styling */
+    public string $scanStatus = 'neutral';
 
     public $availableBoxes = [];
     public $currentBox = null;
     public $currentDr = null;
     public $motherDr = null;
+
+    public bool $showBranchDropdown = false;
+    public string $branchSearch = '';
 
     /** Branches that have at least one draft allocation (for scanner selection) */
     public function getBranchesWithAllocationsProperty()
@@ -37,6 +43,30 @@ class Scanning extends Component
         return Branch::whereHas('branchAllocations', function ($q) {
             $q->whereHas('batchAllocation', fn ($bq) => $bq->where('status', 'draft'));
         })->orderBy('name')->get();
+    }
+
+    /** Branches filtered by search (sequential token prefix match) */
+    public function getFilteredBranchesProperty()
+    {
+        $branches = $this->branchesWithAllocations;
+        if (trim($this->branchSearch) === '') {
+            return $branches;
+        }
+        $search = trim($this->branchSearch);
+        return $branches->filter(function ($b) use ($search) {
+            return ProductSearchHelper::matchesAnyField($search, [
+                $b->name ?? '',
+                $b->code ?? '',
+            ]);
+        })->values();
+    }
+
+    public function selectBranch(int $branchId): void
+    {
+        $this->selectedBranchId = $branchId;
+        $this->updatedSelectedBranchId();
+        $this->showBranchDropdown = false;
+        $this->branchSearch = '';
     }
 
     /** Selected branch name (for summary display) */
@@ -61,12 +91,24 @@ class Scanning extends Component
             ->map(function ($box) {
                 $dr = $box->deliveryReceipts->first();
                 return (object) [
+                    'id' => $box->id,
                     'box_number' => $box->box_number,
                     'status' => $box->status,
                     'current_count' => $box->current_count,
                     'dr_number' => $dr?->dr_number ?? '—',
                 ];
             });
+    }
+
+    /** Scanned items for the current box (moved from view for performance) */
+    public function getScannedItemsProperty()
+    {
+        if (!$this->currentBox) {
+            return collect();
+        }
+        return BranchAllocationItem::where('box_id', $this->currentBox->id)
+            ->where('scanned_quantity', '>', 0)
+            ->get();
     }
 
     /** Products allocatable to this branch (included in allocation, for this branch) */
@@ -121,6 +163,7 @@ class Scanning extends Component
         $this->currentDr = null;
         $this->motherDr = null;
         $this->scanFeedback = '';
+        $this->scanStatus = 'neutral';
 
         if ($this->selectedBranchAllocationId) {
             $this->loadAvailableBoxes();
@@ -189,6 +232,7 @@ class Scanning extends Component
                 $this->createDrForBox($boxId);
             }
             $this->scanFeedback = '';
+            $this->scanStatus = 'neutral';
             $this->lastScannedBarcode = '';
         }
     }
@@ -271,6 +315,11 @@ class Scanning extends Component
         return $motherDr?->id;
     }
 
+    public function clearBarcodeInput()
+    {
+        $this->barcodeInput = '';
+    }
+
     public function processBarcodeScanner()
     {
         if (empty(trim($this->barcodeInput))) {
@@ -282,12 +331,14 @@ class Scanning extends Component
 
         if (!$this->selectedBranchAllocationId) {
             $this->scanFeedback = 'Please select a branch first.';
+            $this->scanStatus = 'error';
             $this->barcodeInput = '';
             return;
         }
 
         if (!$this->currentBox || !$this->currentDr) {
             $this->scanFeedback = 'Please select or create a box first.';
+            $this->scanStatus = 'error';
             $this->barcodeInput = '';
             return;
         }
@@ -295,6 +346,7 @@ class Scanning extends Component
         $branchAllocation = BranchAllocation::with('branch')->find($this->selectedBranchAllocationId);
         if (!$branchAllocation) {
             $this->scanFeedback = 'Branch allocation not found.';
+            $this->scanStatus = 'error';
             $this->barcodeInput = '';
             return;
         }
@@ -303,6 +355,7 @@ class Scanning extends Component
         $result = $this->validateScannedProduct($barcode, $branchAllocation);
         if (!$result['valid']) {
             $this->scanFeedback = $result['message'];
+            $this->scanStatus = 'error';
             session()->flash('scan_error', $result['message']);
             $this->barcodeInput = '';
             $this->dispatch('refocus-barcode-input');
@@ -326,6 +379,7 @@ class Scanning extends Component
 
         if ($totalScannedQty >= $allocatedQty) {
             $this->scanFeedback = "{$item->display_name} for {$branchName} - Already fully scanned.";
+            $this->scanStatus = 'error';
             session()->flash('scan_warning', "Product '{$item->display_name}' for {$branchName} is already fully scanned.");
             $this->barcodeInput = '';
             $this->dispatch('refocus-barcode-input');
@@ -359,8 +413,10 @@ class Scanning extends Component
         $remaining = $allocatedQty - ($totalScannedQty + 1);
         if ($remaining === 0) {
             $this->scanFeedback = "{$item->display_name} for {$branchName} - COMPLETE.";
+            $this->scanStatus = 'success';
         } else {
             $this->scanFeedback = "{$item->display_name} for {$branchName} - " . ($totalScannedQty + 1) . "/{$allocatedQty} ({$remaining} remaining)";
+            $this->scanStatus = 'success';
         }
         session()->flash('scan_success', $this->scanFeedback);
 

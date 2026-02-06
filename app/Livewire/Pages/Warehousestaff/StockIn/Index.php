@@ -33,6 +33,7 @@ class Index extends Component
 
     // Delivery Information
     public $drNumber = ''; // Added DR Number
+    public $deliveryDate = '';
 
     // Manual PO input properties
     public $showManualInput = false;
@@ -116,6 +117,8 @@ class Index extends Component
             $this->drNumber = $this->foundPurchaseOrder->dr_number;
         }
 
+        $this->deliveryDate = now()->toDateString();
+
         foreach ($this->foundPurchaseOrder->productOrders as $productOrder) {
             $this->itemStatuses[$productOrder->id] = 'good';
             $this->itemRemarks[$productOrder->id] = '';
@@ -139,6 +142,25 @@ class Index extends Component
         // Validate DR Number before proceeding
         if (empty(trim($this->drNumber))) {
             $this->message = 'Delivery Receipt (DR) Number is required';
+            $this->messageType = 'error';
+            return;
+        }
+
+        // Validate Date received
+        if (empty(trim($this->deliveryDate))) {
+            $this->message = 'Date received is required';
+            $this->messageType = 'error';
+            return;
+        }
+        try {
+            $parsed = \Carbon\Carbon::parse($this->deliveryDate);
+            if ($parsed->isFuture()) {
+                $this->message = 'Date received cannot be in the future';
+                $this->messageType = 'error';
+                return;
+            }
+        } catch (\Throwable $e) {
+            $this->message = 'Please enter a valid date received';
             $this->messageType = 'error';
             return;
         }
@@ -190,6 +212,28 @@ class Index extends Component
                 return;
             }
 
+            // Validate Date received
+            if (empty(trim($this->deliveryDate))) {
+                DB::rollBack();
+                $this->message = 'Date received is required.';
+                $this->messageType = 'error';
+                return;
+            }
+            try {
+                $receivedAt = \Carbon\Carbon::parse($this->deliveryDate)->startOfDay();
+                if ($receivedAt->isFuture()) {
+                    DB::rollBack();
+                    $this->message = 'Date received cannot be in the future.';
+                    $this->messageType = 'error';
+                    return;
+                }
+            } catch (\Throwable $e) {
+                DB::rollBack();
+                $this->message = 'Please enter a valid date received.';
+                $this->messageType = 'error';
+                return;
+            }
+
             // Check if DR number is already used (prevent duplicate DR numbers)
             $drExists = \App\Models\PurchaseOrderDelivery::where('dr_number', strtoupper(trim($this->drNumber)))->exists();
             
@@ -199,6 +243,8 @@ class Index extends Component
                 $this->messageType = 'error';
                 return;
             }
+
+            $receivedAt = \Carbon\Carbon::parse($this->deliveryDate)->startOfDay();
 
             // Process each product order
             foreach ($this->foundPurchaseOrder->productOrders as $productOrder) {
@@ -313,14 +359,14 @@ class Index extends Component
                             $batchNotes .= "\nDR: {$this->drNumber}";
                             $batchNotes .= "\nReceived by: " . auth()->user()->name;
                             $batchNotes .= "\nPO: {$this->foundPurchaseOrder->po_num}";
-                            $batchNotes .= "\nDate: " . now()->format('Y-m-d H:i:s');
+                            $batchNotes .= "\nDate: " . $receivedAt->format('Y-m-d');
                             
                             $newBatch = \App\Models\ProductBatch::create([
                                 'product_id' => $productOrder->product->id,
                                 'purchase_order_id' => $this->foundPurchaseOrder->id,
                                 'initial_qty' => $totalDelivered,
                                 'current_qty' => $actualReceive,
-                                'received_date' => now()->toDateString(),
+                                'received_date' => $receivedAt->toDateString(),
                                 'received_by' => auth()->id(),
                                 'location' => 'Warehouse',
                                 'notes' => $batchNotes,
@@ -411,7 +457,7 @@ class Index extends Component
             // ✅ UPDATE PO STATUS
             if ($allItemsFullyReceived) {
                 $this->foundPurchaseOrder->status = \App\Enums\PurchaseOrderStatus::RECEIVED;
-                $this->foundPurchaseOrder->del_on = now();
+                $this->foundPurchaseOrder->del_on = $receivedAt;
             } else {
                 $this->foundPurchaseOrder->status = \App\Enums\PurchaseOrderStatus::TO_RECEIVE;
             }
@@ -457,7 +503,7 @@ class Index extends Component
                     DB::table('purchase_order_deliveries')->insert([
                         'purchase_order_id' => $this->foundPurchaseOrder->id,
                         'dr_number' => strtoupper(trim($this->drNumber)),
-                        'delivery_date' => now()->toDateString(),
+                        'delivery_date' => $receivedAt->toDateString(),
                         'notes' => $deliveryNotes,
                         'created_at' => now(),
                         'updated_at' => now(),
@@ -541,7 +587,7 @@ class Index extends Component
                 'scannedCode', 'foundPurchaseOrder', 'showResult',
                 'message', 'messageType', 'itemStatuses', 'itemRemarks', 'generalRemarks',
                 'scannedPONumber', 'receivedQuantities', 'destroyedQuantities',
-                'showManualInput', 'manualPONumber', 'drNumber'
+                'showManualInput', 'manualPONumber', 'drNumber', 'deliveryDate'
             ]);
         Log::info("State reset complete");
     }

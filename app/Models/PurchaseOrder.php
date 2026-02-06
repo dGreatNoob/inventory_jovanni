@@ -172,10 +172,21 @@ class PurchaseOrder extends Model
         return ! $this->isClosed();
     }
 
+    /**
+     * Can the user manually close this PO for fulfillment (e.g. short shipment)?
+     * True when TO_RECEIVE or APPROVED and not cancelled.
+     */
+    public function canCloseForFulfillment(): bool
+    {
+        return ! $this->isCancelled() && ($this->isToReceive() || $this->isApproved());
+    }
+
+    /**
+     * Can this PO be reopened (RECEIVED → TO_RECEIVE) to receive more or edit lines?
+     */
     public function canReopen(): bool
     {
-        // Reopen only if not fully received/cancelled and previously closed via business rules
-        return $this->isApproved() || $this->isToReceive();
+        return $this->isReceived();
     }
 
     // Delivery calculations

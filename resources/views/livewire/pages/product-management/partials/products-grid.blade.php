@@ -65,6 +65,9 @@
                     <div class="p-3">
                         <h3 class="text-sm font-medium text-gray-900 dark:text-white truncate">
                             {{ $product->remarks ?? $product->name }}
+                            @if(($product->product_type ?? '') === 'placeholder')
+                                <span class="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300">Pending</span>
+                            @endif
                         </h3>
                         <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
                             {{ $product->sku }}

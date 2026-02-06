@@ -8,6 +8,7 @@ use App\Models\ProductOrder;
 use App\Models\Supplier;
 use App\Models\Department;
 use App\Models\Category;
+use App\Services\ProductService;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Livewire\Attributes\Validate;
@@ -49,6 +50,10 @@ class Edit extends Component
 
     public $showModal = false;
     public $editingItemIndex = null;
+
+    /** Add-by-supplier-code form */
+    public $addBySupplierCode = '';
+    public $addMode = 'search'; // 'search' | 'supplier_code'
 
     // Cache for ordered items
     #[Validate('required|array|min:1')]
@@ -227,7 +232,7 @@ class Edit extends Component
     
     public function closeModal()
     {
-        $this->reset(['selected_product', 'unit_price', 'order_qty', 'search', 'categoryFilter', 'editingItemIndex']);
+        $this->reset(['selected_product', 'unit_price', 'order_qty', 'search', 'categoryFilter', 'editingItemIndex', 'addBySupplierCode', 'addMode']);
         $this->showModal = false;
     }
 
@@ -276,6 +281,67 @@ class Edit extends Component
             session()->flash('success', 'Item added successfully.');
         }
 
+        $this->closeModal();
+    }
+
+    public function addItemBySupplierCode()
+    {
+        $this->validate([
+            'addBySupplierCode' => 'required|string|max:255',
+            'order_qty' => 'required|numeric|min:0.01',
+            'unit_price' => 'required|numeric|min:0',
+        ], [
+            'addBySupplierCode.required' => 'Please enter supplier code.',
+            'order_qty.required' => 'Please enter quantity.',
+            'order_qty.min' => 'Quantity must be at least 0.01.',
+            'unit_price.required' => 'Please enter unit price.',
+            'unit_price.min' => 'Unit price cannot be negative.',
+        ]);
+
+        if (empty($this->supplier_id)) {
+            session()->flash('error', 'Please select a supplier first.');
+            return;
+        }
+
+        $supplierCode = trim($this->addBySupplierCode);
+        $product = Product::with(['category', 'supplier', 'color'])
+            ->where('supplier_id', $this->supplier_id)
+            ->where('supplier_code', $supplierCode)
+            ->first();
+
+        if (!$product) {
+            try {
+                $product = app(ProductService::class)->createPlaceholderProduct([
+                    'supplier_id' => $this->supplier_id,
+                    'supplier_code' => $supplierCode,
+                    'unit_price' => (float) $this->unit_price,
+                ]);
+            } catch (\Exception $e) {
+                session()->flash('error', 'Could not create placeholder product: ' . $e->getMessage());
+                return;
+            }
+        }
+
+        $exists = collect($this->orderedItems)->firstWhere('product_id', $product->id);
+        if ($exists) {
+            session()->flash('error', 'This product is already in the order list.');
+            return;
+        }
+
+        $this->orderedItems[] = [
+            'id' => null,
+            'product_id' => $product->id,
+            'product_number' => $product->product_number ?? null,
+            'sku' => $product->sku,
+            'name' => $product->remarks ?? $product->name,
+            'category' => $product->category ? $product->category->name : 'N/A',
+            'supplier' => $product->supplier ? $product->supplier->name : 'N/A',
+            'supplier_code' => $product->supplier_code ?? 'N/A',
+            'unit_price' => (float) $this->unit_price,
+            'order_qty' => (float) $this->order_qty,
+            'total_price' => (float) ($this->unit_price * $this->order_qty),
+        ];
+        session()->flash('success', 'Item added successfully.');
         $this->closeModal();
     }
 

@@ -115,6 +115,11 @@ class Product extends Model
         return $query->where('supplier_id', $supplierId);
     }
 
+    public function scopePlaceholder($query): Builder
+    {
+        return $query->where('product_type', 'placeholder');
+    }
+
     public function scopeSearch($query, $search): Builder
     {
         return $query->where(function ($q) use ($search) {

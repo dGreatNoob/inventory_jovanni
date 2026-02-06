@@ -173,7 +173,7 @@
                             Add Item to Purchase Order
                         </h3>
                         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                            Select a product from the supplier's catalog
+                            Search existing products or add by supplier code (creates placeholder if needed)
                         </p>
                     </div>
                     <button
@@ -190,6 +190,66 @@
                     </button>
                 </div>
 
+                {{-- Tabs: Search | Add by Supplier Code --}}
+                <div class="flex border-b border-gray-200 dark:border-gray-600 mb-4">
+                    <button
+                        type="button"
+                        wire:click="$set('addMode', 'search')"
+                        class="px-4 py-2 text-sm font-medium rounded-t-lg {{ $addMode === 'search' ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border-b-2 border-blue-500' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300' }}"
+                    >
+                        Search existing product
+                    </button>
+                    <button
+                        type="button"
+                        wire:click="$set('addMode', 'supplier_code')"
+                        class="px-4 py-2 text-sm font-medium rounded-t-lg {{ $addMode === 'supplier_code' ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border-b-2 border-blue-500' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300' }}"
+                    >
+                        Add by supplier code
+                    </button>
+                </div>
+
+                @if($addMode === 'supplier_code')
+                    {{-- Add by supplier code form --}}
+                    <div class="space-y-4">
+                        <div>
+                            <label for="addBySupplierCode" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Supplier Code</label>
+                            <input
+                                type="text"
+                                id="addBySupplierCode"
+                                wire:model.live="addBySupplierCode"
+                                placeholder="Enter supplier code (e.g. ABC-123)"
+                                class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                            />
+                            @error('addBySupplierCode') <p class="mt-1 text-sm text-red-600 dark:text-red-500">{{ $message }}</p> @enderror
+                        </div>
+                        <div class="grid gap-4 md:grid-cols-2">
+                            <div>
+                                <label for="supplier_code_unit_price" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Unit Price (₱)</label>
+                                <input
+                                    type="number"
+                                    id="supplier_code_unit_price"
+                                    wire:model.live="unit_price"
+                                    step="0.01"
+                                    min="0"
+                                    class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                />
+                                @error('unit_price') <p class="mt-1 text-sm text-red-600 dark:text-red-500">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <label for="supplier_code_order_qty" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Order Quantity</label>
+                                <input
+                                    type="number"
+                                    id="supplier_code_order_qty"
+                                    wire:model.live="order_qty"
+                                    step="0.01"
+                                    min="0.01"
+                                    class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                                />
+                                @error('order_qty') <p class="mt-1 text-sm text-red-600 dark:text-red-500">{{ $message }}</p> @enderror
+                            </div>
+                        </div>
+                    </div>
+                @else
                 {{-- Search and Filters --}}
                 <div class="grid gap-4 mb-4 md:grid-cols-2">
                     <div>
@@ -281,7 +341,7 @@
                     {{ $products->links() }}
                 </div>
 
-                {{-- Quantity and Price Inputs --}}
+                {{-- Quantity and Price Inputs (search mode) --}}
                 @if($selected_product)
                     <div class="mt-4 border-t border-gray-200 dark:border-gray-600 pt-4">
                         <div class="mb-3 text-sm text-gray-700 dark:text-gray-300">
@@ -312,21 +372,35 @@
                         </div>
                     </div>
                 @endif
+                @endif
 
                 {{-- Modal Footer --}}
                 <div class="mt-6 flex items-center justify-end space-x-3">
                     <x-button type="button" variant="secondary" size="md" wire:click="closeModal">
                         Cancel
                     </x-button>
-                    <x-button
-                        type="button"
-                        variant="primary"
-                        size="md"
-                        wire:click="addItem"
-                        :disabled="!$selected_product"
-                    >
-                        Add Item
-                    </x-button>
+                    @if($addMode === 'supplier_code')
+                        <x-button
+                            type="button"
+                            variant="primary"
+                            size="md"
+                            wire:click="addItemBySupplierCode"
+                            wire:loading.attr="disabled"
+                            :disabled="empty(trim($addBySupplierCode ?? '')) || (float)($order_qty ?? 0) < 0.01 || (float)($unit_price ?? -1) < 0"
+                        >
+                            Add Item
+                        </x-button>
+                    @else
+                        <x-button
+                            type="button"
+                            variant="primary"
+                            size="md"
+                            wire:click="addItem"
+                            :disabled="!$selected_product"
+                        >
+                            Add Item
+                        </x-button>
+                    @endif
                 </div>
             </x-modal>
 

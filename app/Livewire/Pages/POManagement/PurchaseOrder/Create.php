@@ -10,6 +10,7 @@ use App\Models\Department;
 use App\Models\User;
 use App\Models\Category;
 use App\Enums\PurchaseOrderStatus;
+use App\Services\ProductService;
 use App\Support\ProductSearchHelper;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -35,6 +36,10 @@ class Create extends Component
     public $search = '';
     public $categoryFilter = '';
     public $showModal = false;
+
+    /** Add-by-supplier-code form */
+    public $addBySupplierCode = '';
+    public $addMode = 'search'; // 'search' | 'supplier_code'
 
     public $orderedItems = [];
     public $departments = [];
@@ -215,7 +220,7 @@ class Create extends Component
     public function closeModal()
     {
         $this->showModal = false;
-        $this->reset(['selected_product', 'unit_price', 'order_qty', 'search', 'categoryFilter']);
+        $this->reset(['selected_product', 'unit_price', 'order_qty', 'search', 'categoryFilter', 'addBySupplierCode', 'addMode']);
     }
 
     public function selectProduct($id)
@@ -273,6 +278,72 @@ class Create extends Component
                 'total_price' => (float)($this->unit_price * $this->order_qty),
             ];
             
+            session()->flash('success', 'Product added to purchase order.');
+        }
+
+        $this->closeModal();
+    }
+
+    public function addItemBySupplierCode()
+    {
+        $this->validate([
+            'addBySupplierCode' => 'required|string|max:255',
+            'order_qty' => 'required|numeric|min:0.01',
+            'unit_price' => 'required|numeric|min:0',
+        ], [
+            'addBySupplierCode.required' => 'Please enter supplier code.',
+            'order_qty.required' => 'Please enter quantity.',
+            'order_qty.min' => 'Quantity must be at least 0.01.',
+            'unit_price.required' => 'Please enter unit price.',
+            'unit_price.min' => 'Unit price cannot be negative.',
+        ]);
+
+        if (empty($this->supplier_id)) {
+            session()->flash('error', 'Please select a supplier first.');
+            return;
+        }
+
+        $supplierCode = trim($this->addBySupplierCode);
+        $product = Product::with(['category', 'supplier', 'color'])
+            ->where('supplier_id', $this->supplier_id)
+            ->where('supplier_code', $supplierCode)
+            ->first();
+
+        if (!$product) {
+            try {
+                $product = app(ProductService::class)->createPlaceholderProduct([
+                    'supplier_id' => $this->supplier_id,
+                    'supplier_code' => $supplierCode,
+                    'unit_price' => (float) $this->unit_price,
+                ]);
+            } catch (\Exception $e) {
+                session()->flash('error', 'Could not create placeholder product: ' . $e->getMessage());
+                return;
+            }
+        }
+
+        $existingIndex = collect($this->orderedItems)->search(fn ($item) => $item['product_id'] == $product->id);
+
+        if ($existingIndex !== false) {
+            $this->orderedItems[$existingIndex]['order_qty'] += (float) $this->order_qty;
+            $this->orderedItems[$existingIndex]['total_price'] =
+                $this->orderedItems[$existingIndex]['unit_price'] * $this->orderedItems[$existingIndex]['order_qty'];
+            session()->flash('success', 'Product quantity updated in purchase order.');
+        } else {
+            $this->orderedItems[] = [
+                'product_id' => $product->id,
+                'product_number' => $product->product_number ?? null,
+                'sku' => $product->sku,
+                'barcode' => $product->barcode,
+                'name' => $product->remarks ?? $product->name,
+                'color' => $product->color ? ($product->color->name ?? $product->color->code) : null,
+                'category' => $product->category ? $product->category->name : 'N/A',
+                'supplier' => $product->supplier ? $product->supplier->name : 'N/A',
+                'supplier_code' => $product->supplier_code ?? 'N/A',
+                'unit_price' => (float) $this->unit_price,
+                'order_qty' => (float) $this->order_qty,
+                'total_price' => (float) ($this->unit_price * $this->order_qty),
+            ];
             session()->flash('success', 'Product added to purchase order.');
         }
 

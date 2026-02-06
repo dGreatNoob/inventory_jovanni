@@ -158,8 +158,32 @@ class ProductService
             })
             ->when($filters['price_min'] ?? null, fn($q) => $q->where('price', '>=', $filters['price_min']))
             ->when($filters['price_max'] ?? null, fn($q) => $q->where('price', '<=', $filters['price_max']))
-            ->orderBy('created_at', 'desc')
-            ->paginate($perPage);
+            ->when(($filters['product_type'] ?? null) === 'placeholder', fn($q) => $q->placeholder());
+
+        $sortBy = $filters['sort_by'] ?? 'created_at';
+        $sortDirection = in_array($filters['sort_direction'] ?? 'desc', ['asc', 'desc'], true)
+            ? $filters['sort_direction']
+            : 'desc';
+
+        if ($sortBy === 'latest_stock_movement') {
+            $lastMovementSub = InventoryMovement::query()
+                ->selectRaw('MAX(created_at)')
+                ->whereColumn('product_id', 'products.id');
+            $products = $products
+                ->select('products.*')
+                ->selectSub($lastMovementSub, 'last_movement_at')
+                ->orderByRaw('last_movement_at IS NULL')
+                ->orderBy('last_movement_at', $sortDirection);
+        } else {
+            $allowedSortColumns = ['created_at', 'name', 'price'];
+            if (in_array($sortBy, $allowedSortColumns, true)) {
+                $products = $products->orderBy('products.' . $sortBy, $sortDirection);
+            } else {
+                $products = $products->orderBy('products.created_at', 'desc');
+            }
+        }
+
+        $products = $products->paginate($perPage);
 
         return $products;
     }
@@ -170,7 +194,7 @@ class ProductService
     public function createProduct(array $data): Product
     {
         return DB::transaction(function () use ($data) {
-            $data['product_number'] = $this->normalizeProductNumber($data['product_number'] ?? null);
+            $data['product_number'] = isset($data['product_number']) ? substr(trim((string) $data['product_number']), 0, 6) : null;
 
             $color = null;
             if (!empty($data['product_color_id'])) {
@@ -237,6 +261,53 @@ class ProductService
     }
 
     /**
+     * Create a minimal placeholder product for PO lines when only supplier code is known.
+     * Used when adding items by supplier code and no matching product exists.
+     */
+    public function createPlaceholderProduct(array $data): Product
+    {
+        $supplierCode = trim($data['supplier_code'] ?? '');
+        $supplierId = (int) ($data['supplier_id'] ?? 0);
+        $unitPrice = (float) ($data['unit_price'] ?? 0);
+
+        if (!$supplierCode || !$supplierId) {
+            throw new \InvalidArgumentException('supplier_id and supplier_code are required for placeholder product.');
+        }
+
+        $defaultCategoryId = config('products.default_placeholder_category_id')
+            ?? Category::whereNotNull('parent_id')->orderBy('id')->value('id');
+
+        if (!$defaultCategoryId) {
+            throw new \RuntimeException('No default category available for placeholder products. Configure default_placeholder_category_id or add leaf categories.');
+        }
+
+        $sanitized = preg_replace('/[^A-Za-z0-9_-]/', '', $supplierCode) ?: 'SC';
+        $sku = 'PND-' . $supplierId . '-' . substr($sanitized, 0, 20) . '-' . strtolower(\Illuminate\Support\Str::random(6));
+
+        $payload = [
+            'sku' => $sku,
+            'barcode' => null,
+            'name' => 'Pending: ' . $supplierCode,
+            'category_id' => $defaultCategoryId,
+            'supplier_id' => $supplierId,
+            'supplier_code' => $supplierCode,
+            'price' => $unitPrice,
+            'cost' => $unitPrice,
+            'product_number' => null,
+            'product_color_id' => null,
+            'product_type' => 'placeholder',
+            'remarks' => 'Auto-created from PO; complete details in Product Management',
+            'uom' => 'pcs',
+        ];
+
+        return $this->createProduct(array_merge($payload, [
+            'product_number' => null,
+            'product_color_id' => null,
+            'barcode' => null,
+        ]));
+    }
+
+    /**
      * Update product information
      */
     public function updateProduct(Product $product, array $data): Product
@@ -245,7 +316,8 @@ class ProductService
             $originalPrice = $product->price;
             $originalNote = $product->price_note;
 
-            $data['product_number'] = $this->normalizeProductNumber($data['product_number'] ?? $product->product_number);
+            $pn = $data['product_number'] ?? $product->product_number;
+            $data['product_number'] = $pn !== null ? substr(trim((string) $pn), 0, 6) : null;
 
             $color = null;
             if (array_key_exists('product_color_id', $data)) {

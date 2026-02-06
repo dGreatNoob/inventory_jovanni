@@ -1002,82 +1002,88 @@
                             <div class="flex h-full flex-col">
                                 <div class="flex-1 overflow-y-auto px-6 py-6">
                                     <div class="space-y-6">
-                                        <!-- Product Selection -->
+                                        <!-- Agent and Selling Area Selection -->
                                         <section class="space-y-4">
                                             <div>
-                                                <flux:heading size="md" class="text-gray-900 dark:text-white">Select Product</flux:heading>
-                                                <p class="text-sm text-gray-500 dark:text-gray-400">Scan product barcode or select from inventory.</p>
+                                                <flux:heading size="md" class="text-gray-900 dark:text-white">Sales Information</flux:heading>
+                                                <p class="text-sm text-gray-500 dark:text-gray-400">Select agent and selling area before scanning products.</p>
                                             </div>
 
-                                            <div class="space-y-4" x-data x-init="$wire.on('refocus-sales-barcode', () => $nextTick(() => document.getElementById('sales-barcode-input')?.focus()))">
-                                                <div>
-                                                    <label for="sales-barcode-input" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
-                                                        Barcode
-                                                    </label>
-                                                    <input
-                                                        id="sales-barcode-input"
-                                                        type="text"
-                                                        wire:model.live.debounce.150ms="salesBarcodeInput"
-                                                        wire:keydown.enter.prevent="processSalesBarcode"
-                                                        wire:keydown.escape="clearSalesBarcodeInput"
-                                                        placeholder="Scan barcode or press Enter to add..."
-                                                        autocomplete="off"
-                                                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                                        x-ref="salesBarcodeInput"
-                                                        x-init="$nextTick(() => { if ($el) $el.focus(); })"
-                                                        autofocus
-                                                    />
-                                                </div>
-
-                                                <!-- Product Info Display -->
-                                                @if($selectedSalesProduct)
-                                                    <div class="rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-900/20">
-                                                        <h5 class="font-medium text-green-900 dark:text-green-100 mb-3">Selected Product</h5>
-                                                        <div class="flex gap-4">
-                                                            @if($selectedSalesProduct['image_url'])
-                                                                <img src="{{ $selectedSalesProduct['image_url'] }}" alt="{{ $selectedSalesProduct['name'] }}" class="w-20 h-20 object-cover rounded flex-shrink-0">
-                                                            @endif
-                                                            <div class="min-w-0 flex-1 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
-                                                                <div class="sm:col-span-2">
-                                                                    <div class="text-sm text-green-600 dark:text-green-400 font-medium mb-0.5">Product Name</div>
-                                                                    <div class="font-medium text-green-900 dark:text-green-100">{{ $selectedSalesProduct['name'] }}</div>
-                                                                </div>
-                                                                <div>
-                                                                    <div class="text-xs text-green-600 dark:text-green-400 font-medium mb-0.5">Product ID</div>
-                                                                    <div class="text-sm font-mono text-green-900 dark:text-green-100">{{ $selectedSalesProduct['product_number'] ?? '—' }}</div>
-                                                                </div>
-                                                                <div>
-                                                                    <div class="text-xs text-green-600 dark:text-green-400 font-medium mb-0.5">SKU</div>
-                                                                    <div class="text-sm font-mono text-green-900 dark:text-green-100">{{ $selectedSalesProduct['sku'] ?? '—' }}</div>
-                                                                </div>
-                                                                <div>
-                                                                    <div class="text-xs text-green-600 dark:text-green-400 font-medium mb-0.5">Supplier Code (SKU)</div>
-                                                                    <div class="text-sm text-green-900 dark:text-green-100">{{ $selectedSalesProduct['supplier_code'] ?? '—' }}</div>
-                                                                </div>
-                                                                <div>
-                                                                    <div class="text-xs text-green-600 dark:text-green-400 font-medium mb-0.5">Barcode</div>
-                                                                    <div class="text-sm font-mono text-green-900 dark:text-green-100">{{ $selectedSalesProduct['barcode'] ?? 'N/A' }}</div>
-                                                                </div>
-                                                                <div class="sm:col-span-2 flex flex-wrap gap-4 pt-2 border-t border-green-200 dark:border-green-700 mt-2">
-                                                                    <div>
-                                                                        <span class="text-xs text-green-600 dark:text-green-400">Available:</span>
-                                                                        <span class="ml-1 font-medium text-green-900 dark:text-green-100">{{ $selectedSalesProduct['remaining_quantity'] }} units</span>
-                                                                    </div>
-                                                                    <div>
-                                                                        <span class="text-xs text-green-600 dark:text-green-400">Unit Price:</span>
-                                                                        <span class="ml-1 font-medium text-green-900 dark:text-green-100">₱{{ number_format($selectedSalesProduct['unit_price'], 2) }}</span>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                @endif
-
-                                                <p class="text-xs text-gray-500 dark:text-gray-400">Scan or type barcode then press Enter to add 1 unit. Repeat for multiple items.</p>
-
+                                            <div class="space-y-4">
+                                                <!-- Agent Selection (Required) -->
                                                 <div>
                                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
-                                                        Selling Area
+                                                        Agent <span class="text-red-500">*</span>
+                                                    </label>
+                                                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Select the agent responsible for this sale</p>
+                                                    <div class="relative" wire:click.outside="$set('agentDropdown', false)">
+                                                        <div wire:click="toggleAgentDropdown"
+                                                            class="block w-full rounded-md border {{ $selectedAgentId ? 'border-gray-300' : 'border-red-300' }} bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-green-500 focus:outline-none focus:ring-green-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm cursor-pointer flex justify-between items-center min-h-[42px]">
+                                                            <span class="{{ $selectedAgentId ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500' }}">
+                                                                @if($selectedAgentId && $availableAgents)
+                                                                    @php $selectedAgent = collect($availableAgents)->firstWhere('id', $selectedAgentId); @endphp
+                                                                    @if($selectedAgent)
+                                                                        {{ $selectedAgent->agent_code }} - {{ $selectedAgent->name }}
+                                                                    @else
+                                                                        Select an agent...
+                                                                    @endif
+                                                                @else
+                                                                    Select an agent...
+                                                                @endif
+                                                            </span>
+                                                            <svg class="w-4 h-4 ml-2 flex-shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                            </svg>
+                                                        </div>
+                                                        @if($agentDropdown)
+                                                            <div class="absolute z-20 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg dark:bg-gray-700 dark:border-gray-600">
+                                                                <div class="p-2 border-b border-gray-200 dark:border-gray-600 sticky top-0 bg-white dark:bg-gray-700">
+                                                                    <input type="text"
+                                                                        wire:model.live.debounce.200ms="agentSearch"
+                                                                        placeholder="Search by name or agent code..."
+                                                                        onclick="event.stopPropagation()"
+                                                                        class="block w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-green-500 focus:outline-none focus:ring-green-500 dark:border-gray-600 dark:bg-gray-600 dark:text-white dark:placeholder-gray-400" />
+                                                                </div>
+                                                                <div class="max-h-48 overflow-auto">
+                                                                    <button type="button"
+                                                                            wire:click="selectAgent()"
+                                                                            class="w-full flex items-center px-3 py-2 text-left text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600">
+                                                                        <span class="text-gray-400">None</span>
+                                                                    </button>
+                                                                    @foreach($this->filteredAvailableAgents as $agent)
+                                                                        <button type="button"
+                                                                                wire:click="selectAgent({{ $agent->id }})"
+                                                                                class="w-full flex items-center justify-between px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600 last:border-b-0 {{ $selectedAgentId == $agent->id ? 'bg-green-50 dark:bg-green-900/20 text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-white' }}">
+                                                                            <span>{{ $agent->agent_code }} - {{ $agent->name }}</span>
+                                                                            @if($selectedAgentId == $agent->id)
+                                                                                <svg class="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                                                                </svg>
+                                                                            @endif
+                                                                        </button>
+                                                                    @endforeach
+                                                                    @if($this->filteredAvailableAgents->isEmpty())
+                                                                        <div class="px-3 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                                                                            @if($agentSearch)
+                                                                                No agents match "{{ $agentSearch }}"
+                                                                            @else
+                                                                                No agents available
+                                                                            @endif
+                                                                        </div>
+                                                                    @endif
+                                                                </div>
+                                                            </div>
+                                                        @endif
+                                                    </div>
+                                                    @if(!$selectedAgentId)
+                                                        <p class="mt-1 text-xs text-red-600 dark:text-red-400">Please select an agent before scanning products</p>
+                                                    @endif
+                                                </div>
+
+                                                <!-- Selling Area Selection (Optional) -->
+                                                <div>
+                                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                                                        Selling Area <span class="text-gray-400 text-xs">(Optional)</span>
                                                     </label>
                                                     <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Where in the branch was this item sold?</p>
                                                     <div class="relative" wire:click.outside="$set('sellingAreaDropdown', false)">
@@ -1135,73 +1141,88 @@
                                                         @endif
                                                     </div>
                                                 </div>
-
-                                                <div>
-                                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
-                                                        Agent (Optional)
-                                                    </label>
-                                                    <div class="relative" wire:click.outside="$set('agentDropdown', false)">
-                                                        <div wire:click="toggleAgentDropdown"
-                                                            class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-green-500 focus:outline-none focus:ring-green-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm cursor-pointer flex justify-between items-center min-h-[42px]">
-                                                            <span class="{{ $selectedAgentId ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500' }}">
-                                                                @if($selectedAgentId && $availableAgents)
-                                                                    @php $selectedAgent = collect($availableAgents)->firstWhere('id', $selectedAgentId); @endphp
-                                                                    @if($selectedAgent)
-                                                                        {{ $selectedAgent->agent_code }} - {{ $selectedAgent->name }}
-                                                                    @else
-                                                                        Select an agent...
-                                                                    @endif
-                                                                @else
-                                                                    Select an agent...
-                                                                @endif
-                                                            </span>
-                                                            <svg class="w-4 h-4 ml-2 flex-shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                                            </svg>
-                                                        </div>
-                                                        @if($agentDropdown)
-                                                            <div class="absolute z-20 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg dark:bg-gray-700 dark:border-gray-600">
-                                                                <div class="p-2 border-b border-gray-200 dark:border-gray-600 sticky top-0 bg-white dark:bg-gray-700">
-                                                                    <input type="text"
-                                                                        wire:model.live.debounce.200ms="agentSearch"
-                                                                        placeholder="Search by name or agent code..."
-                                                                        onclick="event.stopPropagation()"
-                                                                        class="block w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-green-500 focus:outline-none focus:ring-green-500 dark:border-gray-600 dark:bg-gray-600 dark:text-white dark:placeholder-gray-400" />
-                                                                </div>
-                                                                <div class="max-h-48 overflow-auto">
-                                                                    <button type="button"
-                                                                            wire:click="selectAgent()"
-                                                                            class="w-full flex items-center px-3 py-2 text-left text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600">
-                                                                        <span class="text-gray-400">None</span>
-                                                                    </button>
-                                                                    @foreach($this->filteredAvailableAgents as $agent)
-                                                                        <button type="button"
-                                                                                wire:click="selectAgent({{ $agent->id }})"
-                                                                                class="w-full flex items-center justify-between px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-600 border-b border-gray-100 dark:border-gray-600 last:border-b-0 {{ $selectedAgentId == $agent->id ? 'bg-green-50 dark:bg-green-900/20 text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-white' }}">
-                                                                            <span>{{ $agent->agent_code }} - {{ $agent->name }}</span>
-                                                                            @if($selectedAgentId == $agent->id)
-                                                                                <svg class="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                                                                </svg>
-                                                                            @endif
-                                                                        </button>
-                                                                    @endforeach
-                                                                    @if($this->filteredAvailableAgents->isEmpty())
-                                                                        <div class="px-3 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
-                                                                            @if($agentSearch)
-                                                                                No agents match "{{ $agentSearch }}"
-                                                                            @else
-                                                                                No agents available
-                                                                            @endif
-                                                                        </div>
-                                                                    @endif
-                                                                </div>
-                                                            </div>
-                                                        @endif
-                                                    </div>
-                                                </div>
                                             </div>
                                         </section>
+
+                                        <!-- Product Scanning Section -->
+                                        @if($selectedAgentId)
+                                        <section class="space-y-4">
+                                            <div class="flex items-start justify-between">
+                                                <div>
+                                                    <flux:heading size="md" class="text-gray-900 dark:text-white">Scan Products</flux:heading>
+                                                    <p class="text-sm text-gray-500 dark:text-gray-400">Scan barcode to automatically add products to the sale.</p>
+                                                </div>
+                                                @if(!empty($salesItems))
+                                                    <div class="flex items-center gap-2 px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-full">
+                                                        <svg class="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                                                        </svg>
+                                                        <span class="text-sm font-semibold text-blue-900 dark:text-blue-100">{{ count($salesItems) }} scanned</span>
+                                                    </div>
+                                                @endif
+                                            </div>
+
+                                            <div class="space-y-4" x-data x-init="$wire.on('refocus-sales-barcode', () => $nextTick(() => document.getElementById('sales-barcode-input')?.focus()))">
+                                                <div>
+                                                    <label for="sales-barcode-input" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                                                        Barcode
+                                                    </label>
+                                                    <input
+                                                        id="sales-barcode-input"
+                                                        type="text"
+                                                        wire:model.live.debounce.400ms="salesBarcodeInput"
+                                                        wire:keydown.enter.prevent="processSalesBarcode"
+                                                        wire:keydown.escape="clearSalesBarcodeInput"
+                                                        placeholder="Scan barcode - auto-adds to sale..."
+                                                        autocomplete="off"
+                                                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                                        x-ref="salesBarcodeInput"
+                                                        x-init="$nextTick(() => { if ($el) $el.focus(); })"
+                                                        autofocus
+                                                    />
+                                                </div>
+
+                                                <!-- Last Added Item Feedback -->
+                                                @if($lastAddedItem)
+                                                    <div class="rounded-lg border border-green-200 bg-green-50 p-3 dark:border-green-800 dark:bg-green-900/20 animate-pulse">
+                                                        <div class="flex items-center gap-2">
+                                                            <svg class="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                                            </svg>
+                                                            <div class="flex-1 min-w-0">
+                                                                <div class="text-sm font-medium text-green-900 dark:text-green-100">Added to sale!</div>
+                                                                <div class="text-xs text-green-700 dark:text-green-300 truncate">
+                                                                    {{ $lastAddedItem['name'] }} - {{ $lastAddedItem['barcode'] }}
+                                                                </div>
+                                                            </div>
+                                                            <div class="text-sm font-semibold text-green-900 dark:text-green-100">
+                                                                ₱{{ number_format($lastAddedItem['unit_price'], 2) }}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                @endif
+
+                                                <p class="text-xs text-gray-500 dark:text-gray-400">
+                                                    <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                    </svg>
+                                                    Scan barcode to automatically add 1 unit to the sales list below. Each scan is instantly recorded.
+                                                </p>
+                                            </div>
+                                        </section>
+                                        @else
+                                        <div class="rounded-lg border border-yellow-200 bg-yellow-50 p-4 dark:border-yellow-800 dark:bg-yellow-900/20">
+                                            <div class="flex items-start gap-3">
+                                                <svg class="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                                </svg>
+                                                <div>
+                                                    <h4 class="text-sm font-medium text-yellow-900 dark:text-yellow-100">Agent Selection Required</h4>
+                                                    <p class="mt-1 text-sm text-yellow-700 dark:text-yellow-300">Please select an agent above before you can start scanning products.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        @endif
 
                                         <!-- Sales Items List -->
                                         @if (!empty($salesItems))
@@ -1209,6 +1230,33 @@
                                             <div>
                                                 <flux:heading size="md" class="text-gray-900 dark:text-white">Sales Items</flux:heading>
                                                 <p class="text-sm text-gray-500 dark:text-gray-400">Items added to this sales transaction.</p>
+                                            </div>
+
+                                            <!-- Sales Summary Info -->
+                                            <div class="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
+                                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                    <div>
+                                                        <div class="text-xs text-blue-600 dark:text-blue-400 font-medium mb-1">Agent</div>
+                                                        <div class="font-medium text-blue-900 dark:text-blue-100">
+                                                            @if($selectedAgentId && $availableAgents)
+                                                                @php $selectedAgent = collect($availableAgents)->firstWhere('id', $selectedAgentId); @endphp
+                                                                @if($selectedAgent)
+                                                                    {{ $selectedAgent->agent_code }} - {{ $selectedAgent->name }}
+                                                                @else
+                                                                    —
+                                                                @endif
+                                                            @else
+                                                                —
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <div class="text-xs text-blue-600 dark:text-blue-400 font-medium mb-1">Selling Area</div>
+                                                        <div class="font-medium text-blue-900 dark:text-blue-100">
+                                                            {{ $selectedSellingArea ?: 'Not specified' }}
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
 
                                             <div class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
@@ -1284,12 +1332,13 @@
                                         </div>
                                         <div class="flex items-center space-x-3">
                                             <button type="button" wire:click="clearSalesItems"
-                                                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
+                                                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500"
+                                                    @if(empty($salesItems)) disabled @endif>
                                                 Clear All
                                             </button>
                                             <button type="button" wire:click="saveCustomerSales"
-                                                    class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                                                    :disabled="empty($salesItems)">
+                                                    class="px-4 py-2 text-sm font-medium text-white border border-transparent rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 {{ !$selectedAgentId || empty($salesItems) ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700' }}"
+                                                    @if(!$selectedAgentId || empty($salesItems)) disabled @endif>
                                                 Save Sales
                                             </button>
                                         </div>

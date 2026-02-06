@@ -56,6 +56,7 @@ class BranchInventory extends Component
     public $availableAgents = [];
     public $agentSearch = '';
     public $agentDropdown = false;
+    public $lastAddedItem = null;
 
     // File upload properties
     public $textFile;
@@ -925,6 +926,7 @@ class BranchInventory extends Component
         $this->selectedAgentId = null;
         $this->agentSearch = '';
         $this->agentDropdown = false;
+        $this->lastAddedItem = null;
     }
 
     /**
@@ -1012,7 +1014,7 @@ class BranchInventory extends Component
     }
 
     /**
-     * Process sales barcode input changes (for display only)
+     * Process sales barcode input changes - auto-process when barcode is detected
      */
     public function updatedSalesBarcodeInput()
     {
@@ -1022,16 +1024,9 @@ class BranchInventory extends Component
             return;
         }
 
-        // Find product by barcode in current branch products
-        $product = collect($this->branchProducts)->first(function ($product) use ($barcode) {
-            return $product['barcode'] === $barcode;
-        });
-
-        if ($product) {
-            $this->selectedSalesProduct = $product;
-        } else {
-            $this->selectedSalesProduct = null;
-        }
+        // Auto-process barcode when detected (without requiring Enter key)
+        // This provides efficiency for rapid scanning
+        $this->processSalesBarcode();
     }
 
     /**
@@ -1039,6 +1034,13 @@ class BranchInventory extends Component
      */
     public function processSalesBarcode()
     {
+        // Validate agent selection first
+        if (!$this->selectedAgentId) {
+            session()->flash('error', 'Please select an agent before scanning products.');
+            $this->dispatch('refocus-sales-barcode');
+            return;
+        }
+
         $barcode = trim($this->salesBarcodeInput);
         if (empty($barcode)) {
             $this->dispatch('refocus-sales-barcode');
@@ -1066,7 +1068,7 @@ class BranchInventory extends Component
             return;
         }
 
-        $this->salesItems[] = [
+        $item = [
             'id' => $product['id'],
             'name' => $product['name'],
             'product_number' => $product['product_number'] ?? null,
@@ -1077,6 +1079,9 @@ class BranchInventory extends Component
             'unit_price' => $product['unit_price'],
             'total' => 1 * $product['unit_price'],
         ];
+
+        $this->salesItems[] = $item;
+        $this->lastAddedItem = $item; // Store for visual feedback
 
         $this->salesBarcodeInput = '';
         $this->selectedSalesProduct = null;
@@ -1153,7 +1158,14 @@ class BranchInventory extends Component
      */
     public function saveCustomerSales()
     {
+        // Validate agent selection
+        if (!$this->selectedAgentId) {
+            session()->flash('error', 'Please select an agent before saving sales.');
+            return;
+        }
+
         if (empty($this->salesItems)) {
+            session()->flash('error', 'Please add at least one item before saving sales.');
             return;
         }
 

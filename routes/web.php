@@ -126,6 +126,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/branch-inventory', BranchInventory::class)
         ->name('branch.inventory');
 
+    Route::get('/branch-sales', \App\Livewire\Pages\Branch\BranchSales::class)
+        ->name('branch.sales');
+
     Route::get('/branch-sales-tracker', SalesTracker::class)
         ->name('branch.salesTrack');
 

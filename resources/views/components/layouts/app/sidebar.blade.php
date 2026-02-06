@@ -118,6 +118,9 @@
                     <flux:navlist.item icon="building-storefront" href="{{ route('branch.inventory') }}"
                         :current="request()->routeIs('branch.inventory')" wire:navigate>{{ __('Branch Inventory') }}
                     </flux:navlist.item>
+                    <flux:navlist.item icon="shopping-cart" href="{{ route('branch.sales') }}"
+                        :current="request()->routeIs('branch.sales')" wire:navigate>{{ __('Branch Sales') }}
+                    </flux:navlist.item>
                     <flux:navlist.item icon="users" href="{{ route('agent.profile') }}"
                         :current="request()->routeIs('agent.profile')" wire:navigate>{{ __('Agents') }}
                     </flux:navlist.item>

@@ -1254,7 +1254,7 @@ class BranchInventory extends Component
 
             // Close modal and show success
             $this->closeCustomerSalesModal();
-            $this->successMessage = 'Customer sales recorded successfully!';
+            $this->successMessage = "Customer sales recorded successfully! Reference Number: {$sale->ref_no}";
             $this->showSuccessModal = true;
 
         } catch (\Exception $e) {

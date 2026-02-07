@@ -36,6 +36,12 @@ class BranchSales extends Component
     public $createTerm = '';
     public $createRemarks = '';
 
+    // Step 1: Searchable dropdowns
+    public $createBranchSearch = '';
+    public $createBranchDropdown = false;
+    public $createAgentSearch = '';
+    public $createAgentDropdown = false;
+
     // Step 2: Sales items
     public $salesItems = [];
     public $salesBarcodeInput = '';
@@ -81,6 +87,55 @@ class BranchSales extends Component
     }
 
     /**
+     * Filtered branches for Step 1 searchable dropdown
+     */
+    public function getFilteredCreateBranchesProperty()
+    {
+        $branches = Branch::orderBy('name')->get();
+        $query = trim($this->createBranchSearch ?? '');
+        if ($query === '') {
+            return $branches;
+        }
+        $lower = strtolower($query);
+        return $branches->filter(fn ($b) => str_contains(strtolower($b->name ?? ''), $lower)
+            || str_contains(strtolower($b->code ?? ''), $lower))->values();
+    }
+
+    /**
+     * Filtered agents for Step 1 searchable dropdown
+     */
+    public function getFilteredCreateAgentsProperty()
+    {
+        $agents = Agent::orderBy('name')->get();
+        $query = trim($this->createAgentSearch ?? '');
+        if ($query === '') {
+            return $agents;
+        }
+        $lower = strtolower($query);
+        return $agents->filter(fn ($a) => str_contains(strtolower($a->name ?? ''), $lower)
+            || str_contains(strtolower($a->agent_code ?? ''), $lower))->values();
+    }
+
+    public function selectCreateBranch($id)
+    {
+        $branch = Branch::find($id);
+        $this->createBranchId = $id ? (string) $id : '';
+        $this->createBranchDropdown = false;
+        $this->createBranchSearch = $branch ? $branch->name : '';
+        if ($this->createBranchId && $this->currentStep === 1) {
+            $this->loadSellingAreaOptions();
+        }
+    }
+
+    public function selectCreateAgent($id)
+    {
+        $agent = Agent::find($id);
+        $this->createAgentId = $id ? (string) $id : '';
+        $this->createAgentDropdown = false;
+        $this->createAgentSearch = $agent ? ($agent->agent_code . ' - ' . $agent->name) : '';
+    }
+
+    /**
      * Open create stepper and reset state
      */
     public function openCreateStepper()
@@ -113,6 +168,10 @@ class BranchSales extends Component
         $this->createAgentId = '';
         $this->createTerm = '';
         $this->createRemarks = '';
+        $this->createBranchSearch = '';
+        $this->createBranchDropdown = false;
+        $this->createAgentSearch = '';
+        $this->createAgentDropdown = false;
         $this->salesItems = [];
         $this->salesBarcodeInput = '';
         $this->salesQuantity = 1;

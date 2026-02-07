@@ -5,6 +5,11 @@ use Illuminate\Http\Request;
 
 define('LARAVEL_START', microtime(true));
 
+// Raise memory limit for allocation/warehouse page (activity log + batch processing)
+if (ini_get('memory_limit') === '128M') {
+    ini_set('memory_limit', '256M');
+}
+
 // Determine if the application is in maintenance mode...
 if (file_exists($maintenance = __DIR__.'/../storage/framework/maintenance.php')) {
     require $maintenance;

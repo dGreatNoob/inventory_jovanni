@@ -284,6 +284,13 @@ class ProductService
         $sanitized = preg_replace('/[^A-Za-z0-9_-]/', '', $supplierCode) ?: 'SC';
         $sku = 'PND-' . $supplierId . '-' . substr($sanitized, 0, 20) . '-' . strtolower(\Illuminate\Support\Str::random(6));
 
+        $productColorId = array_key_exists('product_color_id', $data) && $data['product_color_id']
+            ? (int) $data['product_color_id']
+            : null;
+        $sellingPrice = array_key_exists('price', $data)
+            ? (float) $data['price']
+            : $unitPrice;
+
         $payload = [
             'sku' => $sku,
             'barcode' => null,
@@ -291,10 +298,10 @@ class ProductService
             'category_id' => $defaultCategoryId,
             'supplier_id' => $supplierId,
             'supplier_code' => $supplierCode,
-            'price' => $unitPrice,
+            'price' => $sellingPrice,
             'cost' => $unitPrice,
             'product_number' => null,
-            'product_color_id' => null,
+            'product_color_id' => $productColorId,
             'product_type' => 'placeholder',
             'remarks' => 'Auto-created from PO; complete details in Product Management',
             'uom' => 'pcs',
@@ -302,7 +309,7 @@ class ProductService
 
         return $this->createProduct(array_merge($payload, [
             'product_number' => null,
-            'product_color_id' => null,
+            'product_color_id' => $productColorId,
             'barcode' => null,
         ]));
     }

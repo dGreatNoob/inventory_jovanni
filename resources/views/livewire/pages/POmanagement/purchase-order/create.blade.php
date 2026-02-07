@@ -173,7 +173,7 @@
                             Add Item to Purchase Order
                         </h3>
                         <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                            Search existing products or add by supplier code (creates placeholder if needed)
+                            Search existing products or add new product by supplier code (creates placeholder if needed)
                         </p>
                     </div>
                     <button
@@ -190,7 +190,7 @@
                     </button>
                 </div>
 
-                {{-- Tabs: Search | Add by Supplier Code --}}
+                {{-- Tabs: Search | Add new Product --}}
                 <div class="flex border-b border-gray-200 dark:border-gray-600 mb-4">
                     <button
                         type="button"
@@ -204,12 +204,12 @@
                         wire:click="$set('addMode', 'supplier_code')"
                         class="px-4 py-2 text-sm font-medium rounded-t-lg {{ $addMode === 'supplier_code' ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 border-b-2 border-blue-500' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300' }}"
                     >
-                        Add by supplier code
+                        Add new Product
                     </button>
                 </div>
 
                 @if($addMode === 'supplier_code')
-                    {{-- Add by supplier code form --}}
+                    {{-- Add new Product form --}}
                     <div class="space-y-4">
                         <div>
                             <label for="addBySupplierCode" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Supplier Code</label>
@@ -222,7 +222,51 @@
                             />
                             @error('addBySupplierCode') <p class="mt-1 text-sm text-red-600 dark:text-red-500">{{ $message }}</p> @enderror
                         </div>
-                        <div class="grid gap-4 md:grid-cols-2">
+                        <div>
+                            <label for="addNewProductColor" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Color Code</label>
+                            <div class="relative" x-data x-on:click.outside="$wire.set('addNewProductColorDropdown', false)" x-on:keydown.escape.window="$wire.set('addNewProductColorDropdown', false)">
+                                <div class="relative">
+                                    <div class="pointer-events-none absolute inset-y-0 left-0 pl-3 flex items-center">
+                                        <svg aria-hidden="true" class="h-5 w-5 text-gray-400 dark:text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                                        </svg>
+                                    </div>
+                                    <input
+                                        type="text"
+                                        id="addNewProductColor"
+                                        wire:model.live.debounce.300ms="addNewProductColorSearch"
+                                        wire:focus="$set('addNewProductColorDropdown', true)"
+                                        placeholder="Search by color code or name…"
+                                        autocomplete="off"
+                                        aria-label="Search and select color"
+                                        class="block w-full min-h-[38px] h-10 pl-10 pr-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                    @if($addNewProductColorDropdown)
+                                        <div class="absolute z-30 mt-2 w-full max-h-48 overflow-auto rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-lg py-1">
+                                            @forelse($this->filteredCreateColors as $color)
+                                                <button
+                                                    type="button"
+                                                    wire:click="selectCreateColor({{ $color->id }})"
+                                                    class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 {{ $addNewProductColorId == $color->id ? 'bg-indigo-50 dark:bg-indigo-900/30' : 'text-gray-900 dark:text-white' }}"
+                                                >
+                                                    <span class="flex-1 min-w-0 font-medium truncate">{{ $color->code }}{{ $color->name ? ' - ' . $color->name : '' }}</span>
+                                                    @if($addNewProductColorId == $color->id)
+                                                        <svg class="h-4 w-4 text-indigo-500 shrink-0" viewBox="0 0 20 20" fill="none">
+                                                            <path d="M5 11.5L8.5 15L15 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                                                        </svg>
+                                                    @endif
+                                                </button>
+                                            @empty
+                                                <div class="px-3 py-3 text-xs text-gray-500 dark:text-gray-400">
+                                                    No colors match your search.
+                                                </div>
+                                            @endforelse
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                        <div class="grid gap-4 md:grid-cols-3">
                             <div>
                                 <label for="supplier_code_unit_price" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Unit Price (₱)</label>
                                 <input
@@ -234,6 +278,19 @@
                                     class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                                 />
                                 @error('unit_price') <p class="mt-1 text-sm text-red-600 dark:text-red-500">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <label for="addNewProductSellingPrice" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Selling Price (₱)</label>
+                                <input
+                                    type="number"
+                                    id="addNewProductSellingPrice"
+                                    wire:model.live="addNewProductSellingPrice"
+                                    step="0.01"
+                                    min="0"
+                                    placeholder="Optional"
+                                    class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                                />
+                                @error('addNewProductSellingPrice') <p class="mt-1 text-sm text-red-600 dark:text-red-500">{{ $message }}</p> @enderror
                             </div>
                             <div>
                                 <label for="supplier_code_order_qty" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Order Quantity</label>

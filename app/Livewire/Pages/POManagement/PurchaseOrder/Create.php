@@ -9,6 +9,7 @@ use App\Models\Supplier;
 use App\Models\Department;
 use App\Models\User;
 use App\Models\Category;
+use App\Models\ProductColor;
 use App\Enums\PurchaseOrderStatus;
 use App\Services\ProductService;
 use App\Support\ProductSearchHelper;
@@ -37,9 +38,13 @@ class Create extends Component
     public $categoryFilter = '';
     public $showModal = false;
 
-    /** Add-by-supplier-code form */
+    /** Add-by-supplier-code form (Add new Product tab) */
     public $addBySupplierCode = '';
     public $addMode = 'search'; // 'search' | 'supplier_code'
+    public $addNewProductColorSearch = '';
+    public $addNewProductColorId = null;
+    public $addNewProductColorDropdown = false;
+    public $addNewProductSellingPrice = '';
 
     public $orderedItems = [];
     public $departments = [];
@@ -214,13 +219,41 @@ class Create extends Component
         }
         
         $this->showModal = true;
-        $this->reset(['selected_product', 'unit_price', 'order_qty', 'search', 'categoryFilter']);
+        $this->reset([
+            'selected_product', 'unit_price', 'order_qty', 'search', 'categoryFilter',
+            'addBySupplierCode', 'addNewProductColorSearch', 'addNewProductColorId', 'addNewProductColorDropdown', 'addNewProductSellingPrice',
+        ]);
     }
 
     public function closeModal()
     {
         $this->showModal = false;
-        $this->reset(['selected_product', 'unit_price', 'order_qty', 'search', 'categoryFilter', 'addBySupplierCode', 'addMode']);
+        $this->reset([
+            'selected_product', 'unit_price', 'order_qty', 'search', 'categoryFilter',
+            'addBySupplierCode', 'addMode',
+            'addNewProductColorSearch', 'addNewProductColorId', 'addNewProductColorDropdown', 'addNewProductSellingPrice',
+        ]);
+    }
+
+    public function getFilteredCreateColorsProperty()
+    {
+        $colors = ProductColor::orderBy('code')->get();
+        $query = trim($this->addNewProductColorSearch ?? '');
+        if ($query === '') {
+            return $colors;
+        }
+        $lower = strtolower($query);
+        return $colors->filter(fn ($c) => str_contains(strtolower($c->code ?? ''), $lower)
+            || str_contains(strtolower($c->name ?? ''), $lower)
+            || str_contains(strtolower($c->shortcut ?? ''), $lower))->values();
+    }
+
+    public function selectCreateColor($id)
+    {
+        $color = ProductColor::find($id);
+        $this->addNewProductColorId = $id ? (int) $id : null;
+        $this->addNewProductColorDropdown = false;
+        $this->addNewProductColorSearch = $color ? ($color->code . ($color->name ? ' - ' . $color->name : '')) : '';
     }
 
     public function selectProduct($id)
@@ -290,12 +323,14 @@ class Create extends Component
             'addBySupplierCode' => 'required|string|max:255',
             'order_qty' => 'required|numeric|min:0.01',
             'unit_price' => 'required|numeric|min:0',
+            'addNewProductSellingPrice' => 'nullable|numeric|min:0',
         ], [
             'addBySupplierCode.required' => 'Please enter supplier code.',
             'order_qty.required' => 'Please enter quantity.',
             'order_qty.min' => 'Quantity must be at least 0.01.',
             'unit_price.required' => 'Please enter unit price.',
             'unit_price.min' => 'Unit price cannot be negative.',
+            'addNewProductSellingPrice.min' => 'Selling price cannot be negative.',
         ]);
 
         if (empty($this->supplier_id)) {
@@ -309,13 +344,22 @@ class Create extends Component
             ->where('supplier_code', $supplierCode)
             ->first();
 
+        $createPayload = [
+            'supplier_id' => $this->supplier_id,
+            'supplier_code' => $supplierCode,
+            'unit_price' => (float) $this->unit_price,
+        ];
+        $sellingPrice = $this->addNewProductSellingPrice !== '' && $this->addNewProductSellingPrice !== null
+            ? (float) $this->addNewProductSellingPrice
+            : (float) $this->unit_price;
+        $createPayload['price'] = $sellingPrice;
+        if ($this->addNewProductColorId) {
+            $createPayload['product_color_id'] = $this->addNewProductColorId;
+        }
+
         if (!$product) {
             try {
-                $product = app(ProductService::class)->createPlaceholderProduct([
-                    'supplier_id' => $this->supplier_id,
-                    'supplier_code' => $supplierCode,
-                    'unit_price' => (float) $this->unit_price,
-                ]);
+                $product = app(ProductService::class)->createPlaceholderProduct($createPayload);
             } catch (\Exception $e) {
                 session()->flash('error', 'Could not create placeholder product: ' . $e->getMessage());
                 return;

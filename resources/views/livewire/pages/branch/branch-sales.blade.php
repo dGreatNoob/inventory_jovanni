@@ -8,31 +8,18 @@
             @include('livewire.pages.branch.partials.branch-sales-create-stepper')
         @else
         <!-- Branch Sales Section -->
-        <section class="bg-white dark:bg-gray-800 shadow rounded-lg">
-            <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700 flex flex-wrap items-center justify-between gap-4">
-                <div>
-                    <h3 class="text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2">
-                        <flux:icon name="banknotes" class="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                        Branch Sales
-                    </h3>
-                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                        View and manage customer sales records across all branches
-                    </p>
-                </div>
-                <flux:button wire:click="openCreateStepper" size="sm" class="flex items-center gap-2">
-                    <!-- <flux:icon name="plus" class="w-4 h-4" /> -->
-                    Add Customer Sales
-                </flux:button>
-            </div>
-
-            @if(session()->has('success'))
-                <div class="mx-6 mt-4 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-3 text-sm text-green-800 dark:text-green-200">
-                    {{ session('success') }}
-                </div>
-            @endif
-
-            <!-- Filters -->
-            <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+        <section class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+            <!-- Filters Section (collapsible) -->
+            <div class="border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/30" x-data="{ filtersExpanded: true }">
+                <button type="button" @click="filtersExpanded = !filtersExpanded"
+                    class="w-full px-6 py-4 flex items-center justify-between gap-2 text-left hover:bg-gray-100/50 dark:hover:bg-gray-800/30 transition-colors">
+                    <span class="text-sm font-medium text-gray-700 dark:text-gray-200">Filters</span>
+                    <svg class="w-5 h-5 text-gray-500 transition-transform duration-200" :class="{ 'rotate-180': filtersExpanded }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                <div x-show="filtersExpanded" x-collapse class="overflow-hidden">
+                <div class="px-6 pb-5">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                 <!-- Search -->
                 <div class="lg:col-span-2">
@@ -114,6 +101,25 @@
                         Clear Filters
                     </flux:button>
                 </div>
+                </div>
+                </div>
+            </div>
+
+            @if(session()->has('success'))
+                <div class="mx-6 mt-4 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-3 text-sm text-green-800 dark:text-green-200">
+                    {{ session('success') }}
+                </div>
+            @endif
+
+            <!-- Branch Sales Header + Add button (above table) -->
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex flex-wrap items-center justify-between gap-4 bg-white dark:bg-gray-800">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2">
+                    <flux:icon name="banknotes" class="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                    Branch Sales
+                </h3>
+                <flux:button wire:click="openCreateStepper" size="sm" class="flex items-center gap-2">
+                    Add Customer Sales
+                </flux:button>
             </div>
 
             <!-- Sales Table -->

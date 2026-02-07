@@ -69,13 +69,50 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label for="createBranchId" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Location (Branch) *</label>
-                        <select id="createBranchId" wire:model.live="createBranchId"
-                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500">
-                            <option value="">Select Branch</option>
-                            @foreach($branches as $branch)
-                                <option value="{{ $branch->id }}">{{ $branch->name }}</option>
-                            @endforeach
-                        </select>
+                        <div class="relative" x-data x-on:click.outside="$wire.set('createBranchDropdown', false)" x-on:keydown.escape.window="$wire.set('createBranchDropdown', false)">
+                            <div class="relative">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 pl-3 flex items-center">
+                                    <svg aria-hidden="true" class="h-5 w-5 text-gray-400 dark:text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                                <input
+                                    type="text"
+                                    wire:model.live.debounce.300ms="createBranchSearch"
+                                    wire:focus="$set('createBranchDropdown', true)"
+                                    placeholder="Search by branch name or code…"
+                                    autocomplete="off"
+                                    aria-label="Search and select branch"
+                                    class="block w-full min-h-[38px] h-10 pl-10 pr-3 rounded-lg border {{ $errors->has('createBranchId') ? 'border-red-500' : 'border-gray-300 dark:border-gray-600' }} bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                />
+
+                                @if($createBranchDropdown)
+                                    <div class="absolute z-30 mt-2 w-full max-h-48 overflow-auto rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-lg py-1">
+                                        @forelse($this->filteredCreateBranches as $branch)
+                                            <button
+                                                type="button"
+                                                wire:click="selectCreateBranch({{ $branch->id }})"
+                                                class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 {{ $createBranchId == $branch->id ? 'bg-indigo-50 dark:bg-indigo-900/30' : 'text-gray-900 dark:text-white' }}"
+                                            >
+                                                <span class="flex-1 min-w-0 font-medium truncate">{{ $branch->name }}</span>
+                                                @if($branch->code ?? null)
+                                                    <span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">{{ $branch->code }}</span>
+                                                @endif
+                                                @if($createBranchId == $branch->id)
+                                                    <svg class="h-4 w-4 text-indigo-500 shrink-0" viewBox="0 0 20 20" fill="none">
+                                                        <path d="M5 11.5L8.5 15L15 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                                                    </svg>
+                                                @endif
+                                            </button>
+                                        @empty
+                                            <div class="px-3 py-3 text-xs text-gray-500 dark:text-gray-400">
+                                                No branches match your search.
+                                            </div>
+                                        @endforelse
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
                         @error('createBranchId')<p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
                     </div>
                     <div>
@@ -96,13 +133,47 @@
                     </div>
                     <div>
                         <label for="createAgentId" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Sales Person (Agent) *</label>
-                        <select id="createAgentId" wire:model="createAgentId"
-                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-indigo-500 focus:border-indigo-500">
-                            <option value="">Select Agent</option>
-                            @foreach($agents as $agent)
-                                <option value="{{ $agent->id }}">{{ $agent->agent_code }} - {{ $agent->name }}</option>
-                            @endforeach
-                        </select>
+                        <div class="relative" x-data x-on:click.outside="$wire.set('createAgentDropdown', false)" x-on:keydown.escape.window="$wire.set('createAgentDropdown', false)">
+                            <div class="relative">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 pl-3 flex items-center">
+                                    <svg aria-hidden="true" class="h-5 w-5 text-gray-400 dark:text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                                <input
+                                    type="text"
+                                    wire:model.live.debounce.300ms="createAgentSearch"
+                                    wire:focus="$set('createAgentDropdown', true)"
+                                    placeholder="Search by name or agent code…"
+                                    autocomplete="off"
+                                    aria-label="Search and select agent"
+                                    class="block w-full min-h-[38px] h-10 pl-10 pr-3 rounded-lg border {{ $errors->has('createAgentId') ? 'border-red-500' : 'border-gray-300 dark:border-gray-600' }} bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                />
+
+                                @if($createAgentDropdown)
+                                    <div class="absolute z-30 mt-2 w-full max-h-48 overflow-auto rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-lg py-1">
+                                        @forelse($this->filteredCreateAgents as $agent)
+                                            <button
+                                                type="button"
+                                                wire:click="selectCreateAgent({{ $agent->id }})"
+                                                class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 {{ $createAgentId == $agent->id ? 'bg-indigo-50 dark:bg-indigo-900/30' : 'text-gray-900 dark:text-white' }}"
+                                            >
+                                                <span class="flex-1 min-w-0 font-medium truncate">{{ $agent->agent_code }} - {{ $agent->name }}</span>
+                                                @if($createAgentId == $agent->id)
+                                                    <svg class="h-4 w-4 text-indigo-500 shrink-0" viewBox="0 0 20 20" fill="none">
+                                                        <path d="M5 11.5L8.5 15L15 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                                                    </svg>
+                                                @endif
+                                            </button>
+                                        @empty
+                                            <div class="px-3 py-3 text-xs text-gray-500 dark:text-gray-400">
+                                                No agents match your search.
+                                            </div>
+                                        @endforelse
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
                         @error('createAgentId')<p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>@enderror
                     </div>
                     <div>
@@ -148,9 +219,9 @@
             <div class="mb-6 p-4 rounded-lg bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600">
                 <h4 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Transaction Summary</h4>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                    <div><span class="text-gray-500 dark:text-gray-400">Branch:</span> {{ collect($branches)->firstWhere('id', $createBranchId)['name'] ?? '—' }}</div>
+                    <div><span class="text-gray-500 dark:text-gray-400">Branch:</span> {{ (($b = collect($branches)->firstWhere('id', $createBranchId)) ? $b->name : '—') }}</div>
                     <div><span class="text-gray-500 dark:text-gray-400">Date:</span> {{ \Carbon\Carbon::parse($createTransactionDate)->format('M d, Y') }}</div>
-                    <div><span class="text-gray-500 dark:text-gray-400">Agent:</span> {{ collect($agents)->firstWhere('id', $createAgentId)['name'] ?? '—' }}</div>
+                    <div><span class="text-gray-500 dark:text-gray-400">Agent:</span> {{ (($a = collect($agents)->firstWhere('id', $createAgentId)) ? $a->name : '—') }}</div>
                     <div><span class="text-gray-500 dark:text-gray-400">Selling Area:</span> {{ $createSellingArea ?: '—' }}</div>
                 </div>
             </div>
@@ -331,9 +402,9 @@
             <div class="mb-6 p-4 rounded-lg bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600">
                 <h5 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Transaction Summary</h5>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm mb-4">
-                    <div><span class="text-gray-500 dark:text-gray-400">Branch:</span> {{ collect($branches)->firstWhere('id', $createBranchId)['name'] ?? '—' }}</div>
+                    <div><span class="text-gray-500 dark:text-gray-400">Branch:</span> {{ (($b = collect($branches)->firstWhere('id', $createBranchId)) ? $b->name : '—') }}</div>
                     <div><span class="text-gray-500 dark:text-gray-400">Date:</span> {{ \Carbon\Carbon::parse($createTransactionDate)->format('M d, Y') }}</div>
-                    <div><span class="text-gray-500 dark:text-gray-400">Agent:</span> {{ collect($agents)->firstWhere('id', $createAgentId)['name'] ?? '—' }}</div>
+                    <div><span class="text-gray-500 dark:text-gray-400">Agent:</span> {{ (($a = collect($agents)->firstWhere('id', $createAgentId)) ? $a->name : '—') }}</div>
                     <div><span class="text-gray-500 dark:text-gray-400">Selling Area:</span> {{ $createSellingArea ?: '—' }}</div>
                 </div>
                 <div class="text-sm">

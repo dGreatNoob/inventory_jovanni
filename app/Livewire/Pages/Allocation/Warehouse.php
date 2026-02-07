@@ -2531,6 +2531,8 @@ class Warehouse extends Component
             $editedPairs = \Spatie\Activitylog\Models\Activity::where('log_name', 'branch_inventory')
                 ->where('description', 'like', 'Updated allocated quantity%')
                 ->where('created_at', '>', $minCreatedAt)
+                ->orderBy('created_at', 'desc')
+                ->limit(5000)
                 ->get()
                 ->map(fn ($a) => [
                     'barcode' => $a->properties['barcode'] ?? null,

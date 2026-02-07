@@ -13,12 +13,20 @@ class BranchCustomerSaleItem extends Model
         'barcode',
         'quantity',
         'unit_price',
+        'discount_percent',
+        'discount_amount',
+        'net_price',
+        'promo_id',
         'total_amount',
+        'remarks',
     ];
 
     protected $casts = [
         'quantity' => 'integer',
         'unit_price' => 'decimal:2',
+        'discount_percent' => 'decimal:2',
+        'discount_amount' => 'decimal:2',
+        'net_price' => 'decimal:2',
         'total_amount' => 'decimal:2',
     ];
 
@@ -30,5 +38,10 @@ class BranchCustomerSaleItem extends Model
     public function product()
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function promo()
+    {
+        return $this->belongsTo(Promo::class);
     }
 }

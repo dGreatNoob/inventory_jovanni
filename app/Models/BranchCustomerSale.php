@@ -11,10 +11,15 @@ class BranchCustomerSale extends Model
         'branch_id',
         'selling_area',
         'agent_id',
+        'transaction_date',
+        'term',
+        'remarks',
         'total_amount',
+        'status',
     ];
 
     protected $casts = [
+        'transaction_date' => 'date',
         'total_amount' => 'decimal:2',
     ];
 
@@ -71,5 +76,10 @@ class BranchCustomerSale extends Model
     public function items()
     {
         return $this->hasMany(BranchCustomerSaleItem::class);
+    }
+
+    public function scopeDraft($query)
+    {
+        return $query->where('status', 'draft');
     }
 }

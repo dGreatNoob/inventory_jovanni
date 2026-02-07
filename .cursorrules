@@ -18,6 +18,11 @@ description:
 alwaysApply: true
 ---
 
+---
+description: 
+alwaysApply: true
+---
+
 {
   "mcpServers": {
     "filesystem": {

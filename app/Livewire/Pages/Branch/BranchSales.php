@@ -19,6 +19,7 @@ class BranchSales extends Component
     public $search = '';
     public $dateFrom = '';
     public $dateTo = '';
+    public $perPage = 10;
     public $selectedBranchId = '';
     public $selectedAgentId = '';
     public $showDetailsModal = false;
@@ -846,6 +847,11 @@ class BranchSales extends Component
         $this->resetPage();
     }
 
+    public function updatedPerPage()
+    {
+        $this->resetPage();
+    }
+
     public function clearFilters()
     {
         $this->search = '';
@@ -904,7 +910,7 @@ class BranchSales extends Component
             $query->where('agent_id', $this->selectedAgentId);
         }
 
-        $sales = $query->paginate(20);
+        $sales = $query->paginate($this->perPage);
 
         // Get branches and agents for filters
         $branches = Branch::orderBy('name')->get();

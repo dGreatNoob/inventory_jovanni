@@ -51,6 +51,7 @@ use App\Livewire\Pages\Shipment\View as createShipmentView;
 use App\Livewire\Pages\Shipment\QrScannder as ShipmentQrScannder;
 use App\Models\Branch;
 use App\Livewire\Pages\Branch\BranchInventory;
+use App\Livewire\Pages\Branch\BranchInventoryProducts;
 use App\Livewire\Pages\Branch\SalesTracker;
 use App\Livewire\Pages\Branch\BranchTransfer;
 
@@ -125,6 +126,9 @@ Route::middleware(['auth'])->group(function () {
     
     Route::get('/branch-inventory', BranchInventory::class)
         ->name('branch.inventory');
+
+    Route::get('/branch-inventory/{branch}', BranchInventoryProducts::class)
+        ->name('branch.inventory.products');
 
     Route::get('/branch-sales', \App\Livewire\Pages\Branch\BranchSales::class)
         ->name('branch.sales');

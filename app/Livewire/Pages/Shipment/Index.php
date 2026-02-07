@@ -63,8 +63,17 @@ class Index extends Component
         'cargo',
     ];
 
-    public function updatingSearch()     { $this->resetPage(); }
-    public function updatingFilterStatus(){ $this->resetPage(); }
+    public $showCreateSection = false;
+
+    public function updatingSearch()        { $this->resetPage(); }
+    public function updatingFilterStatus()  { $this->resetPage(); }
+    public function updatingStatusFilter()  { $this->resetPage(); }
+    public function updatedPerPage()        { $this->resetPage(); }
+
+    public function openCreateSection()
+    {
+        $this->showCreateSection = true;
+    }
 
     public function mount()
     {
@@ -221,8 +230,9 @@ class Index extends Component
 
         if ($result) {
             if ($result->shipping_status == 'pending') {
-                $this->shipping_plan_num    = $result->shipping_plan_num;
-                $this->scheduled_ship_date  = $result->scheduled_ship_date;
+                $this->showCreateSection   = true;
+                $this->shipping_plan_num   = $result->shipping_plan_num;
+                $this->scheduled_ship_date = $result->scheduled_ship_date;
                 $this->vehicle_plate_number = $result->vehicle_plate_number;
                 $this->delivery_method      = $result->delivery_method;
                 $this->editValue            = $id;

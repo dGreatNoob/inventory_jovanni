@@ -1,7 +1,7 @@
 <x-slot:header>Shipment</x-slot:header>
 <x-slot:subheader>Track and manage all outgoing shipments linked to approved sales orders.</x-slot:subheader>
-<div>
-    <div>       
+<div class="pt-4">
+    <div class="space-y-6">
 @if ($errors->any())
     <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded mb-4">
         <ul class="list-disc pl-5">
@@ -12,9 +12,23 @@
     </div>
 @endif
 
-        <!-- Create Sales Order Card -->
-        <x-collapsible-card title="Create New Shipment" open="false" size="full">          
-            <form wire:submit.prevent="createShipment" class="space-y-6">
+        <!-- Create New Shipment (Collapsible - same pattern as Create New Branch) -->
+        <section class="bg-white dark:bg-gray-800 shadow rounded-lg mb-8" x-data="{ open: @entangle('showCreateSection').live }" x-effect="if (open) $el.scrollIntoView({ behavior: 'smooth', block: 'start' })" id="create-shipment-section">
+            <button type="button"
+                @click="open = !open"
+                class="w-full px-6 py-5 flex items-center justify-between text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-inset">
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">Create New Shipment</h3>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Add a new shipment linked to approved sales orders</p>
+                </div>
+                <svg class="w-5 h-5 text-gray-500 dark:text-gray-400 transition-transform duration-200"
+                    :class="{ 'rotate-180': open }"
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
+            <div x-show="open" x-collapse class="border-t border-gray-200 dark:border-gray-700">
+                <form wire:submit.prevent="createShipment" class="p-6 space-y-6">
                         <!-- Order Information Section -->
                         <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
@@ -183,9 +197,10 @@
                                 </x-button>
                           
                         </div>
-                    </form>
-        </x-collapsible-card>
-        
+                </form>
+            </div>
+        </section>
+
         @if (session()->has('message'))
             <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 4000)"
                 class="transition duration-500 ease-in-out" x-transition>
@@ -200,47 +215,78 @@
         @endif
             
    
-        <!-- Sales Orders List Card -->
-        <x-collapsible-card title="Shipment List" open="true" size="full">
-            <section>
+        <!-- Shipment List (non-collapsible, like Branch List) -->
+        <section class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+            <!-- Header -->
+            <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
                 <div>
-                    <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
-                        <div class="flex items-center justify-between p-4 pr-10">
-                            <div class="flex space-x-6">
-                                <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                        <svg aria-hidden="true" class="w-5 h-5 text-gray-500 dark:text-gray-400"
-                                            fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                            <path fill-rule="evenodd"
-                                                d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                                                clip-rule="evenodd" />
-                                        </svg>
-                                    </div>
-                                    <input type="text" wire:model.live.debounce.300ms="search"
-                                        class="block w-64 p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                        placeholder="Search Shipment..." required="">
-                                </div>
-                                <div class="flex items-center space-x-2">
-                                    <label class="text-sm font-medium text-gray-900 dark:text-white">Status:</label>
-                                    <select wire:model.live="statusFilter"
-                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
-                                        <option value="">All Status</option>
-                                        <option value="ready">Ready</option>
-                                        <option value="shipped">Shipped</option>
-                                        <option value="delivered">Delivered</option>
-                                        <option value="cancelled">Cancelled</option>
-                                        <option value="approved">Approved</option>
-                                        <option value="completed">Completed</option>
-                                        <option value="pending">Pending</option>
-                                        <option value="in_transit">In Transit</option>
-                                        <option value="damaged">Damaged</option>
-                                    </select>
-                                </div>
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">Shipment List</h3>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Track and manage all outgoing shipments</p>
+                </div>
+                <flux:button wire:click="openCreateSection" size="sm" class="flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                    Create Shipment
+                </flux:button>
+            </div>
+
+            <!-- Search and Filter Section -->
+            <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                    <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                <svg aria-hidden="true" class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                                </svg>
                             </div>
+                            <input type="text" wire:model.live.debounce.300ms="search"
+                                class="block w-64 p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-indigo-500 dark:focus:border-indigo-500"
+                                placeholder="Search Shipment...">
                         </div>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-                                <thead class="text-sm text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                        <div>
+                            <label for="statusFilter" class="sr-only">Status</label>
+                            <select id="statusFilter" wire:model.live="statusFilter"
+                                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-40 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-indigo-500 dark:focus:border-indigo-500">
+                                <option value="">All Status</option>
+                                <option value="ready">Ready</option>
+                                <option value="shipped">Shipped</option>
+                                <option value="delivered">Delivered</option>
+                                <option value="cancelled">Cancelled</option>
+                                <option value="approved">Approved</option>
+                                <option value="completed">Completed</option>
+                                <option value="pending">Pending</option>
+                                <option value="in_transit">In Transit</option>
+                                <option value="damaged">Damaged</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <label class="text-sm font-medium text-gray-900 dark:text-white whitespace-nowrap">Per Page</label>
+                        <select wire:model.live="perPage"
+                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-24 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-indigo-500 dark:focus:border-indigo-500">
+                            <option value="5">5</option>
+                            <option value="10">10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Info -->
+            <div class="px-6 py-3 text-sm text-gray-700 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50">
+                @if($shipments->total() > 0)
+                    <span class="font-semibold text-gray-900 dark:text-white">{{ $shipments->total() }}</span> shipments found
+                @else
+                    <span class="font-semibold text-gray-900 dark:text-white">No shipments found</span>
+                @endif
+            </div>
+
+            <!-- Table -->
+            <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                <thead class="bg-gray-50 dark:bg-gray-700">
                                     <tr>
                                         <th scope="col" class="px-6 py-3">Shipment Reference Number</th>
                                         <th scope="col" class="px-6 py-3">Vehicles / DR</th>
@@ -248,13 +294,13 @@
                                         <th scope="col" class="px-6 py-3">Shipping Date</th>
                                         <th scope="col" class="px-6 py-3">Status</th>
                                         <th scope="col" class="px-6 py-3">Delivery Method</th>
-                                        <th scope="col" class="px-6 py-3">Action</th>
+                                        <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Action</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                                     @forelse ($shipments as $data)
-                                        <tr wire:key
-                                            class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700 border-gray-200">
+                                        <tr wire:key="shipment-{{ $data->id }}"
+                                            class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                                             <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                                                 {{ ucfirst($data->shipping_plan_num) }}
                                             </th>
@@ -307,8 +353,8 @@
                                         </tr>
                                     @empty
                                     <tr>
-                                        <td colspan="6" class="text-center py-4">
-                                            No shipping request found.
+                                        <td colspan="7" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                                            No shipments found.
                                         </td>
                                     </tr>
                                     @endforelse
@@ -316,29 +362,10 @@
                             </table>
                         </div>
 
-                        <div class="py-4 px-3">
-                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                                <div class="flex items-center space-x-4">
-                                    <label for="perPage" class="text-sm font-medium text-gray-900 dark:text-white">Per Page</label>
-                                    <select
-                                        id="perPage"
-                                        wire:model.live="perPage"
-                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                                        <option value="5">5</option>
-                                        <option value="10">10</option>
-                                        <option value="20">20</option>
-                                        <option value="50">50</option>
-                                        <option value="100">100</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    {{$shipments->links()}}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </x-collapsible-card>
+            <!-- Pagination -->
+            <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+                {{ $shipments->links('livewire::tailwind', ['scrollTo' => false]) }}
+            </div>
+        </section>
     </div>
 </div>

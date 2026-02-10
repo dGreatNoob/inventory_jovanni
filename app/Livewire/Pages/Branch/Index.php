@@ -157,16 +157,20 @@ class Index extends Component
     }
 
     /**
-     * Plain click: if item is selected, remove it; else deselect all.
+     * Select all visible/filtered candidates (Gmail-style).
+     */
+    public function selectAllBranches()
+    {
+        $ids = $this->addBranchesCandidates->pluck('id')->toArray();
+        $this->addBranchesSelectedIds = array_values($ids);
+    }
+
+    /**
+     * Plain click: toggle that row (Gmail-style). Select if unselected, deselect if selected.
      */
     public function handlePlainBranchClick(int $branchId)
     {
-        $ids = $this->addBranchesSelectedIds ?? [];
-        if (in_array($branchId, $ids)) {
-            $this->addBranchesSelectedIds = array_values(array_diff($ids, [$branchId]));
-        } else {
-            $this->addBranchesSelectedIds = [];
-        }
+        $this->toggleBranchSelection($branchId);
     }
 
     /**

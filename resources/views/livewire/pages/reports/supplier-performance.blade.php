@@ -5,13 +5,14 @@
     use Illuminate\Support\Facades\DB;
 
     $totalSuppliers = Supplier::count();
-    $activeSuppliers = Supplier::where('status', 'active')->count();
+    $activeSuppliers = Supplier::where('is_active', true)->count();
     $totalPurchaseOrders = PurchaseOrder::count();
     $onTimeDeliveries = PurchaseOrder::where('status', 'received')
         ->whereColumn('received_date', '<=', 'expected_delivery_date')
         ->count();
 
-    $topSuppliersByValue = Supplier::with(['purchaseOrders' => function($query) {
+    $topSuppliersByValue = Supplier::where('is_active', true)
+    ->with(['purchaseOrders' => function($query) {
         $query->where('status', 'received')
               ->where('created_at', '>=', now()->subDays(90));
     }])
@@ -30,7 +31,8 @@
     ->sortByDesc('total_value')
     ->take(10);
 
-    $supplierDeliveryPerformance = Supplier::with(['purchaseOrders' => function($query) {
+    $supplierDeliveryPerformance = Supplier::where('is_active', true)
+    ->with(['purchaseOrders' => function($query) {
         $query->where('status', 'received')
               ->where('created_at', '>=', now()->subDays(90))
               ->whereNotNull('received_date')
@@ -64,7 +66,8 @@
     ->sortByDesc('on_time_rate')
     ->take(10);
 
-    $supplierQualityMetrics = Supplier::with(['purchaseOrders.purchaseOrderItems.product'])
+    $supplierQualityMetrics = Supplier::where('is_active', true)
+    ->with(['purchaseOrders.purchaseOrderItems.product'])
     ->get()
     ->map(function($supplier) {
         $allItems = collect();

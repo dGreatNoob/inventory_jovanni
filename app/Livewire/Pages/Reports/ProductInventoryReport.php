@@ -259,7 +259,8 @@ class ProductInventoryReport extends Component
 
     public function getSupplierSubtotalsProperty()
     {
-        return Supplier::select('suppliers.id', 'suppliers.name')
+        return Supplier::where('suppliers.is_active', true)
+            ->select('suppliers.id', 'suppliers.name')
             ->join('products', 'products.supplier_id', '=', 'suppliers.id')
             ->join('product_inventory', 'product_inventory.product_id', '=', 'products.id')
             ->when($this->categoryId, fn($q) => $q->where('products.category_id', $this->categoryId))

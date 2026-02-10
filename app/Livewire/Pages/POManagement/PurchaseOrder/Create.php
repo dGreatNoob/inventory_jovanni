@@ -208,7 +208,7 @@ class Create extends Component
 
     public function getSuppliersProperty()
     {
-        return Supplier::orderBy('name')->get();
+        return Supplier::active()->orderBy('name')->get();
     }
 
     public function openModal()

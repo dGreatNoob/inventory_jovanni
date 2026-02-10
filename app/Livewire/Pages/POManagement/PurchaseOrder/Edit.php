@@ -183,7 +183,11 @@ class Edit extends Component
 
     public function getSuppliersProperty()
     {
-        return Supplier::orderBy('name')->get();
+        return Supplier::when($this->supplier_id, function ($q) {
+            $q->where('is_active', true)->orWhere('id', $this->supplier_id);
+        }, fn ($q) => $q->where('is_active', true))
+            ->orderBy('name')
+            ->get();
     }
 
     public function openModal()

@@ -22,6 +22,12 @@ class BranchSales extends Component
     public $perPage = 10;
     public $selectedBranchId = '';
     public $selectedAgentId = '';
+    public $showFilters = false;
+
+    public function toggleFilters()
+    {
+        $this->showFilters = !$this->showFilters;
+    }
     public $showDetailsModal = false;
     public $selectedSale = null;
 

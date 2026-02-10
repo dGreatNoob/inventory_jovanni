@@ -7,145 +7,109 @@
             <!-- Create Branch Sales Stepper -->
             @include('livewire.pages.branch.partials.branch-sales-create-stepper')
         @else
-        <!-- Branch Sales Section -->
-        <section class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
-            <!-- Filters Section (collapsible) -->
-            <div class="border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/30" x-data="{ filtersExpanded: true }">
-                <button type="button" @click="filtersExpanded = !filtersExpanded"
-                    class="w-full px-6 py-4 flex items-center justify-between gap-2 text-left hover:bg-gray-100/50 dark:hover:bg-gray-800/30 transition-colors">
-                    <span class="text-sm font-medium text-gray-700 dark:text-gray-200">Filters</span>
-                    <svg class="w-5 h-5 text-gray-500 transition-transform duration-200" :class="{ 'rotate-180': filtersExpanded }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                    </svg>
-                </button>
-                <div x-show="filtersExpanded" x-collapse class="overflow-hidden">
-                <div class="px-6 pb-5">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                <!-- Search -->
-                <div class="lg:col-span-2">
-                    <label for="search" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
-                        Search
-                    </label>
-                    <input
-                        type="text"
-                        id="search"
-                        wire:model.live.debounce.300ms="search"
-                        placeholder="Search by ref no, branch, or agent..."
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    />
-                </div>
+        @if(session()->has('success'))
+            <div class="rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-3 text-sm text-green-800 dark:text-green-200">
+                {{ session('success') }}
+            </div>
+        @endif
 
-                <!-- Date From -->
-                <div>
-                    <label for="dateFrom" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
-                        Date From
-                    </label>
-                    <input
-                        type="date"
-                        id="dateFrom"
-                        wire:model.live="dateFrom"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    />
-                </div>
-
-                <!-- Date To -->
-                <div>
-                    <label for="dateTo" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
-                        Date To
-                    </label>
-                    <input
-                        type="date"
-                        id="dateTo"
-                        wire:model.live="dateTo"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    />
-                </div>
-
-                <!-- Branch Filter -->
-                <div>
-                    <label for="branchFilter" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
-                        Branch
-                    </label>
-                    <select
-                        id="branchFilter"
-                        wire:model.live="selectedBranchId"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    >
-                        <option value="">All Branches</option>
-                        @foreach($branches as $branch)
-                            <option value="{{ $branch->id }}">{{ $branch->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <!-- Agent Filter -->
-                <div>
-                    <label for="agentFilter" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
-                        Agent
-                    </label>
-                    <select
-                        id="agentFilter"
-                        wire:model.live="selectedAgentId"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    >
-                        <option value="">All Agents</option>
-                        @foreach($agents as $agent)
-                            <option value="{{ $agent->id }}">{{ $agent->agent_code }} - {{ $agent->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <!-- Per Page -->
-                <div class="flex items-end">
-                    <div class="flex items-center gap-3">
-                        <label for="perPage" class="text-sm font-medium text-gray-900 dark:text-white whitespace-nowrap">
-                            Per Page
-                        </label>
-                        <select id="perPage" wire:model.live="perPage"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-24 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-indigo-500 dark:focus:border-indigo-500">
-                            <option value="5">5</option>
-                            <option value="10">10</option>
-                            <option value="20">20</option>
-                            <option value="50">50</option>
-                            <option value="100">100</option>
-                        </select>
+        <!-- Search and Filters -->
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg mb-6">
+            <div class="p-6">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
+                    <div class="flex-1 max-w-lg">
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                </svg>
+                            </div>
+                            <input wire:model.live.debounce.300ms="search"
+                                   type="text"
+                                   placeholder="Search by ref no, branch, or agent..."
+                                   class="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 sm:text-sm">
+                        </div>
+                    </div>
+                    <div class="mt-4 sm:mt-0 flex space-x-3">
+                        <button wire:click="toggleFilters"
+                                class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:focus:ring-gray-400">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.414A1 1 0 013 6.707V4z"></path>
+                            </svg>
+                            Filters
+                        </button>
                     </div>
                 </div>
-                </div>
 
-                <div class="mt-4 flex justify-end">
-                    <flux:button wire:click="clearFilters" variant="outline" size="sm">
-                        Clear Filters
-                    </flux:button>
-                </div>
-                </div>
-                </div>
+                @if($showFilters)
+                    <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Date From</label>
+                                <input type="date" wire:model.live="dateFrom"
+                                    class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 sm:text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Date To</label>
+                                <input type="date" wire:model.live="dateTo"
+                                    class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 sm:text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Branch</label>
+                                <select wire:model.live="selectedBranchId"
+                                    class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 sm:text-sm">
+                                    <option value="">All Branches</option>
+                                    @foreach($branches as $branch)
+                                        <option value="{{ $branch->id }}">{{ $branch->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Agent</label>
+                                <select wire:model.live="selectedAgentId"
+                                    class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 sm:text-sm">
+                                    <option value="">All Agents</option>
+                                    @foreach($agents as $agent)
+                                        <option value="{{ $agent->id }}">{{ $agent->agent_code }} - {{ $agent->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Per Page</label>
+                                <select wire:model.live="perPage"
+                                    class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 sm:text-sm">
+                                    <option value="5">5</option>
+                                    <option value="10">10</option>
+                                    <option value="20">20</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex justify-end">
+                            <button wire:click="clearFilters"
+                                    class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:focus:ring-gray-400">
+                                Clear Filters
+                            </button>
+                        </div>
+                    </div>
+                @endif
             </div>
+        </div>
 
-            @if(session()->has('success'))
-                <div class="mx-6 mt-4 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-3 text-sm text-green-800 dark:text-green-200">
-                    {{ session('success') }}
+        <!-- Sales List -->
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg">
+            <div class="px-6 py-3 flex flex-wrap items-center justify-between gap-4 text-sm text-gray-700 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
+                <div>
+                    @if($sales->total() > 0)
+                        <span class="font-semibold text-gray-900 dark:text-white">{{ $sales->total() }}</span> sales found
+                    @else
+                        <span class="font-semibold text-gray-900 dark:text-white">No sales found</span>
+                    @endif
                 </div>
-            @endif
-
-            <!-- Branch Sales Header + Add button (above table) -->
-            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex flex-wrap items-center justify-between gap-4 bg-white dark:bg-gray-800">
-                <h3 class="text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2">
-                    <flux:icon name="banknotes" class="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                    Branch Sales
-                </h3>
                 <flux:button wire:click="openCreateStepper" size="sm" class="flex items-center gap-2">
                     Add Customer Sales
                 </flux:button>
-            </div>
-
-            <!-- Results Info -->
-            <div class="px-6 py-3 text-sm text-gray-700 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50">
-                @if($sales->total() > 0)
-                    <span class="font-semibold text-gray-900 dark:text-white">{{ $sales->total() }}</span> sales found
-                @else
-                    <span class="font-semibold text-gray-900 dark:text-white">No sales found</span>
-                @endif
             </div>
 
             <!-- Sales Table -->
@@ -274,7 +238,7 @@
                 </div>
             @endif
             </div>
-        </section>
+        </div>
         @endif
 
         <!-- Success Modal -->

@@ -18,7 +18,15 @@ class BranchInventory extends Component
 
     public $search = '';
     public $batchFilter = '';
+    /** @var bool When true, only show branches with completed shipments */
+    public $completedShipmentOnly = true;
     public $perPage = 10;
+    public $showFilters = false;
+
+    public function toggleFilters()
+    {
+        $this->showFilters = !$this->showFilters;
+    }
 
     public function updatingSearch()
     {
@@ -26,6 +34,11 @@ class BranchInventory extends Component
     }
 
     public function updatedBatchFilter()
+    {
+        $this->resetPage();
+    }
+
+    public function updatedCompletedShipmentOnly()
     {
         $this->resetPage();
     }
@@ -142,20 +155,37 @@ class BranchInventory extends Component
         return $lastShipment ? $lastShipment->updated_at->format('M d, Y') : null;
     }
 
+    /**
+     * All batches for the filter dropdown (with and without completed shipments)
+     */
+    public function getAllBatchesForFilterProperty()
+    {
+        $with = collect($this->batches)->map(fn ($b) => array_merge($b, ['has_completed_shipments' => true]));
+        $without = collect($this->batchesWithoutCompletedShipments)->map(fn ($b) => array_merge($b, ['has_completed_shipments' => false]));
+        return $with->concat($without)->sortBy('name')->values();
+    }
+
     public function getFilteredBranchesProperty()
     {
-        $query = Branch::whereHas('branchAllocations.shipments', function ($q) {
-            $q->where('shipping_status', 'completed');
-        })
-        ->withCount([
+        $hasBatchFilter = trim((string) $this->batchFilter) !== '';
+
+        $query = Branch::query();
+
+        if ($hasBatchFilter) {
+            $query->where('batch', $this->batchFilter);
+        }
+
+        if ($this->completedShipmentOnly) {
+            $query->whereHas('branchAllocations.shipments', function ($q) {
+                $q->where('shipping_status', 'completed');
+            });
+        }
+
+        $query->withCount([
             'branchAllocations as completed_shipments_count' => function ($q) {
                 $q->whereHas('shipments', fn ($sq) => $sq->where('shipping_status', 'completed'));
             },
         ]);
-
-        if ($this->batchFilter) {
-            $query->where('batch', $this->batchFilter);
-        }
 
         $branches = $query->get();
 
@@ -186,6 +216,7 @@ class BranchInventory extends Component
     {
         $this->search = '';
         $this->batchFilter = '';
+        $this->completedShipmentOnly = true;
         $this->resetPage();
     }
 

@@ -21,6 +21,11 @@ class DeploymentHistory extends Component
         $this->resetPage();
     }
 
+    public function updatedPerPage()
+    {
+        $this->resetPage();
+    }
+
     public function render()
     {
         $query = AgentBranchAssignment::with(['agent', 'branch'])

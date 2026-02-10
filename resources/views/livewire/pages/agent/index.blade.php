@@ -2,7 +2,7 @@
 <x-slot:subheader>Profile</x-slot:subheader>
 
 <div class="pt-4">
-    <div class="">
+    <div class="space-y-6">
         @can('agent create')
         <section class="mb-6 bg-white dark:bg-gray-800 shadow rounded-lg" x-data="{ open: false }">
             <button type="button"
@@ -77,57 +77,55 @@
             </div>
         @endif
 
+        {{-- Search and Filters --}}
+        <div class="mb-6 bg-white dark:bg-gray-800 shadow rounded-lg">
+            <div class="p-6">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                        {{-- Search Input --}}
+                        <div class="relative flex-1 max-w-xs">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                </svg>
+                            </div>
+                            <input type="text" wire:model.live.debounce.300ms="search"
+                                placeholder="Search agent..."
+                                class="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:focus:ring-indigo-400 dark:focus:border-indigo-400 sm:text-sm">
+                        </div>
+
+                        {{-- Status Filter --}}
+                        <select wire:model.live="statusFilter"
+                            class="block w-full sm:w-auto px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            <option value="all">All Status</option>
+                            <option value="deployed">Deployed</option>
+                            <option value="active">Active</option>
+                        </select>
+                    </div>
+
+                    {{-- Per Page --}}
+                    <div class="flex items-center gap-3">
+                        <label class="text-sm font-medium text-gray-700 dark:text-gray-200 whitespace-nowrap">Per Page</label>
+                        <select wire:model.live="perPage"
+                            class="block w-24 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            <option value="5">5</option>
+                            <option value="10">10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Agent List --}}
         <section class="bg-white dark:bg-gray-800 shadow rounded-lg">
             <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
                 <h3 class="text-lg font-medium text-gray-900 dark:text-white">Agent List</h3>
                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Manage existing agents</p>
             </div>
-            {{-- Search and Filter Section --}}
-            <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
-                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                        <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
-                            {{-- Search Input --}}
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                    <svg aria-hidden="true" class="w-5 h-5 text-gray-500 dark:text-gray-400"
-                                        fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                        <path fill-rule="evenodd"
-                                            d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                                            clip-rule="evenodd" />
-                                    </svg>
-                                </div>
-                                <input type="text" wire:model.live.debounce.300ms="search"
-                                    class="block w-64 p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-indigo-500 dark:focus:border-indigo-500"
-                                    placeholder="Search Agent...">
-                            </div>
-
-                            {{-- Status Filter Dropdown --}}
-                            <select wire:model.live="statusFilter"
-                                class="px-4 py-2 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-indigo-500 dark:focus:border-indigo-500">
-                                <option value="all">All Status</option>
-                                <option value="deployed">Deployed</option>
-                                <option value="active">Active</option>
-                            </select>
-                        </div>
-
-                        {{-- Per Page Selector --}}
-                        <div class="flex items-center space-x-3">
-                            <label class="text-sm font-medium text-gray-900 dark:text-white whitespace-nowrap">
-                                Per Page
-                            </label>
-                            <select wire:model.live="perPage"
-                                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-24 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-indigo-500 dark:focus:border-indigo-500">
-                                <option value="5">5</option>
-                                <option value="10">10</option>
-                                <option value="20">20</option>
-                                <option value="50">50</option>
-                                <option value="100">100</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Results Info --}}
+            {{-- Results Info --}}
                 <div class="px-6 py-3 text-sm text-gray-700 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50">
                     @if($items->total() > 0)
                         <span class="font-semibold text-gray-900 dark:text-white">{{ $items->total() }}</span> agents found
@@ -469,13 +467,8 @@
             @endif
         </div>
 
-        <!-- Deployment History -->
-        <section class="mt-8">
-            <div>
-                {{-- Add the Livewire deployment history component --}}
-                <livewire:deployment-history />
-            </div>
-        </section>
+        {{-- Deployment History --}}
+        <livewire:deployment-history wire:key="deployment-history" />
 
 
 

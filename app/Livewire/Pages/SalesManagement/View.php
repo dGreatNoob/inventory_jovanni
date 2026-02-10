@@ -41,15 +41,15 @@ class View extends Component
         $this->salesOrderId = $salesOrderId;
         $this->salesOrderResult = SalesOrder::findOrFail($salesOrderId);
         $this->company_results  = \App\Models\Customer::all()->pluck('name', 'id');
-        $this->product_results  = \App\Models\Product::all()->pluck('name', 'id');
+        $this->product_results  = \App\Models\Product::active()->get()->pluck('name', 'id');
         $this->shippingMethodDropDown = SalesOrder::shippingMethodDropDown();
         $this->paymentMethodDropdown  = SalesOrder::paymentMethodDropdown();
         $this->paymentTermsDropdown   = SalesOrder::paymentTermsDropdown();
         
         // Load available branches and products for Change Price modal
         $this->availableBranches = Branch::all()->pluck('name', 'id');
-        $this->availableProducts = Product::all()->pluck('name', 'id');
-        $this->filteredProducts = Product::all()->pluck('name', 'id');
+        $this->availableProducts = Product::active()->get()->pluck('name', 'id');
+        $this->filteredProducts = Product::active()->get()->pluck('name', 'id');
     }
 
     public function approveSalesOrder()
@@ -115,7 +115,7 @@ class View extends Component
         if ($branchId) {
             // For now, show all products. You can implement branch-specific filtering here
             // if you have a relationship between branches and products
-            $this->filteredProducts = Product::all()->pluck('name', 'id');
+            $this->filteredProducts = Product::active()->get()->pluck('name', 'id');
         } else {
             $this->filteredProducts = [];
         }
@@ -155,7 +155,7 @@ class View extends Component
                 $this->selectedProductId = $branchItem->product_id;
                 $this->currentUnitPrice = $branchItem->unit_price;
                 $this->newUnitPrice = $branchItem->unit_price;
-                $this->filteredProducts = Product::all()->pluck('name', 'id');
+                $this->filteredProducts = Product::active()->get()->pluck('name', 'id');
             }
         } else {
             // Reset for new entry
@@ -165,7 +165,7 @@ class View extends Component
                 'currentUnitPrice',
                 'newUnitPrice'
             ]);
-            $this->filteredProducts = Product::all()->pluck('name', 'id');
+            $this->filteredProducts = Product::active()->get()->pluck('name', 'id');
         }
         
         $this->showChangePriceModal = true;

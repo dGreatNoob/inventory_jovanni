@@ -156,11 +156,7 @@ class Analytics extends Component
 
     public function render()
     {
-        // ✅ Fix 1: Remove 'active' filter to show all suppliers
-        $suppliers = Supplier::orderBy('name')->get();
-        
-        // ✅ Fix 2: Add debug to check if suppliers exist
-        // \Log::info('Suppliers count: ' . $suppliers->count());
+        $suppliers = Supplier::active()->orderBy('name')->get();
         
         $data = $this->getData();
 

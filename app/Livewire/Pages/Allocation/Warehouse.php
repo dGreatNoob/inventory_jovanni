@@ -7,9 +7,15 @@ use App\Models\Branch;
 use App\Models\BranchAllocation;
 use App\Models\BranchAllocationItem;
 use App\Models\Product;
+use App\Models\ProductOrder;
 use App\Models\Box;
 use App\Models\DeliveryReceipt;
+use App\Models\PurchaseOrder;
+use App\Enums\PurchaseOrderStatus;
+use App\Support\AllocationAvailabilityHelper;
+use App\Support\ProductSearchHelper;
 use Livewire\Component;
+use Livewire\WithPagination;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Layout;
 use Illuminate\Support\Facades\DB;
@@ -18,6 +24,8 @@ use Illuminate\Support\Facades\DB;
 #[Title('Allocation - Warehouse')]
 class Warehouse extends Component
 {
+    use WithPagination;
+
     public $batchAllocations = [];
     public array $batch_numbers = [];
 
@@ -58,7 +66,8 @@ class Warehouse extends Component
     public $search = '';
     public $dateFrom = '';
     public $dateTo = '';
-    
+    public $perPage = 10;
+
     // Sorting fields
     public $sortField = 'created_at';
     public $sortDirection = 'desc';
@@ -69,6 +78,7 @@ class Warehouse extends Component
     public $status = 'draft';
     public $batch_number = ''; // Old field for single batch number selection
     public $selectedBatchNumbers = []; // New field for multiple batch number selection
+    public ?int $batchPurchaseOrderId = null; // PO to link to batch (Step 1)
 
     // Stepper workflow fields
     public $currentStep = 1;
@@ -86,19 +96,26 @@ class Warehouse extends Component
     public $productAllocations = []; // Array to store product allocations for all branches
     public $branchQuantities = []; // Array of branch_id => quantity for per-branch allocation
     public $matrixQuantities = []; // Matrix: branch_id => product_id => quantity
+    public $matrixSavedInSession = true; // Tracks whether matrix has unsaved changes
     public $selectedProductIdsForAllocation = []; // Selected products for allocation matrix
     public $temporarySelectedProducts = []; // Temporary selection for current filter
 
     // Product filtering fields
     public $availableCategories = [];
-    public $selectedCategoryId = null;
-    public $selectedProductFilterName = null;
-    public $showAllProducts = false;
     public $filteredProducts = [];
-    public $categorySearch = '';
-    public $categoryDropdown = false;
-    public $productSearch = '';
-    public $productDropdown = false;
+
+    // Add Products modal (Step 3)
+    public $showAddProductsModal = false;
+    public $addProductsModalSearch = '';
+    public ?int $selectedPurchaseOrderId = null;
+
+    // Allocation validation (Phase 2)
+    public string $allocationValidationMode = 'strict'; // 'strict' | 'warn'
+    public array $allocationValidationErrors = [];
+    public bool $showOverAllocationConfirm = false;
+
+    // Step 2 branch review
+    public $branchSearch = '';
 
     // Add branches fields
     public $availableBranches = [];
@@ -137,6 +154,30 @@ class Warehouse extends Component
         $this->selectedBatchNumbers = [];
     }
 
+    protected $queryString = [
+        'search' => ['except' => ''],
+        'dateFrom' => ['except' => ''],
+        'dateTo' => ['except' => ''],
+    ];
+
+    public function updatedSearch()
+    {
+        $this->resetPage();
+        $this->loadBatchAllocations();
+    }
+
+    public function updatedDateFrom()
+    {
+        $this->resetPage();
+        $this->loadBatchAllocations();
+    }
+
+    public function updatedDateTo()
+    {
+        $this->resetPage();
+        $this->loadBatchAllocations();
+    }
+
     public function initializeScannedQuantities()
     {
         // Load scanned quantities from database for current batch
@@ -166,15 +207,16 @@ class Warehouse extends Component
         }
     }
 
-    private function initializeBatchSteps()
+    private function initializeBatchSteps($batches = null)
     {
         $this->batchSteps = [];
-        
-        if (empty($this->batchAllocations)) {
+        $items = $batches ?? $this->batchAllocations;
+
+        if (!$items || count($items) === 0) {
             return;
         }
-        
-        foreach ($this->batchAllocations as $batch) {
+
+        foreach ($items as $batch) {
             // If this batch is currently being edited, use the UI step
             if ($this->isEditing && $this->currentBatch && $this->currentBatch->id === $batch->id) {
                 $this->batchSteps[$batch->id] = $this->currentStep;
@@ -468,21 +510,20 @@ class Warehouse extends Component
 
         return true;
     }
-    public function loadBatchAllocations()
+    protected function getBatchesQuery()
     {
         $query = BatchAllocation::with([
             'branchAllocations.branch',
             'branchAllocations.items.product'
         ]);
 
-        // Apply filters...
         if ($this->search) {
             $query->where(function ($q) {
                 $q->where('ref_no', 'like', '%' . $this->search . '%')
-                ->orWhere('remarks', 'like', '%' . $this->search . '%')
-                ->orWhereHas('branchAllocations.branch', function ($branchQuery) {
-                    $branchQuery->where('name', 'like', '%' . $this->search . '%');
-                });
+                    ->orWhere('remarks', 'like', '%' . $this->search . '%')
+                    ->orWhereHas('branchAllocations.branch', function ($branchQuery) {
+                        $branchQuery->where('name', 'like', '%' . $this->search . '%');
+                    });
             });
         }
 
@@ -494,20 +535,15 @@ class Warehouse extends Component
             $query->whereDate('created_at', '<=', $this->dateTo);
         }
 
-        // Apply sorting
         $query->orderBy($this->sortField, $this->sortDirection);
 
-        $this->batchAllocations = $query->get();
-        
-        // Initialize open states
-        foreach ($this->batchAllocations as $batch) {
-            if (!isset($this->openBatches[$batch->id])) {
-                $this->openBatches[$batch->id] = false;
-            }
-        }
-        
-        // Initialize batch steps
-        $this->initializeBatchSteps();
+        return $query;
+    }
+
+    public function loadBatchAllocations()
+    {
+        // Batches are now computed in render(); this method is kept for API compatibility
+        // (called after actions) but no longer assigns to batchAllocations.
     }
 
     public function loadAvailableBatchNumbers()
@@ -520,6 +556,16 @@ class Warehouse extends Component
             ->sort()
             ->values()
             ->toArray();
+    }
+
+    public function selectAllBatches()
+    {
+        $this->selectedBatchNumbers = $this->availableBatchNumbers;
+    }
+
+    public function clearBatchSelection()
+    {
+        $this->selectedBatchNumbers = [];
     }
     public function processBarcodeScanner()
     {
@@ -674,7 +720,7 @@ class Warehouse extends Component
                     DeliveryReceipt::where('box_id', $box->id)->update(['scanned_items' => 0]);
                 }
 
-                session()->flash('message', 'Scanned quantities reset for ' . $branchAllocation->branch->name);
+                session()->flash('success', 'Scanned quantities reset for ' . $branchAllocation->branch->name);
             }
         } else {
             // Reset for all branches - delete all box-specific scanned item records for the batch
@@ -692,7 +738,7 @@ class Warehouse extends Component
                 DeliveryReceipt::where('box_id', $box->id)->update(['scanned_items' => 0]);
             }
 
-            session()->flash('message', 'All scanned quantities have been reset.');
+            session()->flash('success', 'All scanned quantities have been reset.');
         }
 
         // Reload scanned quantities
@@ -708,7 +754,7 @@ class Warehouse extends Component
 
         $branchAllocation = $this->currentBatch->branchAllocations->find($branchAllocationId);
         if ($branchAllocation) {
-            session()->flash('message', "Now scanning for: {$branchAllocation->branch->name}");
+            session()->flash('success', "Now scanning for: {$branchAllocation->branch->name}");
             $this->loadAvailableBoxes($branchAllocationId);
         }
     }
@@ -745,7 +791,7 @@ class Warehouse extends Component
         ]);
 
         $this->loadAvailableBoxes($this->activeBranchId);
-        session()->flash('message', "New box created: {$boxNumber}");
+        session()->flash('success', "New box created: {$boxNumber}");
     }
 
     public function selectBox($boxId)
@@ -818,7 +864,7 @@ class Warehouse extends Component
             $this->showBarcodeScannerModal = false;
         }
 
-        session()->flash('message', 'Box deleted and scanned quantities reset (items available for rescanning).');
+        session()->flash('success', 'Box deleted and scanned quantities reset (items available for rescanning).');
     }
 
     public function declareBoxFull()
@@ -837,7 +883,7 @@ class Warehouse extends Component
         // Reload available boxes to reflect the change
         $this->loadAvailableBoxes($this->activeBranchId);
 
-        session()->flash('message', 'Box declared as full.');
+        session()->flash('success', 'Box declared as full.');
     }
 
     private function createDrForBox($boxId)
@@ -873,7 +919,7 @@ class Warehouse extends Component
             $this->motherDr = $dr;
         }
 
-        session()->flash('message', "New DR created: {$drNumber} ({$dr->type})");
+        session()->flash('success', "New DR created: {$drNumber} ({$dr->type})");
     }
 
     private function getMotherDrId($branchAllocationId)
@@ -904,7 +950,27 @@ class Warehouse extends Component
 
     public function loadAvailableProducts()
     {
-        $this->availableProducts = Product::orderBy('name')->get();
+        $orderedCategoryIds = \App\Models\Category::orderBy('parent_id')
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->pluck('id')
+            ->toArray();
+        $orderMap = array_flip($orderedCategoryIds);
+
+        $this->availableProducts = Product::with(['category.parent'])
+            ->active()
+            ->get()
+            ->sort(function ($a, $b) use ($orderMap) {
+                $catIdA = $a->category_id ?? 0;
+                $catIdB = $b->category_id ?? 0;
+                $posA = isset($orderMap[$catIdA]) ? $orderMap[$catIdA] : 99999;
+                $posB = isset($orderMap[$catIdB]) ? $orderMap[$catIdB] : 99999;
+                if ($posA !== $posB) {
+                    return $posA - $posB;
+                }
+                return strcmp($a->name ?? '', $b->name ?? '');
+            })
+            ->values();
     }
 
     public function loadAvailableCategories()
@@ -913,60 +979,133 @@ class Warehouse extends Component
     }
 
     /**
-     * Filtered categories for searchable dropdown (by name).
+     * Filtered branches for Step 2 review (by name, code, address).
      */
-    public function getFilteredCategoriesProperty()
+    public function getFilteredBranchesForReviewProperty()
     {
-        $categories = collect($this->availableCategories);
-        $query = trim($this->categorySearch);
+        $branches = collect($this->filteredBranchesByBatch);
+        $query = trim($this->branchSearch ?? '');
         if ($query === '') {
-            return $categories;
+            return $branches;
         }
         $lower = strtolower($query);
-        return $categories->filter(function ($category) use ($lower) {
-            return str_contains(strtolower((string) ($category->name ?? '')), $lower);
+        return $branches->filter(function ($branch) use ($lower) {
+            return str_contains(strtolower((string) ($branch['name'] ?? '')), $lower)
+                || str_contains(strtolower((string) ($branch['code'] ?? '')), $lower)
+                || str_contains(strtolower((string) ($branch['address'] ?? '')), $lower);
         })->values();
     }
 
     /**
-     * Filtered product names for searchable dropdown (search by name, Product ID, supplier code, SKU).
+     * Add Products modal: search results with prefix segmentation and token-based matching.
+     * Empty search: shows initial products (first 50). With query "LD-127" returns only
+     * products matching "LD***-127***" (each token matches prefix of corresponding segment).
+     * When selectedPurchaseOrderId is set, filters to products that appear in that PO.
      */
-    public function getFilteredProductNamesForDropdownProperty()
+    public function getAddProductsModalResultsProperty()
     {
-        $products = $this->availableProducts;
-        if ($this->selectedCategoryId) {
-            $products = $products->where('category_id', $this->selectedCategoryId);
+        $q = trim($this->addProductsModalSearch ?? '');
+        $baseQuery = $this->applyPOFilterToProductQuery(Product::with('color')->active());
+
+        if ($q === '') {
+            return $baseQuery->orderBy('product_number')->limit(50)->get();
         }
-        $query = trim($this->productSearch);
-        if ($query !== '') {
-            $lower = strtolower($query);
-            $products = $products->filter(function ($product) use ($lower) {
-                return str_contains(strtolower((string) ($product->name ?? '')), $lower)
-                    || str_contains(strtolower((string) ($product->product_number ?? '')), $lower)
-                    || str_contains(strtolower((string) ($product->supplier_code ?? '')), $lower)
-                    || str_contains(strtolower((string) ($product->sku ?? '')), $lower);
-            });
+
+        $segments = preg_split('/[\s\-_]+/', strtolower($q), -1, PREG_SPLIT_NO_EMPTY);
+        if (empty($segments)) {
+            return $baseQuery->orderBy('product_number')->limit(50)->get();
         }
-        return $products->pluck('name')->unique()->values();
+
+        // Fetch candidates: for each segment, include products where any searchable field
+        // contains that segment. "LD" matches "LD****", "LD-127" matches "LD****-127****"
+        $searchableFields = ['product_number', 'supplier_code', 'name', 'remarks', 'sku'];
+        $query = $baseQuery->where(function ($qb) use ($segments, $searchableFields) {
+            foreach ($segments as $segment) {
+                if ($segment === '') {
+                    continue;
+                }
+                $pattern = '%' . $segment . '%';
+                $qb->where(function ($inner) use ($pattern, $searchableFields) {
+                    foreach ($searchableFields as $field) {
+                        $inner->orWhere($field, 'like', $pattern);
+                    }
+                });
+            }
+        });
+
+        // Prioritize products where product_number starts with first segment (e.g. "LD" -> "LD2505-127" first)
+        $firstSegment = $segments[0];
+        $prefixPattern = $firstSegment . '%';
+        $products = $query
+            ->orderByRaw("CASE WHEN LOWER(product_number) LIKE ? THEN 0 ELSE 1 END", [$prefixPattern])
+            ->orderBy('product_number')
+            ->limit(300)
+            ->get();
+
+        // Strict prefix-segmentation: each query token must match PREFIX of corresponding value segment
+        return $products->filter(function ($p) use ($q) {
+            return ProductSearchHelper::matchesAnyField($q, [
+                (string) ($p->product_number ?? ''),
+                (string) ($p->supplier_code ?? ''),
+                (string) ($p->name ?? ''),
+                (string) ($p->remarks ?? ''),
+                (string) ($p->sku ?? ''),
+            ]);
+        })->values();
     }
 
-    public function filterProducts()
+    /**
+     * Apply PO filter to product query: when selectedPurchaseOrderId is set,
+     * restrict to products that have a ProductOrder for that PO.
+     */
+    protected function applyPOFilterToProductQuery($query)
     {
-        $query = Product::query();
-
-        if ($this->selectedCategoryId) {
-            $query->where('category_id', $this->selectedCategoryId);
+        if ($this->selectedPurchaseOrderId !== null) {
+            $productIds = ProductOrder::where('purchase_order_id', $this->selectedPurchaseOrderId)
+                ->pluck('product_id')
+                ->unique()
+                ->filter()
+                ->values()
+                ->all();
+            $query = $query->whereIn('id', $productIds ?: [-1]); // empty array would return no rows
         }
 
-        if ($this->selectedProductFilterName) {
-            $query->where('name', $this->selectedProductFilterName);
-        }
+        return $query;
+    }
 
-        $this->filteredProducts = $query->orderBy('name')->get();
-        $this->showAllProducts = false;
+    /**
+     * Purchase orders with status approved or to_receive (expected receipts).
+     */
+    public function getAvailablePurchaseOrdersProperty()
+    {
+        $validStatuses = [
+            PurchaseOrderStatus::APPROVED->value,
+            PurchaseOrderStatus::TO_RECEIVE->value,
+        ];
 
-        // Clear temporary selection when filtering
+        return PurchaseOrder::with('supplier')
+            ->whereIn('status', $validStatuses)
+            ->orderByDesc('expected_delivery_date')
+            ->orderByDesc('created_at')
+            ->get();
+    }
+
+    public function openAddProductsModal()
+    {
+        $this->addProductsModalSearch = '';
         $this->temporarySelectedProducts = [];
+        $this->showAddProductsModal = true;
+    }
+
+    public function closeAddProductsModal()
+    {
+        $this->showAddProductsModal = false;
+    }
+
+    public function addSelectedProductsAndCloseModal()
+    {
+        $this->addSelectedProductsToAllocation();
+        $this->closeAddProductsModal();
     }
 
     public function addSelectedProductsToAllocation()
@@ -983,20 +1122,7 @@ class Warehouse extends Component
         // Load the matrix with default quantities
         $this->loadMatrix();
 
-        session()->flash('message', 'Products added to allocation list!');
-    }
-
-    public function selectAllVisible()
-    {
-        // Get all visible products based on current filter
-        $visibleProducts = $this->showAllProducts ? $this->availableProducts : $this->filteredProducts;
-        $visibleProductIds = $visibleProducts->pluck('id')->toArray();
-        
-        // Add all visible products to temporary selection
-        $this->temporarySelectedProducts = array_unique(array_merge(
-            $this->temporarySelectedProducts,
-            $visibleProductIds
-        ));
+        session()->flash('success', 'Products added to allocation list!');
     }
 
     public function removeProductFromAllocation($productId)
@@ -1016,70 +1142,9 @@ class Warehouse extends Component
             }
         }
 
-        session()->flash('message', 'Product removed from allocation!');
+        session()->flash('success', 'Product removed from allocation!');
     }
 
-
-    public function toggleProductGroup($productName)
-    {
-        // Get all product IDs for this base product name from filtered products
-        $products = $this->showAllProducts ? $this->availableProducts : $this->filteredProducts;
-        
-        // Filter products that have the same product name
-        $productGroupIds = $products->filter(function($product) use ($productName) {
-            return $product->name === $productName;
-        })->pluck('id')->toArray();
-
-        // Check if all products in this group are already selected
-        $allSelected = !array_diff($productGroupIds, $this->selectedProductIdsForAllocation);
-
-        if ($allSelected) {
-            // Deselect all products in this group
-            $this->selectedProductIdsForAllocation = array_diff(
-                $this->selectedProductIdsForAllocation,
-                $productGroupIds
-            );
-        } else {
-            // Select all products in this group
-            $this->selectedProductIdsForAllocation = array_unique(array_merge(
-                $this->selectedProductIdsForAllocation,
-                $productGroupIds
-            ));
-        }
-    }
-
-    public function showAllProducts()
-    {
-        $this->showAllProducts = true;
-        $this->selectedCategoryId = null;
-        $this->selectedProductFilterName = null;
-        $this->filteredProducts = $this->availableProducts;
-        $this->categorySearch = '';
-        $this->categoryDropdown = false;
-        $this->productSearch = '';
-        $this->productDropdown = false;
-    }
-
-    public function selectCategoryFilter($categoryId)
-    {
-        $this->selectedCategoryId = $categoryId ?: null;
-        $this->categoryDropdown = false;
-        $this->filterProducts();
-    }
-
-    public function selectProductFilter($productName)
-    {
-        $this->selectedProductFilterName = $productName ?: null;
-        $this->productDropdown = false;
-        $this->filterProducts();
-    }
-
-    public function selectProductFilterByIndex($index)
-    {
-        $names = $this->filteredProductNamesForDropdown;
-        $name = $names->get((int) $index);
-        $this->selectProductFilter($name);
-    }
 
     public function loadBranchesByBatch()
     {
@@ -1151,8 +1216,11 @@ class Warehouse extends Component
                 $this->loadBranchesByBatch();
             }
 
-            // When moving to step 3, initialize products
+            // When moving to step 3, initialize products and sync PO from batch
             if ($this->currentStep === 3) {
+                if ($this->currentBatch?->purchase_order_id) {
+                    $this->selectedPurchaseOrderId = $this->currentBatch->purchase_order_id;
+                }
                 $this->loadMatrix();
 
                 if ($this->isEditing && $this->currentBatch) {
@@ -1196,6 +1264,8 @@ class Warehouse extends Component
         $this->ref_no = $batch->ref_no;
         $this->status = $batch->status;
         $this->remarks = $batch->remarks;
+        $this->batchPurchaseOrderId = $batch->purchase_order_id;
+        $this->selectedPurchaseOrderId = $batch->purchase_order_id;
 
         // Load available batch numbers
         $this->loadAvailableBatchNumbers();
@@ -1219,7 +1289,7 @@ class Warehouse extends Component
         // Open stepper
         $this->showStepper = true;
 
-        session()->flash('message', 'Editing batch: ' . $batch->ref_no . ' (Step ' . $this->currentStep . ')');
+        session()->flash('success', 'Editing batch: ' . $batch->ref_no . ' (Step ' . $this->currentStep . ')');
     }
 
     // Add a method to load product allocations
@@ -1316,7 +1386,8 @@ class Warehouse extends Component
                 }
             }
         }
-        
+        $this->matrixSavedInSession = true;
+
         // Reload product allocations
         $this->loadProductAllocations();
     }
@@ -1491,7 +1562,7 @@ class Warehouse extends Component
         // Reload batch data
         $this->loadBatchAllocations();
 
-        session()->flash('message', 'Product added to all branches successfully.');
+        session()->flash('success', 'Product added to all branches successfully.');
     }
 
     public function addProductToBranches()
@@ -1551,7 +1622,7 @@ class Warehouse extends Component
             // Reload batch data
             $this->loadBatchAllocations();
 
-            session()->flash('message', 'Product added to ' . $addedCount . ' branch(es) successfully.');
+            session()->flash('success', 'Product added to ' . $addedCount . ' branch(es) successfully.');
         } else {
             session()->flash('error', 'No valid quantities entered for any branch.');
         }
@@ -1559,8 +1630,8 @@ class Warehouse extends Component
 
     public function getAvailableProductsForBatchProperty()
     {
-        // Return all products for the matrix
-        return Product::orderBy('name')->get();
+        // Return all active products for the matrix (with color for display)
+        return Product::with('color')->active()->orderBy('name')->get();
     }
 
     public function loadMatrix()
@@ -1575,15 +1646,61 @@ class Warehouse extends Component
         if (!empty($this->selectedProductIdsForAllocation)) {
             foreach ($this->currentBatch->branchAllocations as $branchAllocation) {
                 foreach ($this->selectedProductIdsForAllocation as $productId) {
-                    // Find existing allocation for this product and branch
-                    $existingItem = $branchAllocation->items->where('product_id', $productId)->first();
+                    // Find existing base allocation (box_id null) for this product and branch
+                    $existingItem = $branchAllocation->items()->whereNull('box_id')->where('product_id', $productId)->first();
                     $this->matrixQuantities[$branchAllocation->id][$productId] = $existingItem ? $existingItem->quantity : 4;
                 }
             }
         }
+        $this->matrixSavedInSession = true;
     }
 
-    public function saveMatrixAllocations()
+    public function updatedMatrixQuantities()
+    {
+        $this->matrixSavedInSession = false;
+        $this->allocationValidationErrors = [];
+        $this->showOverAllocationConfirm = false;
+    }
+
+    /**
+     * Validate matrix allocations against available stock + expected PO.
+     * Returns ['valid' => bool, 'errors' => array of strings].
+     */
+    protected function validateMatrixAllocations(): array
+    {
+        $errors = [];
+        $poId = $this->selectedPurchaseOrderId;
+
+        foreach ($this->selectedProductIdsForAllocation as $productId) {
+            $product = Product::find($productId);
+            if (!$product) {
+                continue;
+            }
+            $available = AllocationAvailabilityHelper::getAvailableToAllocate($product, $poId);
+            $allocated = 0;
+            foreach ($this->currentBatch->branchAllocations as $branchAllocation) {
+                $qty = (int) ($this->matrixQuantities[$branchAllocation->id][$productId] ?? 0);
+                $allocated += $qty;
+            }
+            if ($allocated > $available) {
+                $errors[] = sprintf(
+                    '%s (%s): allocated %d, available %d (over by %d)',
+                    $product->name ?? $product->product_number ?? 'Product #' . $productId,
+                    $product->product_number ?? $product->sku ?? '',
+                    $allocated,
+                    (int) $available,
+                    $allocated - (int) $available
+                );
+            }
+        }
+
+        return [
+            'valid' => empty($errors),
+            'errors' => $errors,
+        ];
+    }
+
+    public function saveMatrixAllocations(bool $skipValidation = false)
     {
         if (!$this->currentBatch) {
             session()->flash('error', 'No batch selected.');
@@ -1595,11 +1712,28 @@ class Warehouse extends Component
             return;
         }
 
+        $this->showOverAllocationConfirm = false;
+        $this->allocationValidationErrors = [];
+
+        if (!$skipValidation) {
+            $result = $this->validateMatrixAllocations();
+            if (!$result['valid']) {
+                $this->allocationValidationErrors = $result['errors'];
+                if ($this->allocationValidationMode === 'strict') {
+                    session()->flash('error', 'Allocation exceeds available quantity. Please reduce quantities.');
+                    return;
+                }
+                $this->showOverAllocationConfirm = true;
+                return;
+            }
+        }
+
         $changes = 0;
 
-        // First, delete any existing allocation items for products that are no longer selected
+        // First, delete any existing base allocation items (box_id null) for products that are no longer selected
         $branchAllocationIds = $this->currentBatch->branchAllocations->pluck('id')->toArray();
         $deletedItems = BranchAllocationItem::whereIn('branch_allocation_id', $branchAllocationIds)
+            ->whereNull('box_id')
             ->whereNotIn('product_id', $this->selectedProductIdsForAllocation)
             ->delete();
         
@@ -1618,6 +1752,7 @@ class Warehouse extends Component
 
                 $existingItem = BranchAllocationItem::where('branch_allocation_id', $branchAllocationId)
                     ->where('product_id', $productId)
+                    ->whereNull('box_id')
                     ->first();
 
                 if ($quantity > 0) {
@@ -1652,9 +1787,22 @@ class Warehouse extends Component
             $this->loadMatrix(); // Reload to reflect changes
             $this->loadBatchAllocations();
             session()->flash('success', "Allocations updated successfully!");
+            $this->matrixSavedInSession = true;
         } else {
-            session()->flash('info', 'No changes were made to the allocations.');
+            session()->flash('success', 'No changes were made to the allocations.');
+            $this->matrixSavedInSession = true;
         }
+    }
+
+    public function saveMatrixAllocationsAnyway()
+    {
+        $this->saveMatrixAllocations(skipValidation: true);
+    }
+
+    public function dismissOverAllocationConfirm()
+    {
+        $this->showOverAllocationConfirm = false;
+        $this->allocationValidationErrors = [];
     }
 
     public function removeProductAllocation($index)
@@ -1675,7 +1823,7 @@ class Warehouse extends Component
             // Reload batch data
             $this->loadBatchAllocations();
 
-            session()->flash('message', 'Product allocation removed from all branches.');
+            session()->flash('success', 'Product allocation removed from all branches.');
         }
     }
 
@@ -1798,7 +1946,7 @@ class Warehouse extends Component
                 ])
                 ->log('Batch dispatched successfully');
             
-            session()->flash('message', 'Batch "' . $this->currentBatch->ref_no . '" dispatched successfully! Sales receipts have been generated for ' . $this->currentBatch->branchAllocations->count() . ' branch(es).');
+            session()->flash('success', 'Batch "' . $this->currentBatch->ref_no . '" dispatched successfully! Sales receipts have been generated for ' . $this->currentBatch->branchAllocations->count() . ' branch(es).');
             
             // Close stepper and reset
             $this->closeStepper();
@@ -1860,6 +2008,77 @@ class Warehouse extends Component
         return 'A' . now()->format('Ymd') . '-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
     }
 
+    /**
+     * Create draft allocations for all batch numbers (one allocation per batch).
+     * Skips batches that already have a draft allocation.
+     */
+    public function createAllocationsForAllBatches()
+    {
+        $batchNumbers = Branch::whereNotNull('batch')
+            ->where('batch', '!=', '')
+            ->distinct()
+            ->pluck('batch')
+            ->sort()
+            ->values();
+
+        if ($batchNumbers->isEmpty()) {
+            session()->flash('error', 'No batch numbers found in branches.');
+            return;
+        }
+
+        $created = 0;
+        $skipped = 0;
+        $base = 'WT-' . now()->format('Ymd') . '-';
+
+        foreach ($batchNumbers as $batchNum) {
+            $existingDraft = BatchAllocation::where('status', 'draft')
+                ->where('batch_number', $batchNum)
+                ->exists();
+
+            if ($existingDraft) {
+                $skipped++;
+                continue;
+            }
+
+            $suffix = 1;
+            do {
+                $refNo = $base . str_pad($suffix++, 4, '0', STR_PAD_LEFT);
+            } while (BatchAllocation::where('ref_no', $refNo)->exists());
+
+            $branches = Branch::where('batch', $batchNum)->get();
+            if ($branches->isEmpty()) {
+                continue;
+            }
+
+            $batch = BatchAllocation::create([
+                'ref_no' => $refNo,
+                'batch_number' => $batchNum,
+                'remarks' => "Auto-created for batch {$batchNum}",
+                'status' => 'draft',
+                'workflow_step' => 1,
+            ]);
+
+            foreach ($branches as $branch) {
+                BranchAllocation::create([
+                    'batch_allocation_id' => $batch->id,
+                    'branch_id' => $branch->id,
+                    'status' => 'pending',
+                ]);
+            }
+
+            $created++;
+        }
+
+        $this->loadBatchAllocations();
+        $this->initializeBatchSteps();
+
+        if ($created > 0) {
+            session()->flash('success', "Created {$created} allocation(s) for all batches." . ($skipped > 0 ? " Skipped {$skipped} (already exist)." : ''));
+        } else {
+            session()->flash('success', $skipped > 0 ? "All {$skipped} batches already have draft allocations." : 'No allocations created.');
+        }
+    }
+
     public function openStepper()
     {
         // Reset to create mode
@@ -1873,6 +2092,8 @@ class Warehouse extends Component
         $this->ref_no = $this->generateRefNo();
         $this->batch_number = '';
         $this->selectedBatchNumbers = []; // Reset selected batches
+        $this->batchPurchaseOrderId = null;
+        $this->selectedPurchaseOrderId = null;
         $this->remarks = '';
 
         // Reset allocations
@@ -1886,15 +2107,12 @@ class Warehouse extends Component
         $this->lastScannedBarcode = '';
         $this->branchRemarks = [];
 
-        // Reset filtering - don't show products by default
-        $this->selectedCategoryId = null;
-        $this->selectedProductFilterName = null;
-        $this->showAllProducts = false; // Changed to false to not show products by default
+        // Reset filtering and modal state
         $this->filteredProducts = [];
-        $this->categorySearch = '';
-        $this->categoryDropdown = false;
-        $this->productSearch = '';
-        $this->productDropdown = false;
+        $this->showAddProductsModal = false;
+        $this->addProductsModalSearch = '';
+        $this->temporarySelectedProducts = [];
+        $this->branchSearch = '';
 
         // Load fresh data
         $this->loadAvailableBatchNumbers();
@@ -1915,10 +2133,12 @@ class Warehouse extends Component
         $this->reset([
             'batch_number',
             'ref_no',
+            'batchPurchaseOrderId',
             'remarks',
             'status',
             'currentBatch',
             'branchRemarks',
+            'branchSearch',
             'selectedProductIdsForAllocation',
             'matrixQuantities',
             'productAllocations',
@@ -1926,7 +2146,10 @@ class Warehouse extends Component
             'scannedQuantities',
             'barcodeInput',
             'scanFeedback',
-            'lastScannedBarcode'
+            'lastScannedBarcode',
+            'showAddProductsModal',
+            'addProductsModalSearch',
+            'temporarySelectedProducts'
         ]);
 
         // Reset to defaults
@@ -1941,7 +2164,7 @@ class Warehouse extends Component
         // Reload batch allocations list
         $this->loadBatchAllocations();
         
-        session()->flash('message', 'Modal Closed, Process Complete!');
+        session()->flash('success', 'Modal Closed, Process Complete!');
     }
 
     public function createBatch()
@@ -1964,6 +2187,7 @@ class Warehouse extends Component
             // UPDATE EXISTING BATCH
             $updateData = [
                 'batch_number' => implode(', ', $this->selectedBatchNumbers),
+                'purchase_order_id' => $this->batchPurchaseOrderId ?: null,
                 'remarks' => $this->remarks,
                 'status' => $this->status,
                 'workflow_step' => $this->currentStep, // Save current step
@@ -1982,13 +2206,18 @@ class Warehouse extends Component
             $this->currentBatch->refresh();
             $this->loadBranchesByBatch();
 
-            session()->flash('message', 'Batch details updated successfully.');
+            // Advance to Step 2 when saving from Step 1 (same as Create flow)
+            $this->currentStep = 2;
+            $this->currentBatch->update(['workflow_step' => 2]);
+
+            session()->flash('success', 'Batch details updated successfully.');
 
         } else {
             // CREATE NEW BATCH
             $batch = BatchAllocation::create([
                 'ref_no' => $this->ref_no,
                 'batch_number' => implode(', ', $this->selectedBatchNumbers),
+                'purchase_order_id' => $this->batchPurchaseOrderId ?: null,
                 'remarks' => $this->remarks,
                 'status' => $this->status,
                 'workflow_step' => 1, // Start at step 1
@@ -2014,7 +2243,7 @@ class Warehouse extends Component
 
             $this->loadBranchesByBatch();
 
-            session()->flash('message', 'Batch allocation created successfully with branches from batches: ' . implode(', ', $this->selectedBatchNumbers));
+            session()->flash('success', 'Batch allocation created successfully with branches from batches: ' . implode(', ', $this->selectedBatchNumbers));
 
             // Move to step 2
             $this->currentStep = 2;
@@ -2049,7 +2278,7 @@ class Warehouse extends Component
         $this->currentBatch->refresh();
         $this->loadBranchesByBatch();
         
-        session()->flash('message', 'Batch details updated successfully.');
+        session()->flash('success', 'Batch details updated successfully.');
         
         // Reload batch allocations list
         $this->loadBatchAllocations();
@@ -2097,7 +2326,7 @@ class Warehouse extends Component
             }
 
             DB::commit();
-            session()->flash('message', 'Branches added to batch successfully.');
+            session()->flash('success', 'Branches added to batch successfully.');
             $this->closeAddBranchesModal();
             $this->loadBatchAllocations();
         } catch (\Exception $e) {
@@ -2110,7 +2339,7 @@ class Warehouse extends Component
     {
         $this->selectedBranchAllocation = $branchAllocation;
         $this->showAddItemsModal = true;
-        $this->availableProducts = Product::orderBy('name')->get();
+        $this->availableProducts = Product::active()->orderBy('name')->get();
     }
 
     public function closeAddItemsModal()
@@ -2149,7 +2378,7 @@ class Warehouse extends Component
             'unit_price' => $this->productUnitPrice,
         ]);
 
-        session()->flash('message', 'Item added to branch successfully.');
+        session()->flash('success', 'Item added to branch successfully.');
         $this->closeAddItemsModal();
         $this->loadBatchAllocations();
     }
@@ -2188,7 +2417,7 @@ class Warehouse extends Component
             'quantity' => $this->editProductQuantity,
         ]);
 
-        session()->flash('message', 'Item updated successfully.');
+        session()->flash('success', 'Item updated successfully.');
         $this->closeEditItemModal();
         $this->loadBatchAllocations();
     }
@@ -2201,7 +2430,7 @@ class Warehouse extends Component
         }
 
         $branchAllocation->delete();
-        session()->flash('message', 'Branch removed from batch successfully.');
+        session()->flash('success', 'Branch removed from batch successfully.');
         $this->loadBatchAllocations();
     }
 
@@ -2213,7 +2442,7 @@ class Warehouse extends Component
         }
 
         $item->delete();
-        session()->flash('message', 'Item removed successfully.');
+        session()->flash('success', 'Item removed successfully.');
         $this->loadBatchAllocations();
     }
 
@@ -2274,7 +2503,7 @@ class Warehouse extends Component
             }
 
             DB::commit();
-            session()->flash('message', 'Batch dispatched successfully and sales allocations have been generated.');
+            session()->flash('success', 'Batch dispatched successfully and sales allocations have been generated.');
             $this->loadBatchAllocations();
         } catch (\Exception $e) {
             DB::rollback();
@@ -2285,14 +2514,118 @@ class Warehouse extends Component
     public function removeBatch(BatchAllocation $batch)
     {
         $batch->delete();
-        session()->flash('message', 'Batch deleted successfully.');
+        session()->flash('success', 'Batch deleted successfully.');
         $this->loadBatchAllocations();
+    }
+
+    /**
+     * Pre-compute scan progress for table rows to avoid N+1 queries in the view.
+     * Returns [batch_id => ['scanned' => int, 'allocated' => int, 'allScanned' => bool, 'fullyScanned' => bool]]
+     */
+    protected function computeScanProgressForBatches($batches): array
+    {
+        $result = [];
+        $minCreatedAt = $batches->min('created_at');
+
+        $editedPairs = collect();
+        if ($minCreatedAt) {
+            $editedPairs = \Spatie\Activitylog\Models\Activity::where('log_name', 'branch_inventory')
+                ->where('description', 'like', 'Updated allocated quantity%')
+                ->where('created_at', '>', $minCreatedAt)
+                ->orderBy('created_at', 'desc')
+                ->limit(5000)
+                ->get()
+                ->map(fn ($a) => [
+                    'barcode' => $a->properties['barcode'] ?? null,
+                    'branch_id' => $a->properties['branch_id'] ?? null,
+                    'created_at' => $a->created_at,
+                ]);
+        }
+
+        foreach ($batches as $batch) {
+            $scannedQty = 0;
+            $allocatedQty = 0;
+            $allScanned = true;
+            $branchAllocationIds = [];
+
+            foreach ($batch->branchAllocations as $ba) {
+                $branchAllocationIds[] = $ba->id;
+                $originalItems = $ba->items->whereNull('box_id');
+                foreach ($originalItems as $item) {
+                    $allocatedQty += $item->quantity ?? 0;
+                }
+            }
+
+            if (empty($branchAllocationIds)) {
+                $result[$batch->id] = ['scanned' => 0, 'allocated' => 0, 'allScanned' => true, 'fullyScanned' => false];
+                continue;
+            }
+
+            $scannedByKey = BranchAllocationItem::whereIn('branch_allocation_id', $branchAllocationIds)
+                ->whereNotNull('box_id')
+                ->selectRaw('branch_allocation_id, product_id, SUM(scanned_quantity) as total')
+                ->groupBy('branch_allocation_id', 'product_id')
+                ->get()
+                ->keyBy(fn ($r) => $r->branch_allocation_id . '_' . $r->product_id);
+
+            foreach ($batch->branchAllocations as $ba) {
+                $originalItems = $ba->items->whereNull('box_id');
+                foreach ($originalItems as $item) {
+                    $key = $ba->id . '_' . $item->product_id;
+                    $allocQty = $item->quantity ?? 0;
+                    $barcode = $item->product->barcode ?? null;
+
+                    $hasBeenEdited = $editedPairs->contains(fn ($p) =>
+                        ($p['barcode'] ?? null) === $barcode
+                        && ($p['branch_id'] ?? null) == $ba->branch_id
+                        && $p['created_at'] > $batch->created_at
+                    );
+
+                    if ($hasBeenEdited) {
+                        $scannedQty += $allocQty;
+                    } else {
+                        $productScanned = (int) ($scannedByKey[$key]->total ?? 0);
+                        $scannedQty += $productScanned;
+                        if ($productScanned < $allocQty) {
+                            $allScanned = false;
+                        }
+                    }
+                }
+            }
+
+            $fullyScanned = $allocatedQty > 0 && $allScanned;
+            $result[$batch->id] = [
+                'scanned' => $scannedQty,
+                'allocated' => $allocatedQty,
+                'allScanned' => $fullyScanned,
+                'fullyScanned' => $fullyScanned,
+            ];
+        }
+
+        return $result;
     }
 
     public function render()
     {
+        $showTable = !$this->showStepper || $this->currentStep >= 3;
+
+        if ($showTable) {
+            $batches = $this->getBatchesQuery()->paginate($this->perPage);
+            foreach ($batches as $batch) {
+                if (!isset($this->openBatches[$batch->id])) {
+                    $this->openBatches[$batch->id] = false;
+                }
+            }
+            $this->initializeBatchSteps($batches);
+            $scanProgress = $this->computeScanProgressForBatches($batches);
+        } else {
+            $batches = new \Illuminate\Pagination\LengthAwarePaginator([], 0, $this->perPage);
+            $scanProgress = [];
+        }
+
         return view('livewire.pages.allocation.warehouse', [
-            'batches' => $this->batchAllocations
+            'batches' => $batches,
+            'scanProgress' => $scanProgress,
         ]);
     }
 
@@ -2308,21 +2641,6 @@ class Warehouse extends Component
         $this->dateTo = '';
     }
 
-    public function updatedSearch()
-    {
-        $this->loadBatchAllocations();
-    }
-
-    public function updatedDateFrom()
-    {
-        $this->loadBatchAllocations();
-    }
-
-    public function updatedDateTo()
-    {
-        $this->loadBatchAllocations();
-    }
-
     public function updatedSelectedProductIdsForAllocation()
     {
         $this->loadMatrix();
@@ -2330,12 +2648,12 @@ class Warehouse extends Component
 
     public function sortBy($field)
     {
+        $this->resetPage();
         if ($this->sortField === $field) {
             $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
         } else {
             $this->sortDirection = 'asc';
         }
-        
         $this->sortField = $field;
         $this->loadBatchAllocations();
     }
@@ -2392,7 +2710,7 @@ class Warehouse extends Component
                 'filename' => $fileName
             ], 300); // Store for 5 minutes
             
-            session()->flash('message', 'VDR CSV file should download automatically. If it doesn\'t, check your browser\'s download folder or downloads bar.');
+            session()->flash('success', 'VDR CSV file should download automatically. If it doesn\'t, check your browser\'s download folder or downloads bar.');
         } catch (\Exception $e) {
             session()->flash('error', 'Failed to export VDR: ' . $e->getMessage());
         }
@@ -2503,7 +2821,7 @@ class Warehouse extends Component
             
             // Close modal and show success
             $this->closeVDRPreview();
-            session()->flash('message', 'VDR file is ready for download. Please check your browser downloads or Downloads folder.');
+            session()->flash('success', 'VDR file is ready for download. Please check your browser downloads or Downloads folder.');
             
         } catch (\Exception $e) {
             session()->flash('error', 'Failed to generate VDR: ' . $e->getMessage());
@@ -2526,7 +2844,7 @@ class Warehouse extends Component
         try {
             // Open print window
             $this->dispatch('open-vdr-print', batchId: $this->selectedBatchForVDR->id);
-            session()->flash('message', 'Opening VDR print view in new window...');
+            session()->flash('success', 'Opening VDR print view in new window...');
         } catch (\Exception $e) {
             session()->flash('error', 'Failed to open VDR print view: ' . $e->getMessage());
         }
@@ -2554,7 +2872,7 @@ class Warehouse extends Component
             ]);
 
             $this->dispatch('open-excel-download', url: $excelUrl);
-            session()->flash('message', 'Opening VDR Excel export in new window...');
+            session()->flash('success', 'Opening VDR Excel export in new window...');
         } catch (\Exception $e) {
             session()->flash('error', 'Failed to export VDR to Excel: ' . $e->getMessage());
         }
@@ -2575,7 +2893,7 @@ class Warehouse extends Component
 
             // Dispatch event to open PDF in new window
             $this->dispatch('open-pdf-download', url: $pdfUrl);
-            session()->flash('message', 'Opening allocation matrix PDF in new window...');
+            session()->flash('success', 'Opening allocation matrix PDF in new window...');
         } catch (\Exception $e) {
             session()->flash('error', 'Failed to export allocation to PDF: ' . $e->getMessage());
         }
@@ -2595,7 +2913,7 @@ class Warehouse extends Component
             ]);
 
             $this->dispatch('open-excel-download', url: $drUrl);
-            session()->flash('message', 'Opening DR Excel export in new window...');
+            session()->flash('success', 'Opening DR Excel export in new window...');
         } catch (\Exception $e) {
             session()->flash('error', 'Failed to export DR to Excel: ' . $e->getMessage());
         }
@@ -2627,7 +2945,7 @@ class Warehouse extends Component
             ]);
 
             $this->dispatch('open-excel-download', url: $drUrl);
-            session()->flash('message', 'Opening DR Excel export for ' . $branchAllocation->branch->name . '...');
+            session()->flash('success', 'Opening DR Excel export for ' . $branchAllocation->branch->name . '...');
         } catch (\Exception $e) {
             session()->flash('error', 'Failed to generate DR for branch: ' . $e->getMessage());
         }
@@ -2681,7 +2999,7 @@ class Warehouse extends Component
             // Dispatch event to JavaScript to handle download
             $this->dispatch('download-delivery-receipt', url: $deliveryReceiptUrl, filename: $filename);
 
-            session()->flash('message', 'Delivery receipt generation started. PDF should download automatically.');
+            session()->flash('success', 'Delivery receipt generation started. PDF should download automatically.');
 
         } catch (\Exception $e) {
             session()->flash('error', 'Failed to generate delivery receipt: ' . $e->getMessage());

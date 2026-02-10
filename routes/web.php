@@ -6,6 +6,7 @@ use App\Livewire\Settings\Password;
 use App\Livewire\Settings\Profile;
 use Illuminate\Support\Facades\Route;
 use App\Livewire\Pages\Warehousestaff\StockIn\Index as StockIn;
+use App\Livewire\Pages\Warehousestaff\StockIn\ExpectedStockIn as ExpectedStockIn;
 
 
 
@@ -21,6 +22,9 @@ use App\Livewire\Pages\Notifications\Index as Notifications;
 // Allocation Management
 use App\Livewire\Pages\Allocation\Warehouse;
 use App\Livewire\Pages\Allocation\Sales;
+use App\Livewire\Pages\Allocation\Scanning;
+use App\Livewire\Pages\Allocation\ForDispatchDrList;
+use App\Livewire\Pages\Allocation\SummaryDrView;
 
 // Product Management
 use App\Livewire\Pages\ProductManagement\Index as ProductManagement;
@@ -47,6 +51,7 @@ use App\Livewire\Pages\Shipment\View as createShipmentView;
 use App\Livewire\Pages\Shipment\QrScannder as ShipmentQrScannder;
 use App\Models\Branch;
 use App\Livewire\Pages\Branch\BranchInventory;
+use App\Livewire\Pages\Branch\BranchInventoryProducts;
 use App\Livewire\Pages\Branch\SalesTracker;
 use App\Livewire\Pages\Branch\BranchTransfer;
 
@@ -115,11 +120,18 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/agentmanagement/profile', AgentProfile::class)
         ->name('agent.profile');
 
-    Route::get('/Branchmanagement/profile', BranchProfile::class)
+    Route::redirect('/Branchmanagement/profile', '/branch-management/profile', 301);
+    Route::get('/branch-management/profile', BranchProfile::class)
         ->name('branch.profile');
     
     Route::get('/branch-inventory', BranchInventory::class)
         ->name('branch.inventory');
+
+    Route::get('/branch-inventory/{branch}', BranchInventoryProducts::class)
+        ->name('branch.inventory.products');
+
+    Route::get('/branch-sales', \App\Livewire\Pages\Branch\BranchSales::class)
+        ->name('branch.sales');
 
     Route::get('/branch-sales-tracker', SalesTracker::class)
         ->name('branch.salesTrack');
@@ -209,8 +221,11 @@ Route::middleware(['auth'])->group(function () {
     // Allocation Management
     Route::prefix('allocation')->name('allocation.')->group(function () {
         Route::get('/warehouse', Warehouse::class)->name('warehouse');
+        Route::get('/for-dispatch', ForDispatchDrList::class)->name('for-dispatch');
+        Route::get('/for-dispatch/{summaryDr}', SummaryDrView::class)->name('for-dispatch.view');
+        Route::get('/manual-stockin', ExpectedStockIn::class)->name('manual-stockin');
         Route::get('/sales', Sales::class)->name('sales');
-        
+        Route::get('/scan', Scanning::class)->name('scan');
     });
 
 

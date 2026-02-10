@@ -65,6 +65,7 @@ enum PurchaseOrderStatus: string
             self::PENDING    => $newStatus === self::APPROVED,
             self::APPROVED   => $newStatus === self::TO_RECEIVE,
             self::TO_RECEIVE => in_array($newStatus, [self::APPROVED, self::RECEIVED]),
+            self::RECEIVED   => $newStatus === self::TO_RECEIVE,
             default          => false,
         };
     }

@@ -20,10 +20,10 @@ class Index extends Component
     public $totalValue = 0;
 
     // Create form properties
-    public $supplier_name, $supplier_code, $supplier_address, $contact_person, $contact_num, $email, $status;
+    public $supplier_name, $supplier_code, $supplier_address, $contact_person, $contact_num, $email, $status, $is_active = true;
     
     // Edit form properties
-    public $edit_name, $edit_code, $edit_address, $edit_contact_person, $edit_contact_num, $edit_email, $edit_status;
+    public $edit_name, $edit_code, $edit_address, $edit_contact_person, $edit_contact_num, $edit_email, $edit_status, $edit_is_active;
     
     // View modal properties
     public $view_name, $view_code, $view_address, $view_contact_person, $view_contact_num, $view_email, $view_status, $view_categories = [];
@@ -33,7 +33,7 @@ class Index extends Component
     public $search = '';
     
     // Filter properties
-    public $statusFilter = '';
+    public $statusFilter = 'active'; // 'active' | 'inactive' | '' (all)
     public $categoryFilter = '';
     
     // Modal states
@@ -48,7 +48,7 @@ class Index extends Component
 
     protected $queryString = [
         'search' => ['except' => ''],
-        'statusFilter' => ['except' => ''],
+        'statusFilter' => ['except' => 'active'],
         'categoryFilter' => ['except' => ''],
     ];
 
@@ -69,7 +69,7 @@ class Index extends Component
         $this->totalSuppliers = Supplier::count();
         
         // 2. Active Suppliers
-        $this->activeSuppliers = Supplier::where('status', 'active')->count();
+        $this->activeSuppliers = Supplier::where('is_active', true)->count();
         
         // 3. Total Orders (Purchase Orders)
         $this->totalOrders = PurchaseOrder::count();
@@ -201,8 +201,8 @@ class Index extends Component
             'contact_person' => $this->contact_person,
             'contact_num' => $this->contact_num,
             'email' => $this->email,
-            'status' => 'active',
-            'is_active' => true,
+            'status' => $this->is_active ? 'active' : 'inactive',
+            'is_active' => $this->is_active,
         ]);
 
         session()->flash('message', 'Supplier profile added successfully.');
@@ -214,6 +214,7 @@ class Index extends Component
             'contact_person',
             'contact_num',
             'email',
+            'is_active',
             'showCreatePanel',
         ]);
 
@@ -236,6 +237,7 @@ class Index extends Component
         $this->edit_contact_num = $supplier->contact_num;
         $this->edit_email = $supplier->email;
         $this->edit_status = $supplier->status;
+        $this->edit_is_active = $supplier->is_active ?? true;
 
         $this->showEditModal = true;
     }
@@ -257,7 +259,8 @@ class Index extends Component
             'contact_person' => filled($this->edit_contact_person) ? $this->edit_contact_person : $supplier->contact_person,
             'contact_num' => filled($this->edit_contact_num) ? $this->edit_contact_num : $supplier->contact_num,
             'email' => filled($this->edit_email) ? $this->edit_email : $supplier->email,
-            'status' => filled($this->edit_status) ? $this->edit_status : $supplier->status,
+            'status' => $this->edit_is_active ? 'active' : 'inactive',
+            'is_active' => $this->edit_is_active ?? true,
         ]);
 
         session()->flash('message', 'Supplier profile updated successfully.');
@@ -272,6 +275,7 @@ class Index extends Component
             'edit_contact_num',
             'edit_email',
             'edit_status',
+            'edit_is_active',
             'showEditModal',
         ]);
 
@@ -365,6 +369,7 @@ class Index extends Component
             'edit_contact_num',
             'edit_email',
             'edit_status',
+            'edit_is_active',
         ]);
     }
 
@@ -412,9 +417,8 @@ class Index extends Component
                     ->orWhere('status', 'like', "%{$search}%");
             });
         })
-        ->when($this->statusFilter, function ($query) {
-            $query->where('status', $this->statusFilter);
-        })
+        ->when($this->statusFilter === 'active', fn ($query) => $query->where('is_active', true))
+        ->when($this->statusFilter === 'inactive', fn ($query) => $query->where('is_active', false))
         ->when($this->categoryFilter, function ($query) {
             $query->where(function ($q) {
                 // Filter by direct supplier categories (JSON field) - check if category ID or name exists in JSON

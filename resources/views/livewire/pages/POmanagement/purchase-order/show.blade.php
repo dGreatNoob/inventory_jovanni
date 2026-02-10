@@ -231,14 +231,9 @@
                     </div>
                 </div>
 
-                <!-- Items Section with Comprehensive Batch Input -->
+                <!-- Items Section (read-only in Approved status) -->
                 <div class="mb-6">
-                    <h4 class="text-md font-medium text-zinc-900 dark:text-white mb-3">📋 Purchase Order Items - Enter Batch Details</h4>
-                    <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 mb-4 border border-blue-200 dark:border-blue-700">
-                        <p class="text-sm text-blue-900 dark:text-blue-100">
-                            <strong>📝 Note:</strong> Please enter batch numbers for tracking purposes.
-                        </p>
-                    </div>
+                    <h4 class="text-md font-medium text-zinc-900 dark:text-white mb-3">📋 Purchase Order Items</h4>
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm text-left text-zinc-500 dark:text-zinc-400">
                             <thead class="text-sm text-zinc-700 uppercase bg-zinc-50 dark:bg-zinc-700 dark:text-zinc-400">
@@ -248,9 +243,6 @@
                                     <th scope="col" class="px-5 py-3 text-left">Supplier Code (SKU)</th>
                                     <th scope="col" class="px-5 py-3 text-left">Category</th>
                                     <th scope="col" class="px-5 py-3 text-left">Ordered Qty</th>
-                                    <th scope="col" class="px-5 py-3 bg-amber-50 dark:bg-amber-900/20">
-                                        Batch Number
-                                    </th>
                                     <th scope="col" class="px-5 py-3 text-right">Unit Price</th>
                                     <th scope="col" class="px-5 py-3 text-right">Total Price</th>
                                 </tr>
@@ -272,13 +264,6 @@
                                         </td>
                                         <td class="px-5 py-4 text-left">
                                             {{ number_format($order->quantity, 0) }} {{ $order->product->uom ?? 'pcs' }}
-                                        </td>
-                                        <!-- Batch Number Input -->
-                                        <td class="px-5 py-4 bg-amber-50 dark:bg-amber-900/20">
-                                            <input type="text"
-                                                wire:model="batch_numbers.{{ $order->id }}"
-                                                class="bg-white border border-amber-300 text-zinc-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2 dark:bg-zinc-700 dark:border-amber-600 dark:text-white"
-                                                placeholder="Enter batch #">
                                         </td>
                                         <td class="px-5 py-4 text-right">₱{{ number_format($order->unit_price, 2) }}</td>
                                         <td class="px-5 py-4 text-right font-semibold text-zinc-900 dark:text-white">
@@ -597,15 +582,7 @@
                                                 {{ number_format($order->expected_qty ?? $order->quantity, 0) }} {{ $order->product->uom ?? 'pcs' }}
                                             </div>
                                         </td>
-                                        <td class="px-5 py-4 bg-amber-50 dark:bg-amber-900/20">
-                                            @if($order->batch_number)
-                                                <span class="text-xs text-zinc-400 dark:text-zinc-500 ">
-                                                    {{ $order->batch_number }}
-                                                </span>
-                                            @else
-                                                <span class="text-xs text-zinc-400 dark:text-zinc-500 italic">No batch assigned</span>
-                                            @endif
-                                        </td>
+                                        <!-- Batch information shown via Product Batches below; no per-line batch on product orders -->
                                     </tr>
                                 @empty
                                     <tr class="bg-white border-b dark:bg-zinc-800 dark:border-zinc-700">
@@ -1293,6 +1270,16 @@
                         </svg>
                         Complete Approval
                     </button>
+                    @if($purchaseOrder->canCloseForFulfillment())
+                        <button type="button"
+                            onclick="const reason = prompt('Reason for closing (optional):'); if (reason !== null) $wire.call('closeForFulfillment', [reason || '']);"
+                            class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-300 dark:bg-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-800 transition-colors">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            Close for fulfillment
+                        </button>
+                    @endif
                 @endcan
             @elseif($purchaseOrder->status === \App\Enums\PurchaseOrderStatus::TO_RECEIVE)
                 @can('receive_goods')
@@ -1320,6 +1307,16 @@
                         </svg>
                         Return to Approved
                     </button>
+                    @if($purchaseOrder->canCloseForFulfillment())
+                        <button type="button"
+                            onclick="const reason = prompt('Reason for closing (optional):'); if (reason !== null) $wire.call('closeForFulfillment', [reason || '']);"
+                            class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-300 dark:bg-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-800 transition-colors">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            Close for fulfillment
+                        </button>
+                    @endif
                 @endcan
             @elseif($purchaseOrder->status === \App\Enums\PurchaseOrderStatus::RECEIVED)
                 @can('view_products')
@@ -1330,6 +1327,18 @@
                         </svg>
                         View Products
                     </a>
+                @endcan
+                @can('po approve')
+                    @if($purchaseOrder->canReopen())
+                        <button type="button"
+                            onclick="const reason = prompt('Reason for reopening (optional):'); if (reason !== null) $wire.call('reopenPurchaseOrder', [reason || '']);"
+                            class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300 dark:bg-indigo-600 dark:hover:bg-indigo-700 dark:focus:ring-indigo-800 transition-colors">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                            Reopen PO
+                        </button>
+                    @endif
                 @endcan
             @endif
         </div>

@@ -121,14 +121,11 @@ class BarcodeController extends Controller
         ]);
 
         $barcode = $request->input('barcode');
-        $exists = Product::where('barcode', $barcode)->exists();
-        
-        $product = null;
-        if ($exists) {
-            $product = Product::where('barcode', $barcode)
-                ->with(['category', 'supplier'])
-                ->first();
-        }
+        $product = Product::active()
+            ->where('barcode', $barcode)
+            ->with(['category', 'supplier'])
+            ->first();
+        $exists = $product !== null;
 
         return response()->json([
             'success' => true,

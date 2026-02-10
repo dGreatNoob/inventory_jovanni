@@ -118,6 +118,9 @@
                     <flux:navlist.item icon="building-storefront" href="{{ route('branch.inventory') }}"
                         :current="request()->routeIs('branch.inventory')" wire:navigate>{{ __('Branch Inventory') }}
                     </flux:navlist.item>
+                    <flux:navlist.item icon="shopping-cart" href="{{ route('branch.sales') }}"
+                        :current="request()->routeIs('branch.sales')" wire:navigate>{{ __('Branch Sales') }}
+                    </flux:navlist.item>
                     <flux:navlist.item icon="users" href="{{ route('agent.profile') }}"
                         :current="request()->routeIs('agent.profile')" wire:navigate>{{ __('Agents') }}
                     </flux:navlist.item>
@@ -220,8 +223,37 @@
                             :current="request()->routeIs('allocation.warehouse')"
                             wire:navigate
                         >
-                            {{ __('Warehouse Transfer') }}
+                            {{ __('Create Allocation') }}
                         </flux:navlist.item>
+
+                        <flux:navlist.item
+                            icon="qr-code"
+                            href="{{ route('allocation.scan') }}"
+                            :current="request()->routeIs('allocation.scan')"
+                            wire:navigate
+                        >
+                            {{ __('Packing / Scan') }}
+                        </flux:navlist.item>
+
+                        <flux:navlist.item
+                            icon="document-text"
+                            href="{{ route('allocation.for-dispatch') }}"
+                            :current="request()->routeIs('allocation.for-dispatch*')"
+                            wire:navigate
+                        >
+                            {{ __('For Dispatch DRs') }}
+                        </flux:navlist.item>
+
+                        @if (Route::has('allocation.manual-stockin'))
+                            <flux:navlist.item
+                                icon="clipboard-document-list"
+                                href="{{ route('allocation.manual-stockin') }}"
+                                :current="request()->routeIs('allocation.manual-stockin')"
+                                wire:navigate
+                            >
+                                {{ __('Manual Stock-In') }}
+                            </flux:navlist.item>
+                        @endif
 
                     <!-- <flux:navlist.item
                             icon="chart-bar"

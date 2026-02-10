@@ -63,7 +63,7 @@ class SupplierCsvSeeder extends Seeder
                     continue;
                 }
 
-                // CSV columns mapping (based on sample data):
+                // CSV columns mapping (based on sample data and legacy schema):
                 // 0: old_id (the original supplier ID from the old system)
                 // 1: created_at
                 // 2: created_by
@@ -72,7 +72,7 @@ class SupplierCsvSeeder extends Seeder
                 // 5: entity_id
                 // 6: name
                 // 7: email
-                // 8: date (some date field, possibly tin_num or other)
+                // 8: disabled (NULL = active, date string = disabled as of that date)
                 // 9: remarks/notes
 
                 if (count($row) < 7) {
@@ -90,8 +90,11 @@ class SupplierCsvSeeder extends Seeder
                 $entityId = $this->parseInt(trim($row[5] ?? '1'));
                 $name = trim($row[6] ?? '');
                 $email = trim($row[7] ?? '');
-                $dateField = trim($row[8] ?? '');
+                $disabledRaw = trim($row[8] ?? '');
                 $remarks = trim($row[9] ?? '');
+
+                // disabled: NULL or empty = active, date string = inactive
+                $isActive = $disabledRaw === '' || strtolower($disabledRaw) === 'null';
 
                 // Validate required fields
                 if (empty($name)) {
@@ -112,8 +115,8 @@ class SupplierCsvSeeder extends Seeder
                     'name' => $name,
                     'email' => !empty($email) ? $email : null,
                     'code' => $this->generateSupplierCode($name, $oldId),
-                    'is_active' => true,
-                    'status' => 'active',
+                    'is_active' => $isActive,
+                    'status' => $isActive ? 'active' : 'inactive',
                 ];
 
                 // Set timestamps if provided

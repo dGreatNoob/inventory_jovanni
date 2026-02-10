@@ -23,7 +23,7 @@
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Product <span class="text-red-500">*</span>
             </label>
-            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Search by name, SKU, or Supplier Code</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Search by name, SKU, Product Number, or Supplier Code</p>
             <div class="relative" wire:click.outside="$set('uploadProductDropdown', false)">
                 <div wire:click="toggleUploadProductDropdown"
                     class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm cursor-pointer flex justify-between items-center min-h-[42px]">
@@ -50,7 +50,7 @@
                         <div class="p-2 border-b border-gray-200 dark:border-gray-600 sticky top-0 bg-white dark:bg-gray-700">
                             <input type="text"
                                 wire:model.live.debounce.200ms="uploadProductSearch"
-                                placeholder="Search by name, SKU, or Supplier Code..."
+                                placeholder="Search by name, SKU, Product Number, or Supplier Code..."
                                 onclick="event.stopPropagation()"
                                 class="block w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-600 dark:text-white dark:placeholder-gray-400" />
                         </div>
@@ -62,7 +62,20 @@
                                     <span class="flex-1 min-w-0">
                                         <span class="font-medium truncate block">{{ $product->name }}</span>
                                         <span class="text-xs text-gray-500 dark:text-gray-400">
-                                            SKU: {{ $product->sku ?? '—' }}{{ $product->supplier_code ? ' · Supplier Code: ' . $product->supplier_code : '' }}
+                                            @if($product->product_number)
+                                                Product #: {{ $product->product_number }}
+                                                @if($product->sku || $product->supplier_code) · @endif
+                                            @endif
+                                            @if($product->sku)
+                                                SKU: {{ $product->sku }}
+                                                @if($product->supplier_code) · @endif
+                                            @endif
+                                            @if($product->supplier_code)
+                                                Supplier Code: {{ $product->supplier_code }}
+                                            @endif
+                                            @if(!$product->product_number && !$product->sku && !$product->supplier_code)
+                                                —
+                                            @endif
                                         </span>
                                     </span>
                                     @if($uploadProductId == $product->id)

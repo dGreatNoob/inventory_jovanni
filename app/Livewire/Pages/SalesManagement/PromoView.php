@@ -43,7 +43,7 @@ class PromoView extends Component
     public function loadPromoData()
     {
         $this->promo = Promo::findOrFail($this->promoId);
-        $this->products = Product::all();
+        $this->products = Product::active()->get();
 
         // Set the view data
         $this->name = $this->promo->name;

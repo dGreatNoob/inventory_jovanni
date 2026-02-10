@@ -1,7 +1,7 @@
 <x-slot:header>Shipment</x-slot:header>
 <x-slot:subheader>Track and manage all outgoing shipments linked to approved sales orders.</x-slot:subheader>
-<div>
-    <div>       
+<div class="pt-4">
+    <div class="space-y-6">
 @if ($errors->any())
     <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded mb-4">
         <ul class="list-disc pl-5">
@@ -12,9 +12,23 @@
     </div>
 @endif
 
-        <!-- Create Sales Order Card -->
-        <x-collapsible-card title="Create New Shipment" open="false" size="full">          
-            <form wire:submit.prevent="createShipment" class="space-y-6">
+        <!-- Create New Shipment (Collapsible - same pattern as Create New Branch) -->
+        <section class="bg-white dark:bg-gray-800 shadow rounded-lg mb-8" x-data="{ open: @entangle('showCreateSection').live }" x-effect="if (open) $el.scrollIntoView({ behavior: 'smooth', block: 'start' })" id="create-shipment-section">
+            <button type="button"
+                @click="open = !open"
+                class="w-full px-6 py-5 flex items-center justify-between text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-inset">
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">Create New Shipment</h3>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Add a new shipment linked to approved sales orders</p>
+                </div>
+                <svg class="w-5 h-5 text-gray-500 dark:text-gray-400 transition-transform duration-200"
+                    :class="{ 'rotate-180': open }"
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
+            <div x-show="open" x-collapse class="border-t border-gray-200 dark:border-gray-700">
+                <form wire:submit.prevent="createShipment" class="p-6 space-y-6">
                         <!-- Order Information Section -->
                         <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
@@ -69,147 +83,102 @@
                                     />
                                 </div>
 
-                                <!-- Batch Selection -->
+                                @if(!$editValue)
+                                <!-- Summary DR Selection (create path) -->
                                 <div>
-                                    <label for="selectedBatchId" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
-                                        Select Batch Allocation
+                                    <label for="selectedSummaryDrId" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                                        Select Summary DR
                                     </label>
-                                    <select id="selectedBatchId"
-                                            wire:model.live="selectedBatchId"
+                                    <select id="selectedSummaryDrId"
+                                            wire:model.live="selectedSummaryDrId"
                                             class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
-                                        <option value="">Select a dispatched batch...</option>
-                                        @foreach($availableBatches as $batch)
-                                            <option value="{{ $batch->id }}">{{ $batch->ref_no }} - {{ \Carbon\Carbon::parse($batch->transaction_date)->format('M d, Y') }}</option>
+                                        <option value="">Select a Summary DR from Packing/Scan...</option>
+                                        @foreach($availableSummaryDRs as $dr)
+                                            <option value="{{ $dr->id }}">{{ $dr->dr_number }} | {{ $dr->branchAllocation->branch->name ?? '—' }} | {{ $dr->branchAllocation->batchAllocation->ref_no ?? '—' }}</option>
                                         @endforeach
                                     </select>
                                 </div>
-
-                                <!-- Branch Selection -->
+                                @else
+                                <!-- Edit: show Summary DR read-only -->
+                                @if($this->editingShipment && $this->editingShipment->deliveryReceipt)
                                 <div>
-                                    <label for="selectedBranchId" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
-                                        Select Branch
-                                    </label>
-                                    <select id="selectedBranchId"
-                                            wire:model.live="selectedBranchId"
-                                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white">
-                                        <option value="">Select a branch...</option>
-                                        @foreach($availableBranches as $branchAlloc)
-                                            <option value="{{ $branchAlloc->id }}">{{ $branchAlloc->branch->name ?? 'Branch #' . $branchAlloc->id }}</option>
-                                        @endforeach
-                                    </select>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Summary DR</label>
+                                    <p class="text-sm font-mono text-gray-900 dark:text-white">{{ $this->editingShipment->deliveryReceipt->dr_number }}</p>
                                 </div>
+                                @endif
+                                @endif
                             </div>
 
-                            <!-- Dispatched Boxes Preview -->
-                            @if($selectedBranchAllocation)
+                            <!-- Single Summary DR Preview (create path) -->
+                            @if(!$editValue && $this->selectedSummaryDr)
                             @php
-                                // Get all dispatched mother DRs for this branch
-                                $dispatchedMotherDRs = \App\Models\DeliveryReceipt::where('branch_allocation_id', $selectedBranchAllocation->id)
-                                    ->where('type', 'mother')
-                                    ->whereHas('box', function($query) {
-                                        $query->where('dispatched_at', '!=', null);
-                                    })
-                                    ->with('box')
-                                    ->orderBy('created_at')
-                                    ->get();
-
-                                $totalScannedItems = 0;
-                                $uniqueProducts = collect();
+                                $drIds = [$this->selectedSummaryDr->id];
+                                $childDRs = \App\Models\DeliveryReceipt::where('parent_dr_id', $this->selectedSummaryDr->id)->pluck('id');
+                                $drIds = array_merge($drIds, $childDRs->toArray());
+                                $drScannedItems = \App\Models\BranchAllocationItem::whereIn('delivery_receipt_id', $drIds)->where('scanned_quantity', '>', 0)->with('product')->get();
+                                $drTotalItems = $drScannedItems->sum('scanned_quantity');
+                                $drUniqueProducts = $drScannedItems->unique('product_id')->count();
                             @endphp
-                            <div>
+                            <div class="mt-4">
                                 <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                                     <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
                                     </svg>
-                                    Dispatched Boxes for {{ $selectedBranchAllocation->branch->name }}
+                                    Summary DR: {{ $this->selectedSummaryDr->dr_number }}
                                 </h4>
-
-                                @if($dispatchedMotherDRs->count() > 0)
-                                    <div class="mb-4">
-                                        <p class="text-sm text-gray-600 dark:text-gray-400">
-                                            1 shipment with {{ $dispatchedMotherDRs->count() }} vehicle{{ $dispatchedMotherDRs->count() > 1 ? 's' : '' }} (one DR per vehicle)
-                                        </p>
-                                    </div>
-
-                                    <div class="space-y-4 max-h-64 overflow-y-auto">
-                                        @foreach($dispatchedMotherDRs as $index => $motherDR)
-                                            @php
-                                                // Get all boxes for this DR chain
-                                                $drIds = [$motherDR->id];
-                                                $childDRs = \App\Models\DeliveryReceipt::where('parent_dr_id', $motherDR->id)->get();
-                                                $drIds = array_merge($drIds, $childDRs->pluck('id')->toArray());
-
-                                                // Get scanned items for this DR chain
-                                                $drScannedItems = \App\Models\BranchAllocationItem::whereIn('delivery_receipt_id', $drIds)
-                                                    ->where('scanned_quantity', '>', 0)
-                                                    ->with('product')
-                                                    ->get();
-
-                                                $drTotalItems = $drScannedItems->sum('scanned_quantity');
-                                                $drUniqueProducts = $drScannedItems->unique('product_id')->count();
-                                                $totalScannedItems += $drTotalItems;
-                                            @endphp
-
-                                            <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
-                                                <div class="flex justify-between items-start mb-2">
-                                                    <div class="flex-1">
-                                                        <h5 class="font-medium text-gray-900 dark:text-white">
-                                                            Vehicle {{ $index + 1 }}: DR {{ $motherDR->dr_number }}
-                                                        </h5>
-                                                        <div class="mt-2">
-                                                            <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Plate Number</label>
-                                                            <input type="text"
-                                                                wire:model.defer="vehiclePlates.{{ $motherDR->id }}"
-                                                                placeholder="{{ $vehicle_plate_number ?: 'e.g. ABC-1234' }}"
-                                                                class="w-full md:w-48 px-3 py-2 text-sm border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                    <div class="text-right">
-                                                        <div class="text-sm font-medium text-gray-900 dark:text-white">
-                                                            {{ $drTotalItems }} items
-                                                        </div>
-                                                        <div class="text-xs text-gray-500 dark:text-gray-400">
-                                                            {{ $drUniqueProducts }} unique products
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-                                                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
-                                                    @foreach($drScannedItems->take(3) as $item)
-                                                        <div class="flex justify-between">
-                                                            <span class="text-gray-600 dark:text-gray-400">{{ $item->product->name }}</span>
-                                                            <span class="font-medium text-gray-900 dark:text-white">{{ $item->scanned_quantity }}</span>
-                                                        </div>
-                                                    @endforeach
-                                                    @if($drScannedItems->count() > 3)
-                                                        <div class="text-gray-500 dark:text-gray-400 italic">
-                                                            +{{ $drScannedItems->count() - 3 }} more products
-                                                        </div>
-                                                    @endif
-                                                </div>
+                                <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <div class="flex-1">
+                                            <p class="text-sm text-gray-600 dark:text-gray-400">{{ $this->selectedSummaryDr->branchAllocation->branch->name ?? '—' }} · {{ $this->selectedSummaryDr->branchAllocation->batchAllocation->ref_no ?? '—' }}</p>
+                                            <div class="mt-2">
+                                                <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Plate Number</label>
+                                                <input type="text"
+                                                    wire:model.defer="vehiclePlates.{{ $this->selectedSummaryDr->id }}"
+                                                    placeholder="{{ $vehicle_plate_number ?: 'e.g. ABC-1234' }}"
+                                                    class="w-full md:w-48 px-3 py-2 text-sm border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                                />
                                             </div>
-                                        @endforeach
-                                    </div>
-
-                                    <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                                        <div class="flex justify-between items-center">
-                                            <span class="text-sm font-medium text-blue-900 dark:text-blue-100">Total Summary:</span>
-                                            <span class="text-sm font-bold text-blue-900 dark:text-blue-100">
-                                                {{ $totalScannedItems }} items across {{ $dispatchedMotherDRs->count() }} vehicle{{ $dispatchedMotherDRs->count() > 1 ? 's' : '' }}
-                                            </span>
+                                        </div>
+                                        <div class="text-right">
+                                            <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $drTotalItems }} items</div>
+                                            <div class="text-xs text-gray-500 dark:text-gray-400">{{ $drUniqueProducts }} unique products</div>
                                         </div>
                                     </div>
-                                @else
-                                    <div class="text-center py-8 border border-gray-200 dark:border-gray-600 rounded-lg">
-                                        <p class="text-gray-500 dark:text-gray-400 mb-2">
-                                            No dispatched boxes found for this branch.
-                                        </p>
-                                        <p class="text-sm text-gray-400 dark:text-gray-500">
-                                            Boxes must be dispatched from warehouse allocation before creating shipments.
-                                        </p>
+                                    @if($drScannedItems->count() > 0)
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs mt-2">
+                                        @foreach($drScannedItems->take(3) as $item)
+                                            <div class="flex justify-between">
+                                                <span class="text-gray-600 dark:text-gray-400">{{ $item->product->name ?? '—' }}</span>
+                                                <span class="font-medium text-gray-900 dark:text-white">{{ $item->scanned_quantity }}</span>
+                                            </div>
+                                        @endforeach
+                                        @if($drScannedItems->count() > 3)
+                                            <div class="text-gray-500 dark:text-gray-400 italic">+{{ $drScannedItems->count() - 3 }} more products</div>
+                                        @endif
                                     </div>
-                                @endif
+                                    @endif
+                                </div>
+                            </div>
+                            @endif
+
+                            <!-- Edit: existing shipment vehicles -->
+                            @if($editValue && $this->editingShipment && $this->editingShipment->vehicles->count() > 0)
+                            <div class="mt-4">
+                                <h4 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Shipment vehicles</h4>
+                                <div class="space-y-4">
+                                    @foreach($this->editingShipment->vehicles as $vehicle)
+                                        <div class="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                                            <div class="flex justify-between items-center">
+                                                <span class="font-medium text-gray-900 dark:text-white">DR {{ $vehicle->deliveryReceipt->dr_number ?? '—' }}</span>
+                                                <input type="text"
+                                                    wire:model.defer="vehiclePlates.{{ $vehicle->delivery_receipt_id }}"
+                                                    placeholder="Plate number"
+                                                    class="w-48 px-3 py-2 text-sm border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                                />
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
                             </div>
                             @endif
                         </div>
@@ -228,9 +197,10 @@
                                 </x-button>
                           
                         </div>
-                    </form>
-        </x-collapsible-card>
-        
+                </form>
+            </div>
+        </section>
+
         @if (session()->has('message'))
             <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 4000)"
                 class="transition duration-500 ease-in-out" x-transition>
@@ -245,47 +215,78 @@
         @endif
             
    
-        <!-- Sales Orders List Card -->
-        <x-collapsible-card title="Shipment List" open="true" size="full">
-            <section>
+        <!-- Shipment List (non-collapsible, like Branch List) -->
+        <section class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+            <!-- Header -->
+            <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
                 <div>
-                    <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
-                        <div class="flex items-center justify-between p-4 pr-10">
-                            <div class="flex space-x-6">
-                                <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                        <svg aria-hidden="true" class="w-5 h-5 text-gray-500 dark:text-gray-400"
-                                            fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                                            <path fill-rule="evenodd"
-                                                d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                                                clip-rule="evenodd" />
-                                        </svg>
-                                    </div>
-                                    <input type="text" wire:model.live.debounce.300ms="search"
-                                        class="block w-64 p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                                        placeholder="Search Shipment..." required="">
-                                </div>
-                                <div class="flex items-center space-x-2">
-                                    <label class="text-sm font-medium text-gray-900 dark:text-white">Status:</label>
-                                    <select wire:model.live="statusFilter"
-                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
-                                        <option value="">All Status</option>
-                                        <option value="ready">Ready</option>
-                                        <option value="shipped">Shipped</option>
-                                        <option value="delivered">Delivered</option>
-                                        <option value="cancelled">Cancelled</option>
-                                        <option value="approved">Approved</option>
-                                        <option value="completed">Completed</option>
-                                        <option value="pending">Pending</option>
-                                        <option value="in_transit">In Transit</option>
-                                        <option value="damaged">Damaged</option>
-                                    </select>
-                                </div>
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">Shipment List</h3>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Track and manage all outgoing shipments</p>
+                </div>
+                <flux:button wire:click="openCreateSection" size="sm" class="flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                    Create Shipment
+                </flux:button>
+            </div>
+
+            <!-- Search and Filter Section -->
+            <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                    <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                <svg aria-hidden="true" class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                                </svg>
                             </div>
+                            <input type="text" wire:model.live.debounce.300ms="search"
+                                class="block w-64 p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-indigo-500 dark:focus:border-indigo-500"
+                                placeholder="Search Shipment...">
                         </div>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-                                <thead class="text-sm text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                        <div>
+                            <label for="statusFilter" class="sr-only">Status</label>
+                            <select id="statusFilter" wire:model.live="statusFilter"
+                                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-40 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-indigo-500 dark:focus:border-indigo-500">
+                                <option value="">All Status</option>
+                                <option value="ready">Ready</option>
+                                <option value="shipped">Shipped</option>
+                                <option value="delivered">Delivered</option>
+                                <option value="cancelled">Cancelled</option>
+                                <option value="approved">Approved</option>
+                                <option value="completed">Completed</option>
+                                <option value="pending">Pending</option>
+                                <option value="in_transit">In Transit</option>
+                                <option value="damaged">Damaged</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <label class="text-sm font-medium text-gray-900 dark:text-white whitespace-nowrap">Per Page</label>
+                        <select wire:model.live="perPage"
+                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block w-24 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-indigo-500 dark:focus:border-indigo-500">
+                            <option value="5">5</option>
+                            <option value="10">10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Info -->
+            <div class="px-6 py-3 text-sm text-gray-700 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50">
+                @if($shipments->total() > 0)
+                    <span class="font-semibold text-gray-900 dark:text-white">{{ $shipments->total() }}</span> shipments found
+                @else
+                    <span class="font-semibold text-gray-900 dark:text-white">No shipments found</span>
+                @endif
+            </div>
+
+            <!-- Table -->
+            <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                <thead class="bg-gray-50 dark:bg-gray-700">
                                     <tr>
                                         <th scope="col" class="px-6 py-3">Shipment Reference Number</th>
                                         <th scope="col" class="px-6 py-3">Vehicles / DR</th>
@@ -293,13 +294,13 @@
                                         <th scope="col" class="px-6 py-3">Shipping Date</th>
                                         <th scope="col" class="px-6 py-3">Status</th>
                                         <th scope="col" class="px-6 py-3">Delivery Method</th>
-                                        <th scope="col" class="px-6 py-3">Action</th>
+                                        <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Action</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                                     @forelse ($shipments as $data)
-                                        <tr wire:key
-                                            class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700 border-gray-200">
+                                        <tr wire:key="shipment-{{ $data->id }}"
+                                            class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                                             <th scope="row" class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
                                                 {{ ucfirst($data->shipping_plan_num) }}
                                             </th>
@@ -352,8 +353,8 @@
                                         </tr>
                                     @empty
                                     <tr>
-                                        <td colspan="6" class="text-center py-4">
-                                            No shipping request found.
+                                        <td colspan="7" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                                            No shipments found.
                                         </td>
                                     </tr>
                                     @endforelse
@@ -361,29 +362,10 @@
                             </table>
                         </div>
 
-                        <div class="py-4 px-3">
-                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                                <div class="flex items-center space-x-4">
-                                    <label for="perPage" class="text-sm font-medium text-gray-900 dark:text-white">Per Page</label>
-                                    <select
-                                        id="perPage"
-                                        wire:model.live="perPage"
-                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                                        <option value="5">5</option>
-                                        <option value="10">10</option>
-                                        <option value="20">20</option>
-                                        <option value="50">50</option>
-                                        <option value="100">100</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    {{$shipments->links()}}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </x-collapsible-card>
+            <!-- Pagination -->
+            <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+                {{ $shipments->links('livewire::tailwind', ['scrollTo' => false]) }}
+            </div>
+        </section>
     </div>
 </div>

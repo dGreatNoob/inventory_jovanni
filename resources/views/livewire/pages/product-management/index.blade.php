@@ -196,6 +196,27 @@
                             </select>
                         </div>
 
+                        <!-- Product Type (Placeholder filter) -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Product Type</label>
+                            <select wire:model.live="productTypeFilter"
+                                    class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 sm:text-sm">
+                                <option value="">All Types</option>
+                                <option value="placeholder">Pending (placeholder only)</option>
+                            </select>
+                        </div>
+
+                        <!-- Status (Active/Disabled) -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Status</label>
+                            <select wire:model.live="statusFilter"
+                                    class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 sm:text-sm">
+                                <option value="active">Active only</option>
+                                <option value="disabled">Disabled only</option>
+                                <option value="all">All</option>
+                            </select>
+                        </div>
+
                         <!-- Price Range -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Price Range</label>
@@ -209,6 +230,22 @@
                                        placeholder="Max"
                                        class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 sm:text-sm">
                             </div>
+                        </div>
+
+                        <!-- Sort by -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Sort by</label>
+                            <select wire:model.live="sortOption"
+                                    class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 sm:text-sm">
+                                <option value="created_at_desc">Created date (newest first)</option>
+                                <option value="created_at_asc">Created date (oldest first)</option>
+                                <option value="name_asc">Name (A–Z)</option>
+                                <option value="name_desc">Name (Z–A)</option>
+                                <option value="price_asc">Price (low to high)</option>
+                                <option value="price_desc">Price (high to low)</option>
+                                <option value="latest_stock_movement_desc">Latest stock movement (newest first)</option>
+                                <option value="latest_stock_movement_asc">Latest stock movement (oldest first)</option>
+                            </select>
                         </div>
                     </div>
 

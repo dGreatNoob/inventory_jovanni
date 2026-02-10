@@ -208,6 +208,16 @@
                                                         />
                                                         @error('email') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                                     </div>
+
+                                                    <div class="flex items-center">
+                                                        <input type="checkbox"
+                                                            id="is_active"
+                                                            wire:model="is_active"
+                                                            class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700">
+                                                        <label for="is_active" class="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                            Active (supplier is enabled and visible in searches)
+                                                        </label>
+                                                    </div>
                                                 </div>
                                             </section>
 
@@ -355,9 +365,9 @@
                             wire:model.live="statusFilter"
                             class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                         >
-                            <option value="">All Status</option>
-                            <option value="active">Active</option>
-                            <option value="inactive">Inactive</option>
+                            <option value="">All</option>
+                            <option value="active">Active only</option>
+                            <option value="inactive">Inactive only</option>
                         </select>
 
                         <select 
@@ -543,17 +553,13 @@
 
                                     <!-- Status -->
                                     <td class="px-6 py-4">
-                                        @if($item->status === 'active')
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300">
+                                        @if($item->is_active)
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
                                                 Active
                                             </span>
-                                        @elseif($item->status === 'inactive')
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">
-                                                Inactive
-                                            </span>
                                         @else
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
-                                                -
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
+                                                Inactive
                                             </span>
                                         @endif
                                     </td>
@@ -774,29 +780,21 @@
                                                 </div>
                                             </section>
 
-                                            <!-- Additional Information -->
+                                            <!-- Status -->
                                             <section class="space-y-4">
                                                 <div>
-                                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Additional Information</h3>
-                                                    <p class="text-sm text-gray-500 dark:text-gray-400">Optional details and status.</p>
+                                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Status</h3>
+                                                    <p class="text-sm text-gray-500 dark:text-gray-400">Enable or disable this supplier.</p>
                                                 </div>
 
-                                                <div class="space-y-4">
-                                                    <div>
-                                                        <label for="edit_status" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                                                            Status
-                                                        </label>
-                                                        <select 
-                                                            id="edit_status" 
-                                                            wire:model="edit_status"
-                                                            class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
-                                                        >
-                                                            <option value="">Select status</option>
-                                                            <option value="active">Active</option>
-                                                            <option value="inactive">Inactive</option>
-                                                        </select>
-                                                        @error('edit_status') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
-                                                    </div>
+                                                <div class="flex items-center">
+                                                    <input type="checkbox"
+                                                        id="edit_is_active"
+                                                        wire:model="edit_is_active"
+                                                        class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700">
+                                                    <label for="edit_is_active" class="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                        Active (supplier is enabled and visible in searches)
+                                                    </label>
                                                 </div>
                                             </section>
                                         </div>

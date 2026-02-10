@@ -105,27 +105,88 @@ class PurchaseOrder extends Model
 
     public function isPending(): bool
     {
-        return $this->status === PurchaseOrderStatus::PENDING->value;
+        return $this->status === PurchaseOrderStatus::PENDING;
     }
 
     public function isApproved(): bool
     {
-        return $this->status === PurchaseOrderStatus::APPROVED->value;
+        return $this->status === PurchaseOrderStatus::APPROVED;
     }
 
     public function isToReceive(): bool
     {
-        return $this->status === PurchaseOrderStatus::TO_RECEIVE->value;
+        return $this->status === PurchaseOrderStatus::TO_RECEIVE;
     }
 
     public function isReceived(): bool
     {
-        return $this->status === PurchaseOrderStatus::RECEIVED->value;
+        return $this->status === PurchaseOrderStatus::RECEIVED;
     }
 
     public function isCancelled(): bool
     {
-        return $this->status === PurchaseOrderStatus::CANCELLED->value;
+        return $this->status === PurchaseOrderStatus::CANCELLED;
+    }
+
+    /**
+     * Conceptual lifecycle helpers
+     */
+    public function isOpen(): bool
+    {
+        // Open = not fully received or cancelled
+        return ! $this->isClosed();
+    }
+
+    public function isClosed(): bool
+    {
+        // Treat received and cancelled as terminal/closed states
+        return $this->isReceived() || $this->isCancelled();
+    }
+
+    public function isFulfilled(): bool
+    {
+        // Fulfilled when all items are received
+        return $this->isReceived();
+    }
+
+    public function isAllocatable(): bool
+    {
+        // Eligible for allocation while PO is open and not cancelled
+        return $this->isOpen() && ! $this->isCancelled();
+    }
+
+    public function canEdit(): bool
+    {
+        // Allow editing while PO is open and not fully received/cancelled
+        return $this->isOpen();
+    }
+
+    public function canReceive(): bool
+    {
+        // Can receive while not cancelled or fully received
+        return ! $this->isCancelled() && ! $this->isFulfilled();
+    }
+
+    public function canClose(): bool
+    {
+        return ! $this->isClosed();
+    }
+
+    /**
+     * Can the user manually close this PO for fulfillment (e.g. short shipment)?
+     * True when TO_RECEIVE or APPROVED and not cancelled.
+     */
+    public function canCloseForFulfillment(): bool
+    {
+        return ! $this->isCancelled() && ($this->isToReceive() || $this->isApproved());
+    }
+
+    /**
+     * Can this PO be reopened (RECEIVED → TO_RECEIVE) to receive more or edit lines?
+     */
+    public function canReopen(): bool
+    {
+        return $this->isReceived();
     }
 
     // Delivery calculations

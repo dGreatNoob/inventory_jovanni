@@ -88,7 +88,7 @@ class PurchaseOrders extends Component
             ->limit(5)
             ->get();
 
-        $suppliers = Supplier::orderBy('name')->get();
+        $suppliers = Supplier::active()->orderBy('name')->get();
 
         return view('livewire.pages.reports.purchase-orders', compact(
             'totalPOs', 'pendingPOs', 'toReceivePOs', 'receivedPOs', 'totalValue',

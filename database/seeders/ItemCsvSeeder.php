@@ -95,6 +95,8 @@ class ItemCsvSeeder extends Seeder
         $lineNumber = 0;
         $skipped = 0;
         $processed = 0;
+        $created = 0;
+        $updated = 0;
         $chunkProcessed = 0;
 
         DB::beginTransaction();
@@ -128,13 +130,13 @@ class ItemCsvSeeder extends Seeder
                 // 15: price_note (e.g., "SAL1")
                 // 16: cost
                 // 17: remarks/weight (e.g., "WT:3599.00 ", "WT:2400.00", " ")
-                // 18: disabled (0 or 1)
+                // 18: shelf_life_days (0, 365, 180, etc.)
                 // 19: pict_name (image filename, can be empty)
-                // 20: NULL
+                // 20: disabled (NULL = active, date string = disabled as of that date)
 
-                if (count($row) < 19) {
+                if (count($row) < 21) {
                     $skipped++;
-                    $this->command->warn("Line {$lineNumber}: Insufficient columns (expected at least 19, got " . count($row) . ")");
+                    $this->command->warn("Line {$lineNumber}: Insufficient columns (expected at least 21, got " . count($row) . ")");
                     continue;
                 }
 
@@ -157,8 +159,11 @@ class ItemCsvSeeder extends Seeder
                 $priceNote = trim($row[15] ?? '');
                 $cost = $this->parseDecimal(trim($row[16] ?? '0'));
                 $remarks = trim($row[17] ?? '');
-                $disabled = $this->parseBoolean(trim($row[18] ?? '0'));
+                $shelfLifeDaysRaw = $this->parseInt(trim($row[18] ?? '0'));
+                $shelfLifeDays = $shelfLifeDaysRaw && $shelfLifeDaysRaw > 0 ? $shelfLifeDaysRaw : null;
                 $pictName = trim($row[19] ?? '');
+                $disabledRaw = trim($row[20] ?? '');
+                $disabled = $disabledRaw !== '' && strtolower($disabledRaw) !== 'null';
 
                 // Validate required fields
                 if (empty($supplierId)) {
@@ -258,6 +263,7 @@ class ItemCsvSeeder extends Seeder
                     'original_price' => $price, // Use price as original_price if not specified
                     'price_note' => !empty($priceNote) ? $priceNote : null,
                     'cost' => $cost,
+                    'shelf_life_days' => $shelfLifeDays,
                     'pict_name' => !empty($pictName) ? $pictName : null,
                     'disabled' => $disabled,
                     'created_by' => $finalCreatedBy,
@@ -289,10 +295,12 @@ class ItemCsvSeeder extends Seeder
                 if ($existingProduct) {
                     // Update existing product
                     $existingProduct->update($productData);
+                    $updated++;
                     $this->command->info("Line {$lineNumber}: Updated product - {$productName} (ID: {$existingProduct->id})");
                 } else {
                     // Create new product
                     $product = Product::create($productData);
+                    $created++;
                     $this->command->info("Line {$lineNumber}: Created product - {$productName} (ID: {$product->id})");
                 }
 
@@ -318,8 +326,12 @@ class ItemCsvSeeder extends Seeder
 
             $this->command->info("\n=== Import Summary ===");
             $this->command->info("Total lines processed: {$lineNumber}");
-            $this->command->info("Products imported/updated: {$processed}");
+            $this->command->info("Total operations: {$processed} (creates + updates)");
+            $this->command->info("  - New products created: {$created}");
+            $this->command->info("  - Existing products updated: {$updated}");
             $this->command->info("Lines skipped: {$skipped}");
+            $this->command->info("\n💡 Note: The 'Total operations' count includes both creates and updates.");
+            $this->command->info("   The actual unique product count in the database may be lower if some products were updated multiple times.");
 
         } catch (\Throwable $e) {
             DB::rollBack();

@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Pages\Shipment;
 
+use App\Models\DeliveryReceipt;
 use App\Models\SalesOrder;
 use App\Models\Shipment;
 use App\Models\ShipmentVehicle;
@@ -41,7 +42,11 @@ class Index extends Component
     public $editValue = null;
     public $statusFilter = '';
 
-    // Batch and Branch selection
+    // Summary DR selection (create path)
+    public $availableSummaryDRs = [];
+    public $selectedSummaryDrId = null;
+
+    // Batch and Branch (edit path and legacy)
     public $availableBatches = [];
     public $selectedBatchId = null;
     public $availableBranches = [];
@@ -58,8 +63,17 @@ class Index extends Component
         'cargo',
     ];
 
-    public function updatingSearch()     { $this->resetPage(); }
-    public function updatingFilterStatus(){ $this->resetPage(); }
+    public $showCreateSection = false;
+
+    public function updatingSearch()        { $this->resetPage(); }
+    public function updatingFilterStatus()  { $this->resetPage(); }
+    public function updatingStatusFilter()  { $this->resetPage(); }
+    public function updatedPerPage()        { $this->resetPage(); }
+
+    public function openCreateSection()
+    {
+        $this->showCreateSection = true;
+    }
 
     public function mount()
     {
@@ -70,7 +84,70 @@ class Index extends Component
 
         $this->salesOrders = SalesOrder::where('status', 'released')->with('customer')->get();
 
-        $this->loadAvailableBatches();
+        $this->loadAvailableSummaryDRs();
+
+        $summaryDrId = request()->query('summary_dr_id');
+        if ($summaryDrId && $this->isEligibleSummaryDrId($summaryDrId)) {
+            $this->selectedSummaryDrId = (int) $summaryDrId;
+            $this->resetVehiclePlatesForSummaryDr();
+        }
+    }
+
+    public function loadAvailableSummaryDRs()
+    {
+        $this->availableSummaryDRs = DeliveryReceipt::with(['branchAllocation.branch', 'branchAllocation.batchAllocation', 'box'])
+            ->where('type', 'mother')
+            ->whereHas('box', fn ($q) => $q->whereNotNull('dispatched_at'))
+            ->whereDoesntHave('shipmentVehicles', function ($svQuery) {
+                $svQuery->whereHas('shipment', fn ($s) => $s->whereIn('shipping_status', ['completed', 'cancelled', 'delivered']));
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+    }
+
+    protected function isEligibleSummaryDrId($id): bool
+    {
+        return DeliveryReceipt::where('id', $id)
+            ->where('type', 'mother')
+            ->whereHas('box', fn ($q) => $q->whereNotNull('dispatched_at'))
+            ->whereDoesntHave('shipmentVehicles', function ($svQuery) {
+                $svQuery->whereHas('shipment', fn ($s) => $s->whereIn('shipping_status', ['completed', 'cancelled', 'delivered']));
+            })
+            ->exists();
+    }
+
+    public function updatedSelectedSummaryDrId($value = null)
+    {
+        $this->selectedSummaryDrId = $value ? (int) $value : null;
+        $this->resetVehiclePlatesForSummaryDr();
+    }
+
+    protected function resetVehiclePlatesForSummaryDr()
+    {
+        $this->vehiclePlates = [];
+        if (!$this->selectedSummaryDrId) {
+            return;
+        }
+        $this->vehiclePlates[$this->selectedSummaryDrId] = '';
+    }
+
+    /** Selected Summary DR for preview (create path) */
+    public function getSelectedSummaryDrProperty(): ?DeliveryReceipt
+    {
+        if (!$this->selectedSummaryDrId) {
+            return null;
+        }
+        return DeliveryReceipt::with(['branchAllocation.branch', 'branchAllocation.batchAllocation', 'box'])
+            ->find($this->selectedSummaryDrId);
+    }
+
+    /** Shipment being edited (edit path) */
+    public function getEditingShipmentProperty(): ?Shipment
+    {
+        if (!$this->editValue) {
+            return null;
+        }
+        return Shipment::with(['vehicles.deliveryReceipt', 'branchAllocation.branch'])->find($this->editValue);
     }
 
     public function loadAvailableBatches()
@@ -153,8 +230,9 @@ class Index extends Component
 
         if ($result) {
             if ($result->shipping_status == 'pending') {
-                $this->shipping_plan_num    = $result->shipping_plan_num;
-                $this->scheduled_ship_date  = $result->scheduled_ship_date;
+                $this->showCreateSection   = true;
+                $this->shipping_plan_num   = $result->shipping_plan_num;
+                $this->scheduled_ship_date = $result->scheduled_ship_date;
                 $this->vehicle_plate_number = $result->vehicle_plate_number;
                 $this->delivery_method      = $result->delivery_method;
                 $this->editValue            = $id;
@@ -182,7 +260,7 @@ class Index extends Component
 
     public function createShipment()
     {
-        $this->validate([
+        $rules = [
             'shipping_plan_num'   => ['required', 'string', 'max:255', Rule::unique('shipments', 'shipping_plan_num')->ignore($this->editValue)],
             'scheduled_ship_date' => ['required', 'date', function ($attribute, $value, $fail) {
                 if (strtotime($value) < strtotime('today')) {
@@ -191,60 +269,55 @@ class Index extends Component
             }],
             'delivery_method'     => 'required|string|max:255',
             'vehicle_plate_number'=> 'nullable|string|max:255',
-            'selectedBranchId'    => ['required', 'exists:branch_allocations,id'],
-        ]);
+        ];
+
+        if (is_null($this->editValue)) {
+            $rules['selectedSummaryDrId'] = ['required', 'integer', function ($attribute, $value, $fail) {
+                if (!$this->isEligibleSummaryDrId($value)) {
+                    $fail('The selected Summary DR is not valid or has already been assigned to a shipment.');
+                }
+            }];
+        } else {
+            $rules['selectedBranchId'] = ['required', 'exists:branch_allocations,id'];
+        }
+
+        $this->validate($rules);
 
         DB::beginTransaction();
 
         try {
             if (is_null($this->editValue)) {
-                $branchAllocation = BranchAllocation::find($this->selectedBranchId);
-
-                $motherDRs = \App\Models\DeliveryReceipt::where('branch_allocation_id', $this->selectedBranchId)
-                    ->where('type', 'mother')
-                    ->whereHas('box', fn ($q) => $q->whereNotNull('dispatched_at'))
-                    ->orderBy('created_at')
-                    ->get();
-
-                if ($motherDRs->isEmpty()) {
-                    throw new \Exception('No dispatched mother DRs found for this branch allocation.');
+                $motherDR = DeliveryReceipt::with('branchAllocation')->find($this->selectedSummaryDrId);
+                if (!$motherDR || $motherDR->type !== 'mother') {
+                    throw new \Exception('Invalid Summary DR selected.');
+                }
+                if (ShipmentVehicle::where('delivery_receipt_id', $motherDR->id)->exists()) {
+                    throw new \Exception("DR {$motherDR->dr_number} has already been assigned to a shipment.");
                 }
 
-                // Check if any DR already has a shipment vehicle
-                foreach ($motherDRs as $motherDR) {
-                    if (ShipmentVehicle::where('delivery_receipt_id', $motherDR->id)->exists()) {
-                        throw new \Exception("DR {$motherDR->dr_number} has already been assigned to a shipment.");
-                    }
-                }
+                $branchAllocation = $motherDR->branchAllocation;
+                $plate = $this->vehiclePlates[$motherDR->id] ?? $this->vehicle_plate_number ?? null;
 
-                // Create ONE shipment
                 $shipment = Shipment::create([
                     'shipping_plan_num'    => $this->shipping_plan_num,
                     'sales_order_id'       => null,
                     'batch_allocation_id'  => $branchAllocation->batch_allocation_id,
-                    'branch_allocation_id' => $this->selectedBranchId,
-                    'delivery_receipt_id'  => $motherDRs->first()->id, // Keep for backward compat
+                    'branch_allocation_id' => $branchAllocation->id,
+                    'delivery_receipt_id'  => $motherDR->id,
                     'customer_id'          => null,
                     'scheduled_ship_date'  => $this->scheduled_ship_date,
                     'delivery_method'      => $this->delivery_method,
                     'vehicle_plate_number' => $this->vehicle_plate_number,
                 ]);
 
-                // Create N shipment vehicles (one per mother DR)
-                foreach ($motherDRs as $index => $motherDR) {
-                    $plate = $this->vehiclePlates[$motherDR->id] ?? $this->vehicle_plate_number ?? null;
-                    ShipmentVehicle::create([
-                        'shipment_id'          => $shipment->id,
-                        'plate_number'         => $plate,
-                        'delivery_receipt_id'  => $motherDR->id,
-                        'sort_order'           => $index,
-                    ]);
-                }
+                ShipmentVehicle::create([
+                    'shipment_id'         => $shipment->id,
+                    'plate_number'        => $plate,
+                    'delivery_receipt_id' => $motherDR->id,
+                    'sort_order'          => 0,
+                ]);
 
-                $vehicleCount = $motherDRs->count();
-                $message = $vehicleCount === 1
-                    ? 'Shipment created successfully with 1 vehicle.'
-                    : "Shipment created successfully with {$vehicleCount} vehicles.";
+                $message = 'Shipment created successfully with 1 vehicle.';
 
             } else {
                 $shipment = Shipment::find($this->editValue);
@@ -289,6 +362,7 @@ class Index extends Component
             'vehicle_plate_number',
             'vehiclePlates',
             'editValue',
+            'selectedSummaryDrId',
             'selectedBatchId',
             'selectedBranchId',
             'selectedBranchAllocation',
@@ -299,7 +373,9 @@ class Index extends Component
         $date = now()->format('Ymd');
         $latest = Shipment::count() + 1;
         $this->shipping_plan_num = 'SHIP-' . $date . '-' . str_pad($latest, 3, '0', STR_PAD_LEFT);
+        $this->loadAvailableSummaryDRs();
         $this->resetVehiclePlates();
+        $this->resetVehiclePlatesForSummaryDr();
     }
 
     public function markAsShipped($id)

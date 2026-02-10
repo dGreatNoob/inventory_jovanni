@@ -255,14 +255,12 @@
                                                                         @if(empty($selected_products))
                                                                             <span class="text-gray-400">Search and select products...</span>
                                                                         @else
-                                                                            @foreach($this->availableProducts as $product)
-                                                                                @if(in_array($product->id, $selected_products))
+                                                                            @foreach($this->selectedProductModels as $product)
                                                                                     <span class="inline-flex flex-col items-start bg-gray-600 text-white text-xs font-medium px-2 py-1 rounded-full">
                                                                                         <span>{{ $product->remarks ?? $product->name }}</span>
                                                                                         <span class="text-[11px] text-gray-200">SKU: {{ $product->sku ?? '—' }} · Supplier Code (SKU): {{ $product->supplier_code ?? '—' }}</span>
                                                                                         <span class="text-[11px] text-gray-200">₱{{ number_format($product->price ?? 0, 0) }}</span>
                                                                                     </span>
-                                                                                @endif
                                                                             @endforeach
                                                                         @endif
                                                                     @else
@@ -1079,13 +1077,11 @@
                                     <div>
                                         <h4 class="text-sm font-medium text-gray-500 dark:text-gray-300 mb-3">Products</h4>
                                         <div class="flex flex-wrap gap-2">
-                                            @forelse($products as $product)
-                                                @if(in_array($product->id, $view_selected_products ?? []))
-                                                    <span class="inline-flex items-center bg-gray-100 text-gray-800 text-xs font-medium px-3 py-1.5 rounded-full dark:bg-gray-600 dark:text-gray-300">
-                                                        {{ $product->name }}
-                                                        <span class="ml-1 text-gray-600 dark:text-gray-400 text-[11px] font-medium">₱{{ number_format($product->price, 0) }}</span>
-                                                    </span>
-                                                @endif
+                                            @forelse($viewModalProducts as $product)
+                                                <span class="inline-flex items-center bg-gray-100 text-gray-800 text-xs font-medium px-3 py-1.5 rounded-full dark:bg-gray-600 dark:text-gray-300">
+                                                    {{ $product->name }}
+                                                    <span class="ml-1 text-gray-600 dark:text-gray-400 text-[11px] font-medium">₱{{ number_format($product->price ?? 0, 0) }}</span>
+                                                </span>
                                             @empty
                                                 <span class="text-gray-400 text-sm">-</span>
                                             @endforelse

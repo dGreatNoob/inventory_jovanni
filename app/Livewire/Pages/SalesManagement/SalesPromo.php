@@ -60,14 +60,14 @@ class SalesPromo extends Component
     public $filterStartDate = '';
     public $filterEndDate = '';
 
-    // Load batch allocations and products
+    // Load batch allocations and branches (products loaded on-demand to avoid memory issues)
     public function mount()
     {
         $this->batchAllocations = BatchAllocation::with(['branchAllocations.items.product'])
             ->orderBy('ref_no', 'desc')
             ->get();
         $this->branches = Branch::orderBy('name')->get();
-        $this->products = Product::orderBy('name')->get();
+        $this->products = collect();
         
         // Reset form fields when component mounts
         $this->resetForm();
@@ -303,7 +303,7 @@ class SalesPromo extends Component
             $productConflicts = $conflictingPromos->groupBy('product_id');
             
             foreach ($productConflicts as $productId => $conflicts) {
-                $productName = $this->products->firstWhere('id', $productId)->name ?? 'Unknown Product';
+                $productName = Product::find($productId)?->name ?? 'Unknown Product';
                 $promoNames = $conflicts->pluck('promo.name')->unique()->implode(', ');
                 
                 $errorMessage = "Product '{$productName}' is already in promotion(s): {$promoNames} during the selected dates.";
@@ -323,8 +323,9 @@ class SalesPromo extends Component
 
     /**
      * Check if a product is disabled due to overlap (simplified - no batch requirement)
+     * @param iterable|null $promosCollection Pre-loaded promos to avoid repeated DB queries
      */
-    private function isProductDisabled($productId, $startDate, $endDate, $excludePromoId = null)
+    private function isProductDisabled($productId, $startDate, $endDate, $excludePromoId = null, $promosCollection = null)
     {
         if (empty($startDate) || empty($endDate)) {
             return false;
@@ -333,12 +334,14 @@ class SalesPromo extends Component
         $newStart = Carbon::parse($startDate);
         $newEnd = Carbon::parse($endDate);
 
-        // Get all promos that might conflict
-        $allPromos = Promo::when($excludePromoId, function($query) use ($excludePromoId) {
+        $allPromos = $promosCollection ?? Promo::when($excludePromoId, function($query) use ($excludePromoId) {
             $query->where('id', '!=', $excludePromoId);
         })->get();
 
         foreach ($allPromos as $existingPromo) {
+            if ($excludePromoId && (int) $existingPromo->id === (int) $excludePromoId) {
+                continue;
+            }
             $existingStart = Carbon::parse($existingPromo->startDate);
             $existingEnd = Carbon::parse($existingPromo->endDate);
 
@@ -467,42 +470,43 @@ class SalesPromo extends Component
         // No special handling needed
     }
 
-    // Computed property to get all available products (allocated and not fully sold)
-    public function getAvailableProductsProperty()
+    /** Products for selected chips (create form) - only loads selected IDs */
+    public function getSelectedProductModelsProperty()
     {
-        // Get all product IDs from branch allocation items that have available quantity
-        // Only include products that have available quantity (quantity - sold_quantity > 0)
-        // This ensures sold products are excluded from promo creation
-        $productIds = BranchAllocationItem::selectRaw('product_id, SUM(quantity - COALESCE(sold_quantity, 0)) as available_qty')
-            ->groupBy('product_id')
-            ->havingRaw('available_qty > 0')
-            ->pluck('product_id');
-
-        $products = Product::whereIn('id', $productIds)->orderBy('name')->get();
-        
-        // Filter out products that would cause overlap conflicts
-        return $products->map(function ($product) {
-            $product->isDisabled = $this->isProductDisabled($product->id, $this->startDate, $this->endDate);
-            return $product;
-        });
+        if (empty($this->selected_products)) {
+            return collect();
+        }
+        return Product::whereIn('id', $this->selected_products)->orderBy('name')->get();
     }
 
-    // Filtered available products for create form (searchable dropdown)
+    /** Search-driven product dropdown (create form) - max 100 results to avoid freeze */
     public function getFilteredAvailableProductsProperty()
     {
-        $products = $this->availableProducts;
-        $query = trim($this->productSearch);
-        if ($query === '') {
-            return $products;
+        $query = trim($this->productSearch ?? '');
+        $like = $query !== '' ? '%' . $query . '%' : null;
+
+        $q = Product::query()
+            ->active()
+            ->orderBy('name')
+            ->limit(100);
+
+        if ($like !== null) {
+            $q->where(function ($qb) use ($like) {
+                $qb->where('name', 'like', $like)
+                    ->orWhere('remarks', 'like', $like)
+                    ->orWhere('sku', 'like', $like)
+                    ->orWhere('supplier_code', 'like', $like)
+                    ->orWhere('product_number', 'like', $like);
+            });
         }
-        $lower = strtolower($query);
-        return $products->filter(function ($product) use ($lower) {
-            return str_contains(strtolower($product->name ?? ''), $lower)
-                || str_contains(strtolower((string) ($product->remarks ?? '')), $lower)
-                || str_contains(strtolower((string) ($product->sku ?? '')), $lower)
-                || str_contains(strtolower((string) ($product->supplier_code ?? '')), $lower)
-                || str_contains(strtolower((string) ($product->product_number ?? '')), $lower);
-        })->values();
+
+        $products = $q->get();
+        $promos = Promo::get();
+
+        return $products->map(function ($product) use ($promos) {
+            $product->isDisabled = $this->isProductDisabled($product->id, $this->startDate, $this->endDate, null, $promos);
+            return $product;
+        });
     }
 
     // Computed property for edit products based on selected batch allocations
@@ -613,10 +617,15 @@ class SalesPromo extends Component
         ->orderBy('created_at', 'desc')
         ->paginate($this->perPage);
 
+        $viewModalProducts = !empty($this->view_selected_products)
+            ? Product::whereIn('id', $this->view_selected_products)->orderBy('name')->get()
+            : collect();
+
         return view('livewire.pages.sales-management.promo', [
             'items' => $items,
             'branches' => $this->branches,
             'products' => $this->products,
+            'viewModalProducts' => $viewModalProducts,
             'batchAllocations' => $this->batchAllocations,
             'totalPromos' => Promo::count(),
             'activePromos' => Promo::where('startDate', '<=', now())

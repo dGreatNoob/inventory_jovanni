@@ -793,15 +793,35 @@
                             <input type="text" wire:model.live.debounce.200ms="addBranchesSearch"
                                 placeholder="Search by name, code, address..."
                                 class="mb-4 block w-full rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white">
-                            <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">
-                                <kbd class="px-1 py-0.5 rounded bg-gray-200 dark:bg-gray-600 text-xs">Shift</kbd>+click: range select · <kbd class="px-1 py-0.5 rounded bg-gray-200 dark:bg-gray-600 text-xs">Ctrl</kbd>+click: multi-select · Click outside: deselect all
-                            </p>
+                            @php
+                                $candidates = $this->addBranchesCandidates;
+                                $candidateCount = $candidates->count();
+                                $selectedCount = count($addBranchesSelectedIds);
+                                $allSelected = $candidateCount > 0 && $selectedCount === $candidateCount;
+                            @endphp
+                            <div class="mb-2 flex items-center justify-between">
+                                <p class="text-xs text-gray-500 dark:text-gray-400">
+                                    <kbd class="px-1 py-0.5 rounded bg-gray-200 dark:bg-gray-600 text-xs">Click</kbd> toggle · <kbd class="px-1 py-0.5 rounded bg-gray-200 dark:bg-gray-600 text-xs">Shift</kbd>+click range · <kbd class="px-1 py-0.5 rounded bg-gray-200 dark:bg-gray-600 text-xs">Ctrl</kbd>+click multi · Click outside: deselect
+                                </p>
+                                @if($candidateCount > 0)
+                                    @if($allSelected)
+                                        <button type="button" wire:click="deselectAllBranches" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">
+                                            Deselect all
+                                        </button>
+                                    @else
+                                        <button type="button" wire:click="selectAllBranches" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">
+                                            Select all {{ $candidateCount }}
+                                        </button>
+                                    @endif
+                                @endif
+                            </div>
                             <div class="max-h-64 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-lg cursor-default"
                                 x-data="{ lastClickedIndex: null }"
                                 @click.self="$wire.deselectAllBranches()">
-                                @foreach($this->addBranchesCandidates as $idx => $cand)
+                                @foreach($candidates as $idx => $cand)
                                     @php $isSelected = in_array($cand->id, $addBranchesSelectedIds); @endphp
-                                    <label class="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer {{ $isSelected ? 'bg-indigo-50 dark:bg-indigo-900/20' : '' }}"
+                                    <label wire:key="add-branch-row-{{ $cand->id }}"
+                                        class="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer {{ $isSelected ? 'bg-indigo-50 dark:bg-indigo-900/20' : '' }}"
                                         @click.prevent="
                                             if ($event.ctrlKey || $event.metaKey) {
                                                 $wire.toggleBranchSelection({{ $cand->id }});
@@ -812,9 +832,14 @@
                                             }
                                             lastClickedIndex = {{ $idx }};
                                         ">
-                                        <input type="checkbox" {{ $isSelected ? 'checked' : '' }}
-                                            class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 pointer-events-none"
-                                            tabindex="-1">
+                                        <span class="flex h-4 w-4 shrink-0 items-center justify-center rounded border {{ $isSelected ? 'border-indigo-600 bg-indigo-600' : 'border-gray-300 dark:border-gray-500' }}"
+                                            role="checkbox" aria-checked="{{ $isSelected ? 'true' : 'false' }}">
+                                            @if($isSelected)
+                                                <svg class="h-2.5 w-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M5 13l4 4L19 7"/>
+                                                </svg>
+                                            @endif
+                                        </span>
                                         <span class="text-sm text-gray-900 dark:text-white">{{ $cand->name }}</span>
                                         <span class="text-xs text-gray-500 dark:text-gray-400">{{ $cand->code }}</span>
                                         @if($cand->batch)

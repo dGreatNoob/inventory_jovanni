@@ -486,9 +486,7 @@ class SalesPromo extends Component
         $like = $query !== '' ? '%' . $query . '%' : null;
 
         $q = Product::query()
-            ->where(function ($qb) {
-                $qb->where('disabled', false)->orWhereNull('disabled');
-            })
+            ->active()
             ->orderBy('name')
             ->limit(100);
 

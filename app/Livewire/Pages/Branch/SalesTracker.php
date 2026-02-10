@@ -33,7 +33,7 @@ class SalesTracker extends Component
     public function mount()
     {
         $this->branches = Branch::with('products')->get();
-        $this->products = Product::all();
+        $this->products = Product::active()->get();
 
         // Default to last 30 days
         $this->startDate = Carbon::now()->subDays(30)->format('Y-m-d');
@@ -152,7 +152,7 @@ class SalesTracker extends Component
         $barcode = trim($this->barcodeInput);
 
         // Find product by barcode
-        $product = Product::where('barcode', $barcode)->first();
+        $product = Product::active()->where('barcode', $barcode)->first();
 
         if (!$product) {
             $this->scanFeedback = "❌ Barcode '{$barcode}' not found in system!";

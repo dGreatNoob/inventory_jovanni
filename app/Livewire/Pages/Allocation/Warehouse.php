@@ -958,6 +958,7 @@ class Warehouse extends Component
         $orderMap = array_flip($orderedCategoryIds);
 
         $this->availableProducts = Product::with(['category.parent'])
+            ->active()
             ->get()
             ->sort(function ($a, $b) use ($orderMap) {
                 $catIdA = $a->category_id ?? 0;
@@ -1629,8 +1630,8 @@ class Warehouse extends Component
 
     public function getAvailableProductsForBatchProperty()
     {
-        // Return all products for the matrix (with color for display)
-        return Product::with('color')->orderBy('name')->get();
+        // Return all active products for the matrix (with color for display)
+        return Product::with('color')->active()->orderBy('name')->get();
     }
 
     public function loadMatrix()
@@ -2338,7 +2339,7 @@ class Warehouse extends Component
     {
         $this->selectedBranchAllocation = $branchAllocation;
         $this->showAddItemsModal = true;
-        $this->availableProducts = Product::orderBy('name')->get();
+        $this->availableProducts = Product::active()->orderBy('name')->get();
     }
 
     public function closeAddItemsModal()

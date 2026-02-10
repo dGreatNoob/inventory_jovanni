@@ -29,6 +29,7 @@ class Index extends Component
     public $supplierFilter = '';
     public $stockLevelFilter = '';
     public $productTypeFilter = ''; // 'placeholder' to filter pending/placeholder products
+    public $statusFilter = 'active'; // 'active' | 'disabled' | 'all'
     public $priceMin = '';
     public $priceMax = '';
     public $sortBy = 'created_at';
@@ -291,6 +292,11 @@ class Index extends Component
         $this->resetPage();
     }
 
+    public function updatedStatusFilter()
+    {
+        $this->resetPage();
+    }
+
     public function updatedPriceMin()
     {
         $this->resetPage();
@@ -347,6 +353,7 @@ class Index extends Component
         $this->supplierFilter = '';
         $this->stockLevelFilter = '';
         $this->productTypeFilter = '';
+        $this->statusFilter = 'active';
         $this->priceMin = '';
         $this->priceMax = '';
         $this->sortBy = 'created_at';
@@ -363,6 +370,7 @@ class Index extends Component
                 'supplier' => $this->supplierFilter,
                 'stock_level' => $this->stockLevelFilter,
                 'product_type' => $this->productTypeFilter,
+                'status' => $this->statusFilter,
                 'price_min' => $this->priceMin,
                 'price_max' => $this->priceMax,
                 'sort_by' => $this->sortBy,

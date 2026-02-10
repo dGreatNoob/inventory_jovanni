@@ -625,7 +625,11 @@ class Scanning extends Component
         }
 
         // 2. Product exists but not in this branch - find which branch has it
-        $productId = Product::where('barcode', $barcode)->orWhere('sku', $barcode)->value('id');
+        $productId = Product::active()
+            ->where(function ($q) use ($barcode) {
+                $q->where('barcode', $barcode)->orWhere('sku', $barcode);
+            })
+            ->value('id');
         if (!$productId) {
             $productId = BranchAllocationItem::where(function ($q) use ($barcode) {
                 $q->where('product_snapshot_barcode', $barcode)

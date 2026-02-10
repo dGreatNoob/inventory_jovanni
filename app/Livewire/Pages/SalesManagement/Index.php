@@ -84,6 +84,7 @@ class Index extends Component
         // Get products from Product model with inventory instead of SupplyProfile
         $thisProducList = \App\Models\Product::select('products.id','products.name','products.sku','product_inventory.available_quantity as stock_quantity','products.uom as unit')
             ->join('product_inventory', 'products.id', '=', 'product_inventory.product_id')
+            ->where('products.disabled', false)
             ->where('product_inventory.available_quantity', '>', 0) // Only show products with stock
             ->orderBy('products.name')
             ->get();

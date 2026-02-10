@@ -22,8 +22,11 @@ class ProductService
      */
     public function searchProducts(string $query = '', array $filters = [], int $perPage = 20): LengthAwarePaginator
     {
+        $statusFilter = $filters['status'] ?? 'active';
         $products = Product::with(['category', 'supplier', 'images', 'inventory'])
-            ->active()
+            ->when($statusFilter === 'active', fn ($q) => $q->active())
+            ->when($statusFilter === 'disabled', fn ($q) => $q->where('disabled', true))
+            // 'all' = no status filter
             // Advanced search: product masterlist search with special handling
             // for product-number style queries (e.g. "LD-127").
             ->when($query, function ($q) use ($query) {

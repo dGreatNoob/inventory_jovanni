@@ -453,10 +453,30 @@ class Index extends Component
     public function toggleProductSelection($productId)
     {
         if (in_array($productId, $this->selectedProducts)) {
-            $this->selectedProducts = array_diff($this->selectedProducts, [$productId]);
+            $this->selectedProducts = array_values(array_diff($this->selectedProducts, [$productId]));
         } else {
-            $this->selectedProducts[] = $productId;
+            $this->selectedProducts[] = (int) $productId;
         }
+    }
+
+    /**
+     * Plain click: toggle that row (Gmail-style).
+     */
+    public function handlePlainProductClick($productId)
+    {
+        $this->toggleProductSelection($productId);
+    }
+
+    /**
+     * Shift+click: select contiguous range on current page.
+     */
+    public function selectProductRange(int $fromIndex, int $toIndex)
+    {
+        $items = $this->products->items();
+        $low = min($fromIndex, $toIndex);
+        $high = max($fromIndex, $toIndex);
+        $idsInRange = collect($items)->slice($low, $high - $low + 1)->pluck('id')->toArray();
+        $this->selectedProducts = array_values(array_unique(array_merge($this->selectedProducts, $idsInRange)));
     }
 
     public function selectAllProducts()
@@ -526,10 +546,19 @@ class Index extends Component
         }
     }
 
-    public function exportProducts()
+    public function getExportUrlProperty(): string
     {
-        // Open the print view in a new tab to immediately trigger print, while keeping the page state
-        return redirect()->away(route('product-management.print'));
+        if (empty($this->selectedProducts)) {
+            return '#';
+        }
+        return route('product-management.print') . '?ids=' . implode(',', $this->selectedProducts);
+    }
+
+    public function exportProducts(): void
+    {
+        if (empty($this->selectedProducts)) {
+            session()->flash('error', 'Please select one or more products to export.');
+        }
     }
 
     public function refreshProducts()

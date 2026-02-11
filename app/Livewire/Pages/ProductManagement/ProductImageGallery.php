@@ -7,6 +7,7 @@ use Livewire\WithPagination;
 use Livewire\WithFileUploads;
 use Livewire\Attributes\Title;
 use Livewire\Attributes\Layout;
+use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Services\ProductImageService;
@@ -21,8 +22,7 @@ class ProductImageGallery extends Component
 
     // Search and Filters
     public $search = '';
-    public $productFilter = '';
-    public $extensionFilter = '';
+    public $categoryFilter = '';
     public $sortBy = 'created_at';
     public $sortDirection = 'desc';
     public $perPage = 20;
@@ -30,6 +30,7 @@ class ProductImageGallery extends Component
 
     // Data
     public $products = [];
+    public $categories = [];
     public $selectedImages = [];
     public $showFilters = false;
 
@@ -76,6 +77,7 @@ class ProductImageGallery extends Component
         $this->products = Product::with('category')
             ->orderBy('name')
             ->get(['id', 'name', 'sku', 'supplier_code', 'product_number']);
+        $this->categories = Category::active()->orderBy('name')->get(['id', 'name']);
     }
 
     public function getFilteredUploadProductsProperty()
@@ -207,12 +209,12 @@ class ProductImageGallery extends Component
         $this->resetPage();
     }
 
-    public function updatedProductFilter()
+    public function updatedCategoryFilter()
     {
         $this->resetPage();
     }
 
-    public function updatedExtensionFilter()
+    public function updatedPerPage()
     {
         $this->resetPage();
     }
@@ -241,30 +243,24 @@ class ProductImageGallery extends Component
     public function clearFilters()
     {
         $this->search = '';
-        $this->productFilter = '';
-        $this->extensionFilter = '';
+        $this->categoryFilter = '';
         $this->resetPage();
     }
 
+    /**
+     * Images on the current page of product cards (for selection and view count).
+     */
     public function getImagesProperty()
     {
-        $filters = [
-            'product_id' => $this->productFilter,
-            'extension' => $this->extensionFilter,
-        ];
-
-        return $this->productImageService->getProductImages(
-            $this->productFilter ?: null,
-            $this->perPage
-        );
+        return $this->productCards->getCollection()->pluck('images')->flatten(1);
     }
 
     public function getProductCardsProperty()
     {
         $query = Product::whereHas('images');
 
-        if ($this->productFilter) {
-            $query->where('id', (int) $this->productFilter);
+        if ($this->categoryFilter) {
+            $query->where('category_id', (int) $this->categoryFilter);
         }
 
         if ($this->search) {
@@ -281,20 +277,6 @@ class ProductImageGallery extends Component
         $query->with(['images' => function ($q) {
             $q->orderByDesc('is_primary')->orderBy('sort_order')->orderBy('created_at', 'desc');
         }]);
-
-        if ($this->extensionFilter) {
-            $ext = strtolower($this->extensionFilter);
-            $query->whereHas('images', function ($q) use ($ext) {
-                if ($ext === 'jpg' || $ext === 'jpeg') {
-                    $q->where(function ($qq) {
-                        $qq->where('filename', 'like', '%.jpg')
-                           ->orWhere('filename', 'like', '%.jpeg');
-                    });
-                } else {
-                    $q->where('filename', 'like', '%.' . $ext);
-                }
-            });
-        }
 
         return $query->orderBy('name')->paginate($this->perPage);
     }

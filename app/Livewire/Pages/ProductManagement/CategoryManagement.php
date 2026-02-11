@@ -78,6 +78,11 @@ class CategoryManagement extends Component
         $this->resetPage();
     }
 
+    public function updatedPerPage()
+    {
+        $this->resetPage();
+    }
+
     public function sortBy($field)
     {
         if ($this->sortBy === $field) {

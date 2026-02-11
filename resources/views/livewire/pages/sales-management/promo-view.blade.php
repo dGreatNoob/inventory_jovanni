@@ -208,67 +208,55 @@
                         </div>
                     </div>
                 </div>
-                <!-- Data Table -->
+                <!-- Data Table (product taxonomy aligned with product-management) -->
                 <div class="overflow-x-auto">
-                    <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                        <thead class="text-sm text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                        <thead class="text-xs font-medium text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                             <tr>
-                                <th class="px-6 py-3">Product</th>
-                                <th class="px-6 py-3">Action</th>
+                                <th scope="col" class="px-6 py-3 text-left">Product ID</th>
+                                <th scope="col" class="px-6 py-3 text-left">Description</th>
+                                <th scope="col" class="px-6 py-3 text-left">Category</th>
+                                <th scope="col" class="px-6 py-3 text-left">Supplier</th>
+                                <th scope="col" class="px-6 py-3 text-left">Price</th>
+                                <th scope="col" class="relative px-6 py-3"><span class="sr-only">Action</span></th>
                             </tr>
                         </thead>
-
-                        <tbody>
+                        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                             @forelse($connectedProducts as $product)
-                                <tr wire:key="product-{{ $product->id }}" 
-                                    class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700 border-gray-200">
-                                    
-                                    <!-- Product with Image -->
+                                <tr wire:key="product-{{ $product->id }}" class="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm font-mono text-gray-900 dark:text-white">{{ $product->product_number ?? '—' }}</div>
+                                    </td>
                                     <td class="px-6 py-4">
                                         <div class="flex items-center gap-3">
-                                           <!-- Larger Product Image -->
-                                        <div class="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
-                                            @if($product->primary_image)
-                                                <img src="{{ asset('storage/photos/' . $product->primary_image) }}" 
-                                                    alt="{{ $product->name }}" 
-                                                    class="w-12 h-12 object-cover"
-                                                    onerror="this.src='{{ asset('images/placeholder.png') }}'; this.onerror=null;">
-                                            @else
-                                                <div class="w-12 h-12 flex items-center justify-center text-gray-400 dark:text-gray-500">
-                                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
-                                                    </svg>
-                                                </div>
-                                            @endif
-                                        </div>
-                                            
-                                            <!-- Product Details -->
-                                            <div class="flex flex-col space-y-1">
-                                                <div class="inline-flex items-center space-x-2 text-sm">
-                                                    <span class="font-medium text-gray-900 dark:text-white">{{ $product->name }}</span>
-                                                    <span class="text-gray-400 dark:text-gray-500">|</span>
-                                                    <span class="text-gray-500 dark:text-gray-300">{{ $product->sku ?? '-' }}</span>
-                                                </div>
+                                            <div class="flex-shrink-0 h-10 w-10 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                                                @if($product->primary_image)
+                                                    <img src="{{ asset('storage/photos/' . $product->primary_image) }}" alt="{{ $product->name }}" class="h-10 w-10 object-cover" onerror="this.src='{{ asset('images/placeholder.png') }}'; this.onerror=null;">
+                                                @else
+                                                    <svg class="h-6 w-6 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                                                @endif
+                                            </div>
+                                            <div class="min-w-0">
+                                                <div class="text-sm font-medium text-gray-900 dark:text-white">{{ $product->name }}{!! !empty($product->remarks) ? ' - ' . e($product->remarks) : '' !!}</div>
+                                                <div class="text-sm text-gray-500 dark:text-gray-400">SKU: {{ $product->sku ?? '—' }}</div>
+                                                <div class="text-sm text-gray-500 dark:text-gray-400">Supplier Code (SKU): {{ $product->supplier_code ?? '—' }}</div>
                                             </div>
                                         </div>
                                     </td>
-
-                                    <!-- Action -->
-                                    <td class="px-6 py-4 space-x-2">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{{ $product->category->name ?? 'N/A' }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{{ $product->supplier->name ?? 'N/A' }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">₱{{ number_format($product->price ?? 0, 2) }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right">
                                         <flux:modal.trigger name="product-details">
-                                            <flux:button 
-                                                wire:click="viewProduct({{ $product->id }})"
-                                                variant="outline" 
-                                                size="sm"
-                                                type="button">
-                                                View
+                                            <flux:button wire:click="viewProduct({{ $product->id }})" variant="ghost" size="sm" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300" type="button" title="View Details">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                                             </flux:button>
                                         </flux:modal.trigger>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="2" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">No products found.</td>
+                                    <td colspan="6" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">No products found.</td>
                                 </tr>
                             @endforelse
                         </tbody>

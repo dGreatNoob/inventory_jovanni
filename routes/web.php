@@ -246,10 +246,18 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/locations', \App\Livewire\Pages\ProductManagement\InventoryLocationManagement::class)->name('locations');
         Route::get('/images', \App\Livewire\Pages\ProductManagement\ProductImageGallery::class)->name('images');
         // Analytics dashboard removed from Product Management
-        Route::get('/print-catalog', function() {
-            $products = \App\Models\Product::with(['images' => function($q){
-                $q->orderByDesc('is_primary')->orderBy('sort_order')->orderBy('created_at', 'desc');
-            }])->orderBy('name')->get();
+        Route::get('/print-catalog', function () {
+            if (!auth()->user()->can('product export')) {
+                abort(403);
+            }
+            $idsParam = request('ids', '');
+            $ids = array_values(array_filter(array_map('intval', $idsParam ? explode(',', $idsParam) : [])));
+            if (empty($ids)) {
+                return view('livewire.pages.product-management.print-catalog', ['products' => collect()]);
+            }
+            $products = \App\Models\Product::with([
+                'images' => fn ($q) => $q->orderByDesc('is_primary')->orderBy('sort_order')->orderBy('created_at', 'desc'),
+            ])->whereIn('id', $ids)->get()->sortBy(fn ($p) => array_search($p->id, $ids))->values();
             return view('livewire.pages.product-management.print-catalog', compact('products'));
         })->name('print');
     });

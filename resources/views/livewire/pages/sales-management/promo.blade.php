@@ -12,6 +12,7 @@
                         wire:click="$set('showCreatePanel', true)"
                         variant="primary" 
                         class="flex items-center gap-2 whitespace-nowrap min-w-fit"
+                        type="button"
                     >
                         <svg class="inline w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -243,44 +244,36 @@
                                                     <p class="text-sm text-gray-500 dark:text-gray-400">Choose products to include in the promo.</p>
                                                 </div>
 
-                                                <!-- Product Selection (searchable multi-select) -->
+                                                <!-- Product Selection (searchable multi-select - single input, no redundant search bar) -->
                                                 <div class="grid gap-4">
                                                     <div>
                                                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Product</label>
                                                         <div class="relative" wire:click.outside="$set('productDropdown', false)">
-                                                            <div wire:click="$set('productDropdown', true)"
-                                                                class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm cursor-pointer flex justify-between items-center min-h-[42px]">
-                                                                <div class="flex flex-wrap gap-1 items-center">
-                                                                    @if(!$productDropdown)
-                                                                        @if(empty($selected_products))
-                                                                            <span class="text-gray-400">Search and select products...</span>
-                                                                        @else
-                                                                            @foreach($this->selectedProductModels as $product)
-                                                                                    <span class="inline-flex flex-col items-start bg-gray-600 text-white text-xs font-medium px-2 py-1 rounded-full">
-                                                                                        <span>{{ $product->remarks ?? $product->name }}</span>
-                                                                                        <span class="text-[11px] text-gray-200">SKU: {{ $product->sku ?? '—' }} · Supplier Code (SKU): {{ $product->supplier_code ?? '—' }}</span>
-                                                                                        <span class="text-[11px] text-gray-200">₱{{ number_format($product->price ?? 0, 0) }}</span>
-                                                                                    </span>
-                                                                            @endforeach
-                                                                        @endif
-                                                                    @else
-                                                                        <span class="text-gray-400">Search and select products...</span>
-                                                                    @endif
+                                                            <div wire:click="$set('productDropdown', true)" class="flex flex-wrap gap-2 items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus-within:ring-indigo-500 focus-within:border-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm min-h-[42px] cursor-text">
+                                                                @if(!empty($selected_products))
+                                                                    @foreach($this->selectedProductModels as $product)
+                                                                        <span class="inline-flex flex-col items-start bg-gray-600 text-white text-xs font-medium px-2 py-1 rounded-full">
+                                                                            <span>{{ $product->remarks ?? $product->name }}</span>
+                                                                            <span class="text-[11px] text-gray-200">SKU: {{ $product->sku ?? '—' }} · Supplier Code: {{ $product->supplier_code ?? '—' }}</span>
+                                                                            <span class="text-[11px] text-gray-200">₱{{ number_format($product->price ?? 0, 0) }}</span>
+                                                                        </span>
+                                                                    @endforeach
+                                                                @endif
+                                                                <input type="text"
+                                                                    wire:model.live.debounce.200ms="productSearch"
+                                                                    wire:focus="$set('productDropdown', true)"
+                                                                    placeholder="Search by name, SKU, Supplier Code..."
+                                                                    class="flex-1 min-w-[180px] border-0 bg-transparent p-0 text-sm text-gray-900 placeholder-gray-400 focus:ring-0 focus:outline-none dark:text-white dark:placeholder-gray-400"
+                                                                />
+                                                                <div class="pointer-events-none flex-shrink-0">
+                                                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                                    </svg>
                                                                 </div>
-                                                                <svg class="w-4 h-4 ml-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                                                </svg>
                                                             </div>
 
                                                             @if($productDropdown)
                                                                 <div class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg dark:bg-gray-700 dark:border-gray-600">
-                                                                    <div class="p-2 border-b border-gray-200 dark:border-gray-600 sticky top-0 bg-white dark:bg-gray-700">
-                                                                        <input type="text"
-                                                                            wire:model.live.debounce.200ms="productSearch"
-                                                                            placeholder="Search by name, SKU, Supplier Code, or Product ID..."
-                                                                            onclick="event.stopPropagation()"
-                                                                            class="block w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-600 dark:text-white dark:placeholder-gray-400" />
-                                                                    </div>
                                                                     <div class="max-h-60 overflow-auto">
                                                                         @if($this->filteredAvailableProducts->count() > 0)
                                                                             @foreach($this->filteredAvailableProducts as $product)
@@ -524,16 +517,27 @@
                                     </td>
 
                                     <!-- Action -->
-                                    <td class="px-6 py-4 space-x-2">
-                                        <flux:button 
-                                        onclick="window.location='{{ route('promo.view', ['id' => $item->id]) }}'" 
-                                        variant="outline" 
-                                        size="sm"
-                                        type="button">
-                                        View
-                                    </flux:button>
-                                        <flux:button wire:click.prevent="edit({{ $item->id }})" variant="outline" size="sm">Edit</flux:button>
-                                        <flux:button wire:click.prevent="confirmDelete({{ $item->id }})" variant="outline" size="sm" class="text-red-600 hover:text-red-700">Delete</flux:button>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <div class="flex justify-end space-x-2">
+                                            <a href="{{ route('promo.view', ['id' => $item->id]) }}">
+                                                <flux:button type="button" variant="ghost" size="sm" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300" title="View Details">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                                    </svg>
+                                                </flux:button>
+                                            </a>
+                                            <flux:button wire:click.prevent="edit({{ $item->id }})" variant="ghost" size="sm" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300" title="Edit">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                </svg>
+                                            </flux:button>
+                                            <flux:button wire:click.prevent="confirmDelete({{ $item->id }})" variant="ghost" size="sm" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300" title="Delete">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                </svg>
+                                            </flux:button>
+                                        </div>
                                     </td>
                                 </tr>
                             @empty
@@ -570,24 +574,39 @@
             @if($showDeleteModal)
                 <div class="fixed top-0 left-0 right-0 z-50 w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] max-h-full flex items-center justify-center">
                     <div class="relative w-full max-w-md max-h-full">
-                        <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
-                            <button type="button" class="absolute top-3 right-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ml-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white" wire:click="cancelDelete">
-                                <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
-                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
-                                </svg>
-                                <span class="sr-only">Close modal</span>
-                            </button>
-                            <div class="p-6 text-center">
-                                <svg class="mx-auto mb-4 text-gray-400 w-12 h-12 dark:text-gray-200" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
-                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 11V6m0 8h.01M19 10a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
-                                </svg>
-                                <h3 class="mb-5 text-lg font-normal text-gray-500 dark:text-gray-400">Are you sure you want to delete this promo?</h3>
-                                <flux:button wire:click="delete" class="mr-2 bg-red-600 hover:bg-red-700 text-white">
-                                    Yes, I'm sure
-                                </flux:button>
-                                <flux:button wire:click="cancelDelete" variant="outline">
-                                    No, cancel
-                                </flux:button>
+                        <div class="relative bg-white rounded-lg shadow dark:bg-gray-700 dark:bg-zinc-800">
+                            <div class="p-6 space-y-6">
+                                <div class="flex items-start space-x-4">
+                                    <div class="flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-full text-red-600 bg-red-100 dark:bg-red-900/20 dark:text-red-400">
+                                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                        </svg>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Delete Promo</h2>
+                                        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">Are you sure you want to delete this promo? This action cannot be undone and will permanently remove the promotion from your system.</p>
+                                    </div>
+                                </div>
+                                <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                                    <div class="flex">
+                                        <div class="flex-shrink-0">
+                                            <svg class="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                            </svg>
+                                        </div>
+                                        <div class="ml-3">
+                                            <h3 class="text-sm font-medium text-red-800 dark:text-red-200">Warning</h3>
+                                            <div class="mt-2 text-sm text-red-700 dark:text-red-300">
+                                                <p>You are about to delete <strong class="font-semibold">{{ $promoToDelete?->name ?? '' }}</strong>.</p>
+                                                <p class="mt-1">This action cannot be undone and will permanently remove the promo from your system.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
+                                    <flux:button wire:click="cancelDelete" variant="ghost">Cancel</flux:button>
+                                    <flux:button wire:click="delete" variant="danger">Delete Promo</flux:button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -763,10 +782,10 @@
                                                                     @foreach($batchAllocations as $batchAllocation)
                                                                         @if(in_array($batchAllocation->id, $edit_selected_batches))
                                                                             <span class="inline-flex items-center gap-1.5 bg-indigo-100 text-indigo-800 text-xs font-medium px-2.5 py-1 rounded-full dark:bg-indigo-900/30 dark:text-indigo-300">
-                                                                                <span class="font-semibold">{{ $batchAllocation->ref_no }}</span>
-                                                                                @if($batchAllocation->batch_number)
-                                                                                    <span class="text-gray-500 dark:text-gray-400">•</span>
-                                                                                    <span class="text-gray-700 dark:text-gray-300 font-normal">Batch: {{ $batchAllocation->batch_number }}</span>
+                                                                                <span class="font-semibold">{{ $batchAllocation->batch_number ?: $batchAllocation->ref_no }}</span>
+                                                                                @if($batchAllocation->batch_number && $batchAllocation->ref_no)
+                                                                                    <span class="text-gray-500 dark:text-gray-400">·</span>
+                                                                                    <span class="text-gray-700 dark:text-gray-300 font-normal">{{ $batchAllocation->ref_no }}</span>
                                                                                 @endif
                                                                             </span>
                                                                         @endif
@@ -786,11 +805,11 @@
                                                                         class="form-checkbox h-4 w-4 accent-blue-600 text-blue-600 focus:ring-blue-500 border-gray-300 rounded dark:accent-blue-400 dark:text-blue-400">
                                                                     <div class="ml-3 flex-1">
                                                                         <div class="text-sm font-medium text-gray-900 dark:text-white">
-                                                                            {{ $batchAllocation->ref_no }}
+                                                                            {{ $batchAllocation->batch_number ?: $batchAllocation->ref_no }}
                                                                         </div>
-                                                                        @if($batchAllocation->batch_number)
+                                                                        @if($batchAllocation->batch_number && $batchAllocation->ref_no)
                                                                             <div class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                                                                                Batch Number: <span class="font-semibold text-gray-700 dark:text-gray-300">{{ $batchAllocation->batch_number }}</span>
+                                                                                Ref: {{ $batchAllocation->ref_no }}
                                                                             </div>
                                                                         @endif
                                                                     </div>
@@ -804,58 +823,44 @@
                                                     </div>
                                                 </div>
 
-                                                <!-- Product Selection (searchable multi-select) -->
+                                                <!-- Product Selection (searchable multi-select - single input, no redundant search bar) -->
                                                 <div class="grid gap-4">
                                                     <div>
                                                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Product</label>
                                                         <div class="relative" wire:click.outside="$set('editProductDropdown', false)">
-                                                            <div wire:click="$toggle('editProductDropdown')"
-                                                                class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm cursor-pointer flex justify-between items-center min-h-[42px]">
-                                                                <div class="flex flex-wrap gap-1 items-center">
-                                                                    @if(!$editProductDropdown)
-                                                                        @if(empty($edit_selected_products))
-                                                                            <span class="text-gray-400">
-                                                                                @if(empty($edit_selected_batches))
-                                                                                    Select batch allocation first
-                                                                                @else
-                                                                                    Search and select products...
-                                                                                @endif
-                                                                            </span>
-                                                                        @else
-                                                                            @foreach($this->availableProductsForEditBatches as $product)
-                                                                                @if(in_array($product->id, $edit_selected_products))
-                                                                                    <span class="inline-flex flex-col items-start bg-gray-600 text-white text-xs font-medium px-2 py-1 rounded-full">
-                                                                                        <span>{{ $product->remarks ?? $product->name }}</span>
-                                                                                        <span class="text-[11px] text-gray-200">SKU: {{ $product->sku ?? '—' }} · Supplier Code (SKU): {{ $product->supplier_code ?? '—' }}</span>
-                                                                                        <span class="text-[11px] text-gray-200">₱{{ number_format($product->price ?? 0, 0) }}</span>
-                                                                                    </span>
-                                                                                @endif
-                                                                            @endforeach
-                                                                        @endif
-                                                                    @else
-                                                                        <span class="text-gray-400">
-                                                                            @if(empty($edit_selected_batches))
-                                                                                Select batch allocation first
-                                                                            @else
-                                                                                Search and select products...
-                                                                            @endif
-                                                                        </span>
-                                                                    @endif
+                                                            @if(empty($edit_selected_batches))
+                                                                <div class="block w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-gray-400 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-500 sm:text-sm min-h-[42px] flex items-center">
+                                                                    Select batch allocation first
                                                                 </div>
-                                                                <svg class="w-4 h-4 ml-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                                                </svg>
-                                                            </div>
+                                                            @else
+                                                                <div wire:click="$set('editProductDropdown', true)" class="flex flex-wrap gap-2 items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus-within:ring-indigo-500 focus-within:border-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm min-h-[42px] cursor-text">
+                                                                    @if(!empty($edit_selected_products))
+                                                                        @foreach($this->availableProductsForEditBatches as $product)
+                                                                            @if(in_array($product->id, $edit_selected_products))
+                                                                                <span class="inline-flex flex-col items-start bg-gray-600 text-white text-xs font-medium px-2 py-1 rounded-full">
+                                                                                    <span>{{ $product->remarks ?? $product->name }}</span>
+                                                                                    <span class="text-[11px] text-gray-200">SKU: {{ $product->sku ?? '—' }} · Supplier Code: {{ $product->supplier_code ?? '—' }}</span>
+                                                                                    <span class="text-[11px] text-gray-200">₱{{ number_format($product->price ?? 0, 0) }}</span>
+                                                                                </span>
+                                                                            @endif
+                                                                        @endforeach
+                                                                    @endif
+                                                                    <input type="text"
+                                                                        wire:model.live.debounce.200ms="editProductSearch"
+                                                                        wire:focus="$set('editProductDropdown', true)"
+                                                                        placeholder="Search by name, SKU, Supplier Code..."
+                                                                        class="flex-1 min-w-[180px] border-0 bg-transparent p-0 text-sm text-gray-900 placeholder-gray-400 focus:ring-0 focus:outline-none dark:text-white dark:placeholder-gray-400"
+                                                                    />
+                                                                    <div class="pointer-events-none flex-shrink-0">
+                                                                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                                        </svg>
+                                                                    </div>
+                                                                </div>
+                                                            @endif
 
                                                             @if($editProductDropdown && !empty($edit_selected_batches))
                                                                 <div class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg dark:bg-gray-700 dark:border-gray-600">
-                                                                    <div class="p-2 border-b border-gray-200 dark:border-gray-600 sticky top-0 bg-white dark:bg-gray-700">
-                                                                        <input type="text"
-                                                                            wire:model.live.debounce.200ms="editProductSearch"
-                                                                            placeholder="Search by name, SKU, Supplier Code, or Product ID..."
-                                                                            onclick="event.stopPropagation()"
-                                                                            class="block w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-600 dark:text-white dark:placeholder-gray-400" />
-                                                                    </div>
                                                                     <div class="max-h-60 overflow-auto">
                                                                         @if($this->filteredEditProducts->count() > 0)
                                                                             @foreach($this->filteredEditProducts as $product)
@@ -1059,11 +1064,11 @@
                                                             <svg class="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                                                                 <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
                                                             </svg>
-                                                            <span class="font-semibold">{{ $batchAllocation->ref_no }}</span>
+                                                            <span class="font-semibold">{{ $batchAllocation->batch_number ?: $batchAllocation->ref_no }}</span>
                                                         </div>
-                                                        @if($batchAllocation->batch_number)
+                                                        @if($batchAllocation->batch_number && $batchAllocation->ref_no)
                                                             <div class="text-[10px] text-blue-600 dark:text-blue-400 font-normal pl-4.5">
-                                                                Batch: <span class="font-semibold">{{ $batchAllocation->batch_number }}</span>
+                                                                Ref: {{ $batchAllocation->ref_no }}
                                                             </div>
                                                         @endif
                                                     </div>

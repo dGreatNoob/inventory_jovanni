@@ -18,12 +18,18 @@ use Illuminate\Support\Facades\DB;
 class ProductService
 {
     /**
-     * Search products with advanced filtering
+     * Build the product search query with filters and sort (no pagination).
+     * Used by searchProducts (paginated) and searchProductsForExport (collection).
      */
-    public function searchProducts(string $query = '', array $filters = [], int $perPage = 20): LengthAwarePaginator
+    private function buildProductSearchQuery(string $query = '', array $filters = []): \Illuminate\Database\Eloquent\Builder
     {
         $statusFilter = $filters['status'] ?? 'active';
-        $products = Product::with(['category', 'supplier', 'images', 'inventory'])
+        $products = Product::with([
+            'category',
+            'supplier',
+            'inventory',
+            'images' => fn ($q) => $q->orderByDesc('is_primary')->orderBy('sort_order')->orderBy('created_at', 'desc'),
+        ])
             ->when($statusFilter === 'active', fn ($q) => $q->active())
             ->when($statusFilter === 'disabled', fn ($q) => $q->where('disabled', true))
             // 'all' = no status filter
@@ -186,9 +192,24 @@ class ProductService
             }
         }
 
-        $products = $products->paginate($perPage);
-
         return $products;
+    }
+
+    /**
+     * Search products with advanced filtering (paginated).
+     */
+    public function searchProducts(string $query = '', array $filters = [], int $perPage = 20): LengthAwarePaginator
+    {
+        return $this->buildProductSearchQuery($query, $filters)->paginate($perPage);
+    }
+
+    /**
+     * Get all products matching the same filters as the masterlist (for export).
+     * Respects a max count to avoid huge exports.
+     */
+    public function searchProductsForExport(string $query = '', array $filters = [], int $max = 2000): Collection
+    {
+        return $this->buildProductSearchQuery($query, $filters)->limit($max)->get();
     }
 
     /**

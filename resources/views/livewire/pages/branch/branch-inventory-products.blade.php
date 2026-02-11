@@ -19,10 +19,6 @@
                             <!-- <flux:icon name="document-text" class="w-4 h-4" /> -->
                             Upload Text File
                         </flux:button>
-                        <flux:button wire:click="openCustomerSalesModal" variant="outline" size="sm" class="flex items-center gap-2">
-                            <!-- <flux:icon name="banknotes" class="w-4 h-4" /> -->
-                            Add Customer Sales
-                        </flux:button>
                         <a href="{{ route('branch.inventory') }}" wire:navigate>
                             <flux:button variant="outline" size="sm">Back to Branches</flux:button>
                         </a>

@@ -206,12 +206,30 @@ class Index extends Component
 
         $agent = Agent::findOrFail($this->assign_agent_id);
 
-        $exists = AgentBranchAssignment::where('agent_id', $agent->id)
+        // Agent cannot be assigned to multiple branches at the same time
+        $assignedToOtherBranch = AgentBranchAssignment::where('agent_id', $agent->id)
+            ->whereNull('released_at')
+            ->where('branch_id', '!=', $this->assign_branch_id)
+            ->exists();
+        if ($assignedToOtherBranch) {
+            $this->addError('assign_branch_id', 'Agent cannot be assigned to multiple branches at the same time. Release the current assignment first.');
+            return;
+        }
+
+        // Allow same branch + multiple selling areas; block duplicate (same branch + same selling area)
+        $duplicateSameBranchAndArea = AgentBranchAssignment::where('agent_id', $agent->id)
             ->where('branch_id', $this->assign_branch_id)
             ->whereNull('released_at')
+            ->where(function ($q) {
+                if ($this->assign_selling_area === null || $this->assign_selling_area === '') {
+                    $q->whereNull('selling_area')->orWhere('selling_area', '');
+                } else {
+                    $q->where('selling_area', $this->assign_selling_area);
+                }
+            })
             ->exists();
-        if ($exists) {
-            $this->addError('assign_branch_id', 'Agent is already assigned to this branch.');
+        if ($duplicateSameBranchAndArea) {
+            $this->addError('assign_selling_area', 'Agent is already assigned to this branch and selling area.');
             return;
         }
 

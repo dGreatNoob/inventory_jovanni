@@ -1,5 +1,28 @@
 <!-- Products Table View -->
 <div class="overflow-hidden">
+    @php
+        $pageCount = $products->count();
+        $selectedCount = count($selectedProducts);
+        $allOnPageSelected = $pageCount > 0 && $selectedCount === $pageCount && $products->pluck('id')->every(fn ($id) => in_array($id, $selectedProducts));
+    @endphp
+    @if($pageCount > 0)
+        <div class="px-4 py-2 flex items-center justify-between border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 text-sm text-gray-600 dark:text-gray-400">
+            <span>
+                <kbd class="px-1 py-0.5 rounded bg-gray-200 dark:bg-gray-600 text-xs">Click</kbd> toggle
+                · <kbd class="px-1 py-0.5 rounded bg-gray-200 dark:bg-gray-600 text-xs">Shift</kbd>+click range
+                · <kbd class="px-1 py-0.5 rounded bg-gray-200 dark:bg-gray-600 text-xs">Ctrl</kbd>+click multi
+            </span>
+            @if($allOnPageSelected)
+                <button type="button" wire:click="clearSelection" class="text-indigo-600 dark:text-indigo-400 hover:underline">
+                    Deselect all
+                </button>
+            @else
+                <button type="button" wire:click="selectAllProducts" class="text-indigo-600 dark:text-indigo-400 hover:underline">
+                    Select all {{ $pageCount }} on page
+                </button>
+            @endif
+        </div>
+    @endif
     <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead class="bg-gray-50 dark:bg-gray-700">
@@ -73,14 +96,27 @@
                     </th>
                 </tr>
             </thead>
-            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"
+                   x-data="{ lastClickedIndex: null }">
                 @forelse($products as $product)
-                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <input type="checkbox" 
+                    @php $isSelected = in_array($product->id, $selectedProducts); @endphp
+                    <tr class="cursor-pointer transition-colors {{ $isSelected ? 'bg-indigo-50 dark:bg-indigo-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-700' }}"
+                        @click.prevent="
+                            if ($event.target.closest('button, a, input')) return;
+                            if ($event.ctrlKey || $event.metaKey) {
+                                $wire.toggleProductSelection({{ $product->id }});
+                            } else if ($event.shiftKey) {
+                                $wire.selectProductRange(lastClickedIndex ?? {{ $loop->index }}, {{ $loop->index }});
+                            } else {
+                                $wire.handlePlainProductClick({{ $product->id }});
+                            }
+                            lastClickedIndex = {{ $loop->index }};
+                        ">
+                        <td class="px-6 py-4 whitespace-nowrap" @click.stop>
+                            <input type="checkbox"
                                    wire:click="toggleProductSelection({{ $product->id }})"
-                                   @if(in_array($product->id, $selectedProducts)) checked @endif
-                                   class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-gray-600 rounded">
+                                   @if($isSelected) checked @endif
+                                   class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-gray-600 rounded cursor-pointer">
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="text-sm font-mono text-gray-900 dark:text-white">{{ $product->product_number ?? '—' }}</div>
@@ -162,7 +198,7 @@
                                 </span>
                             @endif
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" @click.stop>
                             <div class="flex space-x-2">
                                 <flux:modal.trigger name="product-details">
                                     <flux:button 

@@ -77,12 +77,16 @@
             </div>
         @endif
 
-        {{-- Search and Filters --}}
-        <div class="mb-6 bg-white dark:bg-gray-800 shadow rounded-lg">
-            <div class="p-6">
+        {{-- Agent List --}}
+        <section class="bg-white dark:bg-gray-800 shadow rounded-lg">
+            <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white">Agent List</h3>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Manage existing agents</p>
+            </div>
+            {{-- Search, Filters and Per Page (controls this table) --}}
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-                        {{-- Search Input --}}
                         <div class="relative flex-1 max-w-xs">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -93,8 +97,6 @@
                                 placeholder="Search agent..."
                                 class="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 dark:focus:ring-indigo-400 dark:focus:border-indigo-400 sm:text-sm">
                         </div>
-
-                        {{-- Status Filter --}}
                         <select wire:model.live="statusFilter"
                             class="block w-full sm:w-auto px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                             <option value="all">All Status</option>
@@ -102,8 +104,6 @@
                             <option value="active">Active</option>
                         </select>
                     </div>
-
-                    {{-- Per Page --}}
                     <div class="flex items-center gap-3">
                         <label class="text-sm font-medium text-gray-700 dark:text-gray-200 whitespace-nowrap">Per Page</label>
                         <select wire:model.live="perPage"
@@ -116,14 +116,6 @@
                         </select>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        {{-- Agent List --}}
-        <section class="bg-white dark:bg-gray-800 shadow rounded-lg">
-            <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
-                <h3 class="text-lg font-medium text-gray-900 dark:text-white">Agent List</h3>
-                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Manage existing agents</p>
             </div>
             {{-- Results Info --}}
                 <div class="px-6 py-3 text-sm text-gray-700 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50">

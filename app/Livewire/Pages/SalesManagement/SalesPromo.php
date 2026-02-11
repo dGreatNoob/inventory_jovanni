@@ -621,6 +621,8 @@ class SalesPromo extends Component
             ? Product::whereIn('id', $this->view_selected_products)->orderBy('name')->get()
             : collect();
 
+        $promoToDelete = $this->deleteId ? Promo::find($this->deleteId) : null;
+
         return view('livewire.pages.sales-management.promo', [
             'items' => $items,
             'branches' => $this->branches,
@@ -632,6 +634,7 @@ class SalesPromo extends Component
                 ->where('endDate', '>=', now())
                 ->count(),
             'upcomingPromos' => Promo::where('startDate', '>', now())->count(),
+            'promoToDelete' => $promoToDelete,
         ]);
     }
 }

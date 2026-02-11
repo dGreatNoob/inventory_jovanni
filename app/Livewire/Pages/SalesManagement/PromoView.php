@@ -59,15 +59,32 @@ class PromoView extends Component
 
     public function getConnectedProductsProperty()
     {
-        $allProductIds = array_merge($this->selected_products, $this->selected_second_products);
-        
-        return Product::whereIn('id', $allProductIds)
-            ->when($this->productSearch, function ($query) {
-                $query->where('name', 'like', '%' . $this->productSearch . '%')
-                      ->orWhere('sku', 'like', '%' . $this->productSearch . '%');
-            })
-            ->orderBy('name')
-            ->paginate($this->productsPerPage);
+        $allProductIds = array_unique(array_merge($this->selected_products, $this->selected_second_products));
+        if (empty($allProductIds)) {
+            return new \Illuminate\Pagination\LengthAwarePaginator([], 0, $this->productsPerPage, 1);
+        }
+
+        $query = Product::query()
+            ->whereIn('products.id', $allProductIds)
+            ->with(['category', 'supplier'])
+            ->when($this->productSearch, function ($q) {
+                $search = '%' . $this->productSearch . '%';
+                $q->where(function ($q2) use ($search) {
+                    $q2->where('products.name', 'like', $search)
+                       ->orWhere('products.sku', 'like', $search)
+                       ->orWhere('products.remarks', 'like', $search)
+                       ->orWhere('products.supplier_code', 'like', $search);
+                });
+            });
+
+        // Order by category (taxonomy) then product name, matching product-management
+        $query->leftJoin('categories', 'products.category_id', '=', 'categories.id')
+            ->orderByRaw('categories.name IS NULL')
+            ->orderBy('categories.name')
+            ->orderBy('products.name')
+            ->select('products.*');
+
+        return $query->paginate($this->productsPerPage);
     }
 
     public function viewProduct($productId)

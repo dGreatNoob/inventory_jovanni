@@ -136,7 +136,7 @@
                         </div>
                         <input wire:model.live.debounce.300ms="search" 
                                type="text" 
-                               placeholder="Search by product, SKU, or alt text..." 
+                               placeholder="Search by product name, SKU, or alt text..." 
                                class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white dark:bg-gray-700 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 sm:text-sm dark:text-white">
                     </div>
                 </div>
@@ -165,31 +165,18 @@
             @if($showFilters)
                 <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Product</label>
-                        <select wire:model.live="productFilter" 
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Category</label>
+                        <select wire:model.live="categoryFilter"
                                 class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 sm:text-sm rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                            <option value="">All Products</option>
-                            @foreach($products as $product)
-                                <option value="{{ $product->id }}">{{ $product->name }} ({{ $product->sku }})</option>
+                            <option value="">All Categories</option>
+                            @foreach($categories as $category)
+                                <option value="{{ $category->id }}">{{ $category->name }}</option>
                             @endforeach
                         </select>
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">File Extension</label>
-                        <select wire:model.live="extensionFilter" 
-                                class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 sm:text-sm rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                            <option value="">All Extensions</option>
-                            <option value="jpg">JPG</option>
-                            <option value="jpeg">JPEG</option>
-                            <option value="png">PNG</option>
-                            <option value="gif">GIF</option>
-                            <option value="webp">WebP</option>
-                        </select>
-                    </div>
-
                     <div class="flex items-end">
-                        <button wire:click="clearFilters" 
+                        <button wire:click="clearFilters"
                                 class="w-full inline-flex justify-center items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600 dark:focus:ring-gray-400">
                             Clear Filters
                         </button>
@@ -201,7 +188,7 @@
 
     <!-- Images Display -->
     <div class="bg-white dark:bg-gray-800 shadow overflow-hidden sm:rounded-md">
-        <div class="px-4 py-5 sm:p-6">
+        <div class="px-4 py-5 pb-6 sm:p-6 sm:pb-8">
             @if(($viewMode === 'grid' && count($productCards) > 0) || ($viewMode !== 'grid' && count($images) > 0))
                 @if($viewMode === 'grid')
                     <!-- Grid View: group by product (one card per product, show primary/first image) -->
@@ -255,9 +242,6 @@
                                 </div>
                             </div>
                         @endforeach
-                    </div>
-                    <div class="mt-6">
-                        {{ $productCards->links() }}
                     </div>
                 @else
                     <!-- List View: one row per product -->
@@ -328,14 +312,29 @@
                     </div>
                 @endif
 
-                <!-- Pagination -->
-                <div class="mt-6">
-                    @if($viewMode === 'grid')
-                        {{ $productCards->links() }}
-                    @else
-                        {{ $productCards->links() }}
-                    @endif
-                </div>
+                <!-- Pagination (consistent with Product Management / Categories) -->
+                @if($productCards->count() > 0)
+                    <div class="mt-6 border-t border-gray-200 dark:border-gray-700">
+                        <div class="bg-white dark:bg-gray-800 px-4 py-4 sm:px-6 sm:py-5">
+                            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                <div class="flex items-center space-x-4">
+                                    <label class="text-sm font-medium text-gray-900 dark:text-white">Per Page:</label>
+                                    <select wire:model.live="perPage"
+                                        class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+                                        <option value="5">5</option>
+                                        <option value="10">10</option>
+                                        <option value="20">20</option>
+                                        <option value="50">50</option>
+                                        <option value="100">100</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    {{ $productCards->links('livewire::tailwind', ['scrollTo' => false]) }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
             @else
                 <div class="text-center py-12">
                     <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

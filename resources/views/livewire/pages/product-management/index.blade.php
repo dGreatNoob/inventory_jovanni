@@ -1,4 +1,9 @@
 <div>
+    @if(session()->has('error'))
+        <div class="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300" role="alert">
+            {{ session('error') }}
+        </div>
+    @endif
     <!-- Header Section -->
     <div class="mb-6">
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -8,16 +13,31 @@
             </div>
             <div class="flex flex-row items-center space-x-3">
                 @can('product export')
-                <flux:button 
-                    wire:click="exportProducts" 
-                    variant="outline"
-                    class="flex items-center gap-2 whitespace-nowrap min-w-fit"
-                >
-                    <svg class="inline w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                    <span>Export</span>
-                </flux:button>
+                @if(count($selectedProducts) > 0)
+                    <flux:link
+                        href="{{ $this->exportUrl }}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        variant="outline"
+                        class="flex items-center gap-2 whitespace-nowrap min-w-fit"
+                    >
+                        <svg class="inline w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <span>Export{{ count($selectedProducts) > 0 ? ' (' . count($selectedProducts) . ')' : '' }}</span>
+                    </flux:link>
+                @else
+                    <flux:button
+                        wire:click="exportProducts"
+                        variant="outline"
+                        class="flex items-center gap-2 whitespace-nowrap min-w-fit"
+                    >
+                        <svg class="inline w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <span>Export</span>
+                    </flux:button>
+                @endif
                 @endcan
 
 

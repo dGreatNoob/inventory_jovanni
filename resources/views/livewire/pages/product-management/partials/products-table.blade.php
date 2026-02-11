@@ -24,20 +24,31 @@
         </div>
     @endif
     <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <table class="min-w-full w-full table-fixed divide-y divide-gray-200 dark:divide-gray-700">
+            <colgroup>
+                <col style="width: 2.5%" />
+                <col style="width: 9%" />
+                <col style="width: 22%" />
+                <col style="width: 11%" />
+                <col style="width: 11%" />
+                <col style="width: 11%" />
+                <col style="width: 10%" />
+                <col style="width: 7%" />
+                <col style="width: 8%" />
+                <col style="width: 9.5%" />
+            </colgroup>
             <thead class="bg-gray-50 dark:bg-gray-700">
                 <tr>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         <input type="checkbox" 
                                wire:click="selectAllProducts"
                                class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-gray-600 rounded">
                     </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Product ID
                     </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        <button wire:click="sortBy('name')" class="group inline-flex">
-                            <button wire:click="sortBy('remarks')" class="group inline-flex">
+                    <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        <button type="button" wire:click="sortBy('name')" class="group inline-flex">
                             Description
                             @if($sortBy === 'name')
                                 @if($sortDirection === 'asc')
@@ -56,17 +67,17 @@
                             @endif
                         </button>
                     </th>
-                    <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th scope="col" class="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Barcode
                     </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Category
                     </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Supplier
                     </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        <button wire:click="sortBy('price')" class="group inline-flex">
+                    <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        <button type="button" wire:click="sortBy('price')" class="group inline-flex">
                             Price
                             @if($sortBy === 'price')
                                 @if($sortDirection === 'asc')
@@ -85,13 +96,13 @@
                             @endif
                         </button>
                     </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Stock
                     </th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th scope="col" class="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Status
                     </th>
-                    <th scope="col" class="relative px-6 py-3">
+                    <th scope="col" class="relative px-3 py-2">
                         <span class="sr-only">Actions</span>
                     </th>
                 </tr>
@@ -112,43 +123,42 @@
                             }
                             lastClickedIndex = {{ $loop->index }};
                         ">
-                        <td class="px-6 py-4 whitespace-nowrap" @click.stop>
+                        <td class="px-3 py-3 w-px" @click.stop>
                             <input type="checkbox"
                                    wire:click="toggleProductSelection({{ $product->id }})"
                                    @if($isSelected) checked @endif
                                    class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-gray-600 rounded cursor-pointer">
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm font-mono text-gray-900 dark:text-white">{{ $product->product_number ?? '—' }}</div>
+                        <td class="px-3 py-3 min-w-0">
+                            <div class="text-sm font-mono text-gray-900 dark:text-white truncate" title="{{ $product->product_number ?? '—' }}">{{ $product->product_number ?? '—' }}</div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="flex items-center">
-                                <div class="flex-shrink-0 h-10 w-10">
+                        <td class="px-3 py-3 min-w-0">
+                            <div class="flex items-center min-w-0">
+                                <div class="flex-shrink-0 h-8 w-8">
                                     @if($product->primary_image)
-                                        <img class="h-10 w-10 rounded-lg object-cover" 
+                                        <img class="h-8 w-8 rounded object-cover" 
                                              src="{{ asset('storage/photos/' . $product->primary_image) }}" 
                                              alt="{{ $product->name }}">
                                     @else
-                                        <div class="h-10 w-10 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                                            <svg class="h-6 w-6 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <div class="h-8 w-8 rounded bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                                            <svg class="h-4 w-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                             </svg>
                                         </div>
                                     @endif
                                 </div>
-                                <div class="ml-4">
-                                    <div class="text-sm font-medium text-gray-900 dark:text-white">
+                                <div class="ml-2 min-w-0 flex-1">
+                                    <div class="text-sm font-medium text-gray-900 dark:text-white truncate" title="{{ $product->name }}@if(!empty($product->remarks)) - {{ $product->remarks }}@endif">
                                         {{ $product->name }}@if(!empty($product->remarks)) - {{ $product->remarks }}@endif
                                         @if(($product->product_type ?? '') === 'placeholder')
-                                            <span class="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300">Pending</span>
+                                            <span class="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300 flex-shrink-0">Pending</span>
                                         @endif
                                     </div>
-                                    <div class="text-sm text-gray-500 dark:text-gray-400">{{ $product->sku }}</div>
-                                    <div class="text-sm text-gray-500 dark:text-gray-400">Supplier Code (SKU): {{ $product->supplier_code ?? '—' }}</div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400 truncate" title="SKU: {{ $product->sku }} · Supp: {{ $product->supplier_code ?? '—' }}">{{ $product->sku }} · {{ $product->supplier_code ?? '—' }}</div>
                                 </div>
                             </div>
                         </td>
-                        <td class="px-3 py-4">
+                        <td class="px-3 py-3">
                             @if($product->barcode)
                                 <div class="flex justify-center">
                                     <x-barcode-display 
@@ -165,25 +175,20 @@
                                 </div>
                             @endif
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900 dark:text-white">
-                                {{ $product->category->name ?? 'N/A' }}
-                            </div>
+                        <td class="px-3 py-3 min-w-0">
+                            <div class="text-sm text-gray-900 dark:text-white truncate" title="{{ $product->category->name ?? 'N/A' }}">{{ $product->category->name ?? 'N/A' }}</div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900 dark:text-white">
-                                {{ $product->supplier->name ?? 'N/A' }}
-                            </div>
+                        <td class="px-3 py-3 min-w-0">
+                            <div class="text-sm text-gray-900 dark:text-white truncate" title="{{ $product->supplier->name ?? 'N/A' }}">{{ $product->supplier->name ?? 'N/A' }}</div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
+                        <td class="px-3 py-3">
                             <div class="text-sm text-gray-900 dark:text-white">₱{{ number_format($product->price, 2) }}</div>
-                            <div class="text-sm text-gray-500 dark:text-gray-400">Cost: ₱{{ number_format($product->cost, 2) }}</div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400">cost ₱{{ number_format($product->cost, 2) }}</div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900 dark:text-white">{{ number_format($product->total_quantity) }}</div>
-                            <div class="text-sm text-gray-500 dark:text-gray-400">{{ $product->uom }}</div>
+                        <td class="px-3 py-3">
+                            <div class="text-sm text-gray-900 dark:text-white">{{ number_format($product->total_quantity) }} <span class="text-xs text-gray-500 dark:text-gray-400">{{ $product->uom }}</span></div>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
+                        <td class="px-3 py-3">
                             @if($product->total_quantity <= 0)
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300">
                                     Out of Stock
@@ -198,7 +203,7 @@
                                 </span>
                             @endif
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium" @click.stop>
+                        <td class="px-3 py-3 text-right text-sm font-medium" @click.stop>
                             <div class="flex space-x-2">
                                 <flux:modal.trigger name="product-details">
                                     <flux:button 
@@ -244,7 +249,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="9" class="px-6 py-12 text-center">
+                        <td colspan="10" class="px-3 py-12 text-center">
                             <div class="text-center">
                                 <svg class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>

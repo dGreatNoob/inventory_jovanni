@@ -338,62 +338,76 @@
             </div>
         </section>
 
-        <!-- Filters and Search -->
-        <section class="mb-6">
-            <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
-                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between p-4 gap-4">
-                    <!-- Search -->
-                    <div class="flex space-x-6">
+        <!-- Search and Filters -->
+        <div class="bg-white dark:bg-gray-800 shadow rounded-lg mb-6">
+            <div class="p-6">
+                <!-- Search Bar -->
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
+                    <div class="flex-1 max-w-lg">
                         <div class="relative">
-                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                <svg aria-hidden="true" class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path>
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                                 </svg>
                             </div>
-                            <input 
-                                type="text" 
-                                wire:model.live.debounce.500ms="search"
-                                class="block w-64 p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" 
-                                placeholder="Search suppliers..."
-                            >
+                            <input wire:model.live.debounce.300ms="search"
+                                   type="text"
+                                   placeholder="Search suppliers..."
+                                   class="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-700 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 sm:text-sm">
                         </div>
                     </div>
-
-                    <!-- Filters -->
-                    <div class="flex flex-wrap gap-3">
-                        <select 
-                            wire:model.live="statusFilter"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                        >
-                            <option value="">All</option>
-                            <option value="active">Active only</option>
-                            <option value="inactive">Inactive only</option>
-                        </select>
-
-                        <select 
-                            wire:model.live="categoryFilter"
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                        >
-                            <option value="">All Categories</option>
-                            @foreach($categories as $id => $name)
-                                <option value="{{ $id }}">{{ $name }}</option>
-                            @endforeach
-                        </select>
-
-                        <button 
-                            type="button"
-                            wire:click="resetFilters" 
-                            class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 px-2.5 py-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors flex items-center gap-2"
-                        >
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="mt-4 sm:mt-0 flex space-x-3">
+                        <button wire:click="toggleFilters"
+                                class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:focus:ring-gray-400">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.414A1 1 0 013 6.707V4z"></path>
+                            </svg>
+                            Filters
+                        </button>
+                        <button wire:click="resetFilters"
+                                class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:focus:ring-gray-400">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                             </svg>
-                            Reset Filters
+                            Reset
                         </button>
                     </div>
                 </div>
+
+                <!-- Advanced Filters -->
+                @if($showFilters)
+                    <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Status</label>
+                                <select wire:model.live="statusFilter"
+                                        class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 sm:text-sm">
+                                    <option value="">All</option>
+                                    <option value="active">Active only</option>
+                                    <option value="inactive">Inactive only</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Category</label>
+                                <select wire:model.live="categoryFilter"
+                                        class="block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-gray-500 focus:border-gray-500 dark:focus:ring-gray-400 dark:focus:border-gray-400 sm:text-sm">
+                                    <option value="">All Categories</option>
+                                    @foreach($categories as $id => $name)
+                                        <option value="{{ $id }}">{{ $name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex justify-end">
+                            <button wire:click="resetFilters"
+                                    class="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:focus:ring-gray-400">
+                                Clear Filters
+                            </button>
+                        </div>
+                    </div>
+                @endif
             </div>
-        </section>
+        </div>
 
         <!-- DataTables Section -->
         <section class="mb-6">
@@ -401,23 +415,25 @@
 
                 <!-- Data Table -->
                 <div class="overflow-x-auto">
-                    <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                        <thead class="text-sm text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <thead class="bg-gray-50 dark:bg-gray-700">
                             <tr>
-                                <th scope="col" class="px-6 py-3">Supplier</th>
-                                <th scope="col" class="px-6 py-3">Contact</th>
-                                <th scope="col" class="px-6 py-3">Categories</th>
-                                <th scope="col" class="px-6 py-3">Products</th>
-                                <th scope="col" class="px-6 py-3">Orders</th>
-                                <th scope="col" class="px-6 py-3">Total Ordered Value</th>
-                                <th scope="col" class="px-6 py-3">Last order</th>
-                                <th scope="col" class="px-6 py-3">Status</th>
-                                <th scope="col" class="px-6 py-3">Action</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Supplier</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Contact</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Categories</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Products</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Orders</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Total Ordered Value</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Last order</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                                <th scope="col" class="relative px-6 py-3">
+                                    <span class="sr-only">Actions</span>
+                                </th>
                             </tr>
                         </thead>
 
-                        <tbody>
-                            @foreach($items as $item)
+                        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                            @forelse($items as $item)
                                 @php
                                     // Calculate orders count
                                     $ordersCount = $item->purchaseOrders->count();
@@ -430,7 +446,7 @@
                                     $lastOrderDate = $lastOrder ? $lastOrder->order_date : null;
                                 @endphp
                                 
-                                <tr class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700 border-gray-200">
+                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
                                     <!-- Supplier -->
                                     <td class="px-6 py-4">
                                         <div class="flex flex-col space-y-1">
@@ -565,28 +581,62 @@
                                     </td>
 
                                     <!-- Action -->
-                                    <td class="px-6 py-4 space-x-2">
-                                        <a href="{{ route('supplier.view', ['id' => $item->id]) }}">
-                                            <flux:button type="button" variant="outline" size="sm">View</flux:button>
-                                        </a>
-                                        @can('supplier edit')
-                                        <flux:button wire:click.prevent="edit({{ $item->id }})" variant="outline" size="sm">
-                                            Edit</flux:button>
-                                        @endcan
-
-                                        @can('supplier delete')
-                                        <flux:button wire:click.prevent="confirmDelete({{ $item->id }})" variant="outline" size="sm" class="text-red-600 hover:text-red-700">
-                                            Delete</flux:button>
-                                        @endcan
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <div class="flex justify-end space-x-2">
+                                            <a href="{{ route('supplier.view', ['id' => $item->id]) }}">
+                                                <flux:button type="button" variant="ghost" size="sm" class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300" title="View Details">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                                    </svg>
+                                                </flux:button>
+                                            </a>
+                                            @can('supplier edit')
+                                            <flux:button wire:click.prevent="edit({{ $item->id }})" variant="ghost" size="sm" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300" title="Edit">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                                </svg>
+                                            </flux:button>
+                                            @endcan
+                                            @can('supplier delete')
+                                            <flux:modal.trigger name="delete-supplier">
+                                                <flux:button wire:click="confirmDelete({{ $item->id }})" variant="ghost" size="sm" class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300" title="Delete">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                    </svg>
+                                                </flux:button>
+                                            </flux:modal.trigger>
+                                            @endcan
+                                        </div>
                                     </td>
                                 </tr>
-                            @endforeach
+                            @empty
+                                <tr>
+                                    <td colspan="9" class="px-6 py-12 text-center">
+                                        <div class="text-center">
+                                            <svg class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                            </svg>
+                                            <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No suppliers found</h3>
+                                            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Get started by adding your first supplier.</p>
+                                            @can('supplier create')
+                                            <div class="mt-4">
+                                                <flux:button wire:click="$set('showCreatePanel', true)" variant="primary" size="sm">
+                                                    Add Supplier
+                                                </flux:button>
+                                            </div>
+                                            @endcan
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
 
                 <!-- Pagination -->
-                <div class="py-4 px-3">
+                @if($items->hasPages() || $items->count() > 0)
+                <div class="px-4 py-3 border-t border-gray-200 dark:border-gray-700 sm:px-6">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center space-x-4">
                             <label class="text-sm font-medium text-gray-900 dark:text-white">Per Page:</label>
@@ -604,6 +654,7 @@
                         </div>
                     </div>
                 </div>
+                @endif
             </div>
         </section>
 
@@ -833,69 +884,62 @@
             </template>
         </div>
 
-        <!-- Delete Confirmation Modal -->
-        <div
-            x-data="{ open: @entangle('showDeleteModal').live }"
-            x-cloak
+        <!-- Delete Supplier Modal (matches product-management pattern) -->
+        <x-product-management-modal
+            name="delete-supplier"
+            title="Delete Supplier"
+            description="Are you sure you want to delete this supplier? This action cannot be undone and will permanently remove the supplier profile."
+            size="md"
+            icon="delete"
+            icon-color="red"
         >
-            <template x-teleport="body">
-                <div
-                    x-show="open"
-                    x-transition.opacity
-                    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50"
-                >
-                    <div
-                        x-show="open"
-                        x-transition
-                        class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6"
-                    >
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Confirm Deletion</h3>
-                        <p class="text-gray-600 dark:text-gray-400 mb-4">Are you sure you want to delete this supplier profile? This action cannot be undone.</p>
-                        <div class="flex justify-end space-x-3">
-                            <flux:button 
-                                variant="ghost" 
-                                wire:click="cancel"
-                            >
-                                Cancel
-                            </flux:button>
-                            <flux:button 
-                                variant="danger" 
-                                wire:click="delete"
-                            >
-                                Delete Supplier
-                            </flux:button>
+            <div class="space-y-4 pr-2">
+                <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                            </svg>
                         </div>
-                    </div>
-                </div>
-            </template>
-        </div>
-
-            @if($showDeleteModal)
-                <div class="fixed top-0 left-0 right-0 z-50 w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] max-h-full flex items-center justify-center">
-                    <div class="relative w-full max-w-md max-h-full">
-                        <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
-                            <button type="button" class="absolute top-3 right-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ml-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white" wire:click="cancel">
-                                <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
-                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
-                                </svg>
-                                <span class="sr-only">Close modal</span>
-                            </button>
-                            <div class="p-6 text-center">
-                                <svg class="mx-auto mb-4 text-gray-400 w-12 h-12 dark:text-gray-200" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
-                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 11V6m0 8h.01M19 10a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
-                                </svg>
-                                <h3 class="mb-5 text-lg font-normal text-gray-500 dark:text-gray-400">Are you sure you want to delete this supplier profile?</h3>
-                                <flux:button wire:click="delete" class="mr-2 bg-red-600 hover:bg-red-700 text-white">
-                                    Yes, I'm sure
-                                </flux:button>
-                                <flux:button wire:click="cancel" variant="outline">
-                                    No, cancel
-                                </flux:button>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-red-800 dark:text-red-200">Warning</h3>
+                            <div class="mt-2 text-sm text-red-700 dark:text-red-300">
+                                <p>You are about to delete <strong class="font-semibold">{{ optional($deletingSupplier)->name ?? '' }}</strong>.</p>
+                                <p class="mt-1">This action cannot be undone and will permanently remove the supplier profile.</p>
                             </div>
                         </div>
                     </div>
                 </div>
-            @endif
+
+                @if(optional($deletingSupplier)->products_count > 0)
+                    <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-yellow-800 dark:text-yellow-200">Products linked to this supplier</h3>
+                                <div class="mt-2 text-sm text-yellow-700 dark:text-yellow-300">
+                                    <p>This supplier has <strong>{{ optional($deletingSupplier)->products_count ?? 0 }}</strong> product(s) linked. Deleting the supplier will also remove those products (cascade delete).</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+            </div>
+
+            <x-slot name="actions">
+                <flux:modal.close>
+                    <flux:button variant="ghost">Cancel</flux:button>
+                </flux:modal.close>
+
+                <flux:button wire:click="delete" variant="danger">
+                    Delete Supplier
+                </flux:button>
+            </x-slot>
+        </x-product-management-modal>
         </section>
         
 

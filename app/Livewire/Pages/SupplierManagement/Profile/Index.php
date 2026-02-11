@@ -35,7 +35,8 @@ class Index extends Component
     // Filter properties
     public $statusFilter = 'active'; // 'active' | 'inactive' | '' (all)
     public $categoryFilter = '';
-    
+    public $showFilters = false;
+
     // Modal states
     public $showDeleteModal = false;
     public $showEditModal = false;
@@ -44,6 +45,7 @@ class Index extends Component
     
     // Selected item tracking
     public $deleteId = null;
+    public $deletingSupplier = null;
     public $selectedItemId;
 
     protected $queryString = [
@@ -118,6 +120,14 @@ class Index extends Component
             'categoryFilter',
         ]);
         $this->resetPage();
+    }
+
+    /**
+     * Toggle advanced filters visibility
+     */
+    public function toggleFilters()
+    {
+        $this->showFilters = ! $this->showFilters;
     }
 
     /**
@@ -284,16 +294,17 @@ class Index extends Component
     }
 
     /**
-     * Show delete confirmation modal
+     * Set supplier to delete and open confirmation modal (called before Flux opens modal)
+     * Loads with products count so the modal can show a warning when the supplier has linked products.
      */
     public function confirmDelete($id)
     {
         $this->deleteId = $id;
-        $this->showDeleteModal = true;
+        $this->deletingSupplier = Supplier::withCount('products')->find($id);
     }
 
     /**
-     * Delete supplier
+     * Delete supplier and close modal
      */
     public function delete()
     {
@@ -302,14 +313,13 @@ class Index extends Component
             $supplier->delete();
 
             session()->flash('message', 'Supplier profile deleted successfully.');
-            
-            // Refresh dashboard metrics
             $this->loadDashboardMetrics();
+
+            $this->reset(['deleteId', 'deletingSupplier']);
+            $this->dispatch('modal-close', name: 'delete-supplier');
         } catch (\Exception $e) {
             session()->flash('error', 'Error deleting supplier: ' . $e->getMessage());
         }
-
-        $this->cancel();
     }
 
     /**
@@ -355,6 +365,7 @@ class Index extends Component
             'showDeleteModal',
             'showEditModal',
             'deleteId',
+            'deletingSupplier',
             'selectedItemId',
             'supplier_name',
             'supplier_code',

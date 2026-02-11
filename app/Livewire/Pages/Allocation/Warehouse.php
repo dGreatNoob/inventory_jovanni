@@ -134,10 +134,8 @@ class Warehouse extends Component
         // Generate reference number
         $this->ref_no = $this->generateRefNo();
 
-        // Load data
+        // Load data (products/categories deferred until stepper or Add Items modal is opened)
         $this->loadAvailableBatchNumbers();
-        $this->loadAvailableProducts();
-        $this->loadAvailableCategories();
         $this->loadBatchAllocations();
 
         // Initialize batch steps for the table
@@ -240,9 +238,10 @@ class Warehouse extends Component
         }
         
         // Fallback: determine from data (for old batches without workflow_step)
+        // Use loaded relation to avoid N+1 (items already eager-loaded via branchAllocations.items)
         $hasProducts = false;
         foreach ($batch->branchAllocations as $branchAllocation) {
-            if ($branchAllocation->items()->whereNull('box_id')->count() > 0) {
+            if ($branchAllocation->items->whereNull('box_id')->count() > 0) {
                 $hasProducts = true;
                 break;
             }
@@ -2114,9 +2113,10 @@ class Warehouse extends Component
         $this->temporarySelectedProducts = [];
         $this->branchSearch = '';
 
-        // Load fresh data
+        // Load fresh data (products/categories only when stepper opens)
         $this->loadAvailableBatchNumbers();
         $this->loadAvailableProducts();
+        $this->loadAvailableCategories();
 
         // Show the stepper
         $this->showStepper = true;
@@ -2533,7 +2533,7 @@ class Warehouse extends Component
                 ->where('description', 'like', 'Updated allocated quantity%')
                 ->where('created_at', '>', $minCreatedAt)
                 ->orderBy('created_at', 'desc')
-                ->limit(5000)
+                ->limit(1500)
                 ->get()
                 ->map(fn ($a) => [
                     'barcode' => $a->properties['barcode'] ?? null,
@@ -2542,31 +2542,42 @@ class Warehouse extends Component
                 ]);
         }
 
+        // Single query for all batches: collect all branch_allocation_ids on this page
+        $allBranchAllocationIds = collect();
+        foreach ($batches as $batch) {
+            foreach ($batch->branchAllocations as $ba) {
+                $allBranchAllocationIds->push($ba->id);
+            }
+        }
+        $allBranchAllocationIds = $allBranchAllocationIds->unique()->values();
+
+        $scannedByKey = collect();
+        if ($allBranchAllocationIds->isNotEmpty()) {
+            $scannedByKey = BranchAllocationItem::whereIn('branch_allocation_id', $allBranchAllocationIds)
+                ->whereNotNull('box_id')
+                ->selectRaw('branch_allocation_id, product_id, SUM(scanned_quantity) as total')
+                ->groupBy('branch_allocation_id', 'product_id')
+                ->get()
+                ->keyBy(fn ($r) => $r->branch_allocation_id . '_' . $r->product_id);
+        }
+
         foreach ($batches as $batch) {
             $scannedQty = 0;
             $allocatedQty = 0;
             $allScanned = true;
-            $branchAllocationIds = [];
 
             foreach ($batch->branchAllocations as $ba) {
-                $branchAllocationIds[] = $ba->id;
                 $originalItems = $ba->items->whereNull('box_id');
                 foreach ($originalItems as $item) {
                     $allocatedQty += $item->quantity ?? 0;
                 }
             }
 
-            if (empty($branchAllocationIds)) {
+            $branchAllocationIds = $batch->branchAllocations->pluck('id')->filter()->values();
+            if ($branchAllocationIds->isEmpty()) {
                 $result[$batch->id] = ['scanned' => 0, 'allocated' => 0, 'allScanned' => true, 'fullyScanned' => false];
                 continue;
             }
-
-            $scannedByKey = BranchAllocationItem::whereIn('branch_allocation_id', $branchAllocationIds)
-                ->whereNotNull('box_id')
-                ->selectRaw('branch_allocation_id, product_id, SUM(scanned_quantity) as total')
-                ->groupBy('branch_allocation_id', 'product_id')
-                ->get()
-                ->keyBy(fn ($r) => $r->branch_allocation_id . '_' . $r->product_id);
 
             foreach ($batch->branchAllocations as $ba) {
                 $originalItems = $ba->items->whereNull('box_id');
@@ -2584,7 +2595,8 @@ class Warehouse extends Component
                     if ($hasBeenEdited) {
                         $scannedQty += $allocQty;
                     } else {
-                        $productScanned = (int) ($scannedByKey[$key]->total ?? 0);
+                        $row = $scannedByKey->get($key);
+                        $productScanned = $row ? (int) $row->total : 0;
                         $scannedQty += $productScanned;
                         if ($productScanned < $allocQty) {
                             $allScanned = false;

@@ -1,45 +1,17 @@
-<x-slot:header>Warehouse Allocation</x-slot:header>
-<x-slot:subheader>Create and manage product allocations to branches</x-slot:subheader>
+<x-slot:header>Allocation Management</x-slot:header>
+<x-slot:subheader>Create Allocation</x-slot:subheader>
 
 <div class="pb-6">
-    <!-- Header Section with Create Button -->
-    <div class="mb-6">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-                <h2 class="text-2xl font-bold text-zinc-900 dark:text-white">Create Allocation</h2>
-            </div>
-
-                <!-- Only show Create buttons when stepper is NOT open -->
-                @if (!$showStepper)
-                    <div class="flex flex-col gap-3">
-                    <flux:button 
-                        wire:click="openStepper"
-                        class="inline-flex flex-row items-center justify-center gap-2"
-                    >
-                        <!-- <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                        </svg> -->
-                        <span>New Allocation</span>
-                    </flux:button>
-
-                        <!-- <p class="text-sm text-zinc-500 dark:text-zinc-400"><strong>Create for All Batches:</strong> pre-create empty allocations. <strong>New Allocation:</strong> set up one allocation with batches, branches, and products.</p> -->
-                    </div>
-                @endif
-            </div>
-        </div>
-
-
         <!-- StePPER WORKFLOW (Inline, not modal) -->
         @if ($showStepper)
             <div
-                class="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-lg mb-6">
+                class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg mb-6">
                 <!-- Stepper Header -->
-                <div class="px-6 py-4 border-b border-zinc-200 dark:border-zinc-700">
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                     <div class="flex justify-between items-center">
-                        <h3 class="text-lg font-medium text-zinc-900 dark:text-white">New Allocation</h3>
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-white">New Allocation</h3>
                         <button wire:click="closeStepper"
-                            class="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300">
+                            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M6 18L18 6M6 6l12 12"></path>
@@ -49,23 +21,23 @@
                 </div>
 
                 <!-- Stepper Navigation -->
-                <div class="px-6 py-8 border-b border-zinc-200 dark:border-zinc-700">
+                <div class="px-6 py-8 border-b border-gray-200 dark:border-gray-700">
                     <nav aria-label="Progress">
                         <ol class="flex items-center w-full space-x-4">
                             <li
                                 class="flex flex-col w-full items-center flex-1">
-                                <div class="flex w-full items-center after:content-[''] after:w-full after:h-1 {{ $currentStep > 1 ? 'after:border-zinc-300' : 'after:border-zinc-200 dark:after:border-zinc-600' }} after:border-4 after:inline-block after:ms-4 after:rounded-full">
+                                <div class="flex w-full items-center after:content-[''] after:w-full after:h-1 {{ $currentStep > 1 ? 'after:border-gray-300' : 'after:border-gray-200 dark:after:border-gray-600' }} after:border-4 after:inline-block after:ms-4 after:rounded-full">
                                     <span
-                                        class="flex items-center justify-center w-10 h-10 {{ $currentStep > 1 ? 'bg-zinc-100' : ($currentStep == 1 ? 'bg-zinc-100' : 'bg-zinc-100 dark:bg-zinc-700') }} rounded-full lg:h-12 lg:w-12 shrink-0">
+                                        class="flex items-center justify-center w-10 h-10 {{ $currentStep > 1 ? 'bg-gray-100' : ($currentStep == 1 ? 'bg-gray-100' : 'bg-gray-100 dark:bg-gray-700') }} rounded-full lg:h-12 lg:w-12 shrink-0">
                                         @if ($currentStep > 1)
-                                            <svg class="w-5 h-5 text-zinc-600" aria-hidden="true"
+                                            <svg class="w-5 h-5 text-gray-600" aria-hidden="true"
                                                 xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                                 fill="none" viewBox="0 0 24 24">
                                                 <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
                                                     stroke-width="2" d="M5 11.917 9.724 16.5 19 7.5" />
                                             </svg>
                                         @else
-                                            <svg class="w-5 h-5 {{ $currentStep == 1 ? 'text-zinc-600' : 'text-zinc-400' }}"
+                                            <svg class="w-5 h-5 {{ $currentStep == 1 ? 'text-gray-600' : 'text-gray-400' }}"
                                                 aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24"
                                                 height="24" fill="none" viewBox="0 0 24 24">
                                                 <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
@@ -74,14 +46,14 @@
                                         @endif
                                     </span>
                                 </div>
-                                <span class="mt-2 text-xs font-medium {{ $currentStep >= 1 ? 'text-zinc-700 dark:text-zinc-300' : 'text-zinc-400 dark:text-zinc-500' }}">Batch</span>
+                                <span class="mt-2 text-xs font-medium {{ $currentStep >= 1 ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 dark:text-gray-500' }}">Batch</span>
                             </li>
                             <li
                                 class="flex flex-col w-full items-center flex-1">
-                                <div class="flex w-full items-center after:content-[''] after:w-full after:h-1 {{ $currentStep > 2 ? 'after:border-zinc-300' : 'after:border-zinc-200 dark:after:border-zinc-600' }} after:border-4 after:inline-block after:ms-4 after:rounded-full">
+                                <div class="flex w-full items-center after:content-[''] after:w-full after:h-1 {{ $currentStep > 2 ? 'after:border-gray-300' : 'after:border-gray-200 dark:after:border-gray-600' }} after:border-4 after:inline-block after:ms-4 after:rounded-full">
                                     <span
-                                        class="flex items-center justify-center w-10 h-10 {{ $currentStep > 2 ? 'bg-zinc-100' : ($currentStep == 2 ? 'bg-zinc-100' : 'bg-zinc-100 dark:bg-zinc-700') }} rounded-full lg:h-12 lg:w-12 shrink-0">
-                                        <svg class="w-5 h-5 {{ $currentStep > 2 ? 'text-zinc-600' : ($currentStep == 2 ? 'text-zinc-600' : 'text-zinc-400') }}"
+                                        class="flex items-center justify-center w-10 h-10 {{ $currentStep > 2 ? 'bg-gray-100' : ($currentStep == 2 ? 'bg-gray-100' : 'bg-gray-100 dark:bg-gray-700') }} rounded-full lg:h-12 lg:w-12 shrink-0">
+                                        <svg class="w-5 h-5 {{ $currentStep > 2 ? 'text-gray-600' : ($currentStep == 2 ? 'text-gray-600' : 'text-gray-400') }}"
                                             aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24"
                                             height="24" fill="none" viewBox="0 0 24 24">
                                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
@@ -90,14 +62,14 @@
                                         </svg>
                                     </span>
                                 </div>
-                                <span class="mt-2 text-xs font-medium {{ $currentStep >= 2 ? 'text-zinc-700 dark:text-zinc-300' : 'text-zinc-400 dark:text-zinc-500' }}">Branches</span>
+                                <span class="mt-2 text-xs font-medium {{ $currentStep >= 2 ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 dark:text-gray-500' }}">Branches</span>
                             </li>
                             <li
                                 class="flex flex-col w-full items-center flex-1">
-                                <div class="flex w-full items-center after:content-[''] after:w-full after:h-1 {{ $currentStep > 3 ? 'after:border-zinc-300' : 'after:border-zinc-200 dark:after:border-zinc-600' }} after:border-4 after:inline-block after:ms-4 after:rounded-full">
+                                <div class="flex w-full items-center after:content-[''] after:w-full after:h-1 {{ $currentStep > 3 ? 'after:border-gray-300' : 'after:border-gray-200 dark:after:border-gray-600' }} after:border-4 after:inline-block after:ms-4 after:rounded-full">
                                     <span
-                                        class="flex items-center justify-center w-10 h-10 {{ $currentStep > 3 ? 'bg-zinc-100' : ($currentStep == 3 ? 'bg-zinc-100' : 'bg-zinc-100 dark:bg-zinc-700') }} rounded-full lg:h-12 lg:w-12 shrink-0">
-                                        <svg class="w-5 h-5 {{ $currentStep > 3 ? 'text-zinc-600' : ($currentStep == 3 ? 'text-zinc-600' : 'text-zinc-400') }}"
+                                        class="flex items-center justify-center w-10 h-10 {{ $currentStep > 3 ? 'bg-gray-100' : ($currentStep == 3 ? 'bg-gray-100' : 'bg-gray-100 dark:bg-gray-700') }} rounded-full lg:h-12 lg:w-12 shrink-0">
+                                        <svg class="w-5 h-5 {{ $currentStep > 3 ? 'text-gray-600' : ($currentStep == 3 ? 'text-gray-600' : 'text-gray-400') }}"
                                             aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24"
                                             height="24" fill="none" viewBox="0 0 24 24">
                                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
@@ -106,13 +78,13 @@
                                         </svg>
                                     </span>
                                 </div>
-                                <span class="mt-2 text-xs font-medium {{ $currentStep >= 3 ? 'text-zinc-700 dark:text-zinc-300' : 'text-zinc-400 dark:text-zinc-500' }}">Products</span>
+                                <span class="mt-2 text-xs font-medium {{ $currentStep >= 3 ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 dark:text-gray-500' }}">Products</span>
                             </li>
                             <li class="flex flex-col w-full items-center flex-1">
                                 <div class="flex w-full items-center">
                                     <span
-                                        class="flex items-center justify-center w-10 h-10 {{ $currentStep == 4 ? 'bg-zinc-100' : 'bg-zinc-100 dark:bg-zinc-700' }} rounded-full lg:h-12 lg:w-12 shrink-0">
-                                        <svg class="w-5 h-5 {{ $currentStep == 4 ? 'text-zinc-600' : 'text-zinc-400' }}"
+                                        class="flex items-center justify-center w-10 h-10 {{ $currentStep == 4 ? 'bg-gray-100' : 'bg-gray-100 dark:bg-gray-700' }} rounded-full lg:h-12 lg:w-12 shrink-0">
+                                        <svg class="w-5 h-5 {{ $currentStep == 4 ? 'text-gray-600' : 'text-gray-400' }}"
                                             aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24"
                                             height="24" fill="none" viewBox="0 0 24 24">
                                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
@@ -121,7 +93,7 @@
                                         </svg>
                                     </span>
                                 </div>
-                                <span class="mt-2 text-xs font-medium {{ $currentStep >= 4 ? 'text-zinc-700 dark:text-zinc-300' : 'text-zinc-400 dark:text-zinc-500' }}">Review</span>
+                                <span class="mt-2 text-xs font-medium {{ $currentStep >= 4 ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 dark:text-gray-500' }}">Review</span>
                             </li>
                         </ol>
                     </nav>
@@ -142,36 +114,36 @@
                             <form wire:submit="createBatch" class="space-y-5">
                                 <!-- Primary: Batch selection (full width) -->
                                 <div>
-                                    <label for="batch_number" class="block text-sm font-medium text-zinc-700 dark:text-zinc-200 mb-1">
+                                    <label for="batch_number" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
                                         Batch Numbers *
                                     </label>
-                                    <p class="text-sm text-zinc-500 dark:text-zinc-400 mb-2">
+                                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">
                                         Select which batches to include. Branches from these batches will be added to the allocation.
                                     </p>
                                     @if (count($availableBatchNumbers) > 3)
                                         <div class="flex gap-2 mb-2">
                                             <button type="button" wire:click="selectAllBatches"
-                                                class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline font-medium">
+                                                class="text-sm text-blue-600 dark:text-blue-400 hover:underline font-medium">
                                                 Select All
                                             </button>
-                                            <span class="text-zinc-400 dark:text-zinc-500">|</span>
+                                            <span class="text-gray-400 dark:text-gray-500">|</span>
                                             <button type="button" wire:click="clearBatchSelection"
-                                                class="text-sm text-indigo-600 dark:text-indigo-400 hover:underline font-medium">
+                                                class="text-sm text-blue-600 dark:text-blue-400 hover:underline font-medium">
                                                 Clear
                                             </button>
                                         </div>
                                     @endif
-                                    <div class="border border-zinc-300 rounded-md shadow-sm p-2 max-h-48 overflow-y-auto dark:bg-zinc-600 dark:border-zinc-500">
+                                    <div class="border border-gray-300 rounded-md shadow-sm p-2 max-h-48 overflow-y-auto dark:bg-gray-600 dark:border-gray-500">
                                         @forelse ($availableBatchNumbers as $batchNum)
-                                            <label class="flex items-center p-2 hover:bg-zinc-100 dark:hover:bg-zinc-500 cursor-pointer rounded">
+                                            <label class="flex items-center p-2 hover:bg-gray-100 dark:hover:bg-gray-500 cursor-pointer rounded">
                                                 <input type="checkbox" wire:model.live="selectedBatchNumbers"
                                                     value="{{ $batchNum }}"
-                                                    class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-zinc-300 rounded">
-                                                <span class="ml-2 text-sm text-zinc-900 dark:text-white">{{ $batchNum }}</span>
+                                                    class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                                <span class="ml-2 text-sm text-gray-900 dark:text-white">{{ $batchNum }}</span>
                                             </label>
                                         @empty
-                                            <div class="px-3 py-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
-                                                No batches found. Ensure branches have batch numbers assigned in <a href="{{ route('branch.profile') }}" class="font-medium text-indigo-600 dark:text-indigo-400 hover:underline" wire:navigate>Branch Management</a>.
+                                            <div class="px-3 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                                                No batches found. Ensure branches have batch numbers assigned in <a href="{{ route('branch.profile') }}" class="font-medium text-blue-600 dark:text-blue-400 hover:underline" wire:navigate>Branch Management</a>.
                                             </div>
                                         @endforelse
                                     </div>
@@ -215,10 +187,10 @@
                                     }"
                                     @click.away="open = false"
                                 >
-                                    <label for="batch_purchase_order" class="block text-sm font-medium text-zinc-700 dark:text-zinc-200 mb-1">
+                                    <label for="batch_purchase_order" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
                                         Purchase Order (Optional)
                                     </label>
-                                    <p class="text-sm text-zinc-500 dark:text-zinc-400 mb-2">
+                                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">
                                         Link this allocation to a PO to filter products and show expected quantities.
                                     </p>
                                     <div class="relative">
@@ -228,33 +200,33 @@
                                             x-model="search"
                                             @focus="open = true"
                                             :placeholder="selectedLabel() || 'Search PO (e.g. P-2-60004)...'"
-                                            class="block w-full rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm pl-3 pr-10 py-2"
+                                            class="block w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm pl-3 pr-10 py-2"
                                         />
                                         <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                                            <svg class="w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                             </svg>
                                         </div>
                                         <div
                                             x-show="open"
                                             x-transition
-                                            class="absolute z-20 w-full mt-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-600 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                                            class="absolute z-20 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto"
                                         >
                                             <template x-if="filtered.length === 0">
-                                                <div class="px-3 py-2 text-sm text-zinc-500 dark:text-zinc-400">
+                                                <div class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
                                                     No purchase orders found
                                                 </div>
                                             </template>
                                             <template x-for="option in filtered" :key="option.id ?? 'none'">
                                                 <button
                                                     type="button"
-                                                    class="w-full text-left px-3 py-2 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-700 flex items-center justify-between text-zinc-900 dark:text-white"
+                                                    class="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-between text-gray-900 dark:text-white"
                                                     @click="select(option)"
                                                 >
                                                     <span x-text="option.label"></span>
                                                     <span
                                                         x-show="option.id === selectedId"
-                                                        class="text-xs text-indigo-600 dark:text-indigo-400"
+                                                        class="text-xs text-blue-600 dark:text-blue-400"
                                                     >
                                                         Selected
                                                     </span>
@@ -266,11 +238,11 @@
 
                                 <!-- Secondary: Remarks -->
                                 <div>
-                                    <label for="remarks" class="block text-sm font-medium text-zinc-700 dark:text-zinc-200 mb-1">
+                                    <label for="remarks" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
                                         Remarks (Optional)
                                     </label>
                                     <textarea id="remarks" wire:model="remarks" rows="2"
-                                        class="w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-zinc-600 dark:border-zinc-500 dark:text-white"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white"
                                         placeholder="e.g., Dispatched by Mark, For VisMin route"></textarea>
                                     @error('remarks')
                                         <span class="text-red-500 text-sm">{{ $message }}</span>
@@ -278,8 +250,8 @@
                                 </div>
 
                                 <!-- Metadata: Ref + Status inline -->
-                                <div class="text-sm text-zinc-500 dark:text-zinc-400 pt-2 border-t border-zinc-200 dark:border-zinc-600">
-                                    <span>Ref: <span class="font-mono text-zinc-700 dark:text-zinc-300">{{ $ref_no }}</span></span>
+                                <div class="text-sm text-gray-500 dark:text-gray-400 pt-2 border-t border-gray-200 dark:border-gray-600">
+                                    <span>Ref: <span class="font-mono text-gray-700 dark:text-gray-300">{{ $ref_no }}</span></span>
                                     <span class="mx-2">·</span>
                                     <span>Status: Draft</span>
                                 </div>
@@ -300,64 +272,64 @@
                     @if ($currentStep === 2)
                         <div>
                             <h4 class="text-md font-medium mb-2">Step 2: Review Branches
-                                <span class="text-zinc-500 dark:text-zinc-400 font-normal">(Batches: {{ implode(', ', $selectedBatchNumbers) }})</span>
+                                <span class="text-gray-500 dark:text-gray-400 font-normal">(Batches: {{ implode(', ', $selectedBatchNumbers) }})</span>
                                 @if ($currentBatch?->purchaseOrder)
-                                    <span class="text-zinc-400 dark:text-zinc-500">·</span>
-                                    <span class="text-indigo-600 dark:text-indigo-400 font-medium">Linked PO: {{ $currentBatch->purchaseOrder->po_num }}</span>
+                                    <span class="text-gray-400 dark:text-gray-500">·</span>
+                                    <span class="text-blue-600 dark:text-blue-400 font-medium">Linked PO: {{ $currentBatch->purchaseOrder->po_num }}</span>
                                 @endif
                             </h4>
-                            <p class="text-sm text-zinc-600 dark:text-zinc-400 mb-4">
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
                                 {{ count($filteredBranchesByBatch) }} {{ Str::plural('branch', count($filteredBranchesByBatch)) }} from the selected batches have been automatically added.
                             </p>
 
                             @if (empty($filteredBranchesByBatch))
-                                <div class="text-center py-8 border border-zinc-200 dark:border-zinc-600 rounded-lg mb-6">
-                                    <p class="text-zinc-500 dark:text-zinc-400">No branches found for batches: {{ implode(', ', $selectedBatchNumbers) }}</p>
-                                    <p class="text-sm text-zinc-400 dark:text-zinc-500 mt-2">Ensure branches have batch numbers assigned in <a href="{{ route('branch.profile') }}" class="font-medium text-indigo-600 dark:text-indigo-400 hover:underline" wire:navigate>Branch Management</a>.</p>
+                                <div class="text-center py-8 border border-gray-200 dark:border-gray-600 rounded-lg mb-6">
+                                    <p class="text-gray-500 dark:text-gray-400">No branches found for batches: {{ implode(', ', $selectedBatchNumbers) }}</p>
+                                    <p class="text-sm text-gray-400 dark:text-gray-500 mt-2">Ensure branches have batch numbers assigned in <a href="{{ route('branch.profile') }}" class="font-medium text-blue-600 dark:text-blue-400 hover:underline" wire:navigate>Branch Management</a>.</p>
                                 </div>
                             @else
                                 <div class="mb-4">
                                     <input type="text"
                                         wire:model.live.debounce.200ms="branchSearch"
                                         placeholder="Search branches by name, code, or address..."
-                                        class="block w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:bg-zinc-600 dark:border-zinc-500 dark:text-white dark:placeholder-zinc-400">
+                                        class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white dark:placeholder-gray-400">
                                 </div>
 
-                                <div class="border border-zinc-200 dark:border-zinc-600 rounded-lg overflow-hidden mb-6 max-h-[32rem] overflow-y-auto">
+                                <div class="border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden mb-6 max-h-[32rem] overflow-y-auto">
                                     @php
                                         $groupedBranches = collect($this->filteredBranchesForReview)->groupBy('batch');
                                     @endphp
                                     @if ($this->filteredBranchesForReview->isEmpty())
-                                        <div class="px-4 py-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
+                                        <div class="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
                                             No branches match "{{ $branchSearch }}"
                                         </div>
                                     @else
                                         @foreach ($groupedBranches as $batchName => $branches)
-                                            <div class="border-b border-zinc-200 dark:border-zinc-600 last:border-b-0" x-data="{ expanded: true }">
+                                            <div class="border-b border-gray-200 dark:border-gray-600 last:border-b-0" x-data="{ expanded: true }">
                                                 <button type="button"
                                                     @click="expanded = !expanded"
-                                                    class="w-full flex items-center justify-between px-4 py-3 text-left bg-zinc-50 dark:bg-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-600">
-                                                    <span class="text-sm font-medium text-zinc-900 dark:text-white">{{ $batchName }}</span>
-                                                    <span class="text-sm text-zinc-500 dark:text-zinc-400">{{ $branches->count() }} {{ Str::plural('branch', $branches->count()) }}</span>
-                                                    <svg class="w-5 h-5 text-zinc-500 transition-transform" :class="{ 'rotate-180': expanded }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    class="w-full flex items-center justify-between px-4 py-3 text-left bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600">
+                                                    <span class="text-sm font-medium text-gray-900 dark:text-white">{{ $batchName }}</span>
+                                                    <span class="text-sm text-gray-500 dark:text-gray-400">{{ $branches->count() }} {{ Str::plural('branch', $branches->count()) }}</span>
+                                                    <svg class="w-5 h-5 text-gray-500 transition-transform" :class="{ 'rotate-180': expanded }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                                     </svg>
                                                 </button>
                                                 <div x-show="expanded" x-collapse class="overflow-hidden">
                                                     <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
-                                                        <thead class="bg-zinc-50 dark:bg-zinc-700 sticky top-0">
+                                                        <thead class="bg-gray-50 dark:bg-gray-700 sticky top-0">
                                                             <tr>
-                                                                <th class="px-4 py-2 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase">Name</th>
-                                                                <th class="px-4 py-2 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase">Code</th>
-                                                                <th class="px-4 py-2 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase hidden sm:table-cell">Address</th>
+                                                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Name</th>
+                                                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Code</th>
+                                                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase hidden sm:table-cell">Address</th>
                                                             </tr>
                                                         </thead>
-                                                        <tbody class="bg-white dark:bg-zinc-800 divide-y divide-gray-100 dark:divide-gray-700">
+                                                        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700">
                                                             @foreach ($branches as $branch)
-                                                                <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-700/50">
-                                                                    <td class="px-6 py-4 text-sm font-medium text-zinc-900 dark:text-white">{{ $branch['name'] }}</td>
-                                                                    <td class="px-6 py-4 text-sm text-zinc-600 dark:text-zinc-300">{{ $branch['code'] ?? '—' }}</td>
-                                                                    <td class="px-6 py-4 text-sm text-zinc-500 dark:text-zinc-400 hidden sm:table-cell">{{ $branch['address'] ?: '—' }}</td>
+                                                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                                                    <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{{ $branch['name'] }}</td>
+                                                                    <td class="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{{ $branch['code'] ?? '—' }}</td>
+                                                                    <td class="px-6 py-4 text-sm text-gray-500 dark:text-gray-400 hidden sm:table-cell">{{ $branch['address'] ?: '—' }}</td>
                                                                 </tr>
                                                             @endforeach
                                                         </tbody>
@@ -369,14 +341,14 @@
                                 </div>
                             @endif
 
-                            <div class="flex justify-end space-x-3 pt-4 border-t border-zinc-200 dark:border-zinc-600">
+                            <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
                                 <button type="button" wire:click="previousStep"
-                                    class="px-4 py-2 text-sm font-medium text-zinc-700 bg-zinc-100 border border-zinc-300 rounded-md hover:bg-zinc-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-zinc-500 dark:bg-zinc-600 dark:text-zinc-200 dark:border-zinc-500 dark:hover:bg-zinc-500">
+                                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
                                     Back
                                 </button>
                                 <button type="button" wire:click="nextStep"
                                     @if (empty($filteredBranchesByBatch)) disabled @endif
-                                    class="px-4 py-2 text-sm font-medium text-white bg-zinc-600 border border-transparent rounded-md hover:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-zinc-500 disabled:bg-zinc-400">
+                                    class="px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:bg-gray-400">
                                     Continue to Products
                                 </button>
                             </div>
@@ -396,19 +368,19 @@
                             @endphp
 
                             {{-- Product Allocation Matrix Section: Header | Matrix | Footer --}}
-                            <div class="flex flex-col max-h-[calc(100vh-12rem)] rounded-lg border border-zinc-200 dark:border-zinc-600 bg-zinc-50 dark:bg-zinc-800 overflow-hidden">
+                            <div class="flex flex-col max-h-[calc(100vh-12rem)] rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 overflow-hidden">
                                 {{-- Header: Title / Subheading ---- Add Products --}}
-                                <div class="flex items-center justify-between px-4 py-3 border-b border-zinc-200 dark:border-zinc-600 bg-zinc-50 dark:bg-zinc-800 flex-shrink-0">
+                                <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 flex-shrink-0">
                                     <div>
-                                        <h5 class="font-medium text-zinc-900 dark:text-white">Product Allocation Matrix</h5>
-                                        <p class="text-sm text-zinc-600 dark:text-zinc-400">
+                                        <h5 class="font-medium text-gray-900 dark:text-white">Product Allocation Matrix</h5>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">
                                             Enter quantities for each product and branch combination.
                                         </p>
-                                        <p class="text-sm text-zinc-600 dark:text-zinc-400 mt-1">
+                                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
                                             @if ($currentBatch?->purchaseOrder)
-                                                <span class="text-indigo-600 dark:text-indigo-400 font-medium">Linked PO: {{ $currentBatch->purchaseOrder->po_num }}</span>
+                                                <span class="text-blue-600 dark:text-blue-400 font-medium">Linked PO: {{ $currentBatch->purchaseOrder->po_num }}</span>
                                                 @if (!empty($selectedProductIdsForAllocation))
-                                                    <span class="text-zinc-400 dark:text-zinc-500 mx-1">|</span>
+                                                    <span class="text-gray-400 dark:text-gray-500 mx-1">|</span>
                                                 @endif
                                             @endif
                                             @if (!empty($selectedProductIdsForAllocation))
@@ -448,12 +420,12 @@
                                 {{-- Matrix Scroll Area --}}
                                 <div class="flex-1 min-h-0 overflow-auto">
                                     @if ($hasMatrixData)
-                                        <table class="w-full table-fixed bg-white dark:bg-zinc-800 border-collapse border border-zinc-300 dark:border-zinc-600" style="min-width: max-content;">
+                                        <table class="w-full table-fixed bg-white dark:bg-gray-800 border-collapse border border-gray-300 dark:border-gray-600" style="min-width: max-content;">
                                             <thead>
                                                 <tr>
-                                                    <th class="sticky top-0 left-0 z-20 w-[180px] min-w-[180px] px-4 py-2 border border-zinc-300 dark:border-zinc-600 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase bg-zinc-100 dark:bg-zinc-700">Branch</th>
+                                                    <th class="sticky top-0 left-0 z-20 w-[180px] min-w-[180px] px-4 py-2 border border-gray-300 dark:border-gray-600 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase bg-gray-100 dark:bg-gray-700">Branch</th>
                                                     @foreach ($filteredProductsForMatrix as $product)
-                                                        <th class="sticky top-0 z-10 w-[140px] min-w-[140px] px-3 py-2 border border-zinc-300 dark:border-zinc-600 text-center text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase bg-zinc-100 dark:bg-zinc-700">
+                                                        <th class="sticky top-0 z-10 w-[140px] min-w-[140px] px-3 py-2 border border-gray-300 dark:border-gray-600 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase bg-gray-100 dark:bg-gray-700">
                                                             <div class="flex flex-col items-center space-y-1.5">
                                                                 <button type="button" wire:click="removeProductFromAllocation({{ $product->id }})" class="text-red-500 hover:text-red-700 self-end mb-1" title="Remove this product from allocation">
                                                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -463,15 +435,15 @@
                                                                     $expectedQty = \App\Support\AllocationAvailabilityHelper::getExpectedQuantityFromPO($product, $selectedPurchaseOrderId);
                                                                     $totalAvailable = \App\Support\AllocationAvailabilityHelper::getAvailableToAllocate($product, $selectedPurchaseOrderId);
                                                                 @endphp
-                                                                <div class="text-xs font-mono text-zinc-700 dark:text-zinc-300">{{ $product->product_number ?? '—' }}</div>
-                                                                <div class="text-xs text-zinc-600 dark:text-zinc-400">{{ $product->name ?? '—' }}</div>
-                                                                <div class="text-xs text-zinc-600 dark:text-zinc-400">{{ $product->supplier_code ?? '—' }}</div>
+                                                                <div class="text-xs font-mono text-gray-700 dark:text-gray-300">{{ $product->product_number ?? '—' }}</div>
+                                                                <div class="text-xs text-gray-600 dark:text-gray-400">{{ $product->name ?? '—' }}</div>
+                                                                <div class="text-xs text-gray-600 dark:text-gray-400">{{ $product->supplier_code ?? '—' }}</div>
                                                                 @if(!empty(trim($product->remarks ?? '')))
-                                                                    <div class="text-xs text-zinc-500 dark:text-zinc-400">{{ $product->remarks }}</div>
+                                                                    <div class="text-xs text-gray-500 dark:text-gray-400">{{ $product->remarks }}</div>
                                                                 @endif
-                                                                <div class="text-xs text-zinc-500 dark:text-zinc-500">Stock: {{ (int) $stockQty }}</div>
-                                                                <div class="text-xs text-zinc-500 dark:text-zinc-500">Expected: {{ (int) $expectedQty }}</div>
-                                                                <div class="text-xs font-medium text-zinc-700 dark:text-zinc-300">Total Available: {{ (int) $totalAvailable }}</div>
+                                                                <div class="text-xs text-gray-500 dark:text-gray-500">Stock: {{ (int) $stockQty }}</div>
+                                                                <div class="text-xs text-gray-500 dark:text-gray-500">Expected: {{ (int) $expectedQty }}</div>
+                                                                <div class="text-xs font-medium text-gray-700 dark:text-gray-300">Total Available: {{ (int) $totalAvailable }}</div>
                                                             </div>
                                                         </th>
                                                     @endforeach
@@ -479,11 +451,11 @@
                                             </thead>
                                             <tbody>
                                                 @foreach ($currentBatch->branchAllocations as $branchAllocation)
-                                                    <tr class="bg-white dark:bg-zinc-800 even:bg-zinc-50 dark:even:bg-zinc-800">
-                                                        <td class="sticky left-0 z-10 w-[180px] min-w-[180px] px-4 py-2 border border-zinc-300 dark:border-zinc-600 text-sm font-medium text-zinc-900 dark:text-white bg-zinc-50 dark:bg-zinc-700">{{ $branchAllocation->branch->name }}</td>
+                                                    <tr class="bg-white dark:bg-gray-800 even:bg-gray-50 dark:even:bg-gray-800">
+                                                        <td class="sticky left-0 z-10 w-[180px] min-w-[180px] px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700">{{ $branchAllocation->branch->name }}</td>
                                                         @foreach ($filteredProductsForMatrix as $product)
-                                                            <td class="w-[140px] min-w-[140px] px-4 py-2 border border-zinc-300 dark:border-zinc-600 text-center bg-white dark:bg-zinc-800">
-                                                                <input type="number" wire:model.blur="matrixQuantities.{{ $branchAllocation->id }}.{{ $product->id }}" value="{{ $matrixQuantities[$branchAllocation->id][$product->id] ?? '' }}" min="0" placeholder="0" class="w-full px-2 py-1 text-sm border border-zinc-300 rounded focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-zinc-600 dark:border-zinc-500 dark:text-white text-center">
+                                                            <td class="w-[140px] min-w-[140px] px-4 py-2 border border-gray-300 dark:border-gray-600 text-center bg-white dark:bg-gray-800">
+                                                                <input type="number" wire:model.blur="matrixQuantities.{{ $branchAllocation->id }}.{{ $product->id }}" value="{{ $matrixQuantities[$branchAllocation->id][$product->id] ?? '' }}" min="0" placeholder="0" class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-600 dark:border-gray-500 dark:text-white text-center">
                                                             </td>
                                                         @endforeach
                                                     </tr>
@@ -492,7 +464,7 @@
                                         </table>
                                     @else
                                         <div class="flex flex-col items-center justify-center py-16 px-4 text-center">
-                                            <p class="text-sm text-zinc-500 dark:text-zinc-400">
+                                            <p class="text-sm text-gray-500 dark:text-gray-400">
                                                 @if (!empty($selectedProductIdsForAllocation) && !$currentBatch)
                                                     Ensure branches are selected (Step 1) to display the allocation matrix.
                                                 @else
@@ -520,13 +492,13 @@
                                 @endif
 
                                 {{-- Footer: Save | Back | Continue --}}
-                                <div class="flex-shrink-0 flex items-center justify-between px-4 py-3 border-t border-zinc-200 dark:border-zinc-600 bg-zinc-50 dark:bg-zinc-800">
+                                <div class="flex-shrink-0 flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800">
                                     @if ($hasMatrixData)
                                         <div class="flex flex-col items-start gap-1">
                                             @if (!empty($allocationValidationErrors) && $showOverAllocationConfirm)
                                                 <p class="text-xs text-amber-600 dark:text-amber-400">Review over-allocation above</p>
                                             @else
-                                                <p class="text-xs text-zinc-500 dark:text-zinc-400">Save before using Packing / Scan</p>
+                                                <p class="text-xs text-gray-500 dark:text-gray-400">Save before using Packing / Scan</p>
                                                 <flux:button wire:click="saveMatrixAllocations" class="bg-green-600 hover:bg-green-700">Save All Allocations</flux:button>
                                             @endif
                                         </div>
@@ -535,11 +507,11 @@
                                     @endif
                                     <div class="flex gap-3">
                                         <button type="button" wire:click="previousStep"
-                                            class="px-4 py-2 text-sm font-medium text-zinc-700 bg-zinc-100 border border-zinc-300 rounded-md hover:bg-zinc-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-zinc-500 dark:bg-zinc-600 dark:text-zinc-200 dark:border-zinc-500 dark:hover:bg-zinc-500">
+                                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
                                             Back
                                         </button>
                                         <button type="button" wire:click="nextStep"
-                                            class="px-4 py-2 text-sm font-medium text-white bg-zinc-600 border border-transparent rounded-md hover:bg-zinc-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-zinc-500">
+                                            class="px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
                                             Continue to Dispatch
                                         </button>
                                     </div>
@@ -551,16 +523,16 @@
                                 <x-slot:search>
                                     <div class="space-y-3">
                                         <div class="space-y-2">
-                                            <label for="add-products-po-filter" class="block text-sm font-medium text-zinc-700 dark:text-zinc-300">Filter by PO</label>
+                                            <label for="add-products-po-filter" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Filter by PO</label>
                                             <select id="add-products-po-filter" wire:model.live="selectedPurchaseOrderId"
-                                                class="block w-full rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm pl-3 pr-10 py-2">
+                                                class="block w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm pl-3 pr-10 py-2">
                                                 <option value="">All products</option>
                                                 @foreach ($this->availablePurchaseOrders as $po)
                                                     <option value="{{ $po->id }}">{{ $po->po_num }} — {{ $po->supplier?->name ?? 'No supplier' }}@if($po->expected_delivery_date) ({{ $po->expected_delivery_date->format('M d, Y') }})@endif</option>
                                                 @endforeach
                                             </select>
                                             @if($selectedPurchaseOrderId)
-                                                <p class="text-xs text-zinc-500 dark:text-zinc-400">Showing products from selected PO.</p>
+                                                <p class="text-xs text-gray-500 dark:text-gray-400">Showing products from selected PO.</p>
                                             @endif
                                         </div>
                                         <x-product-search-bar
@@ -582,7 +554,7 @@
 
                                 <x-slot:footer>
                                     <div class="flex justify-between items-center">
-                                        <span class="text-sm text-zinc-500 dark:text-zinc-400">
+                                        <span class="text-sm text-gray-500 dark:text-gray-400">
                                             {{ count($temporarySelectedProducts) }} selected
                                         </span>
                                         <div class="flex gap-2">
@@ -605,7 +577,7 @@
                             <!-- Export Allocation Matrix and Go to Scanning -->
                             <div class="mb-6 flex justify-between items-center flex-wrap gap-4">
                                 <a href="{{ route('allocation.scan') }}"
-                                    class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                                    class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                                     wire:navigate>
                                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path>
@@ -623,42 +595,42 @@
 
                             <!-- Branch Summary (scanning moved to Packing / Scan page) -->
                             <div
-                                class="mb-6 p-4 bg-white dark:bg-zinc-900 border-2 border-zinc-200 dark:border-zinc-700 rounded-lg">
-                                <h4 class="font-bold text-lg text-zinc-900 dark:text-zinc-100 mb-3">
+                                class="mb-6 p-4 bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 rounded-lg">
+                                <h4 class="font-bold text-lg text-gray-900 dark:text-gray-100 mb-3">
                                     Branches
                                 </h4>
-                                <p class="text-sm text-zinc-700 dark:text-zinc-300 mb-4">
-                                    Use <a href="{{ route('allocation.scan') }}" class="font-semibold text-indigo-600 dark:text-indigo-400 hover:underline" wire:navigate>Packing / Scan</a> to verify products for each branch and box.
+                                <p class="text-sm text-gray-700 dark:text-gray-300 mb-4">
+                                    Use <a href="{{ route('allocation.scan') }}" class="font-semibold text-blue-600 dark:text-blue-400 hover:underline" wire:navigate>Packing / Scan</a> to verify products for each branch and box.
                                 </p>
                                 <div
-                                    class="overflow-x-auto max-h-96 border border-zinc-200 dark:border-zinc-700 rounded-lg">
-                                    <table class="min-w-full bg-white dark:bg-zinc-800">
-                                        <thead class="bg-zinc-50 dark:bg-zinc-700 sticky top-0">
+                                    class="overflow-x-auto max-h-96 border border-gray-200 dark:border-gray-700 rounded-lg">
+                                    <table class="min-w-full bg-white dark:bg-gray-800">
+                                        <thead class="bg-gray-50 dark:bg-gray-700 sticky top-0">
                                             <tr>
                                                 <th
-                                                    class="px-4 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase">
+                                                    class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
                                                     Status</th>
                                                 <th
-                                                    class="px-4 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase">
+                                                    class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
                                                     Branch Name</th>
                                                 <th
-                                                    class="px-4 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase">
+                                                    class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">
                                                     Products</th>
                                             </tr>
                                         </thead>
                                         <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                                             @foreach ($currentBatch->branchAllocations as $branchAllocation)
                                                 @php $isComplete = $this->isBranchComplete($branchAllocation->id); @endphp
-                                                <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-700">
+                                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
                                                     <td class="px-4 py-3 whitespace-nowrap text-sm">
                                                         @if ($isComplete)
                                                             <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300">Complete</span>
                                                         @else
-                                                            <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-zinc-100 text-zinc-800 dark:bg-zinc-600 dark:text-zinc-200">Pending</span>
+                                                            <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-200">Pending</span>
                                                         @endif
                                                     </td>
-                                                    <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-zinc-900 dark:text-white">{{ $branchAllocation->branch->name }}</td>
-                                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-zinc-500 dark:text-zinc-400">{{ $branchAllocation->items()->whereNull('box_id')->count() }} products</td>
+                                                    <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{{ $branchAllocation->branch->name }}</td>
+                                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{{ $branchAllocation->items()->whereNull('box_id')->count() }} products</td>
                                                 </tr>
                                             @endforeach
                                         </tbody>
@@ -668,8 +640,8 @@
 
                                 <div class="space-y-4">
                                     <h3 class="text-lg font-medium mb-4">Step 4: Review & Dispatch</h3>
-                                    <p class="text-sm text-zinc-600 dark:text-zinc-400 mb-6">
-                                        Review your allocation. Use <a href="{{ route('allocation.scan') }}" class="font-semibold text-indigo-600 dark:text-indigo-400 hover:underline" wire:navigate>Packing / Scan</a> to verify products per branch and box.
+                                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                                        Review your allocation. Use <a href="{{ route('allocation.scan') }}" class="font-semibold text-blue-600 dark:text-blue-400 hover:underline" wire:navigate>Packing / Scan</a> to verify products per branch and box.
                                     </p>
 
                                     @if ($currentBatch)
@@ -684,9 +656,9 @@
 
                                             @if ($activeBranchAllocation)
                                                 <div
-                                                    class="bg-white dark:bg-zinc-800 border-2 border-indigo-500 shadow-lg rounded-lg overflow-hidden mb-6">
+                                                    class="bg-white dark:bg-gray-800 border-2 border-blue-500 shadow-lg rounded-lg overflow-hidden mb-6">
                                                     <div
-                                                        class="px-4 py-3 border-b border-zinc-200 dark:border-zinc-700 bg-gradient-to-r from-indigo-500 to-indigo-600">
+                                                        class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-500 to-blue-600">
                                                         <div class="flex items-center justify-between">
                                                             <div>
                                                                 <h5 class="font-bold text-lg text-white">
@@ -694,7 +666,7 @@
                                                                     <span
                                                                         class="ml-2 px-2 py-1 bg-white text-blue-600 rounded text-xs">ACTIVE</span>
                                                                 </h5>
-                                                                <p class="text-sm text-indigo-100 mt-1">
+                                                                <p class="text-sm text-blue-100 mt-1">
                                                                     {{ $activeBranchAllocation->items()->whereNull('box_id')->count() }}
                                                                     products
                                                                     allocated
@@ -726,7 +698,7 @@
                                                                 <div class="text-2xl font-bold text-white">
                                                                     {{ $branchProgress }}%
                                                                 </div>
-                                                                <div class="text-xs text-indigo-100">
+                                                                <div class="text-xs text-blue-100">
                                                                     {{ $branchScannedCount }} /
                                                                     {{ $branchTotalProducts }}
                                                                     complete
@@ -735,10 +707,10 @@
                                                         </div>
                                                     </div>
                                                     <!-- Container -->
-<div class="border border-zinc-200 dark:border-zinc-700 rounded-lg">
+<div class="border border-gray-200 dark:border-gray-700 rounded-lg">
 
     <!-- Buttons above table -->
-    {{-- <div class="px-4 py-2 border-b border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-700 flex justify-end space-x-2">
+    {{-- <div class="px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 flex justify-end space-x-2">
         <button type="button"
             wire:click="generateDeliveryReceipt({{ $activeBranchAllocation->id }})"
             class="inline-flex items-center px-3 py-1 text-xs font-medium text-white bg-green-600 rounded hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
@@ -755,14 +727,14 @@
 
     <!-- Table -->
     <table class="min-w-full table-fixed divide-y divide-gray-200 dark:divide-gray-700">
-        <thead class="bg-zinc-50 dark:bg-zinc-700">
+        <thead class="bg-gray-50 dark:bg-gray-700">
             <tr>
-                <th class="w-16 px-4 py-2 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase tracking-wider">Image</th>
-                <th class="w-48 px-4 py-2 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase tracking-wider">Product</th>
-                <th class="w-36 px-4 py-2 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase tracking-wider">Barcode</th>
-                <th class="w-24 px-4 py-2 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase tracking-wider">Allocated Qty</th>
-                <th class="w-24 px-4 py-2 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase tracking-wider">Scanned Qty</th>
-                <th class="w-36 px-4 py-2 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase tracking-wider">Status</th>
+                <th class="w-16 px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Image</th>
+                <th class="w-48 px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Product</th>
+                <th class="w-36 px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Barcode</th>
+                <th class="w-24 px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Allocated Qty</th>
+                <th class="w-24 px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Scanned Qty</th>
+                <th class="w-36 px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
             </tr>
         </thead>
     </table>
@@ -770,20 +742,20 @@
     <!-- Scrollable tbody -->
     <div class="max-h-64 overflow-y-auto">
         <table class="min-w-full table-fixed divide-y divide-gray-200 dark:divide-gray-700">
-            <tbody class="bg-white dark:bg-zinc-800 divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 @php
                     // Filter to show only original allocation items (not scanned tracking records)
                     $originalItems = $activeBranchAllocation->items->where('box_id', null);
                 @endphp
                 @if ($originalItems->count() > 0)
                     @foreach ($originalItems as $item)
-                        <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-700">
+                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
                             <td class="px-6 py-4 w-16">
                                 @if ($item->product->primary_image)
                                     <img src="{{ asset('storage/' . $item->product->primary_image) }}" alt="{{ $item->product->name }}" class="w-12 h-12 rounded object-cover">
                                 @else
-                                    <div class="w-12 h-12 bg-zinc-200 dark:bg-zinc-600 rounded flex items-center justify-center">
-                                        <svg class="w-6 h-6 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <div class="w-12 h-12 bg-gray-200 dark:bg-gray-600 rounded flex items-center justify-center">
+                                        <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 002 2v12a2 2 0 002 2z"></path>
                                         </svg>
@@ -792,27 +764,27 @@
                             </td>
                             <td class="px-6 py-4 w-48 text-sm">
                                 <div class="space-y-1">
-                                    <div class="font-medium text-zinc-900 dark:text-white">
+                                    <div class="font-medium text-gray-900 dark:text-white">
                                         {{ $item->product ? ($item->product->remarks ?? $item->product->name) : $item->display_name }}
                                         @if ($item->product && $item->product->color)
-                                            <span class="text-zinc-500 dark:text-zinc-400"> · {{ $item->product->color->name ?? $item->product->color->code }}</span>
+                                            <span class="text-gray-500 dark:text-gray-400"> · {{ $item->product->color->name ?? $item->product->color->code }}</span>
                                         @endif
                                     </div>
-                                    <div class="text-xs font-mono text-zinc-600 dark:text-zinc-400">
+                                    <div class="text-xs font-mono text-gray-600 dark:text-gray-400">
                                         SKU: {{ $item->product->sku ?? '—' }}
                                     </div>
-                                    <div class="text-xs text-zinc-600 dark:text-zinc-400">
+                                    <div class="text-xs text-gray-600 dark:text-gray-400">
                                         Supplier Code: {{ $item->product->supplier_code ?? '—' }}
                                     </div>
                                 </div>
                             </td>
-                            <td class="px-6 py-4 w-36 text-sm font-mono text-zinc-500 dark:text-zinc-400 truncate" title="{{ $item->display_barcode }}">
+                            <td class="px-6 py-4 w-36 text-sm font-mono text-gray-500 dark:text-gray-400 truncate" title="{{ $item->display_barcode }}">
                                 {{ $item->display_barcode }}
                             </td>
-                            <td class="px-6 py-4 w-24 text-sm font-semibold text-lg text-zinc-900 dark:text-white">
+                            <td class="px-6 py-4 w-24 text-sm font-semibold text-lg text-gray-900 dark:text-white">
                                 {{ $item->quantity }}
                             </td>
-                            <td class="px-6 py-4 w-24 text-3xl font-bold text-indigo-600 dark:text-indigo-400">
+                            <td class="px-6 py-4 w-24 text-3xl font-bold text-blue-600 dark:text-blue-400">
                                 @php
                                     // Calculate actual scanned quantity from box-specific records
                                     $actualScannedQty = \App\Models\BranchAllocationItem::where('branch_allocation_id', $activeBranchAllocation->id)
@@ -839,7 +811,7 @@
                                     $allocatedQty = $item->quantity;
                                 @endphp
                                 @if ($scannedQty == 0)
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-zinc-100 text-zinc-800 dark:bg-zinc-600 dark:text-zinc-200">Not Scanned</span>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-200">Not Scanned</span>
                                 @elseif($scannedQty >= $allocatedQty)
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">✓ Complete</span>
                                 @else
@@ -850,7 +822,7 @@
                     @endforeach
                 @else
                     <tr>
-                        <td colspan="6" class="px-4 py-2 text-center text-sm text-zinc-500 dark:text-zinc-400">
+                        <td colspan="6" class="px-4 py-2 text-center text-sm text-gray-500 dark:text-gray-400">
                             No products allocated to this branch.
                         </td>
                     </tr>
@@ -863,8 +835,8 @@
                                                 </div>
                                             @endif
                                         @else
-                                            <div class="bg-indigo-50 dark:bg-indigo-900/20 border-2 border-indigo-200 dark:border-indigo-700 rounded-lg p-6 mb-6 text-center">
-                                                <p class="text-indigo-800 dark:text-indigo-200">Use the <a href="{{ route('allocation.scan') }}" class="font-semibold underline" wire:navigate>Packing / Scan</a> page to verify products for each branch.</p>
+                                            <div class="bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-700 rounded-lg p-6 mb-6 text-center">
+                                                <p class="text-blue-800 dark:text-blue-200">Use the <a href="{{ route('allocation.scan') }}" class="font-semibold underline" wire:navigate>Packing / Scan</a> page to verify products for each branch.</p>
                                             </div>
                                         @endif
 
@@ -872,49 +844,49 @@
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
     <!-- Batch Summary -->
-    <div class="bg-zinc-50 dark:bg-zinc-700 rounded-lg p-4 mb-6">
+    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6">
         <h4 class="font-medium mb-3">Batch Summary</h4>
         <div class="flex flex-wrap gap-6 text-sm">
             <div>
-                <span class="text-zinc-600 dark:text-zinc-400">Reference:</span>
+                <span class="text-gray-600 dark:text-gray-400">Reference:</span>
                 <div class="font-medium">{{ $currentBatch->ref_no }}</div>
             </div>
             <div>
-                <span class="text-zinc-600 dark:text-zinc-400">Branches:</span>
+                <span class="text-gray-600 dark:text-gray-400">Branches:</span>
                 <div class="font-medium">{{ $currentBatch->branchAllocations->count() }}</div>
             </div>
             <div>
-                <span class="text-zinc-600 dark:text-zinc-400">Boxes:</span>
+                <span class="text-gray-600 dark:text-gray-400">Boxes:</span>
                 <div class="font-medium">{{ $this->getTotalBoxesCount() }}</div>
             </div>
             <div>
-                <span class="text-zinc-600 dark:text-zinc-400">Total Quantities:</span>
+                <span class="text-gray-600 dark:text-gray-400">Total Quantities:</span>
                 <div class="font-medium">{{ $this->getTotalQuantitiesCount() }}</div>
             </div>
         </div>
     </div>
 
     <!-- Overall Scan Summary -->
-    <div class="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800
+    <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800
                 rounded-lg p-4 mb-6">
-        <h5 class="font-medium text-indigo-900 dark:text-indigo-100 mb-2">Overall Scan Summary</h5>
+        <h5 class="font-medium text-blue-900 dark:text-blue-100 mb-2">Overall Scan Summary</h5>
         <div class="flex flex-wrap gap-6 text-sm">
             <div>
-                <span class="text-indigo-700 dark:text-indigo-300">Total Quantities:</span>
-                <div class="font-medium text-indigo-900 dark:text-indigo-100 text-xl">
+                <span class="text-blue-700 dark:text-blue-300">Total Quantities:</span>
+                <div class="font-medium text-blue-900 dark:text-blue-100 text-xl">
                     {{ $this->getTotalQuantitiesCount() }}
                 </div>
             </div>
             <div>
-                <span class="text-indigo-700 dark:text-indigo-300">Scanned Quantities:</span>
-                <div class="font-medium text-indigo-900 dark:text-indigo-100 text-xl">
+                <span class="text-blue-700 dark:text-blue-300">Scanned Quantities:</span>
+                <div class="font-medium text-blue-900 dark:text-blue-100 text-xl">
                     {{ $this->getTotalScannedQuantitiesCount() }} /
                     {{ $this->getTotalQuantitiesCount() }}
                 </div>
             </div>
             <div>
-                <span class="text-indigo-700 dark:text-indigo-300">Pending:</span>
-                <div class="font-medium text-indigo-900 dark:text-indigo-100 text-xl">
+                <span class="text-blue-700 dark:text-blue-300">Pending:</span>
+                <div class="font-medium text-blue-900 dark:text-blue-100 text-xl">
                     {{ $this->getPendingItemsCount() }}
                 </div>
             </div>
@@ -950,9 +922,9 @@
                                 </div>
                     @endif
 
-                <div class="flex justify-end space-x-3 pt-4 border-t border-zinc-200 dark:border-zinc-600">
+                <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-600">
                     <button type="button" wire:click="previousStep"
-                        class="px-4 py-2 text-sm font-medium text-zinc-700 bg-zinc-100 border border-zinc-300 rounded-md hover:bg-zinc-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-zinc-500 dark:bg-zinc-600 dark:text-zinc-200 dark:border-zinc-500 dark:hover:bg-zinc-500">
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:bg-gray-600 dark:text-gray-200 dark:border-gray-500 dark:hover:bg-gray-500">
                         Back
                     </button>
                     <button type="button" wire:click="dispatchBatchFromStepper"
@@ -1058,21 +1030,21 @@
                     x-transition:leave-end="translate-x-full"
                     class="relative ml-auto flex h-full w-full max-w-2xl"
                 >
-                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500 dark:bg-indigo-400"></div>
+                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 dark:bg-blue-400"></div>
 
-                    <div class="ml-[0.25rem] flex h-full w-full flex-col bg-white shadow-xl dark:bg-zinc-900">
-                        <header class="flex items-start justify-between border-b border-zinc-200 px-6 py-5 dark:border-zinc-700">
+                    <div class="ml-[0.25rem] flex h-full w-full flex-col bg-white shadow-xl dark:bg-gray-900">
+                        <header class="flex items-start justify-between border-b border-gray-200 px-6 py-5 dark:border-gray-700">
                             <div class="flex items-start gap-3">
-                                <div class="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-300">
+                                <div class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300">
                                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
                                     </svg>
                                 </div>
                                 <div>
-                                    <h2 class="text-xl font-semibold text-zinc-900 dark:text-white">
+                                    <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
                                         Barcode Scanner
                                     </h2>
-                                    <p class="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+                                    <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
                                         @if ($activeBranchId && $currentBox && $currentDr)
                                             {{ $currentBatch->branchAllocations->find($activeBranchId)->branch->name }}
                                             • Box: {{ $currentBox->box_number }} • DR: {{ $currentDr->dr_number }}
@@ -1085,7 +1057,7 @@
 
                             <button
                                 type="button"
-                                class="rounded-full p-2 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+                                class="rounded-full p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-gray-200"
                                 @click="open = false; $wire.closeBarcodeScannerModal()"
                                 aria-label="Close scanner panel"
                             >
@@ -1102,13 +1074,13 @@
                                         <!-- Barcode Input -->
                                         <section class="space-y-4">
                                             <div>
-                                                <flux:heading size="md" class="text-zinc-900 dark:text-white">Scan Product</flux:heading>
-                                                <p class="text-sm text-zinc-500 dark:text-zinc-400">Scan product barcodes to allocate items to the current box.</p>
+                                                <flux:heading size="md" class="text-gray-900 dark:text-white">Scan Product</flux:heading>
+                                                <p class="text-sm text-gray-500 dark:text-gray-400">Scan product barcodes to allocate items to the current box.</p>
                                             </div>
 
                                             <div class="space-y-4">
                                                 <div>
-                                                    <label for="barcode-input" class="block text-sm font-medium text-zinc-700 dark:text-zinc-200 mb-1">
+                                                    <label for="barcode-input" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
                                                         Barcode
                                                     </label>
                                                     <input
@@ -1117,7 +1089,7 @@
                                                         wire:model.live="barcodeInput"
                                                         wire:keydown.enter="processBarcodeScanner"
                                                         placeholder="Scan barcode or enter manually..."
-                                                        class="w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-zinc-700 dark:border-zinc-600 dark:text-white"
+                                                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                                                         x-ref="barcodeInput"
                                                         x-init="$nextTick(() => { if ($el) $el.focus(); })"
                                                         autofocus
@@ -1129,10 +1101,10 @@
                                         <!-- Scan Feedback -->
                                         <section class="space-y-4">
                                             <div>
-                                                <flux:heading size="md" class="text-zinc-900 dark:text-white">Scan Status</flux:heading>
+                                                <flux:heading size="md" class="text-gray-900 dark:text-white">Scan Status</flux:heading>
                                             </div>
 
-                                            <div class="rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-700">
+                                            <div class="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-700">
                                                 <div class="flex items-start">
                                                     <div class="flex-shrink-0">
                                                         @if(str_contains($scanFeedback, '✅'))
@@ -1148,13 +1120,13 @@
                                                                 <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
                                                             </svg>
                                                         @else
-                                                            <svg class="h-5 w-5 text-indigo-500" fill="currentColor" viewBox="0 0 20 20">
+                                                            <svg class="h-5 w-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
                                                                 <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
                                                             </svg>
                                                         @endif
                                                     </div>
                                                     <div class="ml-3 flex-1">
-                                                        <p class="text-sm font-medium text-zinc-900 dark:text-white">
+                                                        <p class="text-sm font-medium text-gray-900 dark:text-white">
                                                             {{ $scanFeedback ?: 'Ready to scan products...' }}
                                                         </p>
                                                     </div>
@@ -1166,21 +1138,21 @@
                                         @if ($currentBox && $currentDr)
                                         <section class="space-y-4">
                                             <div>
-                                                <flux:heading size="md" class="text-zinc-900 dark:text-white">Scanned Items</flux:heading>
-                                                <p class="text-sm text-zinc-500 dark:text-zinc-400">Items scanned into this box.</p>
+                                                <flux:heading size="md" class="text-gray-900 dark:text-white">Scanned Items</flux:heading>
+                                                <p class="text-sm text-gray-500 dark:text-gray-400">Items scanned into this box.</p>
                                             </div>
 
-                                            <div class="rounded-lg border border-zinc-200 dark:border-zinc-700 overflow-hidden">
+                                            <div class="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
                                                 <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                                    <thead class="bg-zinc-50 dark:bg-zinc-700">
+                                                    <thead class="bg-gray-50 dark:bg-gray-700">
                                                         <tr>
-                                                            <th class="px-4 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase tracking-wider">Image</th>
-                                                            <th class="px-4 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase tracking-wider">Product</th>
-                                                            <th class="px-4 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase tracking-wider">Barcode</th>
-                                                            <th class="px-4 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase tracking-wider">Quantity</th>
+                                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Image</th>
+                                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Product</th>
+                                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Barcode</th>
+                                                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Quantity</th>
                                                         </tr>
                                                     </thead>
-                                                    <tbody class="bg-white dark:bg-zinc-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                                                         @php
                                                             $scannedItems = \App\Models\BranchAllocationItem::where('box_id', $currentBox->id)
                                                                 ->with('product')
@@ -1189,35 +1161,35 @@
                                                         @endphp
                                                         @if ($scannedItems->count() > 0)
                                                             @foreach ($scannedItems as $item)
-                                                                <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-700">
+                                                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
                                                                     <td class="px-4 py-3">
                                                                         @if ($item->product && $item->product->primary_image)
                                                                             <img src="{{ asset('storage/' . $item->product->primary_image) }}" alt="{{ $item->display_name }}" class="w-12 h-12 rounded object-cover">
                                                                         @else
-                                                                            <div class="w-12 h-12 bg-zinc-200 dark:bg-zinc-600 rounded flex items-center justify-center">
-                                                                                <svg class="w-6 h-6 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <div class="w-12 h-12 bg-gray-200 dark:bg-gray-600 rounded flex items-center justify-center">
+                                                                                <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 002 2v12a2 2 0 002 2z"></path>
                                                                                 </svg>
                                                                             </div>
                                                                         @endif
                                                                     </td>
-                                                                    <td class="px-4 py-3 text-sm font-medium text-zinc-900 dark:text-white">
+                                                                    <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">
                                                                         {{ $item->display_name }}
                                                                         @if ($item->product && $item->product->color)
-                                                                            <span class="text-xs text-zinc-500 dark:text-zinc-400">({{ $item->product->color->name }})</span>
+                                                                            <span class="text-xs text-gray-500 dark:text-gray-400">({{ $item->product->color->name }})</span>
                                                                         @endif
                                                                     </td>
-                                                                    <td class="px-4 py-3 text-sm font-mono text-zinc-500 dark:text-zinc-400">
+                                                                    <td class="px-4 py-3 text-sm font-mono text-gray-500 dark:text-gray-400">
                                                                         {{ $item->display_barcode }}
                                                                     </td>
-                                                                    <td class="px-4 py-3 text-sm font-semibold text-indigo-600 dark:text-indigo-400">
+                                                                    <td class="px-4 py-3 text-sm font-semibold text-blue-600 dark:text-blue-400">
                                                                         {{ $item->scanned_quantity }}
                                                                     </td>
                                                                 </tr>
                                                             @endforeach
                                                         @else
                                                             <tr>
-                                                                <td colspan="4" class="px-4 py-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
+                                                                <td colspan="4" class="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                                                                     No items scanned yet
                                                                 </td>
                                                             </tr>
@@ -1231,14 +1203,14 @@
                                         <!-- Current Status -->
                                         <section class="space-y-4">
                                             <div>
-                                                <flux:heading size="md" class="text-zinc-900 dark:text-white">Current Status</flux:heading>
+                                                <flux:heading size="md" class="text-gray-900 dark:text-white">Current Status</flux:heading>
                                             </div>
 
                                             <div class="space-y-4">
                                                 <!-- Box Status -->
                                                 @if ($currentBox)
-                                                    <div class="rounded-lg border border-indigo-200 bg-indigo-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
-                                                        <h5 class="font-medium text-indigo-900 dark:text-indigo-100 mb-3 flex items-center">
+                                                    <div class="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-900/20">
+                                                        <h5 class="font-medium text-blue-900 dark:text-blue-100 mb-3 flex items-center">
                                                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
                                                             </svg>
@@ -1246,12 +1218,12 @@
                                                         </h5>
                                                         <div class="space-y-2 text-sm">
                                                             <div class="flex justify-between">
-                                                                <span class="text-indigo-700 dark:text-indigo-300">Box Number:</span>
-                                                                <span class="font-medium text-indigo-900 dark:text-indigo-100">{{ $currentBox->box_number }}</span>
+                                                                <span class="text-blue-700 dark:text-blue-300">Box Number:</span>
+                                                                <span class="font-medium text-blue-900 dark:text-blue-100">{{ $currentBox->box_number }}</span>
                                                             </div>
                                                             <div class="flex justify-between">
-                                                                <span class="text-indigo-700 dark:text-indigo-300">Items in box:</span>
-                                                                <span class="font-medium text-indigo-900 dark:text-indigo-100">{{ $currentBox->current_count }}</span>
+                                                                <span class="text-blue-700 dark:text-blue-300">Items in box:</span>
+                                                                <span class="font-medium text-blue-900 dark:text-blue-100">{{ $currentBox->current_count }}</span>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1326,9 +1298,9 @@
                                     </div>
                                 </div>
 
-                                <div class="border-t border-zinc-200 bg-white px-6 py-4 dark:border-zinc-700 dark:bg-zinc-900">
+                                <div class="border-t border-gray-200 bg-white px-6 py-4 dark:border-gray-700 dark:bg-gray-900">
                                     <div class="flex items-center justify-between">
-                                        <div class="text-sm text-zinc-500 dark:text-zinc-400">
+                                        <div class="text-sm text-gray-500 dark:text-gray-400">
                                             @if($currentBox && $currentDr)
                                                 Scanning active • Box: {{ $currentBox->box_number }} • DR: {{ $currentDr->dr_number }}
                                             @else
@@ -1360,36 +1332,43 @@
 
     @if (!$showStepper || $currentStep >= 3)
     <!-- Table All (hidden on step 1 and 2 to reduce lag) -->
-    <div class="bg-white dark:bg-zinc-800 relative shadow-md sm:rounded-lg overflow-hidden">
+    <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
     <div class="flex items-center justify-between p-4 pr-10">
         <div class="flex space-x-6">
             <div class="relative">
                 <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                    <svg class="w-5 h-5 text-zinc-500 dark:text-zinc-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                    <svg class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                         <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
                     </svg>
                 </div>
                 <input type="text" id="search" wire:model.live="search"
                     placeholder="Search ref, remarks, branch..."
-                    class="block w-64 p-2 ps-10 text-sm text-zinc-900 border border-zinc-300 rounded-lg bg-zinc-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-zinc-700 dark:border-zinc-600 dark:placeholder-zinc-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+                    class="block w-64 p-2 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
             </div>
             <div class="flex items-center space-x-2">
-                <label class="text-sm font-medium text-zinc-900 dark:text-white">Date From</label>
+                <label class="text-sm font-medium text-gray-900 dark:text-white">Date From</label>
                 <input type="date" id="dateFrom" wire:model.live="dateFrom"
-                    class="bg-zinc-50 border border-zinc-300 text-zinc-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 dark:bg-zinc-700 dark:border-zinc-600 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
             </div>
             <div class="flex items-center space-x-2">
-                <label class="text-sm font-medium text-zinc-900 dark:text-white">Date To</label>
+                <label class="text-sm font-medium text-gray-900 dark:text-white">Date To</label>
                 <input type="date" id="dateTo" wire:model.live="dateTo"
-                    class="bg-zinc-50 border border-zinc-300 text-zinc-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 dark:bg-zinc-700 dark:border-zinc-600 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
             </div>
             <button type="button" wire:click="clearFilters"
-                class="px-4 py-2 text-sm font-medium text-zinc-700 bg-white border border-zinc-300 rounded-lg hover:bg-zinc-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-zinc-700 dark:border-zinc-600 dark:text-white dark:hover:bg-zinc-600">
+                class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:hover:bg-gray-600">
                 Clear
             </button>
         </div>
-        <div class="text-sm text-zinc-600 dark:text-zinc-400">
-            Showing {{ $batches->count() }} of {{ $batches->total() }} allocations
+        <div class="flex items-center gap-4">
+            <span class="text-sm text-gray-600 dark:text-gray-400">
+                Showing {{ $batches->count() }} of {{ $batches->total() }} allocations
+            </span>
+            @if (!$showStepper)
+                <flux:button wire:click="openStepper" class="inline-flex items-center justify-center gap-2">
+                    <span>New Allocation</span>
+                </flux:button>
+            @endif
         </div>
     </div>
     <div class="overflow-x-auto">
@@ -1402,90 +1381,90 @@
         ];
     @endphp
 
-    <table class="w-full text-sm text-left rtl:text-right text-zinc-500 dark:text-zinc-400 min-w-full">
-        <thead class="text-sm text-zinc-700 uppercase bg-zinc-50 dark:bg-zinc-700 dark:text-zinc-400">
+    <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400 min-w-full">
+        <thead class="text-sm text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
             <tr>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase tracking-wider">
-                    <button wire:click="sortBy('ref_no')" class="flex items-center space-x-1 hover:text-indigo-600 dark:hover:text-indigo-400">
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <button wire:click="sortBy('ref_no')" class="flex items-center space-x-1 hover:text-blue-600 dark:hover:text-blue-400">
                         <span>Reference Number</span>
                         <div class="flex flex-col">
-                            <svg class="w-3 h-3 {{ $sortField === 'ref_no' && $sortDirection === 'asc' ? 'text-indigo-600' : 'text-zinc-400' }}" fill="currentColor" viewBox="0 0 20 20">
+                            <svg class="w-3 h-3 {{ $sortField === 'ref_no' && $sortDirection === 'asc' ? 'text-blue-600' : 'text-gray-400' }}" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"></path>
                             </svg>
-                            <svg class="w-3 h-3 {{ $sortField === 'ref_no' && $sortDirection === 'desc' ? 'text-indigo-600' : 'text-zinc-400' }}" fill="currentColor" viewBox="0 0 20 20">
+                            <svg class="w-3 h-3 {{ $sortField === 'ref_no' && $sortDirection === 'desc' ? 'text-blue-600' : 'text-gray-400' }}" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
                             </svg>
                         </div>
                     </button>
                 </th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase tracking-wider">
-                    <button wire:click="sortBy('created_at')" class="flex items-center space-x-1 hover:text-indigo-600 dark:hover:text-indigo-400">
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <button wire:click="sortBy('created_at')" class="flex items-center space-x-1 hover:text-blue-600 dark:hover:text-blue-400">
                         <span>Date Created</span>
                         <div class="flex flex-col">
-                            <svg class="w-3 h-3 {{ $sortField === 'created_at' && $sortDirection === 'asc' ? 'text-indigo-600' : 'text-zinc-400' }}" fill="currentColor" viewBox="0 0 20 20">
+                            <svg class="w-3 h-3 {{ $sortField === 'created_at' && $sortDirection === 'asc' ? 'text-blue-600' : 'text-gray-400' }}" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"></path>
                             </svg>
-                            <svg class="w-3 h-3 {{ $sortField === 'created_at' && $sortDirection === 'desc' ? 'text-indigo-600' : 'text-zinc-400' }}" fill="currentColor" viewBox="0 0 20 20">
+                            <svg class="w-3 h-3 {{ $sortField === 'created_at' && $sortDirection === 'desc' ? 'text-blue-600' : 'text-gray-400' }}" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
                             </svg>
                         </div>
                     </button>
                 </th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase tracking-wider">
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     Current Step
                 </th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase tracking-wider">
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     Scan Progress
                 </th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase tracking-wider">
-                    <button wire:click="sortBy('status')" class="flex items-center space-x-1 hover:text-indigo-600 dark:hover:text-indigo-400">
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <button wire:click="sortBy('status')" class="flex items-center space-x-1 hover:text-blue-600 dark:hover:text-blue-400">
                         <span>Status</span>
                         <div class="flex flex-col">
-                            <svg class="w-3 h-3 {{ $sortField === 'status' && $sortDirection === 'asc' ? 'text-indigo-600' : 'text-zinc-400' }}" fill="currentColor" viewBox="0 0 20 20">
+                            <svg class="w-3 h-3 {{ $sortField === 'status' && $sortDirection === 'asc' ? 'text-blue-600' : 'text-gray-400' }}" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"></path>
                             </svg>
-                            <svg class="w-3 h-3 {{ $sortField === 'status' && $sortDirection === 'desc' ? 'text-indigo-600' : 'text-zinc-400' }}" fill="currentColor" viewBox="0 0 20 20">
+                            <svg class="w-3 h-3 {{ $sortField === 'status' && $sortDirection === 'desc' ? 'text-blue-600' : 'text-gray-400' }}" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
                             </svg>
                         </div>
                     </button>
                 </th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase tracking-wider">
-                    <button wire:click="sortBy('batch_number')" class="flex items-center space-x-1 hover:text-indigo-600 dark:hover:text-indigo-400">
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <button wire:click="sortBy('batch_number')" class="flex items-center space-x-1 hover:text-blue-600 dark:hover:text-blue-400">
                         <span>Batch</span>
                         <div class="flex flex-col">
-                            <svg class="w-3 h-3 {{ $sortField === 'batch_number' && $sortDirection === 'asc' ? 'text-indigo-600' : 'text-zinc-400' }}" fill="currentColor" viewBox="0 0 20 20">
+                            <svg class="w-3 h-3 {{ $sortField === 'batch_number' && $sortDirection === 'asc' ? 'text-blue-600' : 'text-gray-400' }}" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"></path>
                             </svg>
-                            <svg class="w-3 h-3 {{ $sortField === 'batch_number' && $sortDirection === 'desc' ? 'text-indigo-600' : 'text-zinc-400' }}" fill="currentColor" viewBox="0 0 20 20">
+                            <svg class="w-3 h-3 {{ $sortField === 'batch_number' && $sortDirection === 'desc' ? 'text-blue-600' : 'text-gray-400' }}" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
                             </svg>
                         </div>
                     </button>
                 </th>
-                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-zinc-500 dark:text-zinc-300 uppercase tracking-wider">
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     Actions
                 </th>
             </tr>
         </thead>
         <tbody wire:loading.class="opacity-60">
             @forelse ($batches as $record)
-                <tr wire:key="batch-row-{{ $record->id }}" class="odd:bg-white odd:dark:bg-zinc-900 even:bg-zinc-50 even:dark:bg-zinc-800 border-b dark:border-zinc-700">
+                <tr wire:key="batch-row-{{ $record->id }}" class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700">
                     <!-- Reference Number -->
-                    <td class="px-6 py-4 text-sm text-zinc-800 dark:text-zinc-200">
+                    <td class="px-6 py-4 text-sm text-gray-800 dark:text-gray-200">
                         {{ $record->ref_no }}
                     </td>
 
                     <!-- Date Created -->
-                    <td class="px-6 py-4 text-sm text-zinc-800 dark:text-zinc-200">
+                    <td class="px-6 py-4 text-sm text-gray-800 dark:text-gray-200">
                         {{ $record->created_at->format('M d, Y') }}
-                        <div class="text-xs text-zinc-500 dark:text-zinc-400">
+                        <div class="text-xs text-gray-500 dark:text-gray-400">
                             {{ $record->created_at->format('h:i A') }}
                         </div>
                     </td>
 
                     <!-- Current Step -->
-                    <td class="px-6 py-4 text-sm text-zinc-800 dark:text-zinc-200">
+                    <td class="px-6 py-4 text-sm text-gray-800 dark:text-gray-200">
                         @php
                             $batchStep = $batchSteps[$record->id] ?? 1;
                             $stepLabels = [
@@ -1499,16 +1478,16 @@
                             <span
                                 class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
                                     @if ($batchStep == 4 && $record->status === 'dispatched') bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300
-                                    @elseif($batchStep == 4) bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-300
+                                    @elseif($batchStep == 4) bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300
                                     @elseif($batchStep == 3) bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300
-                                    @else bg-zinc-100 text-zinc-800 dark:bg-zinc-900/20 dark:text-zinc-300 @endif">
+                                    @else bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300 @endif">
                                 {{ $batchStep == 4 && $record->status === 'dispatched' ? 'Completed' : $stepLabels[$batchStep] ?? 'Not Started' }}
                             </span>
                         </div>
                     </td>
 
                     <!-- Scan Progress (pre-computed in backend) -->
-                    <td class="px-6 py-4 text-sm text-indigo-900 dark:text-indigo-200">
+                    <td class="px-6 py-4 text-sm text-blue-900 dark:text-blue-200">
                         @php
                             $progress = $scanProgress[$record->id] ?? ['scanned' => 0, 'allocated' => 0, 'allScanned' => false];
                             $scannedQty = $progress['scanned'];
@@ -1520,7 +1499,7 @@
                                 class="ml-2 px-2 py-0.5 rounded text-xs font-medium
                                     @if ($scannedQty >= $allocatedQty && $allocatedQty > 0) bg-green-100 text-green-800 dark:bg-green-900/10 dark:text-green-200
                                     @elseif($scannedQty == 0)
-                                        bg-zinc-100 text-zinc-500 dark:bg-zinc-900/10 dark:text-zinc-400
+                                        bg-gray-100 text-gray-500 dark:bg-gray-900/10 dark:text-gray-400
                                     @else
                                         bg-yellow-100 text-yellow-800 dark:bg-yellow-900/10 dark:text-yellow-300 @endif">
                                 @if ($scannedQty >= $allocatedQty && $allocatedQty > 0)
@@ -1532,21 +1511,21 @@
                                 @endif
                             </span>
                         @else
-                            <span class="text-zinc-400 text-xs">No items</span>
+                            <span class="text-gray-400 text-xs">No items</span>
                         @endif
                     </td>
 
                     <!-- Status -->
-                    <td class="px-6 py-4 text-sm capitalize text-zinc-800 dark:text-zinc-200">
+                    <td class="px-6 py-4 text-sm capitalize text-gray-800 dark:text-gray-200">
                         {{ $record->status }}
                     </td>
 
                     <!-- Batches -->
-                    <td class="px-6 py-4 text-sm text-zinc-800 dark:text-zinc-200">
+                    <td class="px-6 py-4 text-sm text-gray-800 dark:text-gray-200">
                         @if ($record->batch_number)
                             {{ $record->batch_number }}
                         @else
-                            <span class="text-zinc-400">No batches</span>
+                            <span class="text-gray-400">No batches</span>
                         @endif
                     </td>
 
@@ -1561,7 +1540,7 @@
                                 </button>
                             @else
                                 <button wire:click="editRecord({{ $record->id }})"
-                                    class="px-3 py-1 text-xs font-medium text-white rounded bg-indigo-600 hover:bg-indigo-700">
+                                    class="px-3 py-1 text-xs font-medium text-white rounded bg-blue-600 hover:bg-blue-700">
                                     View
                                 </button>
                             @endif
@@ -1574,7 +1553,7 @@
                     </td>
                 </tr>
             @empty
-                <tr class="odd:bg-white odd:dark:bg-zinc-900 even:bg-zinc-50 even:dark:bg-zinc-800 border-b dark:border-zinc-700">
+                <tr class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700">
                     <td colspan="7" class="px-6 py-4 text-center">No allocations found</td>
                 </tr>
             @endforelse
@@ -1584,9 +1563,9 @@
     <div class="py-4 px-3">
         <div class="flex items-center justify-between">
             <div class="flex items-center space-x-4">
-                <label class="text-sm font-medium text-zinc-900 dark:text-white">Per Page:</label>
+                <label class="text-sm font-medium text-gray-900 dark:text-white">Per Page:</label>
                 <select wire:model.live="perPage"
-                    class="bg-zinc-50 border border-zinc-300 text-zinc-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-zinc-700 dark:border-zinc-600 dark:placeholder-zinc-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500">
                     <option value="5">5</option>
                     <option value="10">10</option>
                     <option value="20">20</option>

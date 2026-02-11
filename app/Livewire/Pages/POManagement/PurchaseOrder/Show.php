@@ -31,6 +31,13 @@ class Show extends Component
     public $totalDestroyed;
     public $batches; // ✅ ADDED - Store batches for this PO
 
+    // Reason modal for Close/Reopen (replaces prompt())
+    public $reasonModalAction = '';
+    public $reasonModalReason = '';
+
+    // Items per page for pagination
+    public $itemsPerPage = 25;
+
     public function mount($Id)
     {
         $this->Id = $Id;
@@ -99,17 +106,44 @@ class Show extends Component
         ]);
     }
 
-    // Update all computed properties
+    // Update all computed properties (totals from full PO, not paginated subset)
     protected function updateComputedProperties()
     {
         $this->totalQuantity = (int) $this->purchaseOrder->productOrders->sum('quantity');
         $this->totalPrice = $this->purchaseOrder->productOrders->sum('total_price');
-        $this->totalExpected = (int) $this->purchaseOrder->productOrders->sum(function($order) {
+        $this->totalExpected = (int) $this->purchaseOrder->productOrders->sum(function ($order) {
             return $order->expected_qty ?? $order->quantity;
         });
         $this->totalDelivered = (int) $this->purchaseOrder->productOrders->sum('received_quantity');
         $this->totalReceived = (int) $this->purchaseOrder->productOrders->sum('received_quantity');
         $this->totalDestroyed = (int) $this->purchaseOrder->productOrders->sum('destroyed_quantity') ?? 0;
+    }
+
+    /**
+     * Paginated line items for the items table (e.g. 25 per page).
+     * Totals/summaries remain from full PO via updateComputedProperties().
+     */
+    public function getProductOrdersPaginatedProperty()
+    {
+        return $this->purchaseOrder->productOrders()
+            ->with(['product.category', 'product.supplier'])
+            ->paginate($this->itemsPerPage, ['*'], 'items_page', request()->get('items_page', 1));
+    }
+
+    /**
+     * Get totals array for the summary bar in the items table.
+     * All totals computed from the full PO, not the paginated subset.
+     */
+    public function getTotalsProperty()
+    {
+        return [
+            'count' => $this->purchaseOrder->productOrders->count(),
+            'quantity' => $this->totalQuantity,
+            'expected' => $this->totalExpected,
+            'received' => $this->totalReceived,
+            'destroyed' => $this->totalDestroyed,
+            'price' => $this->totalPrice,
+        ];
     }
 
     // Update computed properties when expected quantities change
@@ -404,6 +438,31 @@ class Show extends Component
             ]);
             session()->flash('error', 'Failed to reopen purchase order: ' . $e->getMessage());
         }
+    }
+
+    /** Open the reason modal for Close or Reopen (replaces prompt()). */
+    public function openReasonModal(string $action): void
+    {
+        if (! in_array($action, ['close', 'reopen'], true)) {
+            return;
+        }
+        $this->reasonModalAction = $action;
+        $this->reasonModalReason = '';
+        $this->dispatch('open-modal', name: 'po-reason-modal');
+    }
+
+    /** Submit reason from modal and call Close or Reopen, then close modal. */
+    public function submitReasonModal(): void
+    {
+        $reason = $this->reasonModalReason ? trim($this->reasonModalReason) : null;
+        if ($this->reasonModalAction === 'close') {
+            $this->closeForFulfillment($reason);
+        } elseif ($this->reasonModalAction === 'reopen') {
+            $this->reopenPurchaseOrder($reason);
+        }
+        $this->reasonModalAction = '';
+        $this->reasonModalReason = '';
+        $this->dispatch('close-modal', name: 'po-reason-modal');
     }
 
     public function render()

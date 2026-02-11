@@ -12,8 +12,6 @@ class Setting extends Model
     protected $keyType = 'string';
 
     protected $primaryKey = 'key';
-    // app/Models/Setting.php
-    protected $primaryKey = 'key';
 
     protected $fillable = ['key', 'value'];
 

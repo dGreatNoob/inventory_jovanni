@@ -1,29 +1,50 @@
 <x-slot:header>Purchase Order Details</x-slot:header>
 <x-slot:subheader>Purchase Order #{{ $purchaseOrder->po_num }} - {{ $purchaseOrder->status->label() }}</x-slot:subheader>
 
-<div>
-    <!-- Error Message -->
+<div class="pb-6">
+    <!-- Breadcrumb (single back link) -->
+    <nav class="mb-4 text-sm text-zinc-600 dark:text-zinc-400" aria-label="Breadcrumb">
+        <ol class="inline-flex items-center gap-2">
+            <li><a href="{{ route('pomanagement.purchaseorder') }}" class="hover:text-zinc-900 dark:hover:text-white">Purchase Orders</a></li>
+            <li><span class="text-zinc-400 dark:text-zinc-500">/</span></li>
+            <li class="text-zinc-900 dark:text-white font-medium" aria-current="page">PO #{{ $purchaseOrder->po_num }}</li>
+        </ol>
+    </nav>
+
+    <!-- Error Message (dismissible) -->
     @if (session()->has('error'))
-        <div class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400" role="alert">
-            {{ session('error') }}
+        <div class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400 flex items-start justify-between gap-2" role="alert" x-data="{ show: true }" x-show="show" x-transition>
+            <span>{{ session('error') }}</span>
+            <button type="button" @click="show = false" class="shrink-0 rounded-lg p-1 hover:bg-red-100 dark:hover:bg-red-900/30" aria-label="Dismiss">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+            </button>
         </div>
     @endif
-    
-    <!-- Success Message -->
+
+    <!-- Success Message (dismissible) -->
     @if (session()->has('message'))
-        <div class="p-4 mb-4 text-sm text-green-800 rounded-lg bg-green-50 dark:bg-gray-800 dark:text-green-400" role="alert">
-            {{ session('message') }}
+        <div class="p-4 mb-4 text-sm text-green-800 rounded-lg bg-green-50 dark:bg-gray-800 dark:text-green-400 flex items-start justify-between gap-2" role="alert" x-data="{ show: true }" x-show="show" x-transition>
+            <span>{{ session('message') }}</span>
+            <button type="button" @click="show = false" class="shrink-0 rounded-lg p-1 hover:bg-green-100 dark:hover:bg-green-900/30" aria-label="Dismiss">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+            </button>
         </div>
     @endif
 
     @php $currencySymbol = $purchaseOrder->currency?->symbol ?? '₱'; @endphp
 
-    <div class="p-6">
+    {{-- Two-Column Layout: Main (70%) + Sidebar (30%) --}}
+    <div class="grid grid-cols-1 lg:grid-cols-10 gap-6">
+
+        {{-- ============================================
+            LEFT COLUMN (70%): Main Content
+        ============================================ --}}
+        <div class="lg:col-span-7 space-y-6">
         <!-- PENDING Status Section -->
         @if($purchaseOrder->status === \App\Enums\PurchaseOrderStatus::PENDING)
         <div class="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-lg border-2 border-yellow-300 dark:border-yellow-700 shadow-sm mb-6">
             <div class="p-6">
-                <!-- Header -->
+                <!-- Status Header -->
                 <div class="flex items-center justify-between mb-6">
                     <div class="flex items-center">
                         <svg class="w-8 h-8 text-yellow-600 dark:text-yellow-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -34,129 +55,27 @@
                             <p class="text-sm text-zinc-600 dark:text-zinc-400 mt-1">Purchase Order #{{ $purchaseOrder->po_num }}</p>
                         </div>
                     </div>
-                    <span class="inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-800">
+                    <span class="inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
                         Pending Approval
                     </span>
                 </div>
 
-                <!-- QR Code and Summary Section -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                    <!-- QR Code -->
-                    <div class="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-6">
-                        <h3 class="text-lg font-semibold text-zinc-900 dark:text-white mb-4 text-center">QR Code</h3>
-                        <div class="flex justify-center mb-4">
-                            <div class="bg-white p-4 rounded-xl shadow-lg border-2 border-yellow-200 dark:border-yellow-700">
-                                {!! QrCode::size(200)->generate($purchaseOrder->po_num) !!}
-                            </div>
-                        </div>
-                        <div class="text-center">
-                            <button type="button" onclick="printQRCode()"
-                                class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-yellow-600 border border-transparent rounded-lg hover:bg-yellow-700 focus:outline-none focus:ring-4 focus:ring-yellow-300 dark:bg-yellow-600 dark:hover:bg-yellow-700 dark:focus:ring-yellow-800 transition-colors">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
-                                </svg>
-                                Print QR Code
-                            </button>
-                        </div>
-                    </div>
+                <!-- Shared PO Header (QR + Details) -->
+                @include('livewire.pages.POmanagement.purchase-order.partials.po-details-header', [
+                    'purchaseOrder' => $purchaseOrder,
+                    'currencySymbol' => $currencySymbol,
+                    'qrBorderColor' => 'border-yellow-200 dark:border-yellow-700'
+                ])
 
-                    <!-- Quick Info -->
-                    <div class="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-6">
-                        <h3 class="text-lg font-semibold text-zinc-900 dark:text-white mb-4">Purchase Order Details</h3>
-                        <div class="grid gap-4">
-                            <div class="flex justify-between items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                                <span class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Supplier:</span>
-                                <span class="text-sm font-semibold text-zinc-900 dark:text-white">{{ $purchaseOrder->supplier->name ?? 'N/A' }}</span>
-                            </div>
-                            <div class="flex justify-between items-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                                <span class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Department:</span>
-                                <span class="text-sm font-semibold text-zinc-900 dark:text-white">{{ $purchaseOrder->department->name ?? 'N/A' }}</span>
-                            </div>
-                            <div class="flex justify-between items-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                                <span class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Order Date:</span>
-                                <span class="text-sm font-semibold text-zinc-900 dark:text-white">{{ $purchaseOrder->order_date->format('M d, Y') }}</span>
-                            </div>
-                            <div class="flex justify-between items-center p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-                                <span class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Ordered By:</span>
-                                <span class="text-sm font-semibold text-zinc-900 dark:text-white">{{ $purchaseOrder->orderedByUser->name ?? 'N/A' }}</span>
-                            </div>
-                            @if($purchaseOrder->expected_delivery_date)
-                            <div class="flex justify-between items-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
-                                <span class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Expected Delivery:</span>
-                                <span class="text-sm font-semibold text-zinc-900 dark:text-white">{{ $purchaseOrder->expected_delivery_date->format('M d, Y') }}</span>
-                            </div>
-                            @endif
-                        </div>
-                    </div>
-
-                    
-                </div>
-
-                <!-- Items Section -->
+                <!-- Items Table -->
                 <div class="mb-6">
-                    <h4 class="text-md font-medium text-zinc-900 dark:text-white mb-3">📋 Purchase Order Items</h4>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm text-left text-zinc-500 dark:text-zinc-400">
-                            <thead class="text-sm text-zinc-700 uppercase bg-zinc-50 dark:bg-zinc-700 dark:text-zinc-400">
-                                <tr>
-                                    <th scope="col" class="px-5 py-3 text-left">Product Name</th>
-                                    <th scope="col" class="px-5 py-3 text-left">SKU</th>
-                                    <th scope="col" class="px-5 py-3 text-left">Supplier Code (SKU)</th>
-                                    <th scope="col" class="px-5 py-3 text-left">Category</th>
-                                    <th scope="col" class="px-5 py-3 text-right">Unit Price</th>
-                                    <th scope="col" class="px-5 py-3 text-right">Quantity</th>
-                                    <th scope="col" class="px-5 py-3 text-right">Total Price</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($purchaseOrder->productOrders as $order)
-                                    <tr class="bg-white border-b dark:bg-zinc-800 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-600">
-                                        <td class="px-5 py-4">
-                                            <div class="font-medium text-zinc-900 dark:text-white">{{ $order->product->remarks ?? $order->product->name ?? 'N/A' }}</div>
-                                        </td>
-                                        <td class="px-5 py-4">
-                                            <div class="text-sm font-mono text-zinc-600 dark:text-zinc-400">{{ $order->product->sku ?? '—' }}</div>
-                                        </td>
-                                        <td class="px-5 py-4">
-                                            <div class="text-sm text-zinc-600 dark:text-zinc-400">{{ $order->product->supplier_code ?? '—' }}</div>
-                                        </td>
-                                        <td class="px-5 py-4">
-                                            <div class="text-sm text-zinc-500 dark:text-zinc-400">{{ $order->product->category->name ?? 'N/A' }}</div>
-                                        </td>
-                                        <td class="px-5 py-4 text-right">{{ $currencySymbol }}{{ number_format($order->unit_price, 2) }}</td>
-                                        <td class="px-5 py-4 text-right">
-                                            {{ number_format($order->quantity, 0) }} {{ $order->product->uom ?? 'pcs' }}
-                                        </td>
-                                        <td class="px-5 py-4 text-right font-semibold text-zinc-900 dark:text-white">
-                                            {{ $currencySymbol }}{{ number_format($order->total_price, 2) }}
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr class="bg-white border-b dark:bg-zinc-800 dark:border-zinc-700">
-                                        <td colspan="7" class="px-5 py-4 text-center">No items found</td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Summary -->
-                <div class="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-700">
-                    <div class="grid gap-4 md:grid-cols-3">
-                        <div class="text-center">
-                            <div class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{{ number_format($this->totalQuantity, 0) }}</div>
-                            <div class="text-sm text-zinc-600 dark:text-zinc-400">Total Quantity</div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-2xl font-bold text-green-600 dark:text-green-400">{{ $purchaseOrder->productOrders->count() }}</div>
-                            <div class="text-sm text-zinc-600 dark:text-zinc-400">Items Count</div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ $currencySymbol }}{{ number_format($this->totalPrice, 2) }}</div>
-                            <div class="text-sm text-zinc-600 dark:text-zinc-400">Total Value</div>
-                        </div>
-                    </div>
+                    <h4 class="text-md font-medium text-zinc-900 dark:text-white mb-3 px-1">📋 Purchase Order Items</h4>
+                    @include('livewire.pages.POmanagement.purchase-order.partials.po-items-table', [
+                        'items' => $this->productOrdersPaginated,
+                        'totals' => $this->totals,
+                        'currencySymbol' => $currencySymbol,
+                        'variant' => 'pending'
+                    ])
                 </div>
             </div>
         </div>
@@ -166,7 +85,7 @@
         @if($purchaseOrder->status === \App\Enums\PurchaseOrderStatus::APPROVED)
         <div class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg border-2 border-blue-300 dark:border-blue-700 shadow-sm mb-6">
             <div class="p-6">
-                <!-- Header -->
+                <!-- Status Header -->
                 <div class="flex items-center justify-between mb-6">
                     <div class="flex items-center">
                         <svg class="w-8 h-8 text-blue-600 dark:text-blue-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -177,127 +96,35 @@
                             <p class="text-sm text-zinc-600 dark:text-zinc-400 mt-1">Purchase Order #{{ $purchaseOrder->po_num }}</p>
                         </div>
                     </div>
-                    <span class="inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-800 dark:text-blue-100">
+                    <span class="inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                         Approved
                     </span>
                 </div>
 
-                <!-- QR Code and Summary Section -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                    <!-- QR Code -->
-                    <div class="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-6">
-                        <h3 class="text-lg font-semibold text-zinc-900 dark:text-white mb-4 text-center">QR Code</h3>
-                        <div class="flex justify-center mb-4">
-                            <div class="bg-white p-4 rounded-xl shadow-lg border-2 border-blue-200 dark:border-blue-700">
-                                {!! QrCode::size(200)->generate($purchaseOrder->po_num) !!}
-                            </div>
-                        </div>
-                        <div class="text-center">
-                            <button type="button" onclick="printQRCode()"
-                                class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 transition-colors">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
-                                </svg>
-                                Print QR Code
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Quick Info -->
-                    <div class="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-6">
-                        <h3 class="text-lg font-semibold text-zinc-900 dark:text-white mb-4">Purchase Order Details</h3>
-                        <div class="grid gap-4">
-                            <div class="flex justify-between items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                                <span class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Supplier:</span>
-                                <span class="text-sm font-semibold text-zinc-900 dark:text-white">{{ $purchaseOrder->supplier->name ?? 'N/A' }}</span>
-                            </div>
-                            <div class="flex justify-between items-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                                <span class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Department:</span>
-                                <span class="text-sm font-semibold text-zinc-900 dark:text-white">{{ $purchaseOrder->department->name ?? 'N/A' }}</span>
-                            </div>
-                            <div class="flex justify-between items-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                                <span class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Order Date:</span>
-                                <span class="text-sm font-semibold text-zinc-900 dark:text-white">{{ $purchaseOrder->order_date->format('M d, Y') }}</span>
-                            </div>
-                            @if($purchaseOrder->expected_delivery_date)
-                            <div class="flex justify-between items-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
-                                <span class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Expected Delivery:</span>
-                                <span class="text-sm font-semibold text-zinc-900 dark:text-white">{{ $purchaseOrder->expected_delivery_date->format('M d, Y') }}</span>
-                            </div>
-                            @endif
-                            <div class="flex justify-between items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                                <span class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Approved By:</span>
-                                <span class="text-sm font-semibold text-zinc-900 dark:text-white">{{ $purchaseOrder->approverInfo->name ?? 'N/A' }}</span>
-                            </div>
-                        </div>
-                    </div>
+                @if($purchaseOrder->canCloseForFulfillment())
+                <div class="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
+                    <p class="text-sm text-zinc-700 dark:text-zinc-300">
+                        💡 You can close this PO for fulfillment (e.g. short or complete shipment).
+                    </p>
                 </div>
+                @endif
 
-                <!-- Items Section (read-only in Approved status) -->
+                <!-- Shared PO Header (QR + Details) -->
+                @include('livewire.pages.POmanagement.purchase-order.partials.po-details-header', [
+                    'purchaseOrder' => $purchaseOrder,
+                    'currencySymbol' => $currencySymbol,
+                    'qrBorderColor' => 'border-blue-200 dark:border-blue-700'
+                ])
+
+                <!-- Items Table -->
                 <div class="mb-6">
-                    <h4 class="text-md font-medium text-zinc-900 dark:text-white mb-3">📋 Purchase Order Items</h4>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm text-left text-zinc-500 dark:text-zinc-400">
-                            <thead class="text-sm text-zinc-700 uppercase bg-zinc-50 dark:bg-zinc-700 dark:text-zinc-400">
-                                <tr>
-                                    <th scope="col" class="px-5 py-3 text-left">Product Name</th>
-                                    <th scope="col" class="px-5 py-3 text-left">SKU</th>
-                                    <th scope="col" class="px-5 py-3 text-left">Supplier Code (SKU)</th>
-                                    <th scope="col" class="px-5 py-3 text-left">Category</th>
-                                    <th scope="col" class="px-5 py-3 text-left">Ordered Qty</th>
-                                    <th scope="col" class="px-5 py-3 text-right">Unit Price</th>
-                                    <th scope="col" class="px-5 py-3 text-right">Total Price</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($purchaseOrder->productOrders as $order)
-                                    <tr class="bg-white border-b dark:bg-zinc-800 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-600">
-                                        <td class="px-5 py-4">
-                                            <div class="font-medium text-zinc-900 dark:text-white">{{ $order->product->remarks ?? $order->product->name ?? 'N/A' }}</div>
-                                        </td>
-                                        <td class="px-5 py-4">
-                                            <div class="text-sm font-mono text-zinc-600 dark:text-zinc-400">{{ $order->product->sku ?? '—' }}</div>
-                                        </td>
-                                        <td class="px-5 py-4">
-                                            <div class="text-sm text-zinc-600 dark:text-zinc-400">{{ $order->product->supplier_code ?? '—' }}</div>
-                                        </td>
-                                        <td class="px-5 py-4">
-                                            <div class="text-sm text-zinc-500 dark:text-zinc-400">{{ $order->product->category->name ?? 'N/A' }}</div>
-                                        </td>
-                                        <td class="px-5 py-4 text-left">
-                                            {{ number_format($order->quantity, 0) }} {{ $order->product->uom ?? 'pcs' }}
-                                        </td>
-                                        <td class="px-5 py-4 text-right">{{ $currencySymbol }}{{ number_format($order->unit_price, 2) }}</td>
-                                        <td class="px-5 py-4 text-right font-semibold text-zinc-900 dark:text-white">
-                                            {{ $currencySymbol }}{{ number_format($order->total_price, 2) }}
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr class="bg-white border-b dark:bg-zinc-800 dark:border-zinc-700">
-                                        <td colspan="7" class="px-6 py-4 text-center">No items found</td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Summary -->
-                <div class="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
-                    <div class="grid gap-4 md:grid-cols-3">
-                        <div class="text-center">
-                            <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ number_format($this->totalQuantity, 0) }}</div>
-                            <div class="text-sm text-zinc-600 dark:text-zinc-400">Total Ordered</div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-2xl font-bold text-green-600 dark:text-green-400">{{ $purchaseOrder->productOrders->count() }}</div>
-                            <div class="text-sm text-zinc-600 dark:text-zinc-400">Items Count</div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ $currencySymbol }}{{ number_format($this->totalPrice, 2) }}</div>
-                            <div class="text-sm text-zinc-600 dark:text-zinc-400">Total Value</div>
-                        </div>
-                    </div>
+                    <h4 class="text-md font-medium text-zinc-900 dark:text-white mb-3 px-1">📋 Purchase Order Items</h4>
+                    @include('livewire.pages.POmanagement.purchase-order.partials.po-items-table', [
+                        'items' => $this->productOrdersPaginated,
+                        'totals' => $this->totals,
+                        'currencySymbol' => $currencySymbol,
+                        'variant' => 'approved'
+                    ])
                 </div>
             </div>
         </div>
@@ -333,15 +160,6 @@
                                 {!! QrCode::size(200)->generate($purchaseOrder->po_num) !!}
                             </div>
                         </div>
-                        <div class="text-center">
-                            <button type="button" onclick="printQRCode()"
-                                class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-lg hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-300 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-800 transition-colors">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
-                                </svg>
-                                Print QR Code
-                            </button>
-                        </div>
                     </div>
 
                     <!-- Quick Info -->
@@ -373,9 +191,9 @@
                 <!-- Items Section -->
                 <div class="mb-6">
                     <h4 class="text-md font-medium text-zinc-900 dark:text-white mb-3">📋 Purchase Order Items</h4>
-                    <div class="overflow-x-auto">
+                    <div class="max-h-[60vh] overflow-y-auto overflow-x-auto">
                         <table class="w-full text-sm text-left text-zinc-500 dark:text-zinc-400">
-                            <thead class="text-sm text-zinc-700 uppercase bg-zinc-50 dark:bg-zinc-700 dark:text-zinc-400">
+                            <thead class="sticky top-0 z-[1] text-sm text-zinc-700 uppercase bg-zinc-50 dark:bg-zinc-700 dark:text-zinc-400">
                                 <tr>
                                     <th scope="col" class="px-5 py-3 text-left">Product Name</th>
                                     <th scope="col" class="px-5 py-3 text-left">SKU</th>
@@ -387,7 +205,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse($purchaseOrder->productOrders as $order)
+                                @forelse($this->productOrdersPaginated as $order)
                                     <tr class="bg-white border-b dark:bg-zinc-800 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-600">
                                         <td class="px-5 py-4">
                                             <div class="font-medium text-zinc-900 dark:text-white">{{ $order->product->remarks ?? $order->product->name ?? 'N/A' }}</div>
@@ -416,6 +234,11 @@
                                 @endforelse
                             </tbody>
                         </table>
+                        @if($this->productOrdersPaginated->hasPages())
+                            <div class="mt-3 flex justify-center">
+                                {{ $this->productOrdersPaginated->withQueryString()->links() }}
+                            </div>
+                        @endif
                     </div>
                 </div>
 
@@ -444,7 +267,7 @@
         @if($purchaseOrder->status === \App\Enums\PurchaseOrderStatus::TO_RECEIVE)
         <div class="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-lg border-2 border-purple-300 dark:border-purple-700 shadow-sm mb-6">
             <div class="p-6">
-                <!-- Header -->
+                <!-- Status Header -->
                 <div class="flex items-center justify-between mb-6">
                     <div class="flex items-center">
                         <svg class="w-8 h-8 text-purple-600 dark:text-purple-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -455,57 +278,25 @@
                             <p class="text-sm text-zinc-600 dark:text-zinc-400 mt-1">Purchase Order #{{ $purchaseOrder->po_num }}</p>
                         </div>
                     </div>
-                    <span class="inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full bg-purple-100 text-purple-800 dark:bg-purple-800 dark:text-purple-100">
+                    <span class="inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
                         To Receive
                     </span>
                 </div>
 
-                <!-- QR Code and Summary Section -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                    <!-- QR Code -->
-                    <div class="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-6">
-                        <h3 class="text-lg font-semibold text-zinc-900 dark:text-white mb-4 text-center">QR Code for Stock-In</h3>
-                        <div class="flex justify-center mb-4">
-                            <div class="bg-white p-4 rounded-xl shadow-lg border-2 border-purple-200 dark:border-purple-700">
-                                {!! QrCode::size(200)->generate($purchaseOrder->po_num) !!}
-                            </div>
-                        </div>
-                        <div class="text-center">
-                            <button type="button" onclick="printQRCode()"
-                                class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-purple-600 border border-transparent rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-4 focus:ring-purple-300 dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-800 transition-colors">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
-                                </svg>
-                                Print QR Code
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Quick Info -->
-                    <div class="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-6">
-                        <h3 class="text-lg font-semibold text-zinc-900 dark:text-white mb-4">Purchase Order Summary</h3>
-                        <div class="grid gap-4">
-                            <div class="flex justify-between items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                                <span class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Supplier:</span>
-                                <span class="text-sm font-semibold text-zinc-900 dark:text-white">{{ $purchaseOrder->supplier->name ?? 'N/A' }}</span>
-                            </div>
-                            <div class="flex justify-between items-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                                <span class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Department:</span>
-                                <span class="text-sm font-semibold text-zinc-900 dark:text-white">{{ $purchaseOrder->department->name ?? 'N/A' }}</span>
-                            </div>
-                            <div class="flex justify-between items-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                                <span class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Order Date:</span>
-                                <span class="text-sm font-semibold text-zinc-900 dark:text-white">{{ $purchaseOrder->order_date->format('M d, Y') }}</span>
-                            </div>
-                            @if($purchaseOrder->expected_delivery_date)
-                            <div class="flex justify-between items-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
-                                <span class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Expected Delivery:</span>
-                                <span class="text-sm font-semibold text-zinc-900 dark:text-white">{{ $purchaseOrder->expected_delivery_date->format('M d, Y') }}</span>
-                            </div>
-                            @endif
-                        </div>
-                    </div>
+                @if($purchaseOrder->canCloseForFulfillment())
+                <div class="mb-4 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-700">
+                    <p class="text-sm text-zinc-700 dark:text-zinc-300">
+                        💡 You can close this PO for fulfillment (e.g. short or complete shipment).
+                    </p>
                 </div>
+                @endif
+
+                <!-- Shared PO Header (QR + Details) -->
+                @include('livewire.pages.POmanagement.purchase-order.partials.po-details-header', [
+                    'purchaseOrder' => $purchaseOrder,
+                    'currencySymbol' => $currencySymbol,
+                    'qrBorderColor' => 'border-purple-200 dark:border-purple-700'
+                ])
 
                 <!-- Delivery Progress Alert (if variance exists) -->
                 @php
@@ -545,55 +336,15 @@
                 </div>
                 @endif
 
-                <!-- Items Ready for Receiving Section with Batch Details -->
+                <!-- Items Ready for Receiving Section -->
                 <div class="mb-6">
-                    <h4 class="text-md font-medium text-zinc-900 dark:text-white mb-3">📦 Items Ready for Receiving</h4>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm text-left text-zinc-500 dark:text-zinc-400">
-                            <thead class="text-sm text-zinc-700 uppercase bg-zinc-50 dark:bg-zinc-700 dark:text-zinc-400">
-                                <tr>
-                                    <th scope="col" class="px-5 py-3 text-left">Product Name</th>
-                                    <th scope="col" class="px-5 py-3 text-left">SKU</th>
-                                    <th scope="col" class="px-5 py-3 text-left">Supplier Code (SKU)</th>
-                                    <th scope="col" class="px-5 py-3 text-left">Category</th>
-                                    <th scope="col" class="px-5 py-3 text-left">Ordered Qty</th>
-                                    <th scope="col" class="px-5 py-3 bg-purple-50 dark:bg-purple-900/20">Expected Qty</th>
-                                    <th scope="col" class="px-5 py-3 bg-amber-50 dark:bg-amber-900/20">Batch Number</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($purchaseOrder->productOrders as $order)
-                                    <tr class="bg-white border-b dark:bg-zinc-800 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-600">
-                                        <td class="px-5 py-4">
-                                            <div class="font-medium text-zinc-900 dark:text-white">{{ $order->product->remarks ?? $order->product->name ?? 'N/A' }}</div>
-                                        </td>
-                                        <td class="px-5 py-4">
-                                            <div class="text-sm font-mono text-zinc-600 dark:text-zinc-400">{{ $order->product->sku ?? '—' }}</div>
-                                        </td>
-                                        <td class="px-5 py-4">
-                                            <div class="text-sm text-zinc-600 dark:text-zinc-400">{{ $order->product->supplier_code ?? '—' }}</div>
-                                        </td>
-                                        <td class="px-5 py-4">
-                                            <div class="text-sm text-zinc-500 dark:text-zinc-400">{{ $order->product->category->name ?? 'N/A' }}</div>
-                                        </td>
-                                        <td class="px-5 py-4 text-left">
-                                            {{ number_format($order->quantity, 0) }} {{ $order->product->uom ?? 'pcs' }}
-                                        </td>
-                                        <td class="px-5 py-4 bg-purple-50 dark:bg-purple-900/20 text-left">
-                                            <div class="font-medium text-purple-600 dark:text-purple-400">
-                                                {{ number_format($order->expected_qty ?? $order->quantity, 0) }} {{ $order->product->uom ?? 'pcs' }}
-                                            </div>
-                                        </td>
-                                        <!-- Batch information shown via Product Batches below; no per-line batch on product orders -->
-                                    </tr>
-                                @empty
-                                    <tr class="bg-white border-b dark:bg-zinc-800 dark:border-zinc-700">
-                                        <td colspan="6" class="px-6 py-4 text-center">No items found</td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
+                    <h4 class="text-md font-medium text-zinc-900 dark:text-white mb-3 px-1">📦 Items Ready for Receiving</h4>
+                    @include('livewire.pages.POmanagement.purchase-order.partials.po-items-table', [
+                        'items' => $this->productOrdersPaginated,
+                        'totals' => $this->totals,
+                        'currencySymbol' => $currencySymbol,
+                        'variant' => 'to_receive'
+                    ])
                 </div>
 
                 <!-- Receiving Progress Summary -->
@@ -679,7 +430,7 @@
         @if($purchaseOrder->status === \App\Enums\PurchaseOrderStatus::RECEIVED)
         <div class="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg border-2 border-green-300 dark:border-green-700 shadow-sm mb-6">
             <div class="p-6">
-                <!-- Header -->
+                <!-- Status Header -->
                 <div class="flex items-center justify-between mb-6">
                     <div class="flex items-center">
                         <svg class="w-8 h-8 text-green-600 dark:text-green-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -690,65 +441,25 @@
                             <p class="text-sm text-zinc-600 dark:text-zinc-400 mt-1">Purchase Order #{{ $purchaseOrder->po_num }}</p>
                         </div>
                     </div>
-                    <span class="inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
+                    <span class="inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
                         Received
                     </span>
                 </div>
-                
-                <!-- QR Code and Summary Section -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                    <!-- QR Code -->
-                    <div class="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-6">
-                        <h3 class="text-lg font-semibold text-zinc-900 dark:text-white mb-4 text-center">QR Code</h3>
-                        <div class="flex justify-center mb-4">
-                            <div class="bg-white p-4 rounded-xl shadow-lg border-2 border-green-200 dark:border-green-700">
-                                {!! QrCode::size(200)->generate($purchaseOrder->po_num) !!}
-                            </div>
-                        </div>
-                        <div class="text-center">
-                            <button type="button" onclick="printQRCode()"
-                                class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-lg hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-300 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800 transition-colors">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
-                                </svg>
-                                Print QR Code
-                            </button>
-                        </div>
-                    </div>
 
-                    <!-- Quick Info -->
-                    <div class="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-6">
-                                                <h3 class="text-lg font-semibold text-zinc-900 dark:text-white mb-4">Purchase Order Details</h3>
-                        <div class="grid gap-4">
-                            <div class="flex justify-between items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                                <span class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Supplier:</span>
-                                <span class="text-sm font-semibold text-zinc-900 dark:text-white">{{ $purchaseOrder->supplier->name ?? 'N/A' }}</span>
-                            </div>
-                            <div class="flex justify-between items-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                                <span class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Department:</span>
-                                <span class="text-sm font-semibold text-zinc-900 dark:text-white">{{ $purchaseOrder->department->name ?? 'N/A' }}</span>
-                            </div>
-                            <div class="flex justify-between items-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                                <span class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Order Date:</span>
-                                <span class="text-sm font-semibold text-zinc-900 dark:text-white">{{ $purchaseOrder->order_date->format('M d, Y') }}</span>
-                            </div>
-                            @if($purchaseOrder->expected_delivery_date)
-                            <div class="flex justify-between items-center p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
-                                <span class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Expected Delivery:</span>
-                                <span class="text-sm font-semibold text-zinc-900 dark:text-white">{{ $purchaseOrder->expected_delivery_date->format('M d, Y') }}</span>
-                            </div>
-                            @endif
-                            <div class="flex justify-between items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                                <span class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Ordered By:</span>
-                                <span class="text-sm font-semibold text-zinc-900 dark:text-white">{{ $purchaseOrder->orderedByUser->name ?? 'N/A' }}</span>
-                            </div>
-                            <div class="flex justify-between items-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                                <span class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Approved By:</span>
-                                <span class="text-sm font-semibold text-zinc-900 dark:text-white">{{ $purchaseOrder->approverInfo->name ?? 'N/A' }}</span>
-                            </div>
-                        </div>
-                    </div>
+                @if($purchaseOrder->canReopen())
+                <div class="mb-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-700">
+                    <p class="text-sm text-zinc-700 dark:text-zinc-300">
+                        💡 You can reopen this PO to receive more or edit lines.
+                    </p>
                 </div>
+                @endif
+
+                <!-- Shared PO Header (QR + Details) -->
+                @include('livewire.pages.POmanagement.purchase-order.partials.po-details-header', [
+                    'purchaseOrder' => $purchaseOrder,
+                    'currencySymbol' => $currencySymbol,
+                    'qrBorderColor' => 'border-green-200 dark:border-green-700'
+                ])
                 {{-- Delivery Information --}}
                 @if($purchaseOrder->deliveries && $purchaseOrder->deliveries->isNotEmpty())
                     <div class="mb-6">
@@ -833,9 +544,9 @@
                 <!-- Items Received Section with Comprehensive Details -->
                 <div class="mb-6">
                     <h4 class="text-md font-medium text-zinc-900 dark:text-white mb-3">📋 Received Items with Quality Control</h4>
-                    <div class="overflow-x-auto">
+                    <div class="max-h-[60vh] overflow-y-auto overflow-x-auto">
                         <table class="w-full text-sm text-left text-zinc-500 dark:text-zinc-400">
-                            <thead class="text-sm text-zinc-700 uppercase bg-zinc-50 dark:bg-zinc-700 dark:text-zinc-400">
+                            <thead class="sticky top-0 z-[1] text-sm text-zinc-700 uppercase bg-zinc-50 dark:bg-zinc-700 dark:text-zinc-400">
                                 <tr>
                                     <th scope="col" class="px-5 py-3 text-left">Product Name</th>
                                     <th scope="col" class="px-5 py-3 text-left">SKU</th>
@@ -853,7 +564,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse($purchaseOrder->productOrders as $order)
+                                @forelse($this->productOrdersPaginated as $order)
                                     <tr class="bg-white border-b dark:bg-zinc-800 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-600">
                                         <td class="px-5 py-4">
                                             <div class="font-medium text-zinc-900 dark:text-white">{{ $order->product->remarks ?? $order->product->name ?? 'N/A' }}</div>
@@ -1108,6 +819,11 @@
                                 @endforelse
                             </tbody>
                         </table>
+                        @if($this->productOrdersPaginated->hasPages())
+                            <div class="mt-3 flex justify-center">
+                                {{ $this->productOrdersPaginated->withQueryString()->links() }}
+                            </div>
+                        @endif
                     </div>
                 </div>
 
@@ -1215,136 +931,181 @@
         </div>
         @endif
 
-    </div>
-
-    <!-- Action Buttons Section -->
-    <div class="flex items-center justify-between mt-6 -mx-6 px-6">
-        <!-- Left Section: Back Button -->
-        <div class="flex items-center">
-            <a href="{{ route('pomanagement.purchaseorder') }}" 
-               class="inline-flex items-center px-4 py-2 text-sm font-medium text-zinc-700 bg-white border border-zinc-300 rounded-lg hover:bg-zinc-50 focus:outline-none focus:ring-4 focus:ring-zinc-200 dark:bg-zinc-700 dark:text-zinc-300 dark:border-zinc-600 dark:hover:bg-zinc-600 dark:focus:ring-zinc-800 transition-colors">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-                Back to Purchase Orders
-            </a>
         </div>
+        {{-- End LEFT COLUMN --}}
 
-        <!-- Right Section: Action Buttons -->
-        <div class="flex items-center space-x-3">
-            @php
-                use App\Enums\Enum\PermissionEnum;
-            @endphp
+        {{-- ============================================
+            RIGHT COLUMN (30%): Sidebar
+        ============================================ --}}
+        <div class="lg:col-span-3">
+            <div class="sticky top-6 space-y-6">
 
-            @can('po approve')
-                @if($purchaseOrder->status === \App\Enums\PurchaseOrderStatus::PENDING || $purchaseOrder->status === 'pending')
-                    <button type="button" 
-                        wire:click="ApprovePurchaseOrder"
-                        wire:confirm="Are you sure you want to approve Purchase Order #{{ $purchaseOrder->po_num }}?"
-                        class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-lg hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-300 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800 transition-colors">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        Approve Purchase Order
-                    </button>
-                    <button type="button" 
-                        onclick="const rejectReason = prompt('Please enter cancellation reason:'); 
-                                if(rejectReason && rejectReason.trim()) { 
-                                    $wire.set('cancellation_reason', rejectReason); 
-                                    $wire.call('RejectPurchaseOrder'); 
-                                } else if(rejectReason !== null) {
-                                    alert('Cancellation reason is required!');
-                                }"
-                        class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-lg hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-300 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-800 transition-colors">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                        Reject Purchase Order
-                    </button>
-                @endcan
-            @elseif($purchaseOrder->status === \App\Enums\PurchaseOrderStatus::APPROVED)
+                {{-- Order Summary Card --}}
+                <div class="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-6">
+                    <h3 class="text-lg font-semibold text-zinc-900 dark:text-white mb-4">Order Summary</h3>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-zinc-600 dark:text-zinc-400">Status</span>
+                            <span class="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full
+                                @if($purchaseOrder->status === \App\Enums\PurchaseOrderStatus::PENDING)
+                                    bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200
+                                @elseif($purchaseOrder->status === \App\Enums\PurchaseOrderStatus::APPROVED)
+                                    bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200
+                                @elseif($purchaseOrder->status === \App\Enums\PurchaseOrderStatus::TO_RECEIVE)
+                                    bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200
+                                @elseif($purchaseOrder->status === \App\Enums\PurchaseOrderStatus::RECEIVED)
+                                    bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200
+                                @else
+                                    bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200
+                                @endif">
+                                {{ $purchaseOrder->status->label() }}
+                            </span>
+                        </div>
+
+                        <div class="border-t border-zinc-200 dark:border-zinc-700 pt-3">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-sm text-zinc-600 dark:text-zinc-400">Supplier</span>
+                                <span class="text-sm font-medium text-zinc-900 dark:text-white">{{ $purchaseOrder->supplier->name ?? 'N/A' }}</span>
+                            </div>
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-sm text-zinc-600 dark:text-zinc-400">Department</span>
+                                <span class="text-sm font-medium text-zinc-900 dark:text-white">{{ $purchaseOrder->department->name ?? 'N/A' }}</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-zinc-600 dark:text-zinc-400">Order Date</span>
+                                <span class="text-sm font-medium text-zinc-900 dark:text-white">{{ $purchaseOrder->order_date->format('M d, Y') }}</span>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-zinc-200 dark:border-zinc-700 pt-3">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-sm text-zinc-600 dark:text-zinc-400">Total Items</span>
+                                <span class="text-lg font-bold text-zinc-900 dark:text-white">{{ number_format($purchaseOrder->productOrders->count(), 0) }}</span>
+                            </div>
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-sm text-zinc-600 dark:text-zinc-400">Total Quantity</span>
+                                <span class="text-lg font-bold text-zinc-900 dark:text-white">{{ number_format($this->totalQuantity, 0) }}</span>
+                            </div>
+
+                            @if($purchaseOrder->status === \App\Enums\PurchaseOrderStatus::TO_RECEIVE || $purchaseOrder->status === \App\Enums\PurchaseOrderStatus::RECEIVED)
+                                @php
+                                    $totalOrdered = $purchaseOrder->productOrders->sum('quantity');
+                                    $totalExpected = $purchaseOrder->productOrders->sum('expected_qty') ?: $totalOrdered;
+                                    $totalReceived = $purchaseOrder->productOrders->sum('received_quantity');
+                                    $totalDestroyed = $purchaseOrder->productOrders->sum('destroyed_qty') ?: 0;
+                                @endphp
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-sm text-zinc-600 dark:text-zinc-400">Expected</span>
+                                    <span class="text-lg font-bold text-purple-600 dark:text-purple-400">{{ number_format($totalExpected, 0) }}</span>
+                                </div>
+                                <div class="flex justify-between items-center mb-2">
+                                    <span class="text-sm text-zinc-600 dark:text-zinc-400">Received (Good)</span>
+                                    <span class="text-lg font-bold text-green-600 dark:text-green-400">{{ number_format($totalReceived, 0) }}</span>
+                                </div>
+                                @if($totalDestroyed > 0)
+                                    <div class="flex justify-between items-center mb-2">
+                                        <span class="text-sm text-zinc-600 dark:text-zinc-400">Damaged</span>
+                                        <span class="text-lg font-bold text-red-600 dark:text-red-400">{{ number_format($totalDestroyed, 0) }}</span>
+                                    </div>
+                                @endif
+                            @endif
+
+                            <div class="flex justify-between items-center pt-3 border-t border-zinc-200 dark:border-zinc-700">
+                                <span class="text-base font-semibold text-zinc-900 dark:text-white">Total Price</span>
+                                <span class="text-xl font-bold text-zinc-900 dark:text-white">{{ $currencySymbol }}{{ number_format($this->totalPrice, 2) }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Actions Card --}}
+                @php use App\Enums\Enum\PermissionEnum; @endphp
                 @can('po approve')
-                    <button type="button" wire:click="ApprovePurchaseOrder"
-                        wire:confirm="Are you sure you want to submit this information? Make sure batch information is correct."
-                        class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 transition-colors">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        Complete Approval
-                    </button>
-                    @if($purchaseOrder->canCloseForFulfillment())
-                        <button type="button"
-                            onclick="const reason = prompt('Reason for closing (optional):'); if (reason !== null) $wire.call('closeForFulfillment', [reason || '']);"
-                            class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-300 dark:bg-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-800 transition-colors">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                            </svg>
-                            Close for fulfillment
-                        </button>
-                    @endif
+                    <div class="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-6">
+                        <h3 class="text-lg font-semibold text-zinc-900 dark:text-white mb-4">Actions</h3>
+                        <div class="space-y-3">
+
+                            @if($purchaseOrder->status === \App\Enums\PurchaseOrderStatus::PENDING || $purchaseOrder->status === 'pending')
+                                <button type="button"
+                                    wire:click="ApprovePurchaseOrder"
+                                    wire:confirm="Are you sure you want to approve Purchase Order #{{ $purchaseOrder->po_num }}?"
+                                    class="w-full inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium text-white bg-green-600 border border-transparent rounded-lg hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-300 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800 transition-colors">
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    Approve Purchase Order
+                                </button>
+                                <button type="button"
+                                    onclick="const rejectReason = prompt('Please enter cancellation reason:'); if(rejectReason && rejectReason.trim()) { $wire.set('cancellation_reason', rejectReason); $wire.call('RejectPurchaseOrder'); } else if(rejectReason !== null) { alert('Cancellation reason is required!'); }"
+                                    class="w-full inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium text-white bg-red-600 border border-transparent rounded-lg hover:bg-red-700 focus:outline-none focus:ring-4 focus:ring-red-300 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-800 transition-colors">
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                    Reject Purchase Order
+                                </button>
+
+                            @elseif($purchaseOrder->status === \App\Enums\PurchaseOrderStatus::APPROVED)
+                                <button type="button" wire:click="ApprovePurchaseOrder"
+                                    wire:confirm="Are you sure you want to submit this information? Make sure batch information is correct."
+                                    class="w-full inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800 transition-colors">
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    Complete Approval
+                                </button>
+                                @if($purchaseOrder->canCloseForFulfillment())
+                                    <button type="button" wire:click="openReasonModal('close')"
+                                        class="w-full inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-300 dark:bg-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-800 transition-colors">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                        Close for fulfillment
+                                    </button>
+                                @endif
+
+                            @elseif($purchaseOrder->status === \App\Enums\PurchaseOrderStatus::TO_RECEIVE)
+                                @can('receive_goods')
+                                    <a href="{{ route('warehousestaff.stockin') }}?po={{ $purchaseOrder->po_num }}" target="_blank"
+                                        class="w-full inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium text-white bg-purple-600 border border-transparent rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-4 focus:ring-purple-300 dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-800 transition-colors">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M9 9l6-3"></path></svg>
+                                        Start Receiving
+                                    </a>
+                                @endcan
+                                <button type="button"
+                                    onclick="const returnReason = prompt('Please enter reason for returning to approved status:'); if(returnReason && returnReason.trim()) { $wire.set('cancellation_reason', returnReason); $wire.call('ReturnToApproved'); } else if(returnReason !== null) { alert('Reason is required!'); }"
+                                    class="w-full inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium text-white bg-yellow-600 border border-transparent rounded-lg hover:bg-yellow-700 focus:outline-none focus:ring-4 focus:ring-yellow-300 dark:bg-yellow-600 dark:hover:bg-yellow-700 dark:focus:ring-yellow-800 transition-colors">
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                    Return to Approved
+                                </button>
+                                @if($purchaseOrder->canCloseForFulfillment())
+                                    <button type="button" wire:click="openReasonModal('close')"
+                                        class="w-full inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-300 dark:bg-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-800 transition-colors">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                        Close for fulfillment
+                                    </button>
+                                @endif
+
+                            @elseif($purchaseOrder->status === \App\Enums\PurchaseOrderStatus::RECEIVED)
+                                @can('view_products')
+                                    <a href="{{ route('product-management.index') }}"
+                                        class="w-full inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium text-white bg-green-600 border border-transparent rounded-lg hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-300 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800 transition-colors">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8 4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                                        View Products
+                                    </a>
+                                @endcan
+                                @if($purchaseOrder->canReopen())
+                                    <button type="button" wire:click="openReasonModal('reopen')"
+                                        class="w-full inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300 dark:bg-indigo-600 dark:hover:bg-indigo-700 dark:focus:ring-indigo-800 transition-colors">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                        Reopen PO
+                                    </button>
+                                @endif
+                            @endif
+
+                        </div>
+                    </div>
                 @endcan
-            @elseif($purchaseOrder->status === \App\Enums\PurchaseOrderStatus::TO_RECEIVE)
-                @can('receive_goods')
-                    <a href="{{ route('warehousestaff.stockin') }}?po={{ $purchaseOrder->po_num }}"
-                        target="_blank"
-                        class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-purple-600 border border-transparent rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-4 focus:ring-purple-300 dark:bg-purple-600 dark:hover:bg-purple-700 dark:focus:ring-purple-800 transition-colors">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M9 9l6-3"></path>
-                        </svg>
-                        Start Receiving
-                    </a>
-                @endcan
-                @can('po approve')
-                    <button type="button"
-                        onclick="const returnReason = prompt('Please enter reason for returning to approved status:');
-                                if(returnReason && returnReason.trim()) {
-                                    $wire.set('cancellation_reason', returnReason);
-                                    $wire.call('ReturnToApproved');
-                                } else if(returnReason !== null) {
-                                    alert('Reason is required!');
-                                }"
-                        class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-yellow-600 border border-transparent rounded-lg hover:bg-yellow-700 focus:outline-none focus:ring-4 focus:ring-yellow-300 dark:bg-yellow-600 dark:hover:bg-yellow-700 dark:focus:ring-yellow-800 transition-colors">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                        </svg>
-                        Return to Approved
-                    </button>
-                    @if($purchaseOrder->canCloseForFulfillment())
-                        <button type="button"
-                            onclick="const reason = prompt('Reason for closing (optional):'); if (reason !== null) $wire.call('closeForFulfillment', [reason || '']);"
-                            class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-gray-600 border border-transparent rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-300 dark:bg-gray-600 dark:hover:bg-gray-700 dark:focus:ring-gray-800 transition-colors">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                            </svg>
-                            Close for fulfillment
-                        </button>
-                    @endif
-                @endcan
-            @elseif($purchaseOrder->status === \App\Enums\PurchaseOrderStatus::RECEIVED)
-                @can('view_products')
-                    <a href="{{ route('product-management.index') }}"
-                        class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-lg hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-300 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800 transition-colors">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                        </svg>
-                        View Products
-                    </a>
-                @endcan
-                @can('po approve')
-                    @if($purchaseOrder->canReopen())
-                        <button type="button"
-                            onclick="const reason = prompt('Reason for reopening (optional):'); if (reason !== null) $wire.call('reopenPurchaseOrder', [reason || '']);"
-                            class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300 dark:bg-indigo-600 dark:hover:bg-indigo-700 dark:focus:ring-indigo-800 transition-colors">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                            </svg>
-                            Reopen PO
-                        </button>
-                    @endif
-                @endcan
-            @endif
+
+            </div>
         </div>
+        {{-- End RIGHT COLUMN --}}
+
     </div>
+    {{-- End Two-Column Layout --}}
+
+    @include('livewire.pages.POmanagement.purchase-order.partials.po-reason-modal')
 </div>
 
 <script>

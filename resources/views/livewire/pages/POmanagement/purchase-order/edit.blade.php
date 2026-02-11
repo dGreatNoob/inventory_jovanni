@@ -20,6 +20,9 @@
                     <x-input type="text" wire:model="po_num" name="po_num" label="PO Number" disabled="true" />
                     <x-input type="text" wire:model="ordered_by" name="ordered_by" label="Ordered By" disabled="true" />
                     <x-dropdown wire:model="supplier_id" name="supplier_id" label="Supplier" :options="$suppliers->pluck('name', 'id')->toArray()" placeholder="Select a supplier" />
+                    @if($selectedCurrency)
+                        <x-input type="text" name="currency_display" label="Currency" :value="$selectedCurrency->name . ' (' . $selectedCurrency->symbol . ')'" readonly="true" disabled="true" />
+                    @endif
                     <x-dropdown wire:model="deliver_to" name="deliver_to" label="Receiving Department" :options="$departments->pluck('name', 'id')->toArray()" placeholder="Select department" searchable="true" />
                     <x-input type="date" wire:model="order_date" name="order_date" label="Order Date" />
                     <x-input type="date" wire:model="expected_delivery_date" name="expected_delivery_date" label="Expected Delivery Date" />
@@ -228,9 +231,9 @@
                                 <td class="px-6 py-4">{{ $item['name'] }}</td>
                                 <td class="px-6 py-4">{{ $item['category'] }}</td>
                                 <td class="px-6 py-4">{{ $item['supplier_code'] }}</td>
-                                <td class="px-6 py-4">₱{{ number_format($item['unit_price'], 2) }}</td>
+                                <td class="px-6 py-4">{{ $selectedCurrency?->symbol ?? '₱' }}{{ number_format($item['unit_price'], 2) }}</td>
                                 <td class="px-6 py-4">{{ number_format($item['order_qty'], 2) }}</td>
-                                <td class="px-6 py-4 font-semibold">₱{{ number_format($item['total_price'], 2) }}</td>
+                                <td class="px-6 py-4 font-semibold">{{ $selectedCurrency?->symbol ?? '₱' }}{{ number_format($item['total_price'], 2) }}</td>
                                 <td class="px-6 py-4">
                                     <div class="flex space-x-2">
                                         <x-button type="button" wire:click="editItem({{ $index }})" variant="warning" size="sm">Edit</x-button>
@@ -256,7 +259,7 @@
                         <tr>
                             <td colspan="5" class="px-6 py-3 text-right">Total:</td>
                             <td class="px-6 py-3">{{ number_format($totalQuantity ?? 0, 2) }}</td>
-                            <td class="px-6 py-3">₱{{ number_format($totalAmount ?? 0, 2) }}</td>
+                            <td class="px-6 py-3">{{ $selectedCurrency?->symbol ?? '₱' }}{{ number_format($totalAmount ?? 0, 2) }}</td>
                             <td></td>
                         </tr>
                     </tfoot>

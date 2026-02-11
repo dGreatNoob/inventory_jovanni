@@ -44,7 +44,8 @@ class Supplier extends Model
         'credit_limit',
         'payment_terms_days',
         'is_active',
-        'categories'
+        'categories',
+        'default_currency_id',
     ];
 
     protected $casts = [
@@ -62,6 +63,11 @@ class Supplier extends Model
     public function purchaseOrders()
     {
         return $this->hasMany(PurchaseOrder::class, 'supplier_id');
+    }
+
+    public function defaultCurrency()
+    {
+        return $this->belongsTo(Currency::class, 'default_currency_id');
     }
 
     // Scopes

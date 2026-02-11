@@ -11,6 +11,7 @@ class ProductOrder extends Model
 
     protected $fillable = [
         'purchase_order_id',
+        'currency_id',
         'product_id',
         'quantity',
         'unit_price',
@@ -39,6 +40,11 @@ class ProductOrder extends Model
     public function purchaseOrder()
     {
         return $this->belongsTo(PurchaseOrder::class);
+    }
+
+    public function currency()
+    {
+        return $this->belongsTo(Currency::class);
     }
 
     public function product()

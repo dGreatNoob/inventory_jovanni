@@ -27,8 +27,8 @@
         <table class="min-w-full w-full table-fixed divide-y divide-gray-200 dark:divide-gray-700">
             <colgroup>
                 <col style="width: 2.5%" />
-                <col style="width: 9%" />
-                <col style="width: 22%" />
+                <col style="width: 8%" />
+                <col style="width: 25%" />
                 <col style="width: 11%" />
                 <col style="width: 11%" />
                 <col style="width: 11%" />

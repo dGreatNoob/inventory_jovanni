@@ -41,9 +41,10 @@ class Show extends Component
             'timestamp' => '2025-11-11 08:01:50',
         ]);
         
-        // Load purchase order with relationships
+        // Load purchase order with relationships (currency for multi-currency display)
         $this->purchaseOrder = PurchaseOrder::with([
             'supplier',
+            'currency',
             'productOrders.product.category',
             'productOrders.product.supplier',
             'orderedByUser',

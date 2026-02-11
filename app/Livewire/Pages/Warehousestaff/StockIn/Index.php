@@ -7,6 +7,8 @@ use App\Models\ProductOrder;
 use App\Models\Product;
 use App\Models\ProductInventory;
 use App\Models\ProductInventoryExpected;
+use App\Models\InventoryMovement;
+use App\Services\ExchangeRateService;
 use Livewire\Component;
 use Livewire\Attributes\On;
 use Illuminate\Support\Facades\Auth;
@@ -62,8 +64,8 @@ class Index extends Component
         $this->foundPurchaseOrder = null;
         $this->scannedPONumber = '';
 
-        // Find purchase order with this PO number
-        $purchaseOrder = PurchaseOrder::with(['productOrders.product', 'supplier', 'department'])
+        // Find purchase order with this PO number (include currency for Phase 3 cost conversion)
+        $purchaseOrder = PurchaseOrder::with(['productOrders.product', 'supplier', 'department', 'currency'])
             ->where('po_num', $code)
             ->first();
 
@@ -311,6 +313,39 @@ class Index extends Component
                         $oldQty = $inventory->quantity ?? 0;
                         $inventory->quantity = $oldQty + $actualReceive;
                         $inventory->save();
+
+                        // Phase 3: Convert PO line cost to PHP and create inventory movement with rate/audit
+                        $po = $this->foundPurchaseOrder;
+                        $currencyCode = $po->currency?->code ?? 'PHP';
+                        $exchangeRateService = app(ExchangeRateService::class);
+                        $rate = $exchangeRateService->getRate($currencyCode, 'PHP');
+                        $unitPriceOriginal = (float) $productOrder->unit_price;
+                        $unitCostPhp = $exchangeRateService->convert($unitPriceOriginal, $currencyCode, 'PHP');
+                        $totalCostPhp = round($unitCostPhp * $actualReceive, 2);
+
+                        InventoryMovement::create([
+                            'product_id' => $product->id,
+                            'movement_type' => 'purchase',
+                            'quantity' => $actualReceive,
+                            'unit_cost' => $unitCostPhp,
+                            'total_cost' => $totalCostPhp,
+                            'currency_id' => $po->currency_id,
+                            'exchange_rate_applied' => $rate,
+                            'unit_cost_original' => $unitPriceOriginal,
+                            'reference_type' => 'purchase_order',
+                            'reference_id' => $po->id,
+                            'notes' => 'Stock-in DR: ' . $this->drNumber,
+                            'created_by' => auth()->id(),
+                        ]);
+
+                        // Phase 3: Update product cost (weighted average in PHP)
+                        $oldCost = (float) $product->cost;
+                        $totalQty = $oldQty + $actualReceive;
+                        if ($totalQty > 0) {
+                            $newCost = ($oldQty * $oldCost + $actualReceive * $unitCostPhp) / $totalQty;
+                            $product->cost = round($newCost, 2);
+                            $product->save();
+                        }
 
                         // Update ProductInventoryExpected ledger (if record exists)
                         $expectedRecord = ProductInventoryExpected::where('product_id', $product->id)
@@ -622,7 +657,7 @@ class Index extends Component
         Log::info("testStep2() called. Scanned PO Number: " . ($this->scannedPONumber ?? 'null'));
 
         if ($this->scannedPONumber) {
-            $purchaseOrder = PurchaseOrder::with(['productOrders.product', 'supplier', 'department'])
+            $purchaseOrder = PurchaseOrder::with(['productOrders.product', 'supplier', 'department', 'currency'])
                 ->where('po_num', $this->scannedPONumber)
                 ->first();
 
@@ -635,7 +670,7 @@ class Index extends Component
             }
         }
 
-        $testPO = PurchaseOrder::with(['productOrders.product', 'supplier', 'department'])->first();
+        $testPO = PurchaseOrder::with(['productOrders.product', 'supplier', 'department', 'currency'])->first();
         if ($testPO) {
             Log::info("Loading fallback PO: {$testPO->po_num}");
             $this->foundPurchaseOrder = $testPO;
@@ -665,7 +700,7 @@ class Index extends Component
         Log::info("ensureCorrectPO called. Scanned code: {$this->scannedCode}, scannedPONumber: {$this->scannedPONumber}");
 
         if ($this->scannedCode && $this->foundPurchaseOrder && $this->foundPurchaseOrder->po_num !== $this->scannedCode) {
-            $purchaseOrder = PurchaseOrder::with(['productOrders.product', 'supplier', 'department'])
+            $purchaseOrder = PurchaseOrder::with(['productOrders.product', 'supplier', 'department', 'currency'])
                 ->where('po_num', $this->scannedCode)
                 ->first();
 

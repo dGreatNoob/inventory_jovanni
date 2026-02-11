@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Pages\POManagement\PurchaseOrder;
 
+use App\Models\Currency;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
 use App\Models\ProductOrder;
@@ -208,7 +209,19 @@ class Create extends Component
 
     public function getSuppliersProperty()
     {
-        return Supplier::active()->orderBy('name')->get();
+        return Supplier::active()->with('defaultCurrency')->orderBy('name')->get();
+    }
+
+    /**
+     * Get the currency for the selected supplier (or base PHP if none).
+     */
+    public function getSelectedCurrencyProperty()
+    {
+        if (empty($this->supplier_id)) {
+            return Currency::base();
+        }
+        $supplier = Supplier::with('defaultCurrency')->find($this->supplier_id);
+        return $supplier?->defaultCurrency ?? Currency::base();
     }
 
     public function openModal()
@@ -455,11 +468,15 @@ class Create extends Component
                 $total_qty += (float)$item['order_qty']; 
             } 
 
+            $selectedCurrency = $this->selectedCurrency;
+            $currencyId = $selectedCurrency?->id ?? Currency::base()?->id;
+
             // Create the purchase order (auto-approved/open)
             $purchaseOrder = PurchaseOrder::create([ 
                 'po_num' => $poNum,
                 'status' => PurchaseOrderStatus::APPROVED,
-                'supplier_id' => $this->supplier_id, 
+                'supplier_id' => $this->supplier_id,
+                'currency_id' => $currencyId,
                 'order_date' => $this->order_date,
                 'expected_delivery_date' => $this->expected_delivery_date,
                 'ordered_by' => Auth::id(),
@@ -481,6 +498,7 @@ class Create extends Component
             foreach ($this->orderedItems as $item) {
                 $productOrderData = [
                     'purchase_order_id' => $purchaseOrder->id,
+                    'currency_id' => $currencyId,
                     'product_id' => $item['product_id'],
                     'quantity' => (float)$item['order_qty'],
                     'unit_price' => (float)$item['unit_price'],
@@ -556,6 +574,7 @@ class Create extends Component
         return view('livewire.pages.POmanagement.purchase-order.create', [
             'products' => $this->getProductsProperty(),
             'suppliers' => $this->getSuppliersProperty(),
+            'selectedCurrency' => $this->selectedCurrency,
             'paginatedOrderedItems' => $this->orderedItemsPaginated,
             'orderedItemsTotalPages' => $this->orderedItemsTotalPages,
         ]);

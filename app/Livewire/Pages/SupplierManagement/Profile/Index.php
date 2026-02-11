@@ -4,6 +4,7 @@ namespace App\Livewire\Pages\SupplierManagement\Profile;
 
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Models\Currency;
 use App\Models\Supplier;
 use App\Models\Category;
 use App\Models\Product;
@@ -20,10 +21,10 @@ class Index extends Component
     public $totalValue = 0;
 
     // Create form properties
-    public $supplier_name, $supplier_code, $supplier_address, $contact_person, $contact_num, $email, $status, $is_active = true;
-    
+    public $supplier_name, $supplier_code, $supplier_address, $default_currency_id, $contact_person, $contact_num, $email, $status, $is_active = true;
+
     // Edit form properties
-    public $edit_name, $edit_code, $edit_address, $edit_contact_person, $edit_contact_num, $edit_email, $edit_status, $edit_is_active;
+    public $edit_name, $edit_code, $edit_address, $edit_default_currency_id, $edit_contact_person, $edit_contact_num, $edit_email, $edit_status, $edit_is_active;
     
     // View modal properties
     public $view_name, $view_code, $view_address, $view_contact_person, $view_contact_num, $view_email, $view_status, $view_categories = [];
@@ -182,6 +183,7 @@ class Index extends Component
                 'edit_contact_num' => ['nullable', 'regex:/^[0-9+\-\(\)\s]*$/'],
                 'edit_email' => 'nullable|email',
                 'edit_status' => 'nullable|string|in:active,inactive',
+                'edit_default_currency_id' => 'nullable|exists:currencies,id',
             ];
         }
 
@@ -208,6 +210,7 @@ class Index extends Component
             'name' => $this->supplier_name,
             'code' => $this->supplier_code,
             'address' => $this->supplier_address,
+            'default_currency_id' => $this->default_currency_id ?: null,
             'contact_person' => $this->contact_person,
             'contact_num' => $this->contact_num,
             'email' => $this->email,
@@ -221,6 +224,7 @@ class Index extends Component
             'supplier_name',
             'supplier_code',
             'supplier_address',
+            'default_currency_id',
             'contact_person',
             'contact_num',
             'email',
@@ -248,6 +252,7 @@ class Index extends Component
         $this->edit_email = $supplier->email;
         $this->edit_status = $supplier->status;
         $this->edit_is_active = $supplier->is_active ?? true;
+        $this->edit_default_currency_id = $supplier->default_currency_id;
 
         $this->showEditModal = true;
     }
@@ -266,6 +271,7 @@ class Index extends Component
             'name' => filled($this->edit_name) ? $this->edit_name : $supplier->name,
             'code' => filled($this->edit_code) ? $this->edit_code : $supplier->code,
             'address' => filled($this->edit_address) ? $this->edit_address : $supplier->address,
+            'default_currency_id' => $this->edit_default_currency_id ?: null,
             'contact_person' => filled($this->edit_contact_person) ? $this->edit_contact_person : $supplier->contact_person,
             'contact_num' => filled($this->edit_contact_num) ? $this->edit_contact_num : $supplier->contact_num,
             'email' => filled($this->edit_email) ? $this->edit_email : $supplier->email,
@@ -286,6 +292,7 @@ class Index extends Component
             'edit_email',
             'edit_status',
             'edit_is_active',
+            'edit_default_currency_id',
             'showEditModal',
         ]);
 
@@ -333,6 +340,7 @@ class Index extends Component
             'supplier_name',
             'supplier_code',
             'supplier_address',
+            'default_currency_id',
             'contact_person',
             'contact_num',
             'email',
@@ -349,6 +357,7 @@ class Index extends Component
             'supplier_name',
             'supplier_code',
             'supplier_address',
+            'default_currency_id',
             'contact_person',
             'contact_num',
             'email',
@@ -370,6 +379,7 @@ class Index extends Component
             'supplier_name',
             'supplier_code',
             'supplier_address',
+            'default_currency_id',
             'contact_person',
             'contact_num',
             'email',
@@ -381,6 +391,7 @@ class Index extends Component
             'edit_email',
             'edit_status',
             'edit_is_active',
+            'edit_default_currency_id',
         ]);
     }
 
@@ -464,6 +475,8 @@ class Index extends Component
                 return [$category->id => $category->name];
             });
 
-        return view('livewire.pages.supplier-management.profile.index', compact('items', 'categories'));
+        $currencies = Currency::orderBy('code')->get()->mapWithKeys(fn ($c) => [$c->id => $c->name . ' (' . $c->symbol . ')']);
+
+        return view('livewire.pages.supplier-management.profile.index', compact('items', 'categories', 'currencies'));
     }
 }

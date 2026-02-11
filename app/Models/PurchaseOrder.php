@@ -16,6 +16,7 @@ class PurchaseOrder extends Model
         'status',
         'po_type',
         'supplier_id',
+        'currency_id',
         'order_date',
         'expected_delivery_date',
         'ordered_by',
@@ -50,6 +51,11 @@ class PurchaseOrder extends Model
     public function supplier()
     {
         return $this->belongsTo(Supplier::class);
+    }
+
+    public function currency()
+    {
+        return $this->belongsTo(Currency::class);
     }
 
     public function department()

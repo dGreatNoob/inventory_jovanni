@@ -138,6 +138,20 @@
                                                     </div>
 
                                                     <div>
+                                                        <label for="default_currency_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                            Default Currency (for POs)
+                                                        </label>
+                                                        <select id="default_currency_id" wire:model="default_currency_id"
+                                                            class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm">
+                                                            <option value="">Select currency (optional)</option>
+                                                            @foreach($currencies as $id => $label)
+                                                                <option value="{{ $id }}">{{ $label }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Used when creating purchase orders for this supplier.</p>
+                                                    </div>
+
+                                                    <div>
                                                         <label for="supplier_address" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                                             Address
                                                         </label>
@@ -759,6 +773,20 @@
                                                             />
                                                             @error('edit_code') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                                         </div>
+                                                    </div>
+
+                                                    <div>
+                                                        <label for="edit_default_currency_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                            Default Currency (for POs)
+                                                        </label>
+                                                        <select id="edit_default_currency_id" wire:model="edit_default_currency_id"
+                                                            class="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm">
+                                                            <option value="">Select currency (optional)</option>
+                                                            @foreach($currencies as $id => $label)
+                                                                <option value="{{ $id }}">{{ $label }}</option>
+                                                            @endforeach
+                                                        </select>
+                                                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Used when creating purchase orders for this supplier.</p>
                                                     </div>
 
                                                     <div>

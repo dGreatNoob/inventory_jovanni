@@ -111,6 +111,18 @@
                         @enderror
                     </div>
 
+                    {{-- Currency (from supplier) --}}
+                    @if($selectedCurrency)
+                        <x-input
+                            type="text"
+                            name="currency_display"
+                            label="Currency"
+                            :value="$selectedCurrency->name . ' (' . $selectedCurrency->symbol . ')'"
+                            readonly="true"
+                            disabled="true"
+                        />
+                    @endif
+
                     {{-- Receiving Department --}}
                     <x-dropdown
                         wire:model="deliver_to"
@@ -268,7 +280,7 @@
                         </div>
                         <div class="grid gap-4 md:grid-cols-3">
                             <div>
-                                <label for="supplier_code_unit_price" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Unit Price (₱)</label>
+                                <label for="supplier_code_unit_price" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Unit Price ({{ $selectedCurrency?->symbol ?? '₱' }})</label>
                                 <input
                                     type="number"
                                     id="supplier_code_unit_price"
@@ -413,7 +425,7 @@
                         <x-input
                             type="number"
                             name="unit_price"
-                            label="Unit Price (₱)"
+                            :label="'Unit Price (' . ($selectedCurrency?->symbol ?? '₱') . ')'"
                             wire:model="unit_price"
                             step="0.01"
                             required="true"
@@ -506,7 +518,7 @@
                                 </td>
                                 <td class="px-5 py-4 text-right">
                                     <div class="text-sm text-gray-900 dark:text-white">
-                                        ₱{{ number_format($item['unit_price'] ?? 0, 2) }}
+                                        {{ $selectedCurrency?->symbol ?? '₱' }}{{ number_format($item['unit_price'] ?? 0, 2) }}
                                     </div>
                                 </td>
                                 <td class="px-5 py-4 text-right">
@@ -516,7 +528,7 @@
                                 </td>
                                 <td class="px-5 py-4 text-right">
                                     <div class="text-sm font-semibold text-gray-900 dark:text-white">
-                                        ₱{{ number_format($item['total_price'] ?? 0, 2) }}
+                                        {{ $selectedCurrency?->symbol ?? '₱' }}{{ number_format($item['total_price'] ?? 0, 2) }}
                                     </div>
                                 </td>
                                 <td class="px-5 py-4 text-center">
@@ -556,7 +568,7 @@
                                     {{ number_format($this->totalQuantity, 2) }}
                                 </td>
                                 <td class="px-5 py-3 text-right">
-                                    ₱{{ number_format($this->totalAmount, 2) }}
+                                    {{ $selectedCurrency?->symbol ?? '₱' }}{{ number_format($this->totalAmount, 2) }}
                                 </td>
                                 <td class="px-5 py-3"></td>
                             </tr>
@@ -628,7 +640,7 @@
                                 <span class="font-medium">Total Quantity:</span> {{ number_format($this->totalQuantity, 2) }}
                             </div>
                             <div class="text-lg font-bold text-gray-900 dark:text-white">
-                                <span class="font-medium">Grand Total:</span> ₱{{ number_format($this->totalAmount, 2) }}
+                                <span class="font-medium">Grand Total:</span> {{ $selectedCurrency?->symbol ?? '₱' }}{{ number_format($this->totalAmount, 2) }}
                             </div>
                         @endif
                     </div>

@@ -20,6 +20,9 @@ class InventoryMovement extends Model
         'quantity',
         'unit_cost',
         'total_cost',
+        'currency_id',
+        'exchange_rate_applied',
+        'unit_cost_original',
         'reference_type',
         'reference_id',
         'notes',
@@ -31,6 +34,8 @@ class InventoryMovement extends Model
         'quantity' => 'decimal:3',
         'unit_cost' => 'decimal:2',
         'total_cost' => 'decimal:2',
+        'exchange_rate_applied' => 'decimal:6',
+        'unit_cost_original' => 'decimal:2',
         'metadata' => 'array',
         'created_at' => 'datetime',
     ];
@@ -54,6 +59,11 @@ class InventoryMovement extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function currency(): BelongsTo
+    {
+        return $this->belongsTo(Currency::class);
     }
 
     // Scopes

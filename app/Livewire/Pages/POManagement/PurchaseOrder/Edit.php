@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Pages\POManagement\PurchaseOrder;
 
+use App\Models\Currency;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
 use App\Models\ProductOrder;
@@ -89,7 +90,8 @@ class Edit extends Component
     {
         $this->Id = $Id;
         $this->purchaseOrder = PurchaseOrder::with([
-            'supplier',
+            'supplier.defaultCurrency',
+            'currency',
             'productOrders.product.category',
             'orderedByUser',
             'department'
@@ -186,8 +188,19 @@ class Edit extends Component
         return Supplier::when($this->supplier_id, function ($q) {
             $q->where('is_active', true)->orWhere('id', $this->supplier_id);
         }, fn ($q) => $q->where('is_active', true))
+            ->with('defaultCurrency')
             ->orderBy('name')
             ->get();
+    }
+
+    /**
+     * Get the currency for the PO (from PO, supplier, or base PHP).
+     */
+    public function getSelectedCurrencyProperty()
+    {
+        return $this->purchaseOrder?->currency
+            ?? $this->purchaseOrder?->supplier?->defaultCurrency
+            ?? Currency::base();
     }
 
     public function openModal()
@@ -396,9 +409,13 @@ class Edit extends Component
                 $total_price += $item['total_price'];
             }
 
+            $selectedCurrency = $this->selectedCurrency;
+            $currencyId = $selectedCurrency?->id ?? Currency::base()?->id;
+
             // Update purchase order
             $this->purchaseOrder->update([
                 'supplier_id' => $this->supplier_id,
+                'currency_id' => $currencyId,
                 'order_date' => $this->order_date,
                 'expected_delivery_date' => $this->expected_delivery_date,
                 'del_to' => $this->deliver_to,
@@ -415,6 +432,7 @@ class Edit extends Component
                 if (isset($item['id']) && $item['id']) {
                     // Update existing product order
                     ProductOrder::where('id', $item['id'])->update([
+                        'currency_id' => $currencyId,
                         'product_id' => $item['product_id'],
                         'quantity' => $item['order_qty'],
                         'unit_price' => $item['unit_price'],
@@ -425,6 +443,7 @@ class Edit extends Component
                     // Create new product order
                     $newOrder = ProductOrder::create([
                         'purchase_order_id' => $this->purchaseOrder->id,
+                        'currency_id' => $currencyId,
                         'product_id' => $item['product_id'],
                         'quantity' => $item['order_qty'],
                         'unit_price' => $item['unit_price'],
@@ -508,6 +527,7 @@ class Edit extends Component
             'suppliers' => $this->suppliers,
             'departments' => $this->departments,
             'categories' => $this->categories,
+            'selectedCurrency' => $this->selectedCurrency,
             'paginatedOrderedItems' => $this->orderedItemsPaginated,
             'orderedItemsTotalPages' => $this->orderedItemsTotalPages,
         ]);

@@ -16,6 +16,8 @@
         </div>
     @endif
 
+    @php $currencySymbol = $purchaseOrder->currency?->symbol ?? '₱'; @endphp
+
     <div class="p-6">
         <!-- PENDING Status Section -->
         @if($purchaseOrder->status === \App\Enums\PurchaseOrderStatus::PENDING)
@@ -121,12 +123,12 @@
                                         <td class="px-5 py-4">
                                             <div class="text-sm text-zinc-500 dark:text-zinc-400">{{ $order->product->category->name ?? 'N/A' }}</div>
                                         </td>
-                                        <td class="px-5 py-4 text-right">₱{{ number_format($order->unit_price, 2) }}</td>
+                                        <td class="px-5 py-4 text-right">{{ $currencySymbol }}{{ number_format($order->unit_price, 2) }}</td>
                                         <td class="px-5 py-4 text-right">
                                             {{ number_format($order->quantity, 0) }} {{ $order->product->uom ?? 'pcs' }}
                                         </td>
                                         <td class="px-5 py-4 text-right font-semibold text-zinc-900 dark:text-white">
-                                            ₱{{ number_format($order->total_price, 2) }}
+                                            {{ $currencySymbol }}{{ number_format($order->total_price, 2) }}
                                         </td>
                                     </tr>
                                 @empty
@@ -151,7 +153,7 @@
                             <div class="text-sm text-zinc-600 dark:text-zinc-400">Items Count</div>
                         </div>
                         <div class="text-center">
-                            <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">₱{{ number_format($this->totalPrice, 2) }}</div>
+                            <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{{ $currencySymbol }}{{ number_format($this->totalPrice, 2) }}</div>
                             <div class="text-sm text-zinc-600 dark:text-zinc-400">Total Value</div>
                         </div>
                     </div>
@@ -265,9 +267,9 @@
                                         <td class="px-5 py-4 text-left">
                                             {{ number_format($order->quantity, 0) }} {{ $order->product->uom ?? 'pcs' }}
                                         </td>
-                                        <td class="px-5 py-4 text-right">₱{{ number_format($order->unit_price, 2) }}</td>
+                                        <td class="px-5 py-4 text-right">{{ $currencySymbol }}{{ number_format($order->unit_price, 2) }}</td>
                                         <td class="px-5 py-4 text-right font-semibold text-zinc-900 dark:text-white">
-                                            ₱{{ number_format($order->total_price, 2) }}
+                                            {{ $currencySymbol }}{{ number_format($order->total_price, 2) }}
                                         </td>
                                     </tr>
                                 @empty
@@ -292,7 +294,7 @@
                             <div class="text-sm text-zinc-600 dark:text-zinc-400">Items Count</div>
                         </div>
                         <div class="text-center">
-                            <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">₱{{ number_format($this->totalPrice, 2) }}</div>
+                            <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">{{ $currencySymbol }}{{ number_format($this->totalPrice, 2) }}</div>
                             <div class="text-sm text-zinc-600 dark:text-zinc-400">Total Value</div>
                         </div>
                     </div>
@@ -399,12 +401,12 @@
                                         <td class="px-5 py-4">
                                             <div class="text-sm text-zinc-500 dark:text-zinc-400">{{ $order->product->category->name ?? 'N/A' }}</div>
                                         </td>
-                                        <td class="px-5 py-4 text-right">₱{{ number_format($order->unit_price, 2) }}</td>
+                                        <td class="px-5 py-4 text-right">{{ $currencySymbol }}{{ number_format($order->unit_price, 2) }}</td>
                                         <td class="px-5 py-4 text-right">
                                             {{ number_format($order->quantity, 0) }} {{ $order->product->uom ?? 'pcs' }}
                                         </td>
                                         <td class="px-5 py-4 text-right font-semibold text-zinc-900 dark:text-white">
-                                            ₱{{ number_format($order->total_price, 2) }}
+                                            {{ $currencySymbol }}{{ number_format($order->total_price, 2) }}
                                         </td>
                                     </tr>
                                 @empty
@@ -429,7 +431,7 @@
                             <div class="text-sm text-zinc-600 dark:text-zinc-400">Items Count</div>
                         </div>
                         <div class="text-center">
-                            <div class="text-2xl font-bold text-red-600 dark:text-red-400">₱{{ number_format($this->totalPrice, 2) }}</div>
+                            <div class="text-2xl font-bold text-red-600 dark:text-red-400">{{ $currencySymbol }}{{ number_format($this->totalPrice, 2) }}</div>
                             <div class="text-sm text-zinc-600 dark:text-zinc-400">Total Value</div>
                         </div>
                     </div>
@@ -980,9 +982,9 @@
                                             </div>
                                             @endif
                                         </td>
-                                        <td class="px-5 py-4 text-right">₱{{ number_format($order->unit_price, 2) }}</td>
+                                        <td class="px-5 py-4 text-right">{{ $currencySymbol }}{{ number_format($order->unit_price, 2) }}</td>
                                         <td class="px-5 py-4 text-right font-semibold text-zinc-900 dark:text-white">
-                                            ₱{{ number_format($order->total_price, 2) }}
+                                            {{ $currencySymbol }}{{ number_format($order->total_price, 2) }}
                                         </td>
                                     </tr>
                                     
@@ -1200,7 +1202,7 @@
                                         </svg>
                                         <span class="text-sm font-medium text-zinc-700 dark:text-zinc-300">Value</span>
                                     </div>
-                                    <span class="text-lg font-bold text-emerald-700 dark:text-emerald-400">₱{{ number_format($this->totalPrice, 2) }}</span>
+                                    <span class="text-lg font-bold text-emerald-700 dark:text-emerald-400">{{ $currencySymbol }}{{ number_format($this->totalPrice, 2) }}</span>
                                 </div>
                                 <div class="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
                                     Total order value
@@ -1473,7 +1475,7 @@ function printQRCode() {
                     </div>
                     <div class="detail-row">
                         <span class="detail-label">Total Price:</span>
-                        <span class="detail-value">₱${parseFloat({{ $this->totalPrice }}).toFixed(2)}</span>
+                        <span class="detail-value">{{ $currencySymbol }}${parseFloat({{ $this->totalPrice }}).toFixed(2)}</span>
                     </div>
                 </div>
                 

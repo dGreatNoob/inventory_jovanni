@@ -108,9 +108,10 @@
                     'branch edit',
                     'branch delete',
                     'agent assign branch',
-                    'agent transfer branch'
+                    'agent transfer branch',
+                    'allocation branch transfer'
                 ]))
-                <flux:navlist.group expandable :expanded="request()->routeIs('customer.*') || request()->routeIs('branch.*') || request()->routeIs('agent.*')"
+                <flux:navlist.group expandable :expanded="request()->routeIs('customer.*') || request()->routeIs('branch.*') || request()->routeIs('agent.*') || request()->routeIs('branch.stockTransfer')"
                     :heading="__('Branch Management')" class="lg:grid">
                     <flux:navlist.item icon="building-storefront" href="{{ route('branch.profile') }}"
                         :current="request()->routeIs('branch.profile')" wire:navigate>{{ __('Branches') }}
@@ -121,6 +122,11 @@
                     <flux:navlist.item icon="shopping-cart" href="{{ route('branch.sales') }}"
                         :current="request()->routeIs('branch.sales')" wire:navigate>{{ __('Branch Sales') }}
                     </flux:navlist.item>
+                    @can('allocation branch transfer')
+                    <flux:navlist.item icon="arrow-path" href="{{ route('branch.stockTransfer') }}"
+                        :current="request()->routeIs('branch.stockTransfer')" wire:navigate>{{ __('Branch Transfer') }}
+                    </flux:navlist.item>
+                    @endcan
                     <flux:navlist.item icon="users" href="{{ route('agent.profile') }}"
                         :current="request()->routeIs('agent.profile')" wire:navigate>{{ __('Agents') }}
                     </flux:navlist.item>
@@ -208,7 +214,6 @@
                 {{-- Allocation --}}
                 @if(Auth::user()->hasAnyPermission([
                     'allocation warehouse transfer',
-                    'allocation branch transfer',
                     'allocation sales return'
                 ]))
                 <flux:navlist.group
@@ -263,15 +268,6 @@
                         >
                             {{ __('Sales Allocation') }}
                         </flux:navlist.item> -->
-
-                         <flux:navlist.item
-                           icon="building-storefront"
-                           href="{{ route('branch.stockTransfer') }}"
-                           :current="request()->routeIs('branch.stockTransfer')"
-                           wire:navigate
-                       >
-                           {{ __('Branch Transfer') }}
-                       </flux:navlist.item>
 
                         <flux:navlist.item icon="arrow-path" href="{{ route('sales-return.index') }}"
                         :current="request()->routeIs('sales-return.index')" wire:navigate>{{ __('Sales Return') }}

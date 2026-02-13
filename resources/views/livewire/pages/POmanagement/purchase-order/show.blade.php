@@ -338,7 +338,18 @@
 
                 <!-- Items Ready for Receiving Section -->
                 <div class="mb-6">
-                    <h4 class="text-md font-medium text-zinc-900 dark:text-white mb-3 px-1">📦 Items Ready for Receiving</h4>
+                    <div class="flex items-center justify-between mb-3 px-1">
+                        <h4 class="text-md font-medium text-zinc-900 dark:text-white">📦 Items Ready for Receiving</h4>
+                        <button
+                            type="button"
+                            wire:click="openAddItemModal"
+                            class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                            </svg>
+                            Add Item
+                        </button>
+                    </div>
                     @include('livewire.pages.POmanagement.purchase-order.partials.po-items-table', [
                         'items' => $this->productOrdersPaginated,
                         'totals' => $this->totals,
@@ -1063,6 +1074,13 @@
                                         Start Receiving
                                     </a>
                                 @endcan
+                                {{-- Update PO: sync totals after adding items so stock-in reflects the latest --}}
+                                <button type="button" wire:click="updatePurchaseOrder" wire:loading.attr="disabled"
+                                    class="w-full inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300 dark:bg-indigo-600 dark:hover:bg-indigo-700 dark:focus:ring-indigo-800 transition-colors">
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                    <span wire:loading.remove wire:target="updatePurchaseOrder">Update PO</span>
+                                    <span wire:loading wire:target="updatePurchaseOrder">Updating…</span>
+                                </button>
                                 <button type="button"
                                     onclick="const returnReason = prompt('Please enter reason for returning to approved status:'); if(returnReason && returnReason.trim()) { $wire.set('cancellation_reason', returnReason); $wire.call('ReturnToApproved'); } else if(returnReason !== null) { alert('Reason is required!'); }"
                                     class="w-full inline-flex items-center justify-center px-4 py-2.5 text-sm font-medium text-white bg-yellow-600 border border-transparent rounded-lg hover:bg-yellow-700 focus:outline-none focus:ring-4 focus:ring-yellow-300 dark:bg-yellow-600 dark:hover:bg-yellow-700 dark:focus:ring-yellow-800 transition-colors">
@@ -1106,6 +1124,17 @@
     {{-- End Two-Column Layout --}}
 
     @include('livewire.pages.POmanagement.purchase-order.partials.po-reason-modal')
+
+    {{-- Add Item Modal (same as Create page) --}}
+    @if($purchaseOrder->status === \App\Enums\PurchaseOrderStatus::TO_RECEIVE)
+    <x-modal wire:model="showAddItemModal" class="max-w-4xl max-h-[90vh]">
+        @include('livewire.pages.POmanagement.purchase-order.partials.add-item-modal', [
+            'products' => $this->products,
+            'categories' => $this->categories,
+            'selectedCurrency' => $this->selectedCurrency,
+        ])
+    </x-modal>
+    @endif
 </div>
 
 <script>

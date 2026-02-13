@@ -194,7 +194,7 @@ class Index extends Component
                 // ✅ UPDATED: Added 'partially_received' to status filter
                 $query->where('status', $this->statusFilter);
             })
-            ->with(['supplier', 'department', 'orderedByUser', 'approvalLogs'])
+            ->with(['supplier', 'department', 'orderedByUser', 'approvalLogs', 'productOrders'])
             ->latest()
             ->paginate($this->perPage);
 

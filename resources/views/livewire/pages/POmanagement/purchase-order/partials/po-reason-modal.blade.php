@@ -13,7 +13,7 @@
             </flux:heading>
             <flux:subheading>
                 @if($reasonModalAction === 'close')
-                    Add an optional reason for closing this PO (e.g. short or complete shipment).
+                    Are you sure you want to close this purchase order for fulfillment? This will mark the PO as received. You may add an optional reason below (e.g. short or complete shipment).
                 @elseif($reasonModalAction === 'reopen')
                     Add an optional reason for reopening this PO.
                 @else

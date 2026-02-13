@@ -195,6 +195,15 @@ class PurchaseOrder extends Model
         return $this->isReceived();
     }
 
+    /**
+     * Was this PO previously closed for fulfillment and then reopened?
+     * Used to enforce same-supplier restriction when adding items.
+     */
+    public function wasReopened(): bool
+    {
+        return $this->approvalLogs()->where('action', 'reopened')->exists();
+    }
+
     // Delivery calculations
     public function getTotalDeliveredAttribute()
     {

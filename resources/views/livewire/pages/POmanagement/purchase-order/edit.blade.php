@@ -19,7 +19,12 @@
                 <div class="grid gap-6 mb-6 md:grid-cols-2">
                     <x-input type="text" wire:model="po_num" name="po_num" label="PO Number" disabled="true" />
                     <x-input type="text" wire:model="ordered_by" name="ordered_by" label="Ordered By" disabled="true" />
-                    <x-dropdown wire:model="supplier_id" name="supplier_id" label="Supplier" :options="$suppliers->pluck('name', 'id')->toArray()" placeholder="Select a supplier" />
+                    @if($purchaseOrder->wasReopened())
+                        {{-- Reopened POs: supplier is locked; new items must be from the same supplier --}}
+                        <x-input type="text" name="supplier_display" label="Supplier" :value="$purchaseOrder->supplier?->name ?? 'N/A'" disabled="true" />
+                    @else
+                        <x-dropdown wire:model="supplier_id" name="supplier_id" label="Supplier" :options="$suppliers->pluck('name', 'id')->toArray()" placeholder="Select a supplier" />
+                    @endif
                     @if($selectedCurrency)
                         <x-input type="text" name="currency_display" label="Currency" :value="$selectedCurrency->name . ' (' . $selectedCurrency->symbol . ')'" readonly="true" disabled="true" />
                     @endif
@@ -63,6 +68,13 @@
                         
                         <div class="p-6 space-y-6">
                             @if($editingItemIndex === null)
+                            @if($purchaseOrder->wasReopened())
+                                <div class="rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-4 py-2 mb-4">
+                                    <p class="text-sm text-amber-800 dark:text-amber-200">
+                                        This is a reopened PO. You can only add items from the same supplier ({{ $purchaseOrder->supplier?->name ?? 'N/A' }}).
+                                    </p>
+                                </div>
+                            @endif
                             <!-- Tabs: Search | Add by Supplier Code -->
                             <div class="flex border-b border-gray-200 dark:border-gray-600 -mt-2 -mx-6 px-6 pb-0">
                                 <button

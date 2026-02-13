@@ -94,7 +94,8 @@ class Edit extends Component
             'currency',
             'productOrders.product.category',
             'orderedByUser',
-            'department'
+            'department',
+            'approvalLogs',
         ])->findOrFail($Id);
 
         if (! $this->purchaseOrder->canEdit()) {
@@ -259,6 +260,17 @@ class Edit extends Component
 
         $product = Product::with(['category', 'supplier'])->find($this->selected_product);
 
+        if (! $product) {
+            session()->flash('error', 'Product not found.');
+            return;
+        }
+
+        // Reopened POs: only allow adding items from the same supplier
+        if ($this->purchaseOrder->wasReopened() && (int) $product->supplier_id !== (int) $this->purchaseOrder->supplier_id) {
+            session()->flash('error', 'For reopened purchase orders, you can only add items from the same supplier (' . ($this->purchaseOrder->supplier?->name ?? 'N/A') . ').');
+            return;
+        }
+
         if ($this->editingItemIndex !== null) {
             // Update existing item
             $this->orderedItems[$this->editingItemIndex] = [
@@ -315,21 +327,26 @@ class Edit extends Component
             'unit_price.min' => 'Unit price cannot be negative.',
         ]);
 
-        if (empty($this->supplier_id)) {
+        // For reopened POs, use PO's supplier; otherwise use form's supplier_id
+        $supplierId = $this->purchaseOrder->wasReopened()
+            ? $this->purchaseOrder->supplier_id
+            : $this->supplier_id;
+
+        if (empty($supplierId)) {
             session()->flash('error', 'Please select a supplier first.');
             return;
         }
 
         $supplierCode = trim($this->addBySupplierCode);
         $product = Product::with(['category', 'supplier', 'color'])
-            ->where('supplier_id', $this->supplier_id)
+            ->where('supplier_id', $supplierId)
             ->where('supplier_code', $supplierCode)
             ->first();
 
-        if (!$product) {
+        if (! $product) {
             try {
                 $product = app(ProductService::class)->createPlaceholderProduct([
-                    'supplier_id' => $this->supplier_id,
+                    'supplier_id' => $supplierId,
                     'supplier_code' => $supplierCode,
                     'unit_price' => (float) $this->unit_price,
                 ]);

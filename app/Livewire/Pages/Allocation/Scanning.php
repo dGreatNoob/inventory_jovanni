@@ -37,6 +37,11 @@ class Scanning extends Component
     public bool $showBranchDropdown = false;
     public string $branchSearch = '';
 
+    // Dispatch modal
+    public bool $showDispatchModal = false;
+    public string $dispatchDate = '';
+    public string $dispatchTime = '';
+
     public function mount(): void
     {
         $branchAllocationId = request()->query('branch_allocation_id');
@@ -389,7 +394,7 @@ class Scanning extends Component
         session()->flash('message', 'Delivery receipt PDF download started.');
     }
 
-    /** Mark this branch allocation's boxes as dispatched */
+    /** Open dispatch modal to collect dispatch date */
     public function dispatchForShipment(): void
     {
         if (!$this->selectedBranchAllocationId) {
@@ -397,12 +402,46 @@ class Scanning extends Component
             return;
         }
 
+        // Set default to today's date and current time
+        $this->dispatchDate = now()->format('Y-m-d');
+        $this->dispatchTime = now()->format('H:i');
+        $this->showDispatchModal = true;
+    }
+
+    /** Confirm dispatch with manual date/time */
+    public function confirmDispatch(): void
+    {
+        // Validate dispatch date and time
+        $this->validate([
+            'dispatchDate' => 'required|date',
+            'dispatchTime' => 'required',
+        ]);
+
+        if (!$this->selectedBranchAllocationId) {
+            session()->flash('error', 'No branch selected.');
+            $this->showDispatchModal = false;
+            return;
+        }
+
+        // Combine date and time into a Carbon instance
+        $dispatchDateTime = \Carbon\Carbon::createFromFormat('Y-m-d H:i', $this->dispatchDate . ' ' . $this->dispatchTime);
+
+        // Update boxes with the manual dispatch date
         Box::where('branch_allocation_id', $this->selectedBranchAllocationId)
             ->whereNull('dispatched_at')
-            ->update(['dispatched_at' => now()]);
+            ->update(['dispatched_at' => $dispatchDateTime]);
 
         $this->loadAvailableBoxes();
-        session()->flash('message', 'Branch shipment dispatched. Summary DR: ' . ($this->summaryDrNumber ?? 'N/A'));
+        $this->showDispatchModal = false;
+        session()->flash('message', 'Branch shipment dispatched on ' . $dispatchDateTime->format('M d, Y h:i A') . '. Summary DR: ' . ($this->summaryDrNumber ?? 'N/A'));
+    }
+
+    /** Cancel dispatch modal */
+    public function cancelDispatch(): void
+    {
+        $this->showDispatchModal = false;
+        $this->dispatchDate = '';
+        $this->dispatchTime = '';
     }
 
     /** Create DR for a newly created box (does not set currentBox/currentDr) */

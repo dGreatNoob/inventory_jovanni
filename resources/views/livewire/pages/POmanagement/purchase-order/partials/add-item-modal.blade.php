@@ -285,7 +285,8 @@
             type="button"
             variant="primary"
             size="md"
-            wire:click="addItem"
+            wire:click.prevent="addItem"
+            wire:loading.attr="disabled"
             :disabled="!$selected_product"
         >
             Add Item

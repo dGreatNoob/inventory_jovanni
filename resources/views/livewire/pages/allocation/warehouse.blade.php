@@ -1333,7 +1333,7 @@
     @if (!$showStepper || $currentStep >= 3)
     <!-- Table All (hidden on step 1 and 2 to reduce lag) -->
     <div class="bg-white dark:bg-gray-800 relative shadow-md sm:rounded-lg overflow-hidden">
-    <div class="flex items-center justify-between p-4 pr-10">
+    <div class="flex items-center justify-between px-6 py-4">
         <div class="flex space-x-6">
             <div class="relative">
                 <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
@@ -1371,7 +1371,7 @@
             @endif
         </div>
     </div>
-    <div class="overflow-x-auto">
+    <div class="overflow-x-auto border-t border-gray-200 dark:border-gray-700">
     @php
         $steps = [
             1 => 'Step 1: Select Batches',
@@ -1560,7 +1560,7 @@
         </tbody>
     </table>
     </div>
-    <div class="py-4 px-3">
+    <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
         <div class="flex items-center justify-between">
             <div class="flex items-center space-x-4">
                 <label class="text-sm font-medium text-gray-900 dark:text-white">Per Page:</label>

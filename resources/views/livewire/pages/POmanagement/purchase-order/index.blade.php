@@ -85,6 +85,7 @@
                         <th scope="col" class="px-6 py-3">PO #</th>
                         <th scope="col" class="px-6 py-3">Supplier</th>
                         <th scope="col" class="px-6 py-3">Status</th>
+                        <th scope="col" class="px-6 py-3">Open/Closed</th>
                         <th scope="col" class="px-6 py-3">Order Date</th>
                         <th scope="col" class="px-6 py-3">Date Received</th>
                         <th scope="col" class="px-6 py-3">Total Qty</th>
@@ -129,6 +130,17 @@
                                     {{ $displayStatus }}
                                 </span>
                             </td>
+                            <td class="px-6 py-4">
+                                @php
+                                    $isClosed = $po->status === \App\Enums\PurchaseOrderStatus::RECEIVED
+                                        || $po->status === \App\Enums\PurchaseOrderStatus::CANCELLED;
+                                @endphp
+                                <span class="{{ $isClosed
+                                    ? 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                                    : 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-300' }}">
+                                    {{ $isClosed ? 'Closed' : 'Open' }}
+                                </span>
+                            </td>
                             <td class="px-6 py-4">{{ $po->order_date ? $po->order_date->format('M d, Y') : 'N/A' }}</td>
                             <td class="px-6 py-4">{{ $po->del_on ? $po->del_on->format('M d, Y') : 'N/A' }}</td>
                             <td class="px-6 py-4">{{ number_format($po->total_qty, 0) }}</td>
@@ -167,7 +179,7 @@
                         </tr>
                         @empty
                         <tr class="odd:bg-white odd:dark:bg-gray-900 even:bg-gray-50 even:dark:bg-gray-800 border-b dark:border-gray-700">
-                            <td colspan="10" class="px-6 py-4 text-center">No purchase orders found</td>
+                            <td colspan="11" class="px-6 py-4 text-center">No purchase orders found</td>
                         </tr>
                         @endforelse
                     </tbody>
